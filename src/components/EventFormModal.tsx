@@ -1,0 +1,1042 @@
+import { FormEvent, useMemo, useState } from 'react';
+import { AlertTriangle, Check, CreditCard, Plus, Trash2, UserCheck, X } from 'lucide-react';
+import {
+  CoachAdminUser,
+  Discipline,
+  DisciplineColorKey,
+  DisciplineItem,
+  EventPaymentMode,
+  SportEvent,
+  VALIDATION_LIMITS,
+} from '../types';
+import {
+  createCustomDiscipline,
+  createEvent,
+  deleteCustomDiscipline,
+  updateEvent,
+} from '../services/firestoreService';
+import {
+  toLocalDateInputValue,
+  toLocalTimeInputValue,
+} from '../utils/dateAndValidation';
+import {
+  DISCIPLINE_COLOR_KEYS,
+  DISCIPLINE_COLOR_PRESETS,
+  getDisciplineStyle,
+} from '../utils/disciplineColors';
+import { PlaceAutocompleteInput } from './PlaceAutocompleteInput';
+import { ProfileAvatar } from './ProfileAvatar';
+
+interface EventFormModalProps {
+  coachUid: string;
+  defaultCoachName: string;
+  coachAdmins?: CoachAdminUser[];
+  disciplines: DisciplineItem[];
+  hasMapsApiKey: boolean;
+  initialDate?: Date | null;
+  editingEvent?: SportEvent | null;
+  duplicatingEvent?: SportEvent | null;
+  onClose: () => void;
+}
+
+interface CoachAssignment {
+  uid?: string;
+  name: string;
+}
+
+export function EventFormModal({
+  coachUid,
+  defaultCoachName,
+  coachAdmins = [],
+  disciplines,
+  hasMapsApiKey,
+  initialDate,
+  editingEvent,
+  duplicatingEvent,
+  onClose,
+}: EventFormModalProps) {
+  const sourceEvent = editingEvent ?? duplicatingEvent ?? null;
+  const isEditing = Boolean(editingEvent);
+  const isDuplicating = Boolean(!editingEvent && duplicatingEvent);
+
+  const defaultStart = (() => {
+    if (editingEvent) return editingEvent.startAt.toDate();
+    if (duplicatingEvent) {
+      const d = new Date(duplicatingEvent.startAt.toDate());
+      d.setDate(d.getDate() + 7);
+      return d;
+    }
+    if (initialDate) {
+      const d = new Date(initialDate);
+      d.setHours(18, 30, 0, 0);
+      return d;
+    }
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(18, 30, 0, 0);
+    return d;
+  })();
+
+  const [title, setTitle] = useState(sourceEvent?.title ?? '');
+  const [discipline, setDiscipline] = useState<Discipline>(
+    sourceEvent?.discipline ?? disciplines[0]?.name ?? ''
+  );
+  const [showNewDiscForm, setShowNewDiscForm] = useState(
+    () => disciplines.length === 0
+  );
+  const [newDiscName, setNewDiscName] = useState('');
+  const [newDiscColor, setNewDiscColor] = useState<DisciplineColorKey>('indigo');
+  const [addingDisc, setAddingDisc] = useState(false);
+  const [deletingDisc, setDeletingDisc] = useState(false);
+  const [discError, setDiscError] = useState<string | null>(null);
+  const [dateStr, setDateStr] = useState(toLocalDateInputValue(defaultStart));
+  const [timeStr, setTimeStr] = useState(toLocalTimeInputValue(defaultStart));
+  const [durationMinutes, setDurationMinutes] = useState(
+    sourceEvent?.durationMinutes ?? 60
+  );
+  const [isUnlimitedCapacity, setIsUnlimitedCapacity] = useState(
+    sourceEvent?.isUnlimitedCapacity ?? false
+  );
+  const [maxCapacity, setMaxCapacity] = useState(
+    sourceEvent && !sourceEvent.isUnlimitedCapacity
+      ? sourceEvent.maxCapacity
+      : 12
+  );
+  const [isPaid, setIsPaid] = useState(Boolean(sourceEvent?.isPaid));
+  const [priceEurosInput, setPriceEurosInput] = useState(() => {
+    if (sourceEvent?.isPaid && typeof sourceEvent.priceCents === 'number' && sourceEvent.priceCents > 0) {
+      const euros = sourceEvent.priceCents / 100;
+      return Number.isInteger(euros) ? String(euros) : euros.toFixed(2).replace('.', ',');
+    }
+    return '15';
+  });
+  const [paymentMode, setPaymentMode] = useState<EventPaymentMode>(
+    sourceEvent?.paymentMode ?? 'online'
+  );
+  const [location, setLocation] = useState(sourceEvent?.location ?? '');
+  const [city, setCity] = useState(sourceEvent?.city ?? 'Paris');
+  const [region, setRegion] = useState(sourceEvent?.region ?? '');
+  const [coords, setCoords] = useState<{
+    hasCoords: boolean;
+    lat: number;
+    lng: number;
+  }>({
+    hasCoords: sourceEvent?.hasCoords ?? false,
+    lat: sourceEvent?.lat ?? 0,
+    lng: sourceEvent?.lng ?? 0,
+  });
+  const activeTeamCoaches = useMemo(
+    () => coachAdmins.filter((admin) => admin.active !== false),
+    [coachAdmins]
+  );
+
+  const [selectedCoaches, setSelectedCoaches] = useState<CoachAssignment[]>(() => {
+    const initialNames =
+      Array.isArray(sourceEvent?.coachNames) && sourceEvent.coachNames.length > 0
+        ? sourceEvent.coachNames
+        : sourceEvent?.coachName
+          ? sourceEvent.coachName
+              .split(',')
+              .map((n) => n.trim())
+              .filter(Boolean)
+          : [defaultCoachName];
+
+    const initialUids = Array.isArray(sourceEvent?.coachUids)
+      ? sourceEvent.coachUids
+      : [];
+
+    const activeCoachesList = coachAdmins.filter((a) => a.active !== false);
+
+    return initialNames.map((name, idx) => {
+      const matchedByName = activeCoachesList.find(
+        (a) => a.displayName.trim().toLowerCase() === name.trim().toLowerCase()
+      );
+      const fallbackUid =
+        !sourceEvent && idx === 0
+          ? coachUid
+          : initialUids[idx] && activeCoachesList.some((a) => a.uid === initialUids[idx])
+            ? initialUids[idx]
+            : undefined;
+      return {
+        uid: matchedByName?.uid ?? fallbackUid,
+        name: name.trim(),
+      };
+    });
+  });
+  const [customCoachName, setCustomCoachName] = useState('');
+  const [coachInputError, setCoachInputError] = useState<string | null>(null);
+  const [description, setDescription] = useState(
+    sourceEvent?.description ?? ''
+  );
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const selectOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    disciplines.forEach((d) => map.set(d.name.toLowerCase(), d.name));
+    if (discipline.trim() && !map.has(discipline.trim().toLowerCase())) {
+      map.set(discipline.trim().toLowerCase(), discipline.trim());
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.localeCompare(b, 'fr', { sensitivity: 'base' })
+    );
+  }, [disciplines, discipline]);
+
+  const selectedCatalogDiscipline = useMemo(
+    () =>
+      disciplines.find(
+        (d) => d.name.trim().toLowerCase() === discipline.trim().toLowerCase()
+      ) ?? null,
+    [disciplines, discipline]
+  );
+
+  const activeDiscStyle = getDisciplineStyle(discipline, disciplines);
+
+  const handleAddInlineDiscipline = async () => {
+    setDiscError(null);
+    setAddingDisc(true);
+    try {
+      const createdName = await createCustomDiscipline({
+        name: newDiscName,
+        colorKey: newDiscColor,
+        coachUid,
+        existingNames: disciplines.map((d) => d.name),
+      });
+      setDiscipline(createdName);
+      setNewDiscName('');
+      setShowNewDiscForm(false);
+    } catch (err) {
+      setDiscError(
+        err instanceof Error
+          ? err.message
+          : 'Impossible d’ajouter cette discipline.'
+      );
+    } finally {
+      setAddingDisc(false);
+    }
+  };
+
+  const handleDeleteSelectedDiscipline = async () => {
+    if (!selectedCatalogDiscipline) return;
+    setDiscError(null);
+    setDeletingDisc(true);
+    try {
+      await deleteCustomDiscipline(selectedCatalogDiscipline.id);
+      const remaining = disciplines.filter(
+        (d) => d.id !== selectedCatalogDiscipline.id
+      );
+      setDiscipline(remaining[0]?.name ?? '');
+      if (remaining.length === 0) {
+        setShowNewDiscForm(true);
+      }
+    } catch (err) {
+      setDiscError(
+        err instanceof Error
+          ? err.message
+          : 'Impossible de supprimer cette discipline.'
+      );
+    } finally {
+      setDeletingDisc(false);
+    }
+  };
+
+  const toggleTeamCoach = (admin: CoachAdminUser) => {
+    setCoachInputError(null);
+    setSelectedCoaches((prev) => {
+      const existsIdx = prev.findIndex(
+        (c) =>
+          (c.uid && c.uid === admin.uid) ||
+          c.name.trim().toLowerCase() === admin.displayName.trim().toLowerCase()
+      );
+      if (existsIdx >= 0) {
+        return prev.filter((_, idx) => idx !== existsIdx);
+      }
+      if (prev.length >= VALIDATION_LIMITS.COACHES_PER_EVENT_MAX) {
+        setCoachInputError(
+          `Maximum ${VALIDATION_LIMITS.COACHES_PER_EVENT_MAX} coachs par événement.`
+        );
+        return prev;
+      }
+      return [...prev, { uid: admin.uid, name: admin.displayName.trim() }];
+    });
+  };
+
+  const handleAddCustomCoach = () => {
+    setCoachInputError(null);
+    const clean = customCoachName
+      .trim()
+      .slice(0, VALIDATION_LIMITS.SINGLE_COACH_NAME_MAX);
+    if (clean.length < VALIDATION_LIMITS.COACH_NAME_MIN) {
+      setCoachInputError('Saisissez au moins 2 caractères pour ajouter un coach.');
+      return;
+    }
+    if (selectedCoaches.length >= VALIDATION_LIMITS.COACHES_PER_EVENT_MAX) {
+      setCoachInputError(
+        `Maximum ${VALIDATION_LIMITS.COACHES_PER_EVENT_MAX} coachs par événement.`
+      );
+      return;
+    }
+    const alreadyExists = selectedCoaches.some(
+      (c) => c.name.trim().toLowerCase() === clean.toLowerCase()
+    );
+    if (alreadyExists) {
+      setCoachInputError('Ce coach est déjà ajouté à la séance.');
+      return;
+    }
+
+    const matchedTeam = activeTeamCoaches.find(
+      (a) => a.displayName.trim().toLowerCase() === clean.toLowerCase()
+    );
+    setSelectedCoaches((prev) => [
+      ...prev,
+      { uid: matchedTeam?.uid, name: matchedTeam?.displayName.trim() || clean },
+    ]);
+    setCustomCoachName('');
+  };
+
+  const removeCoachAt = (index: number) => {
+    setCoachInputError(null);
+    setSelectedCoaches((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    if (
+      !discipline.trim() ||
+      discipline.trim().length < VALIDATION_LIMITS.DISCIPLINE_MIN
+    ) {
+      setErrorMsg('Veuillez choisir ou ajouter une discipline.');
+      return;
+    }
+
+    if (selectedCoaches.length === 0) {
+      setErrorMsg('Veuillez sélectionner ou ajouter au moins un coach encadrant.');
+      return;
+    }
+
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    if (!year || !month || !day || Number.isNaN(hours) || Number.isNaN(minutes)) {
+      setErrorMsg('Veuillez saisir une date et une heure valides.');
+      return;
+    }
+    const startDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+    const coachNames = selectedCoaches.map((c) => c.name);
+    const coachUids = Array.from(
+      new Set(
+        selectedCoaches
+          .map((c) => c.uid)
+          .filter((u): u is string => Boolean(u))
+      )
+    );
+    const combinedCoachName = coachNames
+      .join(', ')
+      .slice(0, VALIDATION_LIMITS.COACH_NAME_MAX);
+
+    let priceCents = 0;
+    if (isPaid) {
+      const normalizedPrice = priceEurosInput.trim().replace(',', '.');
+      const parsedEuros = Number(normalizedPrice);
+      priceCents = Math.round(parsedEuros * 100);
+      if (
+        !normalizedPrice ||
+        !Number.isFinite(parsedEuros) ||
+        priceCents < VALIDATION_LIMITS.PRICE_MIN_CENTS ||
+        priceCents > VALIDATION_LIMITS.PRICE_MAX_CENTS
+      ) {
+        setErrorMsg(
+          'Veuillez saisir un tarif valide entre 1,00 € et 1 000,00 €.'
+        );
+        return;
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        title,
+        discipline,
+        description,
+        location,
+        city,
+        region,
+        hasCoords: coords.hasCoords,
+        lat: coords.lat,
+        lng: coords.lng,
+        coachName: combinedCoachName,
+        coachNames,
+        coachUids,
+        startDate,
+        durationMinutes: Number(durationMinutes),
+        isUnlimitedCapacity,
+        maxCapacity: isUnlimitedCapacity ? 0 : Number(maxCapacity),
+        isPaid,
+        priceCents,
+        paymentMode,
+      };
+
+      if (editingEvent) {
+        await updateEvent(
+          editingEvent.id,
+          { ...payload, status: editingEvent.status },
+          editingEvent.registeredCount
+        );
+      } else {
+        await createEvent(payload, coachUid);
+      }
+      onClose();
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : 'Impossible d’enregistrer l’événement.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="event-form-title"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-slate-950/75 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:rounded-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-slate-700 sm:hidden" />
+
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 dark:border-slate-800 sm:px-6">
+          <h2
+            id="event-form-title"
+            className="font-display text-lg font-bold text-slate-900 dark:text-white"
+          >
+            {isEditing
+              ? 'Modifier la séance sportive'
+              : isDuplicating
+                ? 'Dupliquer la séance sur une autre date'
+                : 'Nouvel événement sportif'}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:p-6">
+          {isDuplicating && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+              Vous dupliquez <strong>{duplicatingEvent?.title}</strong>. Choisissez la nouvelle date (proposée à J+7 par défaut) pour créer une séance indépendante avec 0 inscrit.
+            </div>
+          )}
+          <div>
+            <label
+              htmlFor="ev-title"
+              className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+            >
+              Titre de la séance *
+            </label>
+            <input
+              id="ev-title"
+              type="text"
+              required
+              minLength={VALIDATION_LIMITS.TITLE_MIN}
+              maxLength={VALIDATION_LIMITS.TITLE_MAX}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex. Circuit Training Métabolique"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <label
+                htmlFor="ev-discipline"
+                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+              >
+                Discipline *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setDiscError(null);
+                  setShowNewDiscForm((prev) => !prev);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 cursor-pointer"
+              >
+                <Plus className="h-3 w-3" aria-hidden="true" />
+                {showNewDiscForm ? 'Fermer' : 'Ajouter une discipline'}
+              </button>
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+              <span
+                className={`h-4 w-4 shrink-0 rounded-sm ${
+                  discipline ? activeDiscStyle.swatchBg : 'bg-slate-200 dark:bg-slate-700'
+                }`}
+                title={discipline ? `Couleur : ${activeDiscStyle.label}` : undefined}
+                aria-hidden="true"
+              />
+              <select
+                id="ev-discipline"
+                required
+                value={discipline}
+                onChange={(e) => setDiscipline(e.target.value)}
+                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              >
+                {selectOptions.length === 0 || !discipline ? (
+                  <option value="">
+                    {selectOptions.length === 0
+                      ? 'Aucune discipline — ajoutez-en une ci-dessous'
+                      : 'Choisir une discipline (ordre alphabétique)...'}
+                  </option>
+                ) : null}
+                {selectOptions.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              {selectedCatalogDiscipline && (
+                <button
+                  type="button"
+                  disabled={deletingDisc}
+                  onClick={() => void handleDeleteSelectedDiscipline()}
+                  title={`Supprimer la discipline ${selectedCatalogDiscipline.name}`}
+                  aria-label={`Supprimer la discipline ${selectedCatalogDiscipline.name}`}
+                  className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 disabled:opacity-50 cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+            {discError && !showNewDiscForm && (
+              <p className="mt-1.5 text-xs font-medium text-rose-700 dark:text-rose-400">{discError}</p>
+            )}
+          </div>
+
+          {showNewDiscForm && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3.5 space-y-3 dark:border-emerald-800/80 dark:bg-emerald-950/40">
+              <p className="text-xs font-semibold text-slate-900 dark:text-white">
+                Nouvelle discipline sportive
+              </p>
+              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+                <input
+                  type="text"
+                  maxLength={VALIDATION_LIMITS.DISCIPLINE_MAX}
+                  value={newDiscName}
+                  onChange={(e) => setNewDiscName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void handleAddInlineDiscipline();
+                    }
+                  }}
+                  placeholder="Ex. Boxe, CrossFit, Yoga..."
+                  aria-label="Nom de la nouvelle discipline"
+                  className="min-h-[40px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                />
+                <button
+                  type="button"
+                  disabled={addingDisc}
+                  onClick={() => void handleAddInlineDiscipline()}
+                  className="inline-flex min-h-[40px] items-center justify-center gap-1 rounded-lg bg-emerald-700 px-3.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                  {addingDisc ? 'Ajout...' : 'Ajouter'}
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                  Couleur :
+                </span>
+                {DISCIPLINE_COLOR_KEYS.map((key) => {
+                  const preset = DISCIPLINE_COLOR_PRESETS[key];
+                  const selected = newDiscColor === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setNewDiscColor(key)}
+                      title={preset.label}
+                      aria-label={`Couleur ${preset.label}`}
+                      className={`flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-transform ${preset.swatchBg} ${
+                        selected
+                          ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-slate-100 dark:ring-offset-slate-900 scale-105'
+                          : 'opacity-80 hover:opacity-100'
+                      }`}
+                    >
+                      {selected && (
+                        <Check className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {discError && (
+                <p className="text-xs font-medium text-rose-700 dark:text-rose-400">{discError}</p>
+              )}
+            </div>
+          )}
+
+          {/* Multi-Coach Assignment */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/50">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100">
+                <UserCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                Coach(s) encadrant(s) * ({selectedCoaches.length})
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Tous les coachs sélectionnés reçoivent les alertes d’inscription
+              </span>
+            </div>
+
+            {/* Selected coaches */}
+            {selectedCoaches.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {selectedCoaches.map((coach, idx) => {
+                  const matchedAdmin = coach.uid
+                    ? activeTeamCoaches.find((a) => a.uid === coach.uid)
+                    : undefined;
+                  return (
+                    <span
+                      key={`${coach.uid || 'custom'}-${coach.name}-${idx}`}
+                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white py-1 pl-2 pr-1.5 text-xs font-semibold text-slate-800 shadow-2xs dark:border-emerald-800 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <ProfileAvatar
+                        name={coach.name}
+                        photoUrl={matchedAdmin?.photoUrl}
+                        size="xs"
+                      />
+                      <span>{coach.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeCoachAt(idx)}
+                        aria-label={`Retirer ${coach.name}`}
+                        className="flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-400 cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-rose-700 dark:text-rose-400">
+                Sélectionnez ou ajoutez au moins un coach pour cette séance.
+              </p>
+            )}
+
+            {/* Quick pick from registered team coaches */}
+            {activeTeamCoaches.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                  Équipe des coachs enregistrés :
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {activeTeamCoaches.map((admin) => {
+                    const isSelected = selectedCoaches.some(
+                      (c) =>
+                        (c.uid && c.uid === admin.uid) ||
+                        c.name.trim().toLowerCase() ===
+                          admin.displayName.trim().toLowerCase()
+                    );
+                    return (
+                      <button
+                        key={admin.uid}
+                        type="button"
+                        onClick={() => toggleTeamCoach(admin)}
+                        className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'border-emerald-600 bg-emerald-700 text-white dark:bg-emerald-600'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {isSelected ? (
+                          <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        ) : (
+                          <Plus className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                        )}
+                        <span>{admin.displayName}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Add extra/guest coach by name */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                id="ev-coach-custom"
+                type="text"
+                maxLength={VALIDATION_LIMITS.SINGLE_COACH_NAME_MAX}
+                value={customCoachName}
+                onChange={(e) => {
+                  setCustomCoachName(e.target.value);
+                  if (coachInputError) setCoachInputError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomCoach();
+                  }
+                }}
+                placeholder="Ajouter un autre coach ou co-animateur..."
+                aria-label="Nom d’un autre coach à ajouter"
+                className="min-h-[40px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
+              <button
+                type="button"
+                onClick={handleAddCustomCoach}
+                className="inline-flex min-h-[40px] items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                Ajouter ce coach
+              </button>
+            </div>
+
+            {coachInputError && (
+              <p className="text-xs font-medium text-rose-700 dark:text-rose-400">
+                {coachInputError}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            <div className="col-span-2 sm:col-span-1">
+              <label
+                htmlFor="ev-date"
+                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+              >
+                Date *
+              </label>
+              <input
+                id="ev-date"
+                type="date"
+                required
+                value={dateStr}
+                onChange={(e) => setDateStr(e.target.value)}
+                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-mono text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="ev-time"
+                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+              >
+                Heure début *
+              </label>
+              <input
+                id="ev-time"
+                type="time"
+                required
+                value={timeStr}
+                onChange={(e) => setTimeStr(e.target.value)}
+                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-mono text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="ev-duration"
+                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+              >
+                Durée (min) *
+              </label>
+              <input
+                id="ev-duration"
+                type="number"
+                required
+                min={VALIDATION_LIMITS.DURATION_MIN}
+                max={VALIDATION_LIMITS.DURATION_MAX}
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-mono tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="ev-capacity"
+                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+              >
+                Places max {!isUnlimitedCapacity && '*'}
+              </label>
+              {isUnlimitedCapacity ? (
+                <div className="mt-1 flex min-h-[44px] items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  Illimité
+                </div>
+              ) : (
+                <input
+                  id="ev-capacity"
+                  type="number"
+                  required={!isUnlimitedCapacity}
+                  min={
+                    editingEvent
+                      ? Math.max(
+                          VALIDATION_LIMITS.CAPACITY_MIN,
+                          editingEvent.registeredCount
+                        )
+                      : VALIDATION_LIMITS.CAPACITY_MIN
+                  }
+                  max={VALIDATION_LIMITS.CAPACITY_MAX}
+                  value={maxCapacity}
+                  onChange={(e) => setMaxCapacity(Number(e.target.value))}
+                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-mono tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Unlimited capacity toggle */}
+          <label className="flex min-h-[44px] items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 dark:border-slate-800 dark:bg-slate-800/60 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isUnlimitedCapacity}
+              onChange={(e) => setIsUnlimitedCapacity(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-slate-600 dark:bg-slate-900"
+            />
+            <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
+              Nombre de places illimité (aucune limite de participants)
+            </span>
+          </label>
+
+          {/* Pricing & Payment Mode Configuration */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/50">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100">
+                <CreditCard className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                Tarification & paiement
+              </span>
+              <div
+                role="group"
+                aria-label="Séance gratuite ou payante"
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-200/80 p-1 dark:bg-slate-900"
+              >
+                <button
+                  type="button"
+                  onClick={() => setIsPaid(false)}
+                  className={`min-h-[32px] rounded-md px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                    !isPaid
+                      ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Gratuit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPaid(true)}
+                  className={`min-h-[32px] rounded-md px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                    isPaid
+                      ? 'bg-emerald-700 text-white shadow-xs dark:bg-emerald-600'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  Payant
+                </button>
+              </div>
+            </div>
+
+            {isPaid ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="ev-price"
+                    className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  >
+                    Tarif de la séance (€) *
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      id="ev-price"
+                      type="text"
+                      inputMode="decimal"
+                      required={isPaid}
+                      value={priceEurosInput}
+                      onChange={(e) => setPriceEurosInput(e.target.value)}
+                      placeholder="15"
+                      className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-9 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      €
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    Entre 1 € et 1 000 € (ex. 15 ou 12,50).
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="ev-payment-mode"
+                    className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  >
+                    Mode de règlement accepté
+                  </label>
+                  <select
+                    id="ev-payment-mode"
+                    value={paymentMode}
+                    onChange={(e) =>
+                      setPaymentMode(e.target.value as EventPaymentMode)
+                    }
+                    className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  >
+                    <option value="online">Carte bancaire en ligne</option>
+                    <option value="both">Carte en ligne ou sur place</option>
+                    <option value="onsite">Sur place uniquement</option>
+                  </select>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    Le suivi des règlements apparaît dans la liste des inscrits.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Séance sans frais d’inscription pour les adhérents.
+              </p>
+            )}
+          </div>
+
+          {/* Location + City + Region */}
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="ev-location"
+                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+              >
+                Adresse ou lieu précis *
+              </label>
+              <PlaceAutocompleteInput
+                value={location}
+                hasMapsApiKey={hasMapsApiKey}
+                onChangeText={(val) => {
+                  setLocation(val);
+                  setCoords({ hasCoords: false, lat: 0, lng: 0 });
+                }}
+                onSelectPlace={(selected) => {
+                  setLocation(selected.location);
+                  if (selected.city) setCity(selected.city);
+                  if (selected.region) setRegion(selected.region);
+                  setCoords({
+                    hasCoords: selected.hasCoords,
+                    lat: selected.lat,
+                    lng: selected.lng,
+                  });
+                }}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="ev-city"
+                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Ville *
+                </label>
+                <input
+                  id="ev-city"
+                  type="text"
+                  required
+                  minLength={VALIDATION_LIMITS.CITY_MIN}
+                  maxLength={VALIDATION_LIMITS.CITY_MAX}
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Paris"
+                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="ev-region"
+                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Région
+                </label>
+                <input
+                  id="ev-region"
+                  type="text"
+                  maxLength={VALIDATION_LIMITS.REGION_MAX}
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  placeholder="Ex. Île-de-France"
+                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="ev-description"
+              className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+            >
+              Description & matériel recommandé
+            </label>
+            <textarea
+              id="ev-description"
+              rows={3}
+              maxLength={VALIDATION_LIMITS.DESCRIPTION_MAX}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Niveau requis, intensité, bouteille d'eau, serviette..."
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
+          </div>
+
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+            Rappel : les inscriptions publiques seront automatiquement verrouillées 1 heure avant l’heure de début configurée.
+          </p>
+
+          {errorMsg && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse gap-2.5 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-h-[44px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="min-h-[44px] rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-60 cursor-pointer"
+            >
+              {submitting
+                ? 'Enregistrement...'
+                : isEditing
+                  ? 'Mettre à jour'
+                  : isDuplicating
+                    ? 'Créer la copie'
+                    : 'Publier la séance'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
