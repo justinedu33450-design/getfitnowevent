@@ -10,8 +10,8 @@ import { auth, BOOTSTRAPPED_COACH_EMAIL, googleProvider } from './firebase';
 import {
   autoDeleteCancelledEvent,
   cancelMyRegistration,
-  completeEndedEventAndNotifyMembers,
   deleteCoachNotification,
+  deleteEndedEventAfterRetention,
   deleteMemberNotification,
   ensureMyMemberProfile,
   ensureSessionValidationNotification,
@@ -19,6 +19,7 @@ import {
   markAllMemberNotificationsRead,
   markCoachNotificationRead,
   markMemberNotificationRead,
+  notifyMembersOfEndedEvent,
   resolveCoachSession,
   subscribeCoachAccessRequests,
   subscribeCoachAdmins,
@@ -49,6 +50,7 @@ import {
   MemberProfile,
   Registration,
   SportEvent,
+  VALIDATION_LIMITS,
 } from './types';
 import { buildDisciplineCatalog } from './utils/disciplineColors';
 import {
@@ -148,6 +150,7 @@ export default function App() {
   // Live clock updated every 15s so H-1 cutoff, 0-registrant cancellation, and end-of-duration cleanup trigger promptly
   const [nowMs, setNowMs] = useState(() => Date.now());
   const autoDeleteAttemptedRef = useRef<Set<string>>(new Set());
+  const endedNotifyAttemptedRef = useRef<Set<string>>(new Set());
   const memberNotifAttemptedRef = useRef<Set<string>>(new Set());
 
   // Modals & Drawers
@@ -190,7 +193,8 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // Automatically delete cancelled events (manual or H-1 0-registrant) and complete ended events
+  // Automatically delete cancelled events (manual or H-1 0-registrant), notify members on ended events,
+  // and delete ended events automatically 30 days after their end time
   useEffect(() => {
     if (authLoading || !isVerifiedUser || !isCoach || eventsLoading) return;
     events.forEach((ev) => {
@@ -208,12 +212,26 @@ export default function App() {
       }
 
       const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
-      if (nowMs >= endMs) {
+      const deleteAfterMs = endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS;
+
+      if (nowMs >= deleteAfterMs) {
         if (!autoDeleteAttemptedRef.current.has(ev.id)) {
           autoDeleteAttemptedRef.current.add(ev.id);
-          void completeEndedEventAndNotifyMembers(ev).then((ok) => {
+          void deleteEndedEventAfterRetention(ev).then((ok) => {
             if (!ok) {
               autoDeleteAttemptedRef.current.delete(ev.id);
+            }
+          });
+        }
+        return;
+      }
+
+      if (nowMs >= endMs) {
+        if (!endedNotifyAttemptedRef.current.has(ev.id)) {
+          endedNotifyAttemptedRef.current.add(ev.id);
+          void notifyMembersOfEndedEvent(ev).then((ok) => {
+            if (!ok) {
+              endedNotifyAttemptedRef.current.delete(ev.id);
             }
           });
         }
@@ -456,12 +474,16 @@ export default function App() {
 
   const activeEvents = useMemo(
     () =>
-      events.filter(
-        (ev) =>
-          ev.status !== 'cancelled' &&
-          !evaluateEventBooking(ev, nowMs).isAutoCancelledNoRegistrants &&
-          nowMs < ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000
-      ),
+      events.filter((ev) => {
+        if (
+          ev.status === 'cancelled' ||
+          evaluateEventBooking(ev, nowMs).isAutoCancelledNoRegistrants
+        ) {
+          return false;
+        }
+        const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
+        return nowMs < endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS;
+      }),
     [events, nowMs]
   );
 
@@ -591,6 +613,7 @@ export default function App() {
     setRosterEventId(null);
     setAuthError(null);
     autoDeleteAttemptedRef.current.clear();
+    endedNotifyAttemptedRef.current.clear();
     memberNotifAttemptedRef.current.clear();
     setSignOutNonce((prev) => prev + 1);
     setActiveSection('calendar');

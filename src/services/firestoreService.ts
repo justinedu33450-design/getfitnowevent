@@ -1692,7 +1692,7 @@ export async function autoDeleteCancelledEvent(
   }
 }
 
-export async function completeEndedEventAndNotifyMembers(
+export async function notifyMembersOfEndedEvent(
   event: SportEvent
 ): Promise<boolean> {
   try {
@@ -1747,17 +1747,30 @@ export async function completeEndedEventAndNotifyMembers(
             updatedAt: serverTimestamp(),
           });
         });
-        batch.delete(doc(db, 'events', event.id));
         await batch.commit();
-        return true;
       }
     }
 
+    return true;
+  } catch (error) {
+    console.warn(
+      `Notification de fin de séance différée pour events/${event.id}:`,
+      error
+    );
+    return false;
+  }
+}
+
+export async function deleteEndedEventAfterRetention(
+  event: SportEvent
+): Promise<boolean> {
+  try {
+    await notifyMembersOfEndedEvent(event);
     await deleteDoc(doc(db, 'events', event.id));
     return true;
   } catch (error) {
     console.warn(
-      `Clôture et notification différées pour events/${event.id}:`,
+      `Suppression automatique après 30 jours différée pour events/${event.id}:`,
       error
     );
     return false;

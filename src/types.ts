@@ -83,6 +83,8 @@ export const VALIDATION_LIMITS = {
   BIRTH_DATE_REGEX: /^\d{4}-\d{2}-\d{2}$/,
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   BOOKING_CUTOFF_MS: 60 * 60 * 1000, // 1 heure avant le début
+  ENDED_EVENT_RETENTION_DAYS: 30,
+  ENDED_EVENT_RETENTION_MS: 30 * 24 * 60 * 60 * 1000, // 30 jours après la fin
 } as const;
 
 export interface SportEvent {
