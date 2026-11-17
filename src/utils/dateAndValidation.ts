@@ -28,9 +28,9 @@ export function formatEventCoachesLabel(
   event: Pick<SportEvent, 'coachName' | 'coachNames'>
 ): string {
   const names = getEventCoachNames(event);
-  if (names.length === 0) return 'Coach';
-  if (names.length === 1) return `Coach ${names[0]}`;
-  return `Coachs : ${names.join(', ')}`;
+  if (names.length === 0) return 'Animateur';
+  if (names.length === 1) return `Animateur : ${names[0]}`;
+  return `Animateurs : ${names.join(', ')}`;
 }
 
 export function getRegistrationEndMs(
@@ -138,7 +138,7 @@ export function evaluateEventBooking(
       msUntilCutoff,
       msUntilStart,
       statusLabel: 'Annulé',
-      helperText: 'Cette séance a été annulée par le coach.',
+      helperText: 'Cette séance a été annulée par l’animateur.',
       capacityLabel,
     };
   }
@@ -578,4 +578,3 @@ export function formatBirthDateFrench(birthDate?: string | null): string {
     year: 'numeric',
   }).format(date);
 }
-

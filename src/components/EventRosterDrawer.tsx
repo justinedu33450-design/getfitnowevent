@@ -8,7 +8,9 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
+import { BOOTSTRAPPED_COACH_EMAIL } from '../firebase';
 import {
+  CoachAdminUser,
   MemberProfile,
   Registration,
   SportEvent,
@@ -37,6 +39,7 @@ interface EventRosterDrawerProps {
   event: SportEvent;
   registrations: Registration[];
   memberProfiles?: MemberProfile[];
+  coachAdmins?: CoachAdminUser[];
   onClose: () => void;
 }
 
@@ -44,6 +47,7 @@ export function EventRosterDrawer({
   event,
   registrations,
   memberProfiles = [],
+  coachAdmins = [],
   onClose,
 }: EventRosterDrawerProps) {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -78,8 +82,23 @@ export function EventRosterDrawer({
     return { byKey, byEmail };
   }, [memberProfiles]);
 
+  const coachEmailSet = useMemo(() => {
+    const set = new Set<string>([
+      BOOTSTRAPPED_COACH_EMAIL.trim().toLowerCase(),
+    ]);
+    coachAdmins.forEach((c) => {
+      if (c.email?.trim()) set.add(c.email.trim().toLowerCase());
+    });
+    return set;
+  }, [coachAdmins]);
+
+  const isCoachParticipant = (reg: Registration) =>
+    !reg.isGuest && coachEmailSet.has(reg.email.trim().toLowerCase());
+
   const getParticipantProfileSummary = (reg: Registration) => {
-    if (reg.isGuest) return { ageLabel: '', levelLabel: '', levelShortLabel: '' };
+    if (reg.isGuest || isCoachParticipant(reg)) {
+      return { ageLabel: '', levelLabel: '', levelShortLabel: '' };
+    }
     const matched =
       profileByKeyOrEmail.byKey.get(reg.emailKey) ??
       profileByKeyOrEmail.byEmail.get(reg.email.trim().toLowerCase());
@@ -134,7 +153,7 @@ export function EventRosterDrawer({
       setShowAddForm(false);
     } catch (err) {
       setErrorMsg(
-        err instanceof Error ? err.message : 'Impossible d’ajouter cet adhérent.'
+        err instanceof Error ? err.message : 'Impossible d’ajouter ce participant.'
       );
     } finally {
       setAdding(false);
@@ -312,7 +331,7 @@ export function EventRosterDrawer({
             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-50 cursor-pointer"
           >
             <UserPlus className="h-4 w-4" aria-hidden="true" />
-            Ajouter un adhérent
+            Ajouter un participant
           </button>
 
           <button
@@ -333,7 +352,7 @@ export function EventRosterDrawer({
             className="space-y-3 border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40 sm:p-6"
           >
             <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
-              Ajout manuel par le coach (autorisé même à moins d’1h du début)
+              Ajout manuel par l’animateur (autorisé même à moins d’1h du début)
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <input
@@ -418,7 +437,7 @@ export function EventRosterDrawer({
           {eventRegistrations.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center dark:border-slate-700">
               <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                Aucun adhérent inscrit pour le moment
+                Aucun participant inscrit pour le moment
               </p>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Les réservations effectuées depuis le calendrier apparaîtront ici en temps réel.
@@ -431,6 +450,7 @@ export function EventRosterDrawer({
                 {eventRegistrations.map((reg) => {
                   const payInfo = getRegistrationPaymentBadgeInfo(reg);
                   const profileInfo = getParticipantProfileSummary(reg);
+                  const participantIsCoach = isCoachParticipant(reg);
                   const isUpdatingPay = updatingPaymentId === reg.id;
                   return (
                     <div
@@ -439,9 +459,16 @@ export function EventRosterDrawer({
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-semibold text-slate-900 dark:text-white">
-                            {reg.firstName} {reg.lastName}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                              {reg.firstName} {reg.lastName}
+                            </p>
+                            {participantIsCoach && (
+                              <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                Coach
+                              </span>
+                            )}
+                          </div>
                           <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                             {reg.email}
                           </p>
@@ -562,7 +589,7 @@ export function EventRosterDrawer({
                 <table className="w-full border-collapse text-left text-sm">
                   <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300">
                     <tr>
-                      <th className="px-4 py-3">Adhérent</th>
+                      <th className="px-4 py-3">Participant</th>
                       <th className="px-4 py-3">Paiement</th>
                       <th className="px-4 py-3">Inscrit à</th>
                       <th className="px-4 py-3 text-right">Présence & Action</th>
@@ -572,6 +599,7 @@ export function EventRosterDrawer({
                     {eventRegistrations.map((reg) => {
                       const payInfo = getRegistrationPaymentBadgeInfo(reg);
                       const profileInfo = getParticipantProfileSummary(reg);
+                      const participantIsCoach = isCoachParticipant(reg);
                       const isUpdatingPay = updatingPaymentId === reg.id;
                       return (
                         <tr
@@ -579,9 +607,16 @@ export function EventRosterDrawer({
                           className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
                         >
                           <td className="px-4 py-3">
-                            <p className="font-semibold text-slate-900 dark:text-white">
-                              {reg.firstName} {reg.lastName}
-                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                {reg.firstName} {reg.lastName}
+                              </p>
+                              {participantIsCoach && (
+                                <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                  Coach
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
                               {reg.email}
                             </p>

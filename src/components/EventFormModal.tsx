@@ -253,7 +253,7 @@ export function EventFormModal({
       }
       if (prev.length >= VALIDATION_LIMITS.COACHES_PER_EVENT_MAX) {
         setCoachInputError(
-          `Maximum ${VALIDATION_LIMITS.COACHES_PER_EVENT_MAX} coachs par événement.`
+          `Maximum ${VALIDATION_LIMITS.COACHES_PER_EVENT_MAX} animateurs par événement.`
         );
         return prev;
       }
@@ -267,12 +267,12 @@ export function EventFormModal({
       .trim()
       .slice(0, VALIDATION_LIMITS.SINGLE_COACH_NAME_MAX);
     if (clean.length < VALIDATION_LIMITS.COACH_NAME_MIN) {
-      setCoachInputError('Saisissez au moins 2 caractères pour ajouter un coach.');
+      setCoachInputError('Saisissez au moins 2 caractères pour ajouter un animateur.');
       return;
     }
     if (selectedCoaches.length >= VALIDATION_LIMITS.COACHES_PER_EVENT_MAX) {
       setCoachInputError(
-        `Maximum ${VALIDATION_LIMITS.COACHES_PER_EVENT_MAX} coachs par événement.`
+        `Maximum ${VALIDATION_LIMITS.COACHES_PER_EVENT_MAX} animateurs par événement.`
       );
       return;
     }
@@ -280,7 +280,7 @@ export function EventFormModal({
       (c) => c.name.trim().toLowerCase() === clean.toLowerCase()
     );
     if (alreadyExists) {
-      setCoachInputError('Ce coach est déjà ajouté à la séance.');
+      setCoachInputError('Cet animateur est déjà ajouté à la séance.');
       return;
     }
 
@@ -312,7 +312,7 @@ export function EventFormModal({
     }
 
     if (selectedCoaches.length === 0) {
-      setErrorMsg('Veuillez sélectionner ou ajouter au moins un coach encadrant.');
+      setErrorMsg('Veuillez sélectionner ou ajouter au moins un animateur pour cette séance.');
       return;
     }
 
@@ -595,10 +595,10 @@ export function EventFormModal({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100">
                 <UserCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
-                Coach(s) encadrant(s) * ({selectedCoaches.length})
+                Animateur(s) * ({selectedCoaches.length})
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Tous les coachs sélectionnés reçoivent les alertes d’inscription
+                Tous les animateurs sélectionnés reçoivent les alertes d’inscription
               </span>
             </div>
 
@@ -634,7 +634,7 @@ export function EventFormModal({
               </div>
             ) : (
               <p className="text-xs text-rose-700 dark:text-rose-400">
-                Sélectionnez ou ajoutez au moins un coach pour cette séance.
+                Sélectionnez ou ajoutez au moins un animateur pour cette séance.
               </p>
             )}
 
@@ -642,7 +642,7 @@ export function EventFormModal({
             {activeTeamCoaches.length > 0 && (
               <div className="space-y-1.5">
                 <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                  Équipe des coachs enregistrés :
+                  Équipe d’animateurs enregistrés :
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {activeTeamCoaches.map((admin) => {
@@ -693,8 +693,8 @@ export function EventFormModal({
                     handleAddCustomCoach();
                   }
                 }}
-                placeholder="Ajouter un autre coach ou co-animateur..."
-                aria-label="Nom d’un autre coach à ajouter"
+                placeholder="Ajouter un autre animateur ou co-animateur..."
+                aria-label="Nom d’un autre animateur à ajouter"
                 className="min-h-[40px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
               <button
@@ -703,7 +703,7 @@ export function EventFormModal({
                 className="inline-flex min-h-[40px] items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                Ajouter ce coach
+                Ajouter cet animateur
               </button>
             </div>
 

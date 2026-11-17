@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   onAuthStateChanged,
-  signInWithPopup,
   signOut,
   User,
 } from 'firebase/auth';
 import { APIProvider } from '@vis.gl/react-google-maps';
-import { auth, BOOTSTRAPPED_COACH_EMAIL, googleProvider } from './firebase';
+import { auth, BOOTSTRAPPED_COACH_EMAIL } from './firebase';
 import {
   autoDeleteCancelledEvent,
   cancelMyRegistration,
@@ -36,7 +35,6 @@ import {
   subscribeRegistrations,
   validateMemberSession,
 } from './services/firestoreService';
-import { formatFirebaseAuthError } from './services/authService';
 import {
   AppSection,
   CoachAccessRequest,
@@ -248,7 +246,7 @@ export default function App() {
         setCoachStatus(res.status);
         setCoachRole(res.role);
         if (!res.isCoach) {
-          void ensureMyMemberProfile(nextUser);
+          void ensureMyMemberProfile(nextUser, true);
         }
       } else {
         setIsCoach(false);
@@ -288,7 +286,7 @@ export default function App() {
     return () => unsub();
   }, [authLoading, user, isCoach]);
 
-  // Real-time listener on signed-in member's own profile, registrations & validation reminders
+  // Real-time listener on signed-in user's registrations (all users) & member-only profile/reminders (non-coaches)
   useEffect(() => {
     if (authLoading || !user || !user.email) {
       setMyMemberProfile(null);
@@ -298,11 +296,7 @@ export default function App() {
       setMemberNotificationsPanelOpen(false);
       return;
     }
-    const unsubProfile = subscribeMyMemberProfile(
-      user.email,
-      setMyMemberProfile,
-      () => setMyMemberProfile(null)
-    );
+
     const unsubRegs = subscribeMyRegistrations(
       user.email,
       setMyRegistrations,
@@ -310,14 +304,20 @@ export default function App() {
     );
 
     if (isCoach) {
+      setMyMemberProfile(null);
       setMemberNotifications([]);
       setMemberNotificationsLoaded(false);
       setMemberNotificationsPanelOpen(false);
       return () => {
-        unsubProfile();
         unsubRegs();
       };
     }
+
+    const unsubProfile = subscribeMyMemberProfile(
+      user.email,
+      setMyMemberProfile,
+      () => setMyMemberProfile(null)
+    );
 
     setMemberNotificationsLoaded(false);
     const unsubMemberNotifs = subscribeMyMemberNotifications(
@@ -515,7 +515,7 @@ export default function App() {
   );
 
   const endedUnvalidatedRegistrationsCount = useMemo(() => {
-    if (isCoach || !user?.email) return 0;
+    if (!user?.email || isCoach) return 0;
     const userEmailLower = user.email.trim().toLowerCase();
     const eventsById = new Map(events.map((ev) => [ev.id, ev]));
     return myRegistrations.filter((reg) => {
@@ -525,7 +525,23 @@ export default function App() {
       if (matchedEvent?.status === 'cancelled') return false;
       return getRegistrationEndMs(reg, matchedEvent) <= nowMs;
     }).length;
-  }, [isCoach, user, events, myRegistrations, nowMs]);
+  }, [user, isCoach, events, myRegistrations, nowMs]);
+
+  const registeredEventIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (!user?.email) return ids;
+    const userEmailLower = user.email.trim().toLowerCase();
+    myRegistrations.forEach((reg) => {
+      if (
+        reg.status === 'confirmed' &&
+        !reg.isGuest &&
+        reg.email.trim().toLowerCase() === userEmailLower
+      ) {
+        ids.add(reg.eventId);
+      }
+    });
+    return ids;
+  }, [user, myRegistrations]);
 
   const handleAuthenticatedUser = async (
     signedInUser: User,
@@ -552,6 +568,8 @@ export default function App() {
           activeSection === 'member-profile')
       ) {
         setActiveSection('manage');
+      } else if (activeSection === 'member-profile') {
+        setActiveSection('calendar');
       }
     } else if (target === 'member') {
       setCoachGateIntent(false);
@@ -564,26 +582,6 @@ export default function App() {
         setActiveSection('calendar');
       }
       setMemberAuthReturnToCalendar(false);
-    }
-  };
-
-  const handleMemberGoogleSignIn = async () => {
-    setAuthError(null);
-    try {
-      const cred = await signInWithPopup(auth, googleProvider);
-      await handleAuthenticatedUser(cred.user, 'member');
-    } catch (err) {
-      setAuthError(formatFirebaseAuthError(err));
-    }
-  };
-
-  const handleCoachGoogleSignIn = async () => {
-    setAuthError(null);
-    try {
-      const cred = await signInWithPopup(auth, googleProvider);
-      await handleAuthenticatedUser(cred.user, 'coach');
-    } catch (err) {
-      setAuthError(formatFirebaseAuthError(err));
     }
   };
 
@@ -675,16 +673,21 @@ export default function App() {
     activeSection === 'coaches';
 
   useEffect(() => {
-    if (
-      !authLoading &&
-      isVerifiedUser &&
-      !isCoach &&
-      !coachGateIntent &&
-      isCoachRoute
-    ) {
-      setActiveSection('calendar');
+    if (!authLoading && isVerifiedUser) {
+      if (!isCoach && !coachGateIntent && isCoachRoute) {
+        setActiveSection('calendar');
+      } else if (isCoach && activeSection === 'member-profile') {
+        setActiveSection('calendar');
+      }
     }
-  }, [authLoading, isVerifiedUser, isCoach, coachGateIntent, isCoachRoute]);
+  }, [
+    authLoading,
+    isVerifiedUser,
+    isCoach,
+    coachGateIntent,
+    isCoachRoute,
+    activeSection,
+  ]);
 
   const appShell = (
     <div className="flex min-h-screen flex-col bg-slate-50 pb-16 text-slate-900 transition-colors duration-150 dark:bg-slate-950 dark:text-slate-100 md:pb-0">
@@ -721,6 +724,9 @@ export default function App() {
           ) {
             return;
           }
+          if (isVerifiedUser && isCoach && section === 'member-profile') {
+            return;
+          }
           if (
             section === 'calendar' ||
             section === 'sessions' ||
@@ -733,8 +739,10 @@ export default function App() {
         }}
         isSignedIn={isVerifiedUser}
         isCoach={isCoach}
-        userDisplayName={memberDisplayName}
-        userPhotoUrl={myMemberProfile?.photoUrl}
+        userDisplayName={isCoach ? coachDisplayName : memberDisplayName}
+        userPhotoUrl={
+          isCoach ? myAdminProfile?.photoUrl : myMemberProfile?.photoUrl
+        }
         pendingCoachRequestsCount={pendingCoachRequestsCount}
         unreadCoachNotificationsCount={unreadCoachNotificationsCount}
         unreadMemberNotificationsCount={unreadMemberNotificationsCount}
@@ -783,7 +791,6 @@ export default function App() {
             coachStatus={coachStatus}
             myAccessRequest={myAccessRequest}
             authError={authError}
-            onSignIn={() => void handleCoachGoogleSignIn()}
             onEmailAuthSuccess={(u) => void handleAuthenticatedUser(u, 'coach')}
             onSignOut={() => void handleSignOut()}
             onBackToCalendar={() => {
@@ -797,7 +804,6 @@ export default function App() {
             key={`member-gate-${signOutNonce}`}
             authLoading={authLoading}
             authError={authError}
-            onGoogleSignIn={() => void handleMemberGoogleSignIn()}
             onEmailAuthSuccess={(u) => void handleAuthenticatedUser(u, 'member')}
             onCoachAccess={() => {
               setAuthError(null);
@@ -876,10 +882,14 @@ export default function App() {
                     setActiveSection('members');
                   }
                 }}
-                onOpenMemberProfile={() => {
-                  setMemberAuthReturnToCalendar(false);
-                  setActiveSection('member-profile');
-                }}
+                onOpenMemberProfile={
+                  isCoach
+                    ? undefined
+                    : () => {
+                        setMemberAuthReturnToCalendar(false);
+                        setActiveSection('member-profile');
+                      }
+                }
               />
             )}
 
@@ -889,6 +899,8 @@ export default function App() {
                 disciplines={disciplineCatalog}
                 nowMs={nowMs}
                 isCoach={isCoach}
+                isCoachAdmin={isCoachAdmin}
+                registeredEventIds={registeredEventIds}
                 loading={eventsLoading}
                 hasMapsApiKey={hasMapsApiKey}
                 onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
@@ -910,22 +922,24 @@ export default function App() {
                 disciplines={disciplineCatalog}
                 nowMs={nowMs}
                 isCoach={isCoach}
+                isCoachAdmin={isCoachAdmin}
+                registeredEventIds={registeredEventIds}
                 loading={eventsLoading}
                 hasMapsApiKey={hasMapsApiKey}
                 onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
               />
             )}
 
-            {activeSection === 'member-profile' && user && (
+            {activeSection === 'member-profile' && user && !isCoach && (
               <MemberPortalView
                 user={user}
                 memberProfile={myMemberProfile}
-                registrations={isCoach ? registrations : myRegistrations}
+                registrations={myRegistrations}
                 events={activeEvents}
                 disciplines={disciplineCatalog}
                 nowMs={nowMs}
                 onValidateSession={
-                  isCoach ? undefined : (reg) => validateMemberSession(reg)
+                  isVerifiedUser ? (reg) => validateMemberSession(reg) : undefined
                 }
                 onCancelRegistration={
                   isVerifiedUser ? (reg) => cancelMyRegistration(reg) : undefined
@@ -986,7 +1000,6 @@ export default function App() {
                   coachStatus={coachStatus}
                   myAccessRequest={myAccessRequest}
                   authError={authError}
-                  onSignIn={() => void handleCoachGoogleSignIn()}
                   onEmailAuthSuccess={(u) => void handleAuthenticatedUser(u, 'coach')}
                   onSignOut={() => void handleSignOut()}
                   onBackToCalendar={() => {
@@ -1001,6 +1014,7 @@ export default function App() {
               (isCoach ? (
                 <MembersTrackingView
                   coachEmail={user.email || ''}
+                  coachAdmins={coachAdmins}
                   events={activeEvents}
                   registrations={registrations}
                   memberProfiles={memberProfiles}
@@ -1016,7 +1030,6 @@ export default function App() {
                   coachStatus={coachStatus}
                   myAccessRequest={myAccessRequest}
                   authError={authError}
-                  onSignIn={() => void handleCoachGoogleSignIn()}
                   onEmailAuthSuccess={(u) => void handleAuthenticatedUser(u, 'coach')}
                   onSignOut={() => void handleSignOut()}
                   onBackToCalendar={() => {
@@ -1035,6 +1048,14 @@ export default function App() {
                   admins={coachAdmins}
                   requests={coachRequests}
                   invites={coachInvites}
+                  myRegistrations={myRegistrations}
+                  events={activeEvents}
+                  nowMs={nowMs}
+                  onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
+                  onExploreCalendar={() => setActiveSection('calendar')}
+                  onCancelRegistration={
+                    isVerifiedUser ? (reg) => cancelMyRegistration(reg) : undefined
+                  }
                   onSignOut={() => void handleSignOut()}
                 />
               ) : coachGateIntent ? (
@@ -1046,7 +1067,6 @@ export default function App() {
                   coachStatus={coachStatus}
                   myAccessRequest={myAccessRequest}
                   authError={authError}
-                  onSignIn={() => void handleCoachGoogleSignIn()}
                   onEmailAuthSuccess={(u) => void handleAuthenticatedUser(u, 'coach')}
                   onSignOut={() => void handleSignOut()}
                   onBackToCalendar={() => {
@@ -1123,10 +1143,11 @@ export default function App() {
           nowMs={nowMs}
           isSignedIn={isVerifiedUser}
           isCoach={isCoach}
+          isCoachAdmin={isCoachAdmin}
           hasMapsApiKey={hasMapsApiKey}
-          memberProfile={myMemberProfile}
+          memberProfile={isCoach ? null : myMemberProfile}
           userEmail={user?.email}
-          userDisplayName={user?.displayName}
+          userDisplayName={myAdminProfile?.displayName || user?.displayName}
           authError={authError}
           existingRegistration={existingMemberBookingRegistration}
           invitedGuestRegistrations={invitedGuestRegistrationsForBooking}
@@ -1134,7 +1155,6 @@ export default function App() {
           onCancelRegistration={
             isVerifiedUser ? (reg) => cancelMyRegistration(reg) : undefined
           }
-          onMemberGoogleSignIn={() => void handleMemberGoogleSignIn()}
           onMemberEmailAuthSuccess={(u) =>
             void handleAuthenticatedUser(u, 'member')
           }
@@ -1143,10 +1163,22 @@ export default function App() {
             setSelectedEventForBooking(null);
             setRosterEventId(ev.id);
           }}
-          onOpenMemberTracking={() => {
-            setSelectedEventForBooking(null);
-            setActiveSection('member-profile');
-          }}
+          onOpenMemberTracking={
+            isCoach
+              ? undefined
+              : () => {
+                  setSelectedEventForBooking(null);
+                  setActiveSection('member-profile');
+                }
+          }
+          onOpenCoachRegistrations={
+            isCoach
+              ? () => {
+                  setSelectedEventForBooking(null);
+                  setActiveSection('coaches');
+                }
+              : undefined
+          }
           onDuplicateEvent={(ev) => {
             setSelectedEventForBooking(null);
             setEventFormState({
@@ -1180,6 +1212,7 @@ export default function App() {
           event={currentRosterEvent}
           registrations={registrations}
           memberProfiles={memberProfiles}
+          coachAdmins={coachAdmins}
           onClose={() => setRosterEventId(null)}
         />
       )}

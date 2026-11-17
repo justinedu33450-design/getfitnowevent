@@ -22,14 +22,12 @@ interface EmailPasswordAuthFormProps {
   audience: 'member' | 'coach';
   externalError?: string | null;
   onSuccess: (user: User) => void;
-  onGoogleSignIn: () => void;
 }
 
 export function EmailPasswordAuthForm({
   audience,
   externalError,
   onSuccess,
-  onGoogleSignIn,
 }: EmailPasswordAuthFormProps) {
   const [mode, setMode] = useState<AuthMode>('login');
   const [firstName, setFirstName] = useState('');
@@ -359,22 +357,6 @@ export function EmailPasswordAuthForm({
           </button>
         )}
       </form>
-
-      <div className="relative flex items-center py-1">
-        <div className="flex-grow border-t border-slate-200 dark:border-slate-700" />
-        <span className="mx-3 shrink-0 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          ou
-        </span>
-        <div className="flex-grow border-t border-slate-200 dark:border-slate-700" />
-      </div>
-
-      <button
-        type="button"
-        onClick={onGoogleSignIn}
-        className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
-      >
-        Continuer avec Google
-      </button>
     </div>
   );
 }

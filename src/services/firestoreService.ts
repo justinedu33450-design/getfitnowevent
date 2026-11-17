@@ -196,6 +196,8 @@ export function subscribeMyAdminStatus(
 ): Unsubscribe {
   if (
     userEmail &&
+    auth.currentUser?.uid === uid &&
+    auth.currentUser.emailVerified &&
     userEmail.trim().toLowerCase() === BOOTSTRAPPED_COACH_EMAIL.toLowerCase()
   ) {
     onStatus({ status: 'active', role: 'coach_admin' });
@@ -1279,7 +1281,7 @@ export async function createEvent(
     throw new Error('La ville doit contenir au moins 2 caractères.');
   }
   if (coachNames.length === 0 || coachName.length < VALIDATION_LIMITS.COACH_NAME_MIN) {
-    throw new Error('Veuillez sélectionner ou ajouter au moins un coach (2 caractères minimum).');
+    throw new Error('Veuillez sélectionner ou ajouter au moins un animateur (2 caractères minimum).');
   }
   if (
     input.durationMinutes < VALIDATION_LIMITS.DURATION_MIN ||
@@ -1360,7 +1362,7 @@ export async function updateEvent(
     throw new Error('La ville doit contenir au moins 2 caractères.');
   }
   if (coachNames.length === 0 || coachName.length < VALIDATION_LIMITS.COACH_NAME_MIN) {
-    throw new Error('Veuillez sélectionner ou ajouter au moins un coach (2 caractères minimum).');
+    throw new Error('Veuillez sélectionner ou ajouter au moins un animateur (2 caractères minimum).');
   }
 
   if (!input.isUnlimitedCapacity && input.maxCapacity < currentRegisteredCount) {
@@ -2697,7 +2699,23 @@ export async function registerEventWithGuests(params: {
     | Array<{ id: string; data: Partial<PaymentRecord> }>
     | undefined;
 
-  if (normalizedGuests.length > 0 && !params.bypassCutoffAsCoach) {
+  if (normalizedGuests.length > 0 && params.bypassCutoffAsCoach) {
+    const guestChecks = await Promise.all(
+      normalizedGuests.map(async (guest) => {
+        const guestEmailKey = await hashEmailKey(guest.email);
+        const guestRegId = `${liveEvent.id}__${guestEmailKey}`;
+        const snap = await getDocFromServer(doc(db, 'registrations', guestRegId));
+        return { guest, snap };
+      })
+    );
+    for (const { guest, snap } of guestChecks) {
+      if (snap.exists() && (snap.data() as Partial<Registration>).status === 'confirmed') {
+        throw new Error(
+          `L’invité(e) ${guest.firstName} ${guest.lastName} (${guest.email}) est déjà inscrit(e) à cette séance.`
+        );
+      }
+    }
+  } else if (normalizedGuests.length > 0 && !params.bypassCutoffAsCoach) {
     const [invitedRegsSnap, hostPaySnap] = await Promise.all([
       getDocsFromServer(
         query(

@@ -1,8 +1,13 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   Award,
+  CalendarDays,
+  CalendarPlus,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
+  FileDown,
   FileText,
   LogOut,
   Mail,
@@ -28,6 +33,8 @@ import {
   CoachAdminRequestStatus,
   CoachAdminUser,
   CoachRole,
+  Registration,
+  SportEvent,
   VALIDATION_LIMITS,
 } from '../types';
 import {
@@ -43,7 +50,14 @@ import {
   setCoachRole,
   updateMyCoachProfile,
 } from '../services/firestoreService';
-import { formatFrenchDateShort } from '../utils/dateAndValidation';
+import {
+  downloadEventIcs,
+  formatFrenchDateShort,
+  formatPriceEuros,
+  formatTimeRange,
+  getRegistrationPaymentBadgeInfo,
+} from '../utils/dateAndValidation';
+import { downloadPaymentReceipt } from '../utils/paymentHelpers';
 import { PhotoUploadField, ProfileAvatar } from './ProfileAvatar';
 import { PasswordSettingsCard } from './PasswordSettingsCard';
 
@@ -53,6 +67,12 @@ interface CoachesAdminViewProps {
   admins: CoachAdminUser[];
   requests: CoachAccessRequest[];
   invites: CoachAdminInvite[];
+  myRegistrations?: Registration[];
+  events?: SportEvent[];
+  nowMs?: number;
+  onSelectEvent?: (event: SportEvent) => void;
+  onExploreCalendar?: () => void;
+  onCancelRegistration?: (registration: Registration) => Promise<void>;
   onSignOut: () => void;
 }
 
@@ -62,6 +82,12 @@ export function CoachesAdminView({
   admins,
   requests,
   invites,
+  myRegistrations = [],
+  events = [],
+  nowMs = Date.now(),
+  onSelectEvent,
+  onExploreCalendar,
+  onCancelRegistration,
   onSignOut,
 }: CoachesAdminViewProps) {
   const myAdminRecord = useMemo(
@@ -132,6 +158,75 @@ export function CoachesAdminView({
   >(null);
 
   const [requestingAdmin, setRequestingAdmin] = useState(false);
+  const [coachBookingsExpanded, setCoachBookingsExpanded] = useState(true);
+  const [confirmCancelRegId, setConfirmCancelRegId] = useState<string | null>(
+    null
+  );
+  const [cancellingRegId, setCancellingRegId] = useState<string | null>(null);
+  const [bookingFeedback, setBookingFeedback] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+
+  const coachEmailLower = (currentAdminUser.email ?? '').trim().toLowerCase();
+
+  const eventsById = useMemo(() => {
+    const map = new Map<string, SportEvent>();
+    events.forEach((ev) => map.set(ev.id, ev));
+    return map;
+  }, [events]);
+
+  const ownCoachRegistrations = useMemo(() => {
+    return myRegistrations
+      .filter((r) => {
+        if (r.status !== 'confirmed') return false;
+        const emailMatch =
+          r.email.trim().toLowerCase() === coachEmailLower && !r.isGuest;
+        const invitedMatch =
+          Boolean(r.isGuest) &&
+          (r.invitedByEmail ?? '').trim().toLowerCase() === coachEmailLower;
+        return emailMatch || invitedMatch;
+      })
+      .sort((a, b) => a.eventStartAt.toMillis() - b.eventStartAt.toMillis());
+  }, [myRegistrations, coachEmailLower]);
+
+  const upcomingCoachRegistrations = useMemo(
+    () =>
+      ownCoachRegistrations.filter((r) => r.eventStartAt.toMillis() > nowMs),
+    [ownCoachRegistrations, nowMs]
+  );
+
+  const pastCoachRegistrations = useMemo(
+    () =>
+      ownCoachRegistrations
+        .filter((r) => r.eventStartAt.toMillis() <= nowMs)
+        .sort((a, b) => b.eventStartAt.toMillis() - a.eventStartAt.toMillis()),
+    [ownCoachRegistrations, nowMs]
+  );
+
+  const handleCancelOwnRegistration = async (reg: Registration) => {
+    if (!onCancelRegistration) return;
+    setBookingFeedback(null);
+    setCancellingRegId(reg.id);
+    try {
+      await onCancelRegistration(reg);
+      setConfirmCancelRegId(null);
+      setBookingFeedback({
+        type: 'success',
+        text: `Votre inscription à « ${reg.eventTitle} » a été annulée.`,
+      });
+    } catch (err) {
+      setBookingFeedback({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Impossible d’annuler cette inscription.',
+      });
+    } finally {
+      setCancellingRegId(null);
+    }
+  };
 
   const pendingRequests = useMemo(
     () => requests.filter((r) => r.status === 'pending'),
@@ -233,7 +328,7 @@ export function CoachesAdminView({
       } else {
         setFeedback({
           type: 'success',
-          text: 'Coach ajouté : il recevra le rôle Coach (non administrateur) dès sa connexion Google avec cette adresse.',
+          text: 'Coach ajouté : il recevra le rôle Coach (non administrateur) dès sa connexion avec cette adresse email (après validation de son email).',
         });
       }
     } catch (err) {
@@ -492,6 +587,284 @@ export function CoachesAdminView({
         </div>
       )}
 
+      {/* Section: Coach's own event registrations (without mixing with Adhérent directory) */}
+      <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setCoachBookingsExpanded((prev) => !prev)}
+            className="flex flex-1 items-center gap-3 text-left cursor-pointer"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+              <CalendarDays className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                  Mes inscriptions aux événements
+                </h3>
+                <span className="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+                  {upcomingCoachRegistrations.length} à venir
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                Consultez ou annulez les séances auxquelles vous êtes inscrit en tant que participant, sans créer de fiche adhérent.
+              </p>
+            </div>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+              {coachBookingsExpanded ? (
+                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+              )}
+            </span>
+          </button>
+
+          {onExploreCalendar && (
+            <button
+              type="button"
+              onClick={onExploreCalendar}
+              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
+            >
+              <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+              Voir le calendrier
+            </button>
+          )}
+        </div>
+
+        {coachBookingsExpanded && (
+          <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-4">
+            {bookingFeedback && (
+              <div
+                className={`rounded-lg border p-3 text-xs ${
+                  bookingFeedback.type === 'success'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
+                    : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                }`}
+              >
+                {bookingFeedback.text}
+              </div>
+            )}
+
+            {ownCoachRegistrations.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Vous n’êtes inscrit à aucun événement pour le moment.
+                </p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Vous pouvez vous inscrire librement à n’importe quelle séance depuis le calendrier ou la liste des séances.
+                </p>
+              </div>
+            ) : (
+              <>
+                {upcomingCoachRegistrations.length > 0 && (
+                  <div className="space-y-2.5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Séances à venir ({upcomingCoachRegistrations.length})
+                    </p>
+                    {upcomingCoachRegistrations.map((reg) => {
+                      const matchedEvent = eventsById.get(reg.eventId) ?? null;
+                      const startDate = reg.eventStartAt.toDate();
+                      const payInfo = getRegistrationPaymentBadgeInfo(reg);
+                      const canCancel =
+                        Boolean(onCancelRegistration) &&
+                        !reg.attended &&
+                        reg.eventStartAt.toMillis() > nowMs;
+                      const hasReceipt =
+                        (reg.amountCents ?? 0) > 0 && Boolean(reg.paymentReference);
+
+                      return (
+                        <div
+                          key={reg.id}
+                          className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3.5"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                                  {reg.eventTitle}
+                                </p>
+                                {reg.isGuest && (
+                                  <span className="inline-flex items-center rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                                    Invité : {reg.firstName} {reg.lastName}
+                                  </span>
+                                )}
+                                {payInfo.status !== 'free' && (
+                                  <span className="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+                                    {payInfo.shortLabel}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-1 flex items-center gap-1.5 font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums capitalize">
+                                <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" aria-hidden="true" />
+                                {formatFrenchDateShort(startDate)} ·{' '}
+                                {formatTimeRange(
+                                  startDate,
+                                  reg.eventDurationMinutes ||
+                                    matchedEvent?.durationMinutes ||
+                                    60
+                                )}
+                                {matchedEvent?.city ? ` · ${matchedEvent.city}` : ''}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                              {matchedEvent && onSelectEvent && (
+                                <button
+                                  type="button"
+                                  onClick={() => onSelectEvent(matchedEvent)}
+                                  className="min-h-[36px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                                >
+                                  Détails
+                                </button>
+                              )}
+                              {matchedEvent && (
+                                <button
+                                  type="button"
+                                  onClick={() => downloadEventIcs(matchedEvent)}
+                                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                                >
+                                  <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                                  .ics
+                                </button>
+                              )}
+                              {matchedEvent && hasReceipt && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    downloadPaymentReceipt({
+                                      event: matchedEvent,
+                                      memberName: `${reg.firstName} ${reg.lastName}`.trim(),
+                                      memberEmail: reg.email,
+                                      amountCents: reg.amountCents ?? 0,
+                                      method:
+                                        reg.paymentMethod === 'onsite'
+                                          ? 'onsite'
+                                          : 'card',
+                                      status:
+                                        payInfo.status === 'paid' ||
+                                        payInfo.status === 'refunded'
+                                          ? payInfo.status
+                                          : 'pending',
+                                      reference: reg.paymentReference ?? '',
+                                      cardBrand: reg.cardBrand,
+                                      cardLast4: reg.cardLast4,
+                                    })
+                                  }
+                                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                                >
+                                  <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
+                                  Reçu
+                                </button>
+                              )}
+                              {canCancel &&
+                                (confirmCancelRegId === reg.id ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      disabled={cancellingRegId === reg.id}
+                                      onClick={() =>
+                                        void handleCancelOwnRegistration(reg)
+                                      }
+                                      className="min-h-[36px] rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                    >
+                                      {cancellingRegId === reg.id
+                                        ? 'Annulation...'
+                                        : 'Confirmer'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={cancellingRegId === reg.id}
+                                      onClick={() => setConfirmCancelRegId(null)}
+                                      className="min-h-[36px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+                                    >
+                                      Non
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmCancelRegId(reg.id)}
+                                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
+                                  >
+                                    <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                                    Annuler
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                          {confirmCancelRegId === reg.id &&
+                            reg.paymentStatus === 'paid' &&
+                            (reg.amountCents ?? 0) > 0 && (
+                              <p className="mt-2 text-[11px] text-rose-700 dark:text-rose-300">
+                                Le règlement de {formatPriceEuros(reg.amountCents ?? 0)} sera marqué comme remboursé.
+                              </p>
+                            )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {pastCoachRegistrations.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Historique récent ({pastCoachRegistrations.length})
+                    </p>
+                    <div className="space-y-2">
+                      {pastCoachRegistrations.slice(0, 6).map((reg) => {
+                        const startDate = reg.eventStartAt.toDate();
+                        const matchedEvent = eventsById.get(reg.eventId) ?? null;
+                        return (
+                          <div
+                            key={reg.id}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <span className="font-semibold text-slate-900 dark:text-white">
+                                {reg.eventTitle}
+                              </span>
+                              <span className="ml-2 font-mono text-slate-500 dark:text-slate-400 capitalize tabular-nums">
+                                {formatFrenchDateShort(startDate)}
+                              </span>
+                              {reg.isGuest && (
+                                <span className="ml-2 text-sky-700 dark:text-sky-300">
+                                  (Invité : {reg.firstName} {reg.lastName})
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`font-semibold ${
+                                  reg.attended
+                                    ? 'text-emerald-700 dark:text-emerald-400'
+                                    : 'text-slate-500 dark:text-slate-400'
+                                }`}
+                              >
+                                {reg.attended ? 'Présent' : 'Terminée'}
+                              </span>
+                              {matchedEvent && onSelectEvent && (
+                                <button
+                                  type="button"
+                                  onClick={() => onSelectEvent(matchedEvent)}
+                                  className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                                >
+                                  Voir
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Section 0: My Coach Info Sheet */}
       <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
         <div className="flex items-start gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -747,7 +1120,7 @@ export function CoachesAdminView({
                 Ajouter un coach
               </h3>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Ajoutez un nouveau coach par son nom et son adresse Google. Il reçoit automatiquement le rôle <strong>Coach</strong> (sans droits administrateur). Seul un coach administrateur pourra ensuite accepter ou refuser de le nommer administrateur.
+                Ajoutez un nouveau coach par son nom et son adresse email. Il reçoit automatiquement le rôle <strong>Coach</strong> (sans droits administrateur). Seul un coach administrateur pourra ensuite accepter ou refuser de le nommer administrateur.
               </p>
             </div>
           </div>
@@ -781,7 +1154,7 @@ export function CoachesAdminView({
                 htmlFor="nominate-email"
                 className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
               >
-                Adresse email Google *
+                Adresse email *
               </label>
               <input
                 id="nominate-email"
@@ -790,7 +1163,7 @@ export function CoachesAdminView({
                 maxLength={VALIDATION_LIMITS.EMAIL_MAX}
                 value={nominationEmail}
                 onChange={(e) => setNominationEmail(e.target.value)}
-                placeholder="coach.partenaire@gmail.com"
+                placeholder="coach.partenaire@exemple.fr"
                 className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
               />
             </div>

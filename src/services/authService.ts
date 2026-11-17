@@ -3,14 +3,14 @@ import {
   EmailAuthProvider,
   linkWithCredential,
   reauthenticateWithCredential,
-  reauthenticateWithPopup,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   updatePassword,
   updateProfile,
   User,
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
+import { auth } from '../firebase';
 
 export function formatFirebaseAuthError(error: unknown): string {
   const code =
@@ -40,9 +40,6 @@ export function formatFirebaseAuthError(error: unknown): string {
   }
   if (code === 'auth/too-many-requests') {
     return 'Trop de tentatives. Patientez quelques instants avant de réessayer.';
-  }
-  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-    return 'La fenêtre de connexion Google a été fermée avant la fin.';
   }
   if (code === 'auth/requires-recent-login') {
     return 'Par sécurité, veuillez vous déconnecter puis vous reconnecter avant de modifier votre mot de passe.';
@@ -95,6 +92,11 @@ export async function registerWithEmailPassword(params: {
       params.password
     );
     await updateProfile(cred.user, { displayName: cleanName });
+    try {
+      await sendEmailVerification(cred.user);
+    } catch {
+      // Non-blocking: user can also resend verification from the gate if needed
+    }
     return cred.user;
   } catch (error) {
     throw new Error(formatFirebaseAuthError(error));
@@ -149,7 +151,7 @@ export async function setOrUpdateUserPassword(params: {
     }
   }
 
-  // User signed in via Google without password provider yet -> link Email/Password credential
+  // Account without password provider yet -> link Email/Password credential
   const credential = EmailAuthProvider.credential(
     params.user.email,
     params.newPassword
@@ -158,19 +160,6 @@ export async function setOrUpdateUserPassword(params: {
     await linkWithCredential(params.user, credential);
     return 'linked';
   } catch (error) {
-    const code =
-      typeof error === 'object' && error !== null && 'code' in error
-        ? String((error as { code?: unknown }).code ?? '')
-        : '';
-    if (code === 'auth/requires-recent-login') {
-      try {
-        await reauthenticateWithPopup(params.user, googleProvider);
-        await linkWithCredential(params.user, credential);
-        return 'linked';
-      } catch (reauthError) {
-        throw new Error(formatFirebaseAuthError(reauthError));
-      }
-    }
     throw new Error(formatFirebaseAuthError(error));
   }
 }

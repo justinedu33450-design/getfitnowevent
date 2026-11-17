@@ -726,7 +726,7 @@ export function MemberPortalView({
                 {trackingTab === 'upcoming'
                   ? 'Parcourez le calendrier pour réserver votre prochaine séance sportive.'
                   : trackingTab === 'history'
-                    ? 'Vos séances effectuées et présences validées par le coach apparaîtront ici.'
+                    ? 'Vos séances effectuées et présences validées par l’animateur apparaîtront ici.'
                     : 'Vos réservations annulées apparaîtront ici si vous vous désinscrivez d’une séance.'}
               </p>
               {trackingTab === 'upcoming' && (
@@ -923,7 +923,7 @@ export function MemberPortalView({
                                     location: '',
                                     city: '',
                                     startAt: reg.eventStartAt,
-                                    coachName: 'Coach GetFitNow',
+                                    coachName: 'Animateur GetFitNow',
                                   },
                                   memberName: `${reg.firstName} ${reg.lastName}`.trim(),
                                   memberEmail: reg.email,

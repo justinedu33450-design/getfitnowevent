@@ -171,7 +171,7 @@ export function TopBar({
           {navItems.length > 0 && (
             <nav
               aria-label="Navigation principale"
-              className="hidden md:flex items-center gap-7 text-sm font-medium"
+              className="hidden md:flex items-center gap-5 lg:gap-7 text-sm font-medium"
             >
               {navItems.map((item) => {
                 const isActive = activeSection === item.id;
@@ -299,7 +299,7 @@ export function TopBar({
                     </span>
                   )}
                 </div>
-                <span className="text-[11px] font-medium whitespace-nowrap">
+                <span className="text-[10px] sm:text-[11px] font-medium whitespace-nowrap">
                   {item.mobileLabel}
                 </span>
               </button>

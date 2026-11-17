@@ -217,6 +217,21 @@ service cloud.firestore {
         paymentAfterData.status == regData.paymentStatus;
     }
 
+    function canBypassCutoffForRegistration(regIncoming) {
+      return isCoachAdmin() || (
+        isCoach() &&
+        regIncoming.get('isGuest', false) == false &&
+        regIncoming.email.lower() != request.auth.token.email.lower()
+      );
+    }
+
+    function isCoachOnEvent(coachUid, eventData) {
+      return coachUid == eventData.createdBy || (
+        ('coachUids' in eventData) &&
+        coachUid in eventData.coachUids
+      );
+    }
+
     function isValidRegistrationPaymentForEvent(regData, eventData, regId) {
       return (eventData.get('isPaid', false) == false || eventData.get('priceCents', 0) == 0)
         ? (
@@ -242,10 +257,10 @@ service cloud.firestore {
               ) ||
               (
                 regData.get('paymentMethod', '') == 'onsite' &&
-                (isAdmin() || eventData.get('paymentMode', 'online') in ['onsite', 'both']) &&
+                (canBypassCutoffForRegistration(regData) || eventData.get('paymentMode', 'online') in ['onsite', 'both']) &&
                 (
                   (regData.get('paymentStatus', '') == 'pending' && regData.get('paidAt', null) == null) ||
-                  (isAdmin() && regData.get('paymentStatus', '') == 'paid' && regData.get('paidAt', null) == request.time)
+                  (canBypassCutoffForRegistration(regData) && regData.get('paymentStatus', '') == 'paid' && regData.get('paidAt', null) == request.time)
                 )
               )
             )
@@ -260,7 +275,7 @@ service cloud.firestore {
         isValidRegistrationPaymentForEvent(regIncoming, eventBefore, regId) &&
         (
           request.time < eventBefore.startAt - duration.value(1, 'h') ||
-          isAdmin()
+          canBypassCutoffForRegistration(regIncoming)
         );
     }
 
@@ -303,13 +318,6 @@ service cloud.firestore {
         regAfter.amountCents == incomingPay.amountCents &&
         regAfter.paymentMethod == incomingPay.method &&
         regAfter.paymentStatus == incomingPay.status;
-    }
-
-    function isCoachOnEvent(coachUid, eventData) {
-      return coachUid == eventData.createdBy || (
-        ('coachUids' in eventData) &&
-        coachUid in eventData.coachUids
-      );
     }
 
     function isValidNewPaymentForEvent(payIncoming, paymentId, eventData, regAfter) {
@@ -552,7 +560,15 @@ service cloud.firestore {
           hasCapacityForBooking(existing()) &&
           isValidId(incoming().lastRegId) &&
           incoming().updatedAt == request.time &&
-          (request.time < existing().startAt - duration.value(1, 'h') || isAdmin()) &&
+          (
+            request.time < existing().startAt - duration.value(1, 'h') ||
+            isCoachAdmin() ||
+            (
+              isCoach() &&
+              getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.get('isGuest', false) == false &&
+              getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.email.lower() != request.auth.token.email.lower()
+            )
+          ) &&
           (
             (
               !exists(/databases/$(database)/documents/registrations/$(incoming().lastRegId)) &&

@@ -110,7 +110,7 @@ export function downloadPaymentReceipt(params: {
   const methodLabel =
     params.method === 'card'
       ? `Carte bancaire${params.cardBrand ? ` ${params.cardBrand}` : ''}${params.cardLast4 ? ` •••• ${params.cardLast4}` : ''}`
-      : 'Règlement sur place auprès du coach';
+      : 'Règlement sur place auprès de l’animateur';
 
   const html = `<!doctype html>
 <html lang="fr">
@@ -146,7 +146,7 @@ export function downloadPaymentReceipt(params: {
     <p class="meta">${escapeHtml(params.event.discipline)} · ${escapeHtml(dateLabel)} à ${escapeHtml(timeLabel)} · ${escapeHtml(params.event.location)}, ${escapeHtml(params.event.city)}</p>
     <table>
       <tr><th>Adhérent</th><td>${escapeHtml(params.memberName)} (${escapeHtml(params.memberEmail)})</td></tr>
-      <tr><th>Coach(s)</th><td>${escapeHtml(params.event.coachName)}</td></tr>
+      <tr><th>Animateur(s)</th><td>${escapeHtml(params.event.coachName)}</td></tr>
       <tr><th>Mode de règlement</th><td>${escapeHtml(methodLabel)}</td></tr>
       <tr><th>Statut du paiement</th><td>${escapeHtml(statusLabel)}</td></tr>
       <tr><th>Montant</th><td class="total">${escapeHtml(amountLabel)}</td></tr>

@@ -112,7 +112,7 @@ export function PasswordSettingsCard({
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 {hasPassword
                   ? 'Mettez à jour le mot de passe associé à votre compte.'
-                  : 'Créez un mot de passe personnel pour pouvoir aussi vous connecter sans Google.'}
+                  : 'Définissez un mot de passe personnel pour sécuriser votre connexion par email.'}
               </p>
             </div>
           </button>
@@ -130,7 +130,7 @@ export function PasswordSettingsCard({
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 {hasPassword
                   ? 'Mettez à jour le mot de passe associé à votre compte.'
-                  : 'Créez un mot de passe personnel pour pouvoir aussi vous connecter sans Google.'}
+                  : 'Définissez un mot de passe personnel pour sécuriser votre connexion par email.'}
               </p>
             </div>
           </div>

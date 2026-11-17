@@ -35,6 +35,8 @@ interface CalendarViewProps {
   disciplines: DisciplineItem[];
   nowMs: number;
   isCoach: boolean;
+  isCoachAdmin?: boolean;
+  registeredEventIds?: Set<string>;
   loading: boolean;
   hasMapsApiKey: boolean;
   onSelectEvent: (event: SportEvent) => void;
@@ -48,6 +50,8 @@ export function CalendarView({
   disciplines,
   nowMs,
   isCoach,
+  isCoachAdmin = false,
+  registeredEventIds,
   loading,
   hasMapsApiKey,
   onSelectEvent,
@@ -684,6 +688,11 @@ export function CalendarView({
                               </div>
                               <div className="flex items-center justify-between gap-3 sm:block sm:shrink-0 sm:text-right">
                                 <div className="flex items-center gap-2 sm:justify-end">
+                                  {registeredEventIds?.has(ev.id) && (
+                                    <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                      Inscrit
+                                    </span>
+                                  )}
                                   <span
                                     className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
                                       ev.isPaid
@@ -850,6 +859,11 @@ export function CalendarView({
                           >
                             {formatEventPrice(ev)}
                           </span>
+                          {registeredEventIds?.has(ev.id) && (
+                            <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 shrink-0">
+                              Inscrit
+                            </span>
+                          )}
                           <span className="truncate">
                             {ev.city}
                             {ev.region ? ` (${ev.region})` : ''}
@@ -918,21 +932,37 @@ export function CalendarView({
                         {evalInfo.helperText}
                       </p>
 
-                      <button
-                        type="button"
-                        onClick={() => onSelectEvent(ev)}
-                        className={`mt-3 w-full min-h-[44px] rounded-lg px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-                          evalInfo.state === 'open'
-                            ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                            : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        {evalInfo.state === 'open'
-                          ? ev.isPaid
-                            ? `Réserver (${formatEventPrice(ev)})`
-                            : 'Réserver & voir la carte'
-                          : 'Voir la carte et détails'}
-                      </button>
+                      {(() => {
+                        const hasSpots =
+                          evalInfo.isUnlimited || (evalInfo.remainingSpots ?? 0) > 0;
+                        const canBookFromCard =
+                          hasSpots &&
+                          (evalInfo.state === 'open' ||
+                            (isCoachAdmin && evalInfo.state === 'cutoff_closed'));
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => onSelectEvent(ev)}
+                            className={`mt-3 w-full min-h-[44px] rounded-lg px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                              canBookFromCard
+                                ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                                : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            {evalInfo.state === 'open' && hasSpots
+                              ? ev.isPaid
+                                ? `Réserver (${formatEventPrice(ev)})`
+                                : 'Réserver & voir la carte'
+                              : isCoachAdmin &&
+                                  evalInfo.state === 'cutoff_closed' &&
+                                  hasSpots
+                                ? ev.isPaid
+                                  ? `Réserver (${formatEventPrice(ev)}) · admin`
+                                  : 'Réserver (accès admin)'
+                                : 'Voir la carte et détails'}
+                          </button>
+                        );
+                      })()}
                     </div>
                   );
                 })

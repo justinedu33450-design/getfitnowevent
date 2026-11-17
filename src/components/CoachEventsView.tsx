@@ -194,7 +194,7 @@ export function CoachEventsView({
         'Ville',
         'Région',
         'Lieu',
-        'Coach(s)',
+        'Animateur(s)',
         'Tarif',
         'Mode paiement',
         'Encaissé (€)',

@@ -83,8 +83,8 @@ export function MemberNotificationsBar({
   } else if (unreadCancelled.length > 0) {
     headerTitle =
       unreadCancelled.length === 1
-        ? 'Séance annulée par le coach'
-        : `${unreadCancelled.length} séances annulées par le coach`;
+        ? 'Séance annulée par l’animateur'
+        : `${unreadCancelled.length} séances annulées par l’animateur`;
     headerSubtitle =
       'Votre inscription a été annulée automatiquement (et remboursée si la séance était payante).';
   } else if (unvalidated.length > 0) {
@@ -248,7 +248,7 @@ export function MemberNotificationsBar({
                       </span>
                       {isCancelledNotif ? (
                         <span className="text-rose-800 dark:text-rose-300 font-medium">
-                          Annulée par le coach
+                          Annulée par l’animateur
                           {notif.coachName ? ` (${notif.coachName})` : ''} · Votre
                           inscription a été annulée
                           {notif.wasPaid

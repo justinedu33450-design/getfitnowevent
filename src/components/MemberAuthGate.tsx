@@ -12,7 +12,6 @@ import { EmailPasswordAuthForm } from './EmailPasswordAuthForm';
 interface MemberAuthGateProps {
   authLoading: boolean;
   authError: string | null;
-  onGoogleSignIn: () => void;
   onEmailAuthSuccess: (user: User) => void;
   onCoachAccess: () => void;
   onBackToCalendar?: () => void;
@@ -21,7 +20,6 @@ interface MemberAuthGateProps {
 export function MemberAuthGate({
   authLoading,
   authError,
-  onGoogleSignIn,
   onEmailAuthSuccess,
   onCoachAccess,
   onBackToCalendar,
@@ -39,7 +37,7 @@ export function MemberAuthGate({
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
       <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-12">
-        {/* Left: Member Sign-in (Email/Password + Google) */}
+        {/* Left: Member Sign-in (Email/Password) */}
         <div className="flex flex-col justify-between p-6 sm:p-8 lg:col-span-7 lg:p-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
@@ -52,7 +50,7 @@ export function MemberAuthGate({
               Connectez-vous à votre profil adhérent pour vos inscriptions et votre suivi
             </h1>
             <p className="mt-2.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              Connectez-vous avec votre email et votre mot de passe personnel, ou avec votre compte Google.
+              Connectez-vous avec votre adresse email et votre mot de passe personnel, ou créez un compte en quelques secondes.
             </p>
 
             <div className="mt-5">
@@ -60,7 +58,6 @@ export function MemberAuthGate({
                 audience="member"
                 externalError={authError}
                 onSuccess={onEmailAuthSuccess}
-                onGoogleSignIn={onGoogleSignIn}
               />
             </div>
           </div>

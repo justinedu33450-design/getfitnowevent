@@ -30,6 +30,8 @@ interface SessionsListViewProps {
   disciplines: DisciplineItem[];
   nowMs: number;
   isCoach: boolean;
+  isCoachAdmin?: boolean;
+  registeredEventIds?: Set<string>;
   loading: boolean;
   hasMapsApiKey: boolean;
   onSelectEvent: (event: SportEvent) => void;
@@ -42,6 +44,8 @@ export function SessionsListView({
   disciplines,
   nowMs,
   isCoach,
+  isCoachAdmin = false,
+  registeredEventIds,
   loading,
   hasMapsApiKey,
   onSelectEvent,
@@ -177,7 +181,7 @@ export function SessionsListView({
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Séance, lieu, coach..."
+              placeholder="Séance, lieu, animateur..."
               aria-label="Rechercher une séance"
               className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
@@ -337,7 +341,7 @@ export function SessionsListView({
           </p>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {events.length === 0
-              ? 'Le coach publiera prochainement ses nouveaux créneaux sportifs.'
+              ? 'Un animateur publiera prochainement de nouveaux créneaux sportifs.'
               : 'Essayez une autre ville ou région, affichez l’historique ou réinitialisez vos filtres.'}
           </p>
           {events.length > 0 && (
@@ -403,6 +407,11 @@ export function SessionsListView({
                       >
                         {formatEventPrice(ev)}
                       </span>
+                      {registeredEventIds?.has(ev.id) && (
+                        <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 shrink-0">
+                          Inscrit
+                        </span>
+                      )}
                       <span className="font-mono tabular-nums">
                         {ev.durationMinutes} min
                       </span>
@@ -485,23 +494,39 @@ export function SessionsListView({
                   >
                     {evalInfo.helperText}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => onSelectEvent(ev)}
-                    className={`w-full min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold transition-colors cursor-pointer ${
-                      evalInfo.state === 'open'
-                        ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                        : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {evalInfo.state === 'open'
-                      ? ev.isPaid
-                        ? `Réserver (${formatEventPrice(ev)})`
-                        : 'Réserver & voir la carte'
-                      : evalInfo.state === 'cutoff_closed'
-                        ? 'Clôturé (< 1h avant début)'
-                        : 'Voir la carte et détails'}
-                  </button>
+                  {(() => {
+                    const hasSpots =
+                      evalInfo.isUnlimited || (evalInfo.remainingSpots ?? 0) > 0;
+                    const canBookFromCard =
+                      hasSpots &&
+                      (evalInfo.state === 'open' ||
+                        (isCoachAdmin && evalInfo.state === 'cutoff_closed'));
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => onSelectEvent(ev)}
+                        className={`w-full min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold transition-colors cursor-pointer ${
+                          canBookFromCard
+                            ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                            : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {evalInfo.state === 'open' && hasSpots
+                          ? ev.isPaid
+                            ? `Réserver (${formatEventPrice(ev)})`
+                            : 'Réserver & voir la carte'
+                          : isCoachAdmin &&
+                              evalInfo.state === 'cutoff_closed' &&
+                              hasSpots
+                            ? ev.isPaid
+                              ? `Réserver (${formatEventPrice(ev)}) · admin`
+                              : 'Réserver (accès admin)'
+                            : evalInfo.state === 'cutoff_closed'
+                              ? 'Clôturé (< 1h avant début)'
+                              : 'Voir la carte et détails'}
+                      </button>
+                    );
+                  })()}
                 </div>
               </article>
             );

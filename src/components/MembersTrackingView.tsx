@@ -11,7 +11,9 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
+import { BOOTSTRAPPED_COACH_EMAIL } from '../firebase';
 import {
+  CoachAdminUser,
   FitnessLevel,
   FollowUpStatus,
   MemberAggregate,
@@ -40,6 +42,7 @@ import { PhotoUploadField, ProfileAvatar } from './ProfileAvatar';
 
 interface MembersTrackingViewProps {
   coachEmail: string;
+  coachAdmins?: CoachAdminUser[];
   events: SportEvent[];
   registrations: Registration[];
   memberProfiles: MemberProfile[];
@@ -55,6 +58,7 @@ const FOLLOW_UP_LABELS: Record<FollowUpStatus, string> = {
 
 export function MembersTrackingView({
   coachEmail,
+  coachAdmins = [],
   events,
   registrations,
   memberProfiles,
@@ -74,14 +78,45 @@ export function MembersTrackingView({
     text: string;
   } | null>(null);
 
-  // Aggregate unique members from registrations + saved profiles
+  const coachIdentitySets = useMemo(() => {
+    const emails = new Set<string>([
+      BOOTSTRAPPED_COACH_EMAIL.trim().toLowerCase(),
+    ]);
+    const emailKeys = new Set<string>();
+    if (coachEmail.trim()) {
+      emails.add(coachEmail.trim().toLowerCase());
+    }
+    coachAdmins.forEach((a) => {
+      if (a.email?.trim()) emails.add(a.email.trim().toLowerCase());
+      if (a.emailKey?.trim()) emailKeys.add(a.emailKey.trim());
+    });
+    return { emails, emailKeys };
+  }, [coachAdmins, coachEmail]);
+
+  // Aggregate unique members from registrations + saved profiles (excluding coaches)
   const members = useMemo<MemberAggregate[]>(() => {
     const profileMap = new Map<string, MemberProfile>();
-    memberProfiles.forEach((p) => profileMap.set(p.emailKey, p));
+    memberProfiles.forEach((p) => {
+      const cleanEmail = (p.email ?? '').trim().toLowerCase();
+      if (
+        coachIdentitySets.emailKeys.has(p.emailKey) ||
+        (cleanEmail && coachIdentitySets.emails.has(cleanEmail))
+      ) {
+        return;
+      }
+      profileMap.set(p.emailKey, p);
+    });
 
     const grouped = new Map<string, Registration[]>();
     registrations.forEach((reg) => {
       if (reg.status !== 'confirmed') return;
+      const cleanEmail = (reg.email ?? '').trim().toLowerCase();
+      if (
+        coachIdentitySets.emailKeys.has(reg.emailKey) ||
+        (cleanEmail && coachIdentitySets.emails.has(cleanEmail))
+      ) {
+        return;
+      }
       const list = grouped.get(reg.emailKey) ?? [];
       list.push(reg);
       grouped.set(reg.emailKey, list);
@@ -100,6 +135,13 @@ export function MembersTrackingView({
       );
       const latestReg = regs[0];
       const email = profile?.email || latestReg?.email || '';
+      const cleanEmail = email.trim().toLowerCase();
+      if (
+        coachIdentitySets.emailKeys.has(key) ||
+        (cleanEmail && coachIdentitySets.emails.has(cleanEmail))
+      ) {
+        return;
+      }
       const firstName = profile?.firstName || latestReg?.firstName || '';
       const lastName = profile?.lastName || latestReg?.lastName || '';
 
@@ -139,7 +181,7 @@ export function MembersTrackingView({
         'fr'
       )
     );
-  }, [registrations, memberProfiles, nowMs]);
+  }, [registrations, memberProfiles, coachIdentitySets, nowMs]);
 
   const existingEmailKeys = useMemo(
     () => new Set(members.map((m) => m.emailKey)),
@@ -695,6 +737,7 @@ export function MembersTrackingView({
       {isAddModalOpen && (
         <AddMemberModal
           existingEmailKeys={existingEmailKeys}
+          coachEmails={coachIdentitySets.emails}
           onClose={() => setIsAddModalOpen(false)}
           onCreated={(emailKey, fullName) => {
             setIsAddModalOpen(false);
@@ -724,12 +767,14 @@ export function MembersTrackingView({
 
 interface AddMemberModalProps {
   existingEmailKeys: Set<string>;
+  coachEmails: Set<string>;
   onClose: () => void;
   onCreated: (emailKey: string, fullName: string) => void;
 }
 
 function AddMemberModal({
   existingEmailKeys,
+  coachEmails,
   onClose,
   onCreated,
 }: AddMemberModalProps) {
@@ -755,6 +800,13 @@ function AddMemberModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    const cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail && coachEmails.has(cleanEmail)) {
+      setError(
+        'Cette adresse email appartient à un coach de l’application. Les coachs sont gérés séparément dans l’onglet Coachs.'
+      );
+      return;
+    }
     setSaving(true);
     try {
       const emailKey = await createManualMember({

@@ -72,6 +72,7 @@ interface BookingModalProps {
   nowMs: number;
   isSignedIn: boolean;
   isCoach: boolean;
+  isCoachAdmin?: boolean;
   hasMapsApiKey: boolean;
   memberProfile?: MemberProfile | null;
   userEmail?: string | null;
@@ -81,11 +82,11 @@ interface BookingModalProps {
   invitedGuestRegistrations?: Registration[];
   isEventActive?: boolean;
   onCancelRegistration?: (registration: Registration) => Promise<void>;
-  onMemberGoogleSignIn?: () => void;
   onMemberEmailAuthSuccess?: (user: User) => void;
   onClose: () => void;
   onOpenCoachRoster: (event: SportEvent) => void;
   onOpenMemberTracking?: () => void;
+  onOpenCoachRegistrations?: () => void;
   onDuplicateEvent?: (event: SportEvent) => void;
 }
 
@@ -95,6 +96,7 @@ export function BookingModal({
   nowMs,
   isSignedIn,
   isCoach,
+  isCoachAdmin = false,
   hasMapsApiKey,
   memberProfile,
   userEmail,
@@ -104,11 +106,11 @@ export function BookingModal({
   invitedGuestRegistrations = [],
   isEventActive = true,
   onCancelRegistration,
-  onMemberGoogleSignIn,
   onMemberEmailAuthSuccess,
   onClose,
   onOpenCoachRoster,
   onOpenMemberTracking,
+  onOpenCoachRegistrations,
   onDuplicateEvent,
 }: BookingModalProps) {
   const nameParts = (userDisplayName || '').trim().split(/\s+/).filter(Boolean);
@@ -118,7 +120,7 @@ export function BookingModal({
     memberProfile?.lastName ||
     (nameParts.length > 1 ? nameParts.slice(1).join(' ') : '');
   const initialEmail =
-    (!isCoach && userEmail ? userEmail : memberProfile?.email || userEmail) ||
+    (!isCoachAdmin && userEmail ? userEmail : memberProfile?.email || userEmail) ||
     '';
 
   const isPaidEvent =
@@ -186,7 +188,7 @@ export function BookingModal({
         return prev;
       });
       setEmail((prev) =>
-        !isCoach && userEmail ? userEmail : prev || memberProfile.email || ''
+        !isCoachAdmin && userEmail ? userEmail : prev || memberProfile.email || ''
       );
       const full = `${memberProfile.firstName || ''} ${memberProfile.lastName || ''}`.trim();
       if (full && !cardHolderTouchedRef.current) {
@@ -206,9 +208,9 @@ export function BookingModal({
       setCardHolder((prev) => prev || userDisplayName.trim());
     }
     if (userEmail) {
-      setEmail((prev) => (!isCoach ? userEmail : prev || userEmail));
+      setEmail((prev) => (!isCoachAdmin ? userEmail : prev || userEmail));
     }
-  }, [isSignedIn, isCoach, memberProfile, userDisplayName, userEmail]);
+  }, [isSignedIn, isCoachAdmin, memberProfile, userDisplayName, userEmail]);
 
   useEffect(() => {
     if (cardHolderTouchedRef.current) return;
@@ -221,6 +223,12 @@ export function BookingModal({
   const evaluation = evaluateEventBooking(event, nowMs, {
     hideRegisteredCount: !isCoach,
   });
+  const hasAvailableSpots =
+    evaluation.isUnlimited || (evaluation.remainingSpots ?? 0) > 0;
+  const canBookInModal =
+    hasAvailableSpots &&
+    (evaluation.state === 'open' ||
+      (isCoachAdmin && evaluation.state === 'cutoff_closed'));
   const discStyle = getDisciplineStyle(event.discipline, disciplines);
   const startDate = event.startAt.toDate();
   const cutoffDate = new Date(evaluation.cutoffMs);
@@ -529,6 +537,7 @@ export function BookingModal({
         email: cleanEmail,
         guests: validatedGuests,
         skipSelf: false,
+        bypassCutoffAsCoach: isCoachAdmin,
         payment: isPaidEvent
           ? selectedPayMethod === 'card'
             ? {
@@ -616,6 +625,7 @@ export function BookingModal({
         email: hostEmail,
         guests: validatedGuests,
         skipSelf: true,
+        bypassCutoffAsCoach: isCoachAdmin,
         payment: isPaidEvent
           ? selectedPayMethod === 'card'
             ? {
@@ -774,7 +784,7 @@ export function BookingModal({
           {isCoach && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60">
               <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                Mode coach actif
+                {isCoachAdmin ? 'Mode administrateur actif' : 'Mode coach actif'}
               </span>
               <div className="flex flex-wrap items-center gap-3">
                 {onDuplicateEvent && (
@@ -901,7 +911,7 @@ export function BookingModal({
                             <span className="font-medium">
                               {confirmedMember.paymentMethod === 'card'
                                 ? `Carte ${confirmedMember.cardBrand} •••• ${confirmedMember.cardLast4} (Payé)`
-                                : 'Sur place auprès du coach'}
+                                : 'Sur place auprès de l’animateur'}
                             </span>
                           </div>
                           {confirmedMember.paymentReference && (
@@ -994,13 +1004,22 @@ export function BookingModal({
                         Télécharger le reçu
                       </button>
                     )}
-                    {onOpenMemberTracking && !isCoach && (
+                    {onOpenMemberTracking && (
                       <button
                         type="button"
                         onClick={onOpenMemberTracking}
                         className="min-h-[44px] rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
                       >
                         Voir dans Mon suivi
+                      </button>
+                    )}
+                    {!onOpenMemberTracking && onOpenCoachRegistrations && (
+                      <button
+                        type="button"
+                        onClick={onOpenCoachRegistrations}
+                        className="min-h-[44px] rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                      >
+                        Voir mes inscriptions
                       </button>
                     )}
                     {canCancelConfirmedHere && !confirmingCancel && (
@@ -1182,7 +1201,7 @@ export function BookingModal({
                     </div>
                   )}
 
-                  {showAddGuestsForm && evaluation.state === 'open' && (
+                  {showAddGuestsForm && canBookInModal && (
                     <form
                       onSubmit={handleSubmitAdditionalGuests}
                       noValidate
@@ -1446,7 +1465,7 @@ export function BookingModal({
                   )}
 
                   <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
-                    {evaluation.state === 'open' &&
+                    {canBookInModal &&
                       maxAdditionalGuests > 0 &&
                       !showAddGuestsForm && (
                         <button
@@ -1502,13 +1521,22 @@ export function BookingModal({
                         Télécharger le reçu
                       </button>
                     )}
-                    {onOpenMemberTracking && !isCoach && (
+                    {onOpenMemberTracking && (
                       <button
                         type="button"
                         onClick={onOpenMemberTracking}
                         className="min-h-[44px] rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
                       >
                         Voir dans Mon suivi
+                      </button>
+                    )}
+                    {!onOpenMemberTracking && onOpenCoachRegistrations && (
+                      <button
+                        type="button"
+                        onClick={onOpenCoachRegistrations}
+                        className="min-h-[44px] rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                      >
+                        Voir mes inscriptions
                       </button>
                     )}
                     {canCancelHere && !confirmingCancel && (
@@ -1544,7 +1572,7 @@ export function BookingModal({
                 {cancelledFeedback}
               </p>
               <div className="mt-4 flex flex-wrap gap-2.5">
-                {evaluation.state === 'open' && isEventActive && (
+                {canBookInModal && isEventActive && (
                   <button
                     type="button"
                     onClick={() => setCancelledFeedback(null)}
@@ -1553,13 +1581,22 @@ export function BookingModal({
                     Me réinscrire
                   </button>
                 )}
-                {onOpenMemberTracking && !isCoach && (
+                {onOpenMemberTracking && (
                   <button
                     type="button"
                     onClick={onOpenMemberTracking}
                     className="min-h-[42px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
                   >
                     Voir dans Mon suivi
+                  </button>
+                )}
+                {!onOpenMemberTracking && onOpenCoachRegistrations && (
+                  <button
+                    type="button"
+                    onClick={onOpenCoachRegistrations}
+                    className="min-h-[42px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Voir mes inscriptions
                   </button>
                 )}
                 <button
@@ -1571,7 +1608,7 @@ export function BookingModal({
                 </button>
               </div>
             </div>
-          ) : evaluation.state === 'open' && !isSignedIn ? (
+          ) : canBookInModal && !isSignedIn ? (
             <div className="space-y-4 border-t border-slate-100 pt-4 dark:border-slate-800">
               {!showAuthStep ? (
                 <div className="space-y-4">
@@ -1635,12 +1672,11 @@ export function BookingModal({
                     onSuccess={(signedInUser) =>
                       onMemberEmailAuthSuccess?.(signedInUser)
                     }
-                    onGoogleSignIn={() => onMemberGoogleSignIn?.()}
                   />
                 </div>
               )}
             </div>
-          ) : evaluation.state === 'open' ? (
+          ) : canBookInModal ? (
             <form onSubmit={handleSubmit} noValidate className="space-y-4 border-t border-slate-100 pt-4 dark:border-slate-800">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-display text-base font-semibold text-slate-900 dark:text-white">
@@ -1649,9 +1685,20 @@ export function BookingModal({
                     : 'Inscription gratuite'}
                 </h3>
                 <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                  {evaluation.helperText}
+                  {isCoachAdmin && evaluation.state === 'cutoff_closed'
+                    ? 'Accès administrateur actif (clôture H-1 contournée)'
+                    : evaluation.helperText}
                 </span>
               </div>
+
+              {isCoachAdmin && evaluation.state === 'cutoff_closed' && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/50 dark:text-amber-200">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
+                  <span>
+                    Cette séance débute dans moins d’1 heure. En tant qu’administrateur, vous pouvez tout de même finaliser votre inscription.
+                  </span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
@@ -1703,22 +1750,28 @@ export function BookingModal({
                   id="booking-email"
                   type="email"
                   required
-                  readOnly={!isCoach && Boolean(userEmail)}
+                  readOnly={!isCoachAdmin && Boolean(userEmail)}
                   maxLength={VALIDATION_LIMITS.EMAIL_MAX}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="camille.laurent@exemple.fr"
                   className={`mt-1 min-h-[44px] w-full rounded-lg border px-3 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 ${
-                    !isCoach && Boolean(userEmail)
+                    !isCoachAdmin && Boolean(userEmail)
                       ? 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
                       : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500'
                   }`}
                 />
-                {!isCoach && Boolean(userEmail) && (
+                {!isCoachAdmin && Boolean(userEmail) ? (
                   <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                    Email de votre profil connecté — la réservation apparaîtra dans Mon suivi.
+                    {isCoach
+                      ? 'Email de votre compte coach connecté — retrouvez vos inscriptions dans votre espace coach.'
+                      : 'Email de votre profil connecté — la réservation apparaîtra dans Mon suivi.'}
                   </p>
-                )}
+                ) : isCoachAdmin && Boolean(userEmail) ? (
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    Prérempli avec votre email coach (modifiable si vous inscrivez un tiers).
+                  </p>
+                ) : null}
               </div>
 
               {/* Accompanying Guests Section */}
@@ -1993,7 +2046,7 @@ export function BookingModal({
                       {guests.length > 0
                         ? `${totalBookingParticipants} places sont réservées immédiatement. Vous réglerez `
                         : 'Votre place est réservée immédiatement. Vous réglerez '}
-                      <strong>{totalBookingPriceLabel}</strong> sur place directement auprès du coach le jour de la séance.
+                      <strong>{totalBookingPriceLabel}</strong> sur place directement auprès de l’animateur le jour de la séance.
                     </div>
                   )}
                 </div>
@@ -2042,7 +2095,7 @@ export function BookingModal({
               className={`rounded-xl border p-4 ${
                 evaluation.state === 'cancelled'
                   ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100'
-                  : evaluation.state === 'cutoff_closed'
+                  : evaluation.state === 'cutoff_closed' && hasAvailableSpots
                     ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100'
                     : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
               }`}
@@ -2055,16 +2108,20 @@ export function BookingModal({
                       ? isCoach
                         ? 'Événement annulé — aucun inscrit à H-1'
                         : 'Événement annulé (clôture H-1)'
-                      : evaluation.statusLabel}
+                      : !hasAvailableSpots && evaluation.state === 'cutoff_closed'
+                        ? 'Complet'
+                        : evaluation.statusLabel}
                   </h3>
                   <p className="mt-1 text-sm">
                     {evaluation.isAutoCancelledNoRegistrants
                       ? isCoach
                         ? 'Cet événement programmé n’a enregistré aucune inscription 1 heure avant le début et a été automatiquement annulé.'
                         : 'Cet événement programmé a été automatiquement annulé 1 heure avant le début.'
-                      : evaluation.state === 'cutoff_closed'
-                        ? 'Il n’est plus possible de s’inscrire à cet événement car la séance débute dans moins d’1 heure.'
-                        : evaluation.helperText}
+                      : !hasAvailableSpots && evaluation.state === 'cutoff_closed'
+                        ? 'Toutes les places disponibles ont été réservées.'
+                        : evaluation.state === 'cutoff_closed'
+                          ? 'Il n’est plus possible de s’inscrire à cet événement car la séance débute dans moins d’1 heure.'
+                          : evaluation.helperText}
                   </p>
                 </div>
               </div>
