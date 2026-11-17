@@ -4,24 +4,33 @@ import {
   CalendarDays,
   CalendarPlus,
   CheckCircle2,
+  ChevronDown,
   Clock,
   FileText,
   LogOut,
   MapPin,
+  MessageSquare,
   Save,
+  Trash2,
   UserCheck,
   XCircle,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
   DisciplineItem,
+  EventRatingSummary,
+  EventReview,
   FitnessLevel,
   MemberProfile,
   Registration,
   SportEvent,
   VALIDATION_LIMITS,
 } from '../types';
-import { upsertMyMemberProfile } from '../services/firestoreService';
+import {
+  deleteEventReview,
+  upsertEventReview,
+  upsertMyMemberProfile,
+} from '../services/firestoreService';
 import {
   FITNESS_LEVEL_OPTIONS,
   calculateAgeFromBirthDate,
@@ -39,6 +48,14 @@ import { getDisciplineStyle } from '../utils/disciplineColors';
 import { downloadPaymentReceipt } from '../utils/paymentHelpers';
 import { PhotoUploadField, ProfileAvatar } from './ProfileAvatar';
 import { PasswordSettingsCard } from './PasswordSettingsCard';
+import {
+  EventLikeButton,
+  EventRatingInline,
+  EventReviewComposer,
+  EventShareButton,
+  StarRatingDisplay,
+} from './EventEngagementWidgets';
+import { MemberRegularityChart } from './MemberRegularityChart';
 
 interface MemberPortalViewProps {
   user: User;
@@ -47,6 +64,14 @@ interface MemberPortalViewProps {
   events: SportEvent[];
   disciplines: DisciplineItem[];
   nowMs: number;
+  likedEventIds?: Set<string>;
+  likingEventId?: string | null;
+  onToggleLike?: (event: SportEvent) => void;
+  onShareEvent?: (event: SportEvent) => void;
+  reviewsByRegId?: Map<string, EventReview>;
+  ratingSummaryByEventId?: Map<string, EventRatingSummary>;
+  initialReviewRegId?: string | null;
+  onClearInitialReviewRegId?: () => void;
   onValidateSession?: (registration: Registration) => Promise<void>;
   onCancelRegistration?: (registration: Registration) => Promise<void>;
   onSelectEvent: (event: SportEvent) => void;
@@ -61,6 +86,14 @@ export function MemberPortalView({
   events,
   disciplines,
   nowMs,
+  likedEventIds,
+  likingEventId,
+  onToggleLike,
+  onShareEvent,
+  reviewsByRegId,
+  ratingSummaryByEventId,
+  initialReviewRegId,
+  onClearInitialReviewRegId,
   onValidateSession,
   onCancelRegistration,
   onSelectEvent,
@@ -97,6 +130,7 @@ export function MemberPortalView({
   const [trackingTab, setTrackingTab] = useState<'upcoming' | 'history' | 'cancelled'>(
     'upcoming'
   );
+  const [profileExpanded, setProfileExpanded] = useState(true);
   const [validatingRegId, setValidatingRegId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [confirmCancelRegId, setConfirmCancelRegId] = useState<string | null>(null);
@@ -105,6 +139,23 @@ export function MemberPortalView({
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+  const [reviewingRegId, setReviewingRegId] = useState<string | null>(null);
+  const [submittingReviewRegId, setSubmittingReviewRegId] = useState<string | null>(
+    null
+  );
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [confirmDeleteReviewId, setConfirmDeleteReviewId] = useState<
+    string | null
+  >(null);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!initialReviewRegId) return;
+    setTrackingTab('history');
+    setReviewingRegId(initialReviewRegId);
+    setReviewError(null);
+    onClearInitialReviewRegId?.();
+  }, [initialReviewRegId, onClearInitialReviewRegId]);
 
   useEffect(() => {
     if (!memberProfile) return;
@@ -246,6 +297,8 @@ export function MemberPortalView({
     setValidatingRegId(reg.id);
     try {
       await onValidateSession(reg);
+      setReviewError(null);
+      setReviewingRegId(reg.id);
     } catch (err) {
       let message = 'Impossible de valider cette séance pour le moment.';
       if (err instanceof Error) {
@@ -400,16 +453,49 @@ export function MemberPortalView({
         <div className="space-y-6 lg:col-span-5">
           {/* Profile Card */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-          <div className="border-b border-slate-100 pb-3.5 dark:border-slate-800">
-            <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-              Mon profil adhérent
-            </h3>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Ces informations pré-remplissent vos réservations et apparaissent sur votre suivi coach.
-            </p>
+          <div
+            className={`flex items-start justify-between gap-3 ${
+              profileExpanded
+                ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+                : ''
+            }`}
+          >
+            <div className="min-w-0">
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                Mon profil adhérent
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                Ces informations pré-remplissent vos réservations et apparaissent sur votre suivi coach.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setProfileExpanded((prev) => !prev)}
+              aria-expanded={profileExpanded}
+              aria-controls="member-profile-details-form"
+              aria-label={
+                profileExpanded
+                  ? 'Replier les informations du profil'
+                  : 'Déplier les informations du profil'
+              }
+              className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer whitespace-nowrap"
+            >
+              <span>{profileExpanded ? 'Replier' : 'Déplier'}</span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                  profileExpanded ? 'rotate-180' : ''
+                }`}
+                aria-hidden="true"
+              />
+            </button>
           </div>
 
-          <form onSubmit={handleSaveProfile} className="mt-4 space-y-4">
+          {profileExpanded && (
+          <form
+            id="member-profile-details-form"
+            onSubmit={handleSaveProfile}
+            className="mt-4 space-y-4"
+          >
             <PhotoUploadField
               label="Photo de profil"
               name={fullName}
@@ -583,6 +669,7 @@ export function MemberPortalView({
               {saving ? 'Enregistrement...' : 'Enregistrer mon profil'}
             </button>
           </form>
+          )}
           </div>
 
           <PasswordSettingsCard user={user} stacked collapsible />
@@ -708,6 +795,18 @@ export function MemberPortalView({
               {cancelFeedback.text}
             </div>
           )}
+
+          <div className="mt-4">
+            <MemberRegularityChart
+              registrations={registrations}
+              events={events}
+              nowMs={nowMs}
+              memberEmail={user.email ?? undefined}
+              title="Ma régularité"
+              subtitle="Suivi en camembert de vos événements inscrits, validés et annulés."
+              onExploreCalendar={onExploreCalendar}
+            />
+          </div>
 
           {displayedRegistrations.length === 0 ? (
             <div className="py-10 text-center">
@@ -895,11 +994,45 @@ export function MemberPortalView({
                               Réf. {reg.paymentReference}
                             </span>
                           )}
+                          {matchedEvent &&
+                            ratingSummaryByEventId?.get(matchedEvent.id) && (
+                              <EventRatingInline
+                                summary={ratingSummaryByEventId.get(
+                                  matchedEvent.id
+                                )}
+                              />
+                            )}
                         </div>
                       </div>
 
-                      {(matchedEvent || canValidateNow || canCancelReg || hasReceipt) && (
+                      {(matchedEvent ||
+                        canValidateNow ||
+                        canCancelReg ||
+                        hasReceipt) && (
                         <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          {matchedEvent &&
+                            matchedEvent.status === 'published' &&
+                            onToggleLike && (
+                              <EventLikeButton
+                                compact
+                                count={matchedEvent.likesCount ?? 0}
+                                liked={Boolean(
+                                  likedEventIds?.has(matchedEvent.id)
+                                )}
+                                loading={likingEventId === matchedEvent.id}
+                                eventTitle={matchedEvent.title}
+                                onClick={() => onToggleLike(matchedEvent)}
+                              />
+                            )}
+                          {matchedEvent &&
+                            matchedEvent.status === 'published' &&
+                            onShareEvent && (
+                              <EventShareButton
+                                compact
+                                eventTitle={matchedEvent.title}
+                                onClick={() => onShareEvent(matchedEvent)}
+                              />
+                            )}
                           {canValidateNow && (
                             <button
                               type="button"
@@ -983,6 +1116,175 @@ export function MemberPortalView({
                         </div>
                       )}
                     </div>
+
+                    {(() => {
+                      const canReviewReg =
+                        isOwnRegistration &&
+                        !isCancelled &&
+                        isEnded &&
+                        reg.attended;
+                      if (!canReviewReg) {
+                        if (isOwnRegistration && !isCancelled && isEnded && !reg.attended) {
+                          return (
+                            <p className="mt-3 border-t border-slate-100 pt-2.5 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                              Validez votre séance pour pouvoir laisser un avis et un commentaire.
+                            </p>
+                          );
+                        }
+                        return null;
+                      }
+                      const myReview = reviewsByRegId?.get(reg.id) ?? null;
+                      const isComposerOpen = reviewingRegId === reg.id;
+                      const isSubmittingThis = submittingReviewRegId === reg.id;
+                      const isConfirmingReviewDel =
+                        Boolean(myReview) &&
+                        confirmDeleteReviewId === myReview?.id;
+                      const isDeletingThis =
+                        Boolean(myReview) && deletingReviewId === myReview?.id;
+
+                      return (
+                        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                          {isComposerOpen ? (
+                            <EventReviewComposer
+                              initialRating={myReview?.rating ?? 5}
+                              initialComment={myReview?.comment ?? ''}
+                              isEditing={Boolean(myReview)}
+                              submitting={isSubmittingThis}
+                              errorMsg={reviewError}
+                              onSubmit={async (rating, comment) => {
+                                setReviewError(null);
+                                setSubmittingReviewRegId(reg.id);
+                                try {
+                                  await upsertEventReview({
+                                    registration: reg,
+                                    matchedEvent,
+                                    authorUid: user.uid,
+                                    rating,
+                                    comment,
+                                    fallbackDisplayName: fullName,
+                                  });
+                                  setReviewingRegId(null);
+                                } catch (err) {
+                                  setReviewError(
+                                    err instanceof Error
+                                      ? err.message
+                                      : 'Impossible de publier votre avis.'
+                                  );
+                                } finally {
+                                  setSubmittingReviewRegId(null);
+                                }
+                              }}
+                              onCancel={() => {
+                                setReviewError(null);
+                                setReviewingRegId(null);
+                              }}
+                            />
+                          ) : myReview ? (
+                            <div className="space-y-1.5 rounded-lg bg-slate-50/80 p-3 dark:bg-slate-800/50">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                                    Votre avis
+                                  </span>
+                                  <StarRatingDisplay rating={myReview.rating} />
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setReviewError(null);
+                                      setReviewingRegId(reg.id);
+                                    }}
+                                    className="min-h-[30px] rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                                  >
+                                    Modifier
+                                  </button>
+                                  {!isConfirmingReviewDel && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setConfirmDeleteReviewId(myReview.id)
+                                      }
+                                      aria-label="Supprimer mon avis"
+                                      className="inline-flex min-h-[30px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:text-rose-400 cursor-pointer"
+                                    >
+                                      <Trash2 className="h-3 w-3" aria-hidden="true" />
+                                      Supprimer
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-line break-words">
+                                {myReview.comment}
+                              </p>
+                              {isConfirmingReviewDel && (
+                                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2 text-xs dark:border-slate-700">
+                                  <span className="text-rose-800 dark:text-rose-200">
+                                    Supprimer définitivement votre avis ?
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      disabled={isDeletingThis}
+                                      onClick={async () => {
+                                        setDeletingReviewId(myReview.id);
+                                        try {
+                                          await deleteEventReview(myReview.id);
+                                          setConfirmDeleteReviewId(null);
+                                        } catch (err) {
+                                          setReviewError(
+                                            err instanceof Error
+                                              ? err.message
+                                              : 'Impossible de supprimer votre avis.'
+                                          );
+                                        } finally {
+                                          setDeletingReviewId(null);
+                                        }
+                                      }}
+                                      className="min-h-[28px] rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                    >
+                                      {isDeletingThis
+                                        ? 'Suppression...'
+                                        : 'Confirmer'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isDeletingThis}
+                                      onClick={() =>
+                                        setConfirmDeleteReviewId(null)
+                                      }
+                                      className="min-h-[28px] rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 cursor-pointer"
+                                    >
+                                      Non
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                Comment s’est passée cette séance ?
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReviewError(null);
+                                  setReviewingRegId(reg.id);
+                                }}
+                                className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/50 cursor-pointer"
+                              >
+                                <MessageSquare
+                                  className="h-3.5 w-3.5"
+                                  aria-hidden="true"
+                                />
+                                Donner mon avis
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {isConfirmingCancel && canCancelReg && (
                       <div className="mt-3 flex flex-col gap-2.5 rounded-lg border border-rose-200 bg-rose-50/80 p-3 dark:border-rose-900/80 dark:bg-rose-950/40 sm:flex-row sm:items-center sm:justify-between">

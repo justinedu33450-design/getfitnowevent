@@ -39,6 +39,7 @@ import {
   toLocalDateInputValue,
 } from '../utils/dateAndValidation';
 import { PhotoUploadField, ProfileAvatar } from './ProfileAvatar';
+import { MemberRegularityChart } from './MemberRegularityChart';
 
 interface MembersTrackingViewProps {
   coachEmail: string;
@@ -208,6 +209,11 @@ export function MembersTrackingView({
     () => members.find((m) => m.emailKey === selectedMemberKey) ?? null,
     [members, selectedMemberKey]
   );
+
+  const selectedMemberAllRegistrations = useMemo(() => {
+    if (!selectedMember) return [];
+    return registrations.filter((r) => r.emailKey === selectedMember.emailKey);
+  }, [registrations, selectedMember]);
 
   const stats = useMemo(() => {
     const total = members.length;
@@ -755,6 +761,8 @@ export function MembersTrackingView({
         <MemberDetailDrawer
           key={selectedMember.emailKey}
           member={selectedMember}
+          allRegistrations={selectedMemberAllRegistrations}
+          events={events}
           nowMs={nowMs}
           deleting={deletingKey === selectedMember.emailKey}
           onDelete={() => void handleDeleteMember(selectedMember)}
@@ -1100,6 +1108,8 @@ function AddMemberModal({
 
 interface MemberDetailDrawerProps {
   member: MemberAggregate;
+  allRegistrations: Registration[];
+  events: SportEvent[];
   nowMs: number;
   deleting: boolean;
   onDelete: () => void;
@@ -1108,6 +1118,8 @@ interface MemberDetailDrawerProps {
 
 function MemberDetailDrawer({
   member,
+  allRegistrations,
+  events,
   nowMs,
   deleting,
   onDelete,
@@ -1453,8 +1465,17 @@ function MemberDetailDrawer({
             </div>
           </form>
 
-          {/* Session History */}
+          {/* Regularity Pie Chart (Week / Month / Year) */}
           <div className="border-t border-slate-200 dark:border-slate-800 pt-5">
+            <MemberRegularityChart
+              registrations={allRegistrations}
+              events={events}
+              nowMs={nowMs}
+              compact
+              title="Régularité de l’adhérent"
+              subtitle="Événements inscrits, validés et annulés par semaine, mois ou année."
+            />
+
             <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
               Historique des séances ({member.registrations.length})
             </h3>

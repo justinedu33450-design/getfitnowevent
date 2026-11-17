@@ -13,7 +13,12 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
-import { Discipline, DisciplineItem, SportEvent } from '../types';
+import {
+  Discipline,
+  DisciplineItem,
+  EventRatingSummary,
+  SportEvent,
+} from '../types';
 import {
   evaluateEventBooking,
   formatCapacityCompact,
@@ -29,6 +34,11 @@ import {
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import { EventsOverviewMap } from './EventLocationMap';
+import {
+  EventLikeButton,
+  EventRatingInline,
+  EventShareButton,
+} from './EventEngagementWidgets';
 
 interface CalendarViewProps {
   events: SportEvent[];
@@ -37,6 +47,11 @@ interface CalendarViewProps {
   isCoach: boolean;
   isCoachAdmin?: boolean;
   registeredEventIds?: Set<string>;
+  likedEventIds?: Set<string>;
+  likingEventId?: string | null;
+  onToggleLike?: (event: SportEvent) => void;
+  onShareEvent?: (event: SportEvent) => void;
+  ratingSummaryByEventId?: Map<string, EventRatingSummary>;
   loading: boolean;
   hasMapsApiKey: boolean;
   onSelectEvent: (event: SportEvent) => void;
@@ -52,6 +67,11 @@ export function CalendarView({
   isCoach,
   isCoachAdmin = false,
   registeredEventIds,
+  likedEventIds,
+  likingEventId,
+  onToggleLike,
+  onShareEvent,
+  ratingSummaryByEventId,
   loading,
   hasMapsApiKey,
   onSelectEvent,
@@ -647,13 +667,22 @@ export function CalendarView({
                             hideRegisteredCount: !isCoach,
                           });
                           const style = getEventVisualState(ev);
+                          const ratingSummary = ratingSummaryByEventId?.get(ev.id);
                           return (
-                            <button
+                            <div
                               key={ev.id}
-                              type="button"
+                              role="button"
+                              tabIndex={0}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onSelectEvent(ev);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  onSelectEvent(ev);
+                                }
                               }}
                               className={`flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${style.container}`}
                             >
@@ -679,42 +708,70 @@ export function CalendarView({
                                     {ev.region ? ` (${ev.region})` : ''} — {ev.location}
                                   </span>
                                 </div>
-                                <p className="mt-0.5 text-sm font-semibold truncate">
-                                  {ev.title}
-                                </p>
+                                <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                                  <p className="text-sm font-semibold truncate">
+                                    {ev.title}
+                                  </p>
+                                  {ratingSummary && (
+                                    <EventRatingInline summary={ratingSummary} />
+                                  )}
+                                </div>
                                 <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300 truncate">
                                   {formatEventCoachesLabel(ev)}
                                 </p>
                               </div>
-                              <div className="flex items-center justify-between gap-3 sm:block sm:shrink-0 sm:text-right">
-                                <div className="flex items-center gap-2 sm:justify-end">
-                                  {registeredEventIds?.has(ev.id) && (
-                                    <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                                      Inscrit
+                              <div className="flex items-center justify-between gap-3 sm:shrink-0">
+                                <div className="sm:text-right">
+                                  <div className="flex items-center gap-2 sm:justify-end">
+                                    {registeredEventIds?.has(ev.id) && (
+                                      <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                        Inscrit
+                                      </span>
+                                    )}
+                                    <span
+                                      className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
+                                        ev.isPaid
+                                          ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                          : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                      }`}
+                                    >
+                                      {formatEventPrice(ev)}
                                     </span>
-                                  )}
-                                  <span
-                                    className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
-                                      ev.isPaid
-                                        ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                                        : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                    }`}
-                                  >
-                                    {formatEventPrice(ev)}
-                                  </span>
-                                  <p className={`text-xs font-semibold ${style.statusColor}`}>
-                                    {evalInfo.statusLabel}
+                                    <p className={`text-xs font-semibold ${style.statusColor}`}>
+                                      {evalInfo.statusLabel}
+                                    </p>
+                                  </div>
+                                  <p className="mt-0.5 font-mono text-xs tabular-nums opacity-80">
+                                    {isCoach
+                                      ? ev.isUnlimitedCapacity
+                                        ? `${ev.registeredCount} · Illimité`
+                                        : `${ev.registeredCount}/${ev.maxCapacity} places`
+                                      : evalInfo.capacityLabel}
                                   </p>
                                 </div>
-                                <p className="mt-0.5 font-mono text-xs tabular-nums opacity-80">
-                                  {isCoach
-                                    ? ev.isUnlimitedCapacity
-                                      ? `${ev.registeredCount} · Illimité`
-                                      : `${ev.registeredCount}/${ev.maxCapacity} places`
-                                    : evalInfo.capacityLabel}
-                                </p>
+                                {ev.status === 'published' && (onToggleLike || onShareEvent) && (
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {onToggleLike && (
+                                      <EventLikeButton
+                                        compact
+                                        count={ev.likesCount ?? 0}
+                                        liked={Boolean(likedEventIds?.has(ev.id))}
+                                        loading={likingEventId === ev.id}
+                                        eventTitle={ev.title}
+                                        onClick={() => onToggleLike(ev)}
+                                      />
+                                    )}
+                                    {onShareEvent && (
+                                      <EventShareButton
+                                        compact
+                                        eventTitle={ev.title}
+                                        onClick={() => onShareEvent(ev)}
+                                      />
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            </button>
+                            </div>
                           );
                         })
                       )}
@@ -839,7 +896,7 @@ export function CalendarView({
                       key={ev.id}
                       className={`rounded-lg border border-slate-200 border-l-4 ${discStyle.leftBorder} p-4 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700`}
                     >
-                      <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                           <span
                             className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
@@ -869,28 +926,55 @@ export function CalendarView({
                             {ev.region ? ` (${ev.region})` : ''}
                           </span>
                         </div>
-                        <span
-                          className={`inline-flex items-center gap-1 font-semibold shrink-0 ${
-                            evalInfo.state === 'open'
-                              ? 'text-emerald-700 dark:text-emerald-400'
-                              : evalInfo.state === 'cutoff_closed'
-                                ? 'text-amber-700 dark:text-amber-400'
-                                : evalInfo.state === 'full' ||
-                                    evalInfo.state === 'cancelled'
-                                  ? 'text-rose-700 dark:text-rose-400'
-                                  : 'text-slate-500 dark:text-slate-400'
-                          }`}
-                        >
-                          {evalInfo.state === 'cutoff_closed' && (
-                            <Lock className="h-3 w-3" aria-hidden="true" />
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`inline-flex items-center gap-1 font-semibold shrink-0 ${
+                              evalInfo.state === 'open'
+                                ? 'text-emerald-700 dark:text-emerald-400'
+                                : evalInfo.state === 'cutoff_closed'
+                                  ? 'text-amber-700 dark:text-amber-400'
+                                  : evalInfo.state === 'full' ||
+                                      evalInfo.state === 'cancelled'
+                                    ? 'text-rose-700 dark:text-rose-400'
+                                    : 'text-slate-500 dark:text-slate-400'
+                            }`}
+                          >
+                            {evalInfo.state === 'cutoff_closed' && (
+                              <Lock className="h-3 w-3" aria-hidden="true" />
+                            )}
+                            {evalInfo.statusLabel}
+                          </span>
+                          {ev.status === 'published' && onToggleLike && (
+                            <EventLikeButton
+                              compact
+                              count={ev.likesCount ?? 0}
+                              liked={Boolean(likedEventIds?.has(ev.id))}
+                              loading={likingEventId === ev.id}
+                              eventTitle={ev.title}
+                              onClick={() => onToggleLike(ev)}
+                            />
                           )}
-                          {evalInfo.statusLabel}
-                        </span>
+                          {ev.status === 'published' && onShareEvent && (
+                            <EventShareButton
+                              compact
+                              eventTitle={ev.title}
+                              onClick={() => onShareEvent(ev)}
+                            />
+                          )}
+                        </div>
                       </div>
 
                       <h4 className="mt-1.5 font-display text-base font-semibold text-slate-900 dark:text-white">
                         {ev.title}
                       </h4>
+
+                      {ratingSummaryByEventId?.get(ev.id) && (
+                        <div className="mt-1">
+                          <EventRatingInline
+                            summary={ratingSummaryByEventId.get(ev.id)}
+                          />
+                        </div>
+                      )}
 
                       <div className="mt-2.5 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                         <div className="flex items-center gap-2 font-mono tabular-nums">

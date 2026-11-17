@@ -39,7 +39,9 @@ import {
   Discipline,
   DisciplineColorKey,
   EventCancelReason,
+  EventLike,
   EventPaymentMode,
+  EventReview,
   EventStatus,
   FitnessLevel,
   FollowUpStatus,
@@ -55,6 +57,8 @@ import {
 } from '../types';
 import {
   evaluateEventBooking,
+  formatPublicAuthorName,
+  getRegistrationEndMs,
   hashEmailKey,
   isValidBirthDateString,
 } from '../utils/dateAndValidation';
@@ -981,6 +985,14 @@ export function subscribeEvents(
           priceCents: isPaid ? priceCents : 0,
           currency: 'EUR',
           paymentMode,
+          likesCount:
+            typeof raw.likesCount === 'number' && raw.likesCount >= 0
+              ? Math.round(raw.likesCount)
+              : 0,
+          lastLikeId:
+            typeof raw.lastLikeId === 'string' && raw.lastLikeId
+              ? raw.lastLikeId
+              : 'none',
         };
       });
       list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
@@ -1320,6 +1332,8 @@ export async function createEvent(
       maxCapacity: input.isUnlimitedCapacity ? 0 : Math.round(input.maxCapacity),
       registeredCount: 0,
       lastRegId: 'none',
+      likesCount: 0,
+      lastLikeId: 'none',
       status: 'published',
       cancelReason: '',
       isPaid: pricing.isPaid,
@@ -1560,10 +1574,31 @@ async function notifyMembersOfCancelledEvent(params: {
   return toCreate.length;
 }
 
+async function deleteEventLikesForEvent(eventId: string): Promise<void> {
+  try {
+    const likeSnap = await getDocs(
+      query(collection(db, 'eventLikes'), where('eventId', '==', eventId))
+    );
+    if (likeSnap.empty) return;
+    const CHUNK_SIZE = 300;
+    for (let i = 0; i < likeSnap.docs.length; i += CHUNK_SIZE) {
+      const batch = writeBatch(db);
+      likeSnap.docs.slice(i, i + CHUNK_SIZE).forEach((d) => {
+        batch.delete(d.ref);
+      });
+      await batch.commit();
+    }
+  } catch (error) {
+    console.warn(`Nettoyage des likes différé pour events/${eventId}:`, error);
+  }
+}
+
 async function cancelRegistrationsAndDeleteEvent(
   eventId: string,
   confirmedRegs: Registration[]
 ): Promise<void> {
+  await deleteEventLikesForEvent(eventId);
+
   const CHUNK_SIZE = 5;
   for (let i = 0; i < confirmedRegs.length; i += CHUNK_SIZE) {
     const chunk = confirmedRegs.slice(i, i + CHUNK_SIZE);
@@ -1768,6 +1803,7 @@ export async function deleteEndedEventAfterRetention(
 ): Promise<boolean> {
   try {
     await notifyMembersOfEndedEvent(event);
+    await deleteEventLikesForEvent(event.id);
     await deleteDoc(doc(db, 'events', event.id));
     return true;
   } catch (error) {
@@ -2136,6 +2172,14 @@ function parseLiveSportEventSnapshot(
       raw.paymentMode === 'onsite' || raw.paymentMode === 'both'
         ? raw.paymentMode
         : 'online',
+    likesCount:
+      typeof raw.likesCount === 'number' && raw.likesCount >= 0
+        ? Math.round(raw.likesCount)
+        : 0,
+    lastLikeId:
+      typeof raw.lastLikeId === 'string' && raw.lastLikeId
+        ? raw.lastLikeId
+        : 'none',
   };
 }
 
@@ -3761,3 +3805,269 @@ export async function seedDemoEvents(
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Mentions J'aime (/eventLikes) & Avis / Commentaires (/eventReviews)
+// ---------------------------------------------------------------------------
+
+export function subscribeMyEventLikes(
+  userId: string,
+  onData: (likedEventIds: Set<string>) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, 'eventLikes'),
+    where('userId', '==', userId)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const next = new Set<string>();
+      snapshot.docs.forEach((d) => {
+        const data = d.data() as Partial<EventLike>;
+        if (typeof data.eventId === 'string' && data.eventId) {
+          next.add(data.eventId);
+        }
+      });
+      onData(next);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'eventLikes');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export async function toggleEventLike(
+  event: SportEvent,
+  userId: string
+): Promise<boolean> {
+  if (!userId) {
+    throw new Error('Connexion requise pour aimer un événement.');
+  }
+  if (event.status !== 'published') {
+    throw new Error('Impossible d’aimer une séance annulée.');
+  }
+
+  const likeId = `${event.id}__${userId}`;
+  const eventRef = doc(db, 'events', event.id);
+  const likeRef = doc(db, 'eventLikes', likeId);
+
+  try {
+    const [eventSnap, likeSnap] = await Promise.all([
+      getDocFromServer(eventRef),
+      getDocFromServer(likeRef),
+    ]);
+
+    if (!eventSnap.exists()) {
+      throw new Error('Cet événement n’existe plus.');
+    }
+
+    const liveEvent = parseLiveSportEventSnapshot(
+      eventSnap.id,
+      eventSnap.data() as Partial<SportEvent>
+    );
+
+    if (liveEvent.status !== 'published') {
+      throw new Error('Impossible d’aimer une séance annulée.');
+    }
+
+    const currentLikes = Math.max(0, liveEvent.likesCount ?? 0);
+    const batch = writeBatch(db);
+
+    if (likeSnap.exists()) {
+      if (currentLikes < 1) {
+        batch.delete(likeRef);
+        await batch.commit();
+        return false;
+      }
+      batch.delete(likeRef);
+      batch.update(eventRef, {
+        likesCount: currentLikes - 1,
+        lastLikeId: likeId,
+        updatedAt: serverTimestamp(),
+      });
+      await batch.commit();
+      return false;
+    }
+
+    batch.set(likeRef, {
+      eventId: event.id,
+      userId,
+      createdAt: serverTimestamp(),
+    });
+    batch.update(eventRef, {
+      likesCount: currentLikes + 1,
+      lastLikeId: likeId,
+      updatedAt: serverTimestamp(),
+    });
+    await batch.commit();
+    return true;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `eventLikes/${likeId}`);
+  }
+}
+
+export function subscribePublishedEventReviews(
+  onData: (reviews: EventReview[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, 'eventReviews'),
+    where('status', '==', 'published')
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list: EventReview[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<EventReview, 'id'>),
+      }));
+      list.sort((a, b) => {
+        const aMs = a.updatedAt?.toMillis?.() ?? a.createdAt?.toMillis?.() ?? 0;
+        const bMs = b.updatedAt?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0;
+        return bMs - aMs;
+      });
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'eventReviews');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export async function upsertEventReview(params: {
+  registration: Registration;
+  matchedEvent?: SportEvent | null;
+  authorUid: string;
+  rating: number;
+  comment: string;
+  fallbackDisplayName?: string | null;
+}): Promise<void> {
+  const { registration, matchedEvent, authorUid } = params;
+  if (!authorUid) {
+    throw new Error('Connexion requise pour publier un avis.');
+  }
+  if (registration.status !== 'confirmed') {
+    throw new Error('Seule une inscription confirmée permet de laisser un avis.');
+  }
+  if (matchedEvent && matchedEvent.status === 'cancelled') {
+    throw new Error('Impossible de laisser un avis sur une séance annulée.');
+  }
+  const endMs = getRegistrationEndMs(registration, matchedEvent);
+  if (Date.now() < endMs) {
+    throw new Error(
+      'Les avis et commentaires ne peuvent être laissés qu’à partir de l’heure de fin de la séance.'
+    );
+  }
+  if (!registration.attended) {
+    throw new Error(
+      'Veuillez d’abord valider votre séance à l’issue de l’événement avant de laisser un avis.'
+    );
+  }
+
+  const rating = Math.round(Number(params.rating));
+  if (
+    !Number.isInteger(rating) ||
+    rating < VALIDATION_LIMITS.REVIEW_RATING_MIN ||
+    rating > VALIDATION_LIMITS.REVIEW_RATING_MAX
+  ) {
+    throw new Error('Veuillez attribuer une note comprise entre 1 et 5 étoiles.');
+  }
+
+  const comment = params.comment
+    .trim()
+    .slice(0, VALIDATION_LIMITS.REVIEW_COMMENT_MAX);
+  if (comment.length < VALIDATION_LIMITS.REVIEW_COMMENT_MIN) {
+    throw new Error(
+      `Votre commentaire doit contenir au moins ${VALIDATION_LIMITS.REVIEW_COMMENT_MIN} caractères.`
+    );
+  }
+
+  const authorName = formatPublicAuthorName(
+    registration.firstName,
+    registration.lastName,
+    params.fallbackDisplayName
+  );
+  const reviewId = registration.id;
+  const reviewRef = doc(db, 'eventReviews', reviewId);
+
+  try {
+    const existingSnap = await getDoc(reviewRef);
+    if (existingSnap.exists()) {
+      await updateDoc(reviewRef, {
+        rating,
+        comment,
+        authorName,
+        updatedAt: serverTimestamp(),
+      });
+      return;
+    }
+
+    const rawTitle = (
+      matchedEvent?.title ||
+      registration.eventTitle ||
+      'Séance sportive'
+    )
+      .trim()
+      .slice(0, VALIDATION_LIMITS.TITLE_MAX);
+    const eventTitle =
+      rawTitle.length >= VALIDATION_LIMITS.TITLE_MIN
+        ? rawTitle
+        : 'Séance sportive';
+
+    const rawDiscipline = (matchedEvent?.discipline || 'Coaching')
+      .trim()
+      .slice(0, VALIDATION_LIMITS.DISCIPLINE_MAX);
+    const discipline =
+      rawDiscipline.length >= VALIDATION_LIMITS.DISCIPLINE_MIN
+        ? rawDiscipline
+        : 'Coaching';
+
+    await setDoc(reviewRef, {
+      eventId: registration.eventId,
+      registrationId: registration.id,
+      emailKey: registration.emailKey,
+      authorUid,
+      authorName,
+      eventTitle,
+      discipline,
+      eventStartAt: registration.eventStartAt,
+      rating,
+      comment,
+      status: 'published',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.WRITE,
+      `eventReviews/${reviewId}`
+    );
+  }
+}
+
+export async function deleteEventReview(reviewId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'eventReviews', reviewId));
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.DELETE,
+      `eventReviews/${reviewId}`
+    );
+  }
+}
+

@@ -6,6 +6,7 @@ import {
   Check,
   CheckCheck,
   CheckCircle2,
+  MessageSquare,
   Trash2,
   X,
 } from 'lucide-react';
@@ -17,6 +18,8 @@ import {
 
 interface MemberNotificationsBarProps {
   notifications: MemberNotification[];
+  reviewedRegIds?: Set<string>;
+  nowMs?: number;
   panelOpen: boolean;
   onClosePanel: () => void;
   onValidateSession: (registrationId: string) => Promise<void>;
@@ -24,10 +27,13 @@ interface MemberNotificationsBarProps {
   onMarkAllRead: () => void;
   onDelete: (notificationId: string) => void;
   onOpenMyTracking: () => void;
+  onOpenReview?: (registrationId: string) => void;
 }
 
 export function MemberNotificationsBar({
   notifications,
+  reviewedRegIds,
+  nowMs = Date.now(),
   panelOpen,
   onClosePanel,
   onValidateSession,
@@ -35,6 +41,7 @@ export function MemberNotificationsBar({
   onMarkAllRead,
   onDelete,
   onOpenMyTracking,
+  onOpenReview,
 }: MemberNotificationsBarProps) {
   const [validatingId, setValidatingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -277,6 +284,21 @@ export function MemberNotificationsBar({
                         {isBusy ? 'Validation...' : 'Valider ma séance'}
                       </button>
                     )}
+
+                    {!isCancelledNotif &&
+                      notif.validated &&
+                      notif.eventEndAt.toMillis() <= nowMs &&
+                      onOpenReview &&
+                      !reviewedRegIds?.has(notif.registrationId) && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenReview(notif.registrationId)}
+                          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/50 whitespace-nowrap cursor-pointer"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                          Donner mon avis
+                        </button>
+                      )}
 
                     {isCancelledNotif && !notif.read && (
                       <button

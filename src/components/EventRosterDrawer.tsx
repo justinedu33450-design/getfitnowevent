@@ -1,22 +1,29 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   Check,
   CreditCard,
   Download,
+  Heart,
+  MessageSquare,
   RotateCcw,
+  Star,
   Trash2,
   UserPlus,
+  Users,
   X,
 } from 'lucide-react';
 import { BOOTSTRAPPED_COACH_EMAIL } from '../firebase';
 import {
   CoachAdminUser,
+  EventRatingSummary,
+  EventReview,
   MemberProfile,
   Registration,
   SportEvent,
   VALIDATION_LIMITS,
 } from '../types';
 import {
+  deleteEventReview,
   registerForEvent,
   removeRegistration,
   toggleRegistrationAttendance,
@@ -34,12 +41,17 @@ import {
   formatTimeRange,
   getRegistrationPaymentBadgeInfo,
 } from '../utils/dateAndValidation';
+import { EventReviewsSection } from './EventEngagementWidgets';
 
 interface EventRosterDrawerProps {
   event: SportEvent;
   registrations: Registration[];
   memberProfiles?: MemberProfile[];
   coachAdmins?: CoachAdminUser[];
+  eventReviews?: EventReview[];
+  ratingSummary?: EventRatingSummary | null;
+  currentUserUid?: string | null;
+  initialTab?: 'roster' | 'reviews';
   onClose: () => void;
 }
 
@@ -48,8 +60,13 @@ export function EventRosterDrawer({
   registrations,
   memberProfiles = [],
   coachAdmins = [],
+  eventReviews = [],
+  ratingSummary,
+  currentUserUid,
+  initialTab = 'roster',
   onClose,
 }: EventRosterDrawerProps) {
+  const [drawerTab, setDrawerTab] = useState<'roster' | 'reviews'>(initialTab);
   const [showAddForm, setShowAddForm] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -60,6 +77,10 @@ export function EventRosterDrawer({
   const [paymentActionError, setPaymentActionError] = useState<string | null>(null);
   const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDrawerTab(initialTab);
+  }, [initialTab, event.id]);
 
   const isPaidEvent =
     Boolean(event.isPaid) &&
@@ -292,8 +313,51 @@ export function EventRosterDrawer({
           </button>
         </div>
 
+        {/* Drawer Tab Switch */}
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
+          <div
+            role="tablist"
+            aria-label="Sections de la séance"
+            className="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={drawerTab === 'roster'}
+              onClick={() => setDrawerTab('roster')}
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                drawerTab === 'roster'
+                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" aria-hidden="true" />
+              Inscrits ({eventRegistrations.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={drawerTab === 'reviews'}
+              onClick={() => setDrawerTab('reviews')}
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                drawerTab === 'reviews'
+                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+              }`}
+            >
+              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+              Avis & J’aime ({eventReviews.length})
+            </button>
+          </div>
+
+          <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-rose-600 dark:text-rose-400 tabular-nums">
+            <Heart className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+            {event.likesCount ?? 0}
+          </span>
+        </div>
+
         {/* Paid Event Financial Summary Bar */}
-        {isPaidEvent && (
+        {drawerTab === 'roster' && isPaidEvent && (
           <div className="grid grid-cols-3 divide-x divide-slate-200 border-b border-slate-200 bg-slate-50/80 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-800/40">
             <div className="px-4 py-2.5 sm:px-6">
               <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -323,30 +387,32 @@ export function EventRosterDrawer({
         )}
 
         {/* Actions Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60 sm:px-6">
-          <button
-            type="button"
-            onClick={() => setShowAddForm((prev) => !prev)}
-            disabled={isFull}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-50 cursor-pointer"
-          >
-            <UserPlus className="h-4 w-4" aria-hidden="true" />
-            Ajouter un participant
-          </button>
+        {drawerTab === 'roster' && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60 sm:px-6">
+            <button
+              type="button"
+              onClick={() => setShowAddForm((prev) => !prev)}
+              disabled={isFull}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-50 cursor-pointer"
+            >
+              <UserPlus className="h-4 w-4" aria-hidden="true" />
+              Ajouter un participant
+            </button>
 
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            disabled={eventRegistrations.length === 0}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            Exporter CSV
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={eventRegistrations.length === 0}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+            >
+              <Download className="h-4 w-4" aria-hidden="true" />
+              Exporter CSV
+            </button>
+          </div>
+        )}
 
         {/* Manual Add Form */}
-        {showAddForm && (
+        {drawerTab === 'roster' && showAddForm && (
           <form
             onSubmit={handleManualAdd}
             className="space-y-3 border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40 sm:p-6"
@@ -426,13 +492,56 @@ export function EventRosterDrawer({
           </form>
         )}
 
-        {/* Roster List */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {paymentActionError && (
-            <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
-              {paymentActionError}
+        {/* Roster or Reviews Content */}
+        {drawerTab === 'reviews' ? (
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+            <div className="grid grid-cols-3 divide-x divide-slate-200 rounded-xl border border-slate-200 bg-slate-50/70 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-800/40">
+              <div className="px-4 py-3">
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  Mentions J’aime
+                </p>
+                <p className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-base font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                  <Heart className="h-4 w-4 fill-current" aria-hidden="true" />
+                  {event.likesCount ?? 0}
+                </p>
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  Note moyenne
+                </p>
+                <p className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-base font-bold text-slate-900 dark:text-white tabular-nums">
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-hidden="true" />
+                  {ratingSummary && ratingSummary.count > 0
+                    ? `${ratingSummary.averageRating.toFixed(1)}/5`
+                    : '—'}
+                </p>
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  Commentaires
+                </p>
+                <p className="mt-0.5 font-mono text-base font-bold text-slate-900 dark:text-white tabular-nums">
+                  {eventReviews.length}
+                </p>
+              </div>
             </div>
-          )}
+
+            <EventReviewsSection
+              reviews={eventReviews}
+              summary={ratingSummary}
+              currentUserUid={currentUserUid}
+              isCoach
+              onDeleteReview={(reviewId) => deleteEventReview(reviewId)}
+              emptyMessage="Aucun avis adhérent publié pour cette séance pour le moment."
+            />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            {paymentActionError && (
+              <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+                {paymentActionError}
+              </div>
+            )}
 
           {eventRegistrations.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center dark:border-slate-700">
@@ -741,7 +850,8 @@ export function EventRosterDrawer({
               </div>
             </>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

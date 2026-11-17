@@ -578,3 +578,32 @@ export function formatBirthDateFrench(birthDate?: string | null): string {
     year: 'numeric',
   }).format(date);
 }
+
+export function formatPublicAuthorName(
+  firstName?: string | null,
+  lastName?: string | null,
+  fallbackDisplayName?: string | null
+): string {
+  const first = (firstName ?? '').trim();
+  const last = (lastName ?? '').trim();
+  let candidate = '';
+  if (first && last) {
+    candidate = `${first} ${last.charAt(0).toUpperCase()}.`;
+  } else if (first) {
+    candidate = first;
+  } else if (fallbackDisplayName && fallbackDisplayName.trim()) {
+    const parts = fallbackDisplayName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      candidate = `${parts[0]} ${parts[1].charAt(0).toUpperCase()}.`;
+    } else {
+      candidate = parts[0];
+    }
+  }
+  const clean = candidate
+    .trim()
+    .slice(0, VALIDATION_LIMITS.REVIEW_AUTHOR_NAME_MAX);
+  return clean.length >= VALIDATION_LIMITS.REVIEW_AUTHOR_NAME_MIN
+    ? clean
+    : 'Adhérent';
+}
+

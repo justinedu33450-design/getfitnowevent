@@ -5,8 +5,10 @@ import {
   Copy,
   Download,
   Edit3,
+  Heart,
   LogOut,
   MapPin,
+  MessageSquare,
   Palette,
   Plus,
   ShieldCheck,
@@ -17,6 +19,7 @@ import {
 import {
   DisciplineColorKey,
   DisciplineItem,
+  EventRatingSummary,
   Registration,
   SportEvent,
   VALIDATION_LIMITS,
@@ -45,6 +48,7 @@ import {
   DISCIPLINE_COLOR_PRESETS,
   getDisciplineStyle,
 } from '../utils/disciplineColors';
+import { EventRatingInline, EventShareButton } from './EventEngagementWidgets';
 
 interface CoachEventsViewProps {
   coachUid: string;
@@ -54,6 +58,7 @@ interface CoachEventsViewProps {
   registrations: Registration[];
   disciplines: DisciplineItem[];
   nowMs: number;
+  ratingSummaryByEventId?: Map<string, EventRatingSummary>;
   isCoachAdmin?: boolean;
   pendingCoachRequestsCount?: number;
   onOpenCoachesAdmin?: () => void;
@@ -61,7 +66,8 @@ interface CoachEventsViewProps {
   onCreateEvent: () => void;
   onEditEvent: (event: SportEvent) => void;
   onDuplicateEvent: (event: SportEvent) => void;
-  onOpenRoster: (event: SportEvent) => void;
+  onOpenRoster: (event: SportEvent, initialTab?: 'roster' | 'reviews') => void;
+  onShareEvent?: (event: SportEvent) => void;
 }
 
 export function CoachEventsView({
@@ -72,6 +78,7 @@ export function CoachEventsView({
   registrations,
   disciplines,
   nowMs,
+  ratingSummaryByEventId,
   isCoachAdmin = false,
   pendingCoachRequestsCount = 0,
   onOpenCoachesAdmin,
@@ -80,6 +87,7 @@ export function CoachEventsView({
   onEditEvent,
   onDuplicateEvent,
   onOpenRoster,
+  onShareEvent,
 }: CoachEventsViewProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
@@ -635,21 +643,47 @@ export function CoachEventsView({
                         {ev.location}
                       </span>
                     </span>
-                    <span className="font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
-                      {formatCapacityCompact(ev)}
-                      {regCount > 0 && ` (${presentCount} prés.)`}
-                    </span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="inline-flex items-center gap-1 font-mono text-xs text-rose-600 dark:text-rose-400 tabular-nums">
+                        <Heart className="h-3.5 w-3.5" aria-hidden="true" />
+                        {ev.likesCount ?? 0}
+                      </span>
+                      <EventRatingInline
+                        summary={ratingSummaryByEventId?.get(ev.id)}
+                      />
+                      <span className="font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
+                        {formatCapacityCompact(ev)}
+                        {regCount > 0 && ` (${presentCount} prés.)`}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => onOpenRoster(ev)}
+                      onClick={() => onOpenRoster(ev, 'roster')}
                       className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
                     >
                       <Users className="h-4 w-4" aria-hidden="true" />
                       Inscrits ({ev.registeredCount})
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => onOpenRoster(ev, 'reviews')}
+                      title="Consulter les avis et mentions J'aime"
+                      className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                    >
+                      <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                      Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
+                    </button>
+
+                    {ev.status === 'published' && onShareEvent && (
+                      <EventShareButton
+                        compact
+                        eventTitle={ev.title}
+                        onClick={() => onShareEvent(ev)}
+                      />
+                    )}
 
                     <button
                       type="button"
@@ -799,6 +833,15 @@ export function CoachEventsView({
                             <UserCheck className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
                             <span>{formatEventCoachesLabel(ev)}</span>
                           </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
+                            <span className="inline-flex items-center gap-1 font-mono text-rose-600 dark:text-rose-400 tabular-nums">
+                              <Heart className="h-3.5 w-3.5" aria-hidden="true" />
+                              {ev.likesCount ?? 0} J’aime
+                            </span>
+                            <EventRatingInline
+                              summary={ratingSummaryByEventId?.get(ev.id)}
+                            />
+                          </div>
                         </td>
 
                         <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-xs text-slate-600 dark:text-slate-300 max-w-[160px] lg:max-w-[210px]">
@@ -842,12 +885,30 @@ export function CoachEventsView({
                           <div className="flex flex-wrap items-center justify-end gap-1.5 xl:flex-nowrap">
                             <button
                               type="button"
-                              onClick={() => onOpenRoster(ev)}
+                              onClick={() => onOpenRoster(ev, 'roster')}
                               className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
                             >
                               <Users className="h-3.5 w-3.5" aria-hidden="true" />
                               Inscrits
                             </button>
+
+                            <button
+                              type="button"
+                              onClick={() => onOpenRoster(ev, 'reviews')}
+                              title="Consulter les avis et mentions J'aime"
+                              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
+                            >
+                              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                              Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
+                            </button>
+
+                            {ev.status === 'published' && onShareEvent && (
+                              <EventShareButton
+                                compact
+                                eventTitle={ev.title}
+                                onClick={() => onShareEvent(ev)}
+                              />
+                            )}
 
                             <button
                               type="button"

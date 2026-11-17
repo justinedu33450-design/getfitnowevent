@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import {
   DisciplineItem,
+  EventRatingSummary,
+  EventReview,
   GuestInput,
   MemberProfile,
   PaymentMethod,
@@ -34,7 +36,9 @@ import {
 import {
   GuestRegistrationResult,
   PartialGuestBookingError,
+  deleteEventReview,
   registerEventWithGuests,
+  upsertEventReview,
 } from '../services/firestoreService';
 import {
   downloadEventIcs,
@@ -61,6 +65,12 @@ import {
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import { EventLocationMap } from './EventLocationMap';
 import { EmailPasswordAuthForm } from './EmailPasswordAuthForm';
+import {
+  EventLikeButton,
+  EventRatingInline,
+  EventReviewsSection,
+  EventShareButton,
+} from './EventEngagementWidgets';
 
 interface BookingGuestRow extends GuestInput {
   id: string;
@@ -81,6 +91,15 @@ interface BookingModalProps {
   existingRegistration?: Registration | null;
   invitedGuestRegistrations?: Registration[];
   isEventActive?: boolean;
+  currentUserUid?: string | null;
+  likedEventIds?: Set<string>;
+  likingEventId?: string | null;
+  onToggleLike?: (event: SportEvent) => void;
+  onShareEvent?: (event: SportEvent) => void;
+  eventReviews?: EventReview[];
+  ratingSummary?: EventRatingSummary | null;
+  eligibleReviewRegistration?: Registration | null;
+  onValidateSession?: (registration: Registration) => Promise<void>;
   onCancelRegistration?: (registration: Registration) => Promise<void>;
   onMemberEmailAuthSuccess?: (user: User) => void;
   onClose: () => void;
@@ -105,6 +124,15 @@ export function BookingModal({
   existingRegistration,
   invitedGuestRegistrations = [],
   isEventActive = true,
+  currentUserUid,
+  likedEventIds,
+  likingEventId,
+  onToggleLike,
+  onShareEvent,
+  eventReviews = [],
+  ratingSummary,
+  eligibleReviewRegistration,
+  onValidateSession,
   onCancelRegistration,
   onMemberEmailAuthSuccess,
   onClose,
@@ -158,6 +186,8 @@ export function BookingModal({
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelledFeedback, setCancelledFeedback] = useState<string | null>(null);
+  const [validatingSession, setValidatingSession] = useState(false);
+  const [validationSessionError, setValidationSessionError] = useState<string | null>(null);
   const [confirmedMember, setConfirmedMember] = useState<{
     registrationId: string;
     firstName: string;
@@ -232,6 +262,7 @@ export function BookingModal({
   const discStyle = getDisciplineStyle(event.discipline, disciplines);
   const startDate = event.startAt.toDate();
   const cutoffDate = new Date(evaluation.cutoffMs);
+  const hasEventEnded = nowMs >= evaluation.endMs;
 
   const cardDigits = sanitizeCardDigits(cardNumber);
   const cardBrand = detectCardBrand(cardDigits);
@@ -698,6 +729,9 @@ export function BookingModal({
               <span>
                 {event.city} · {formatEventCoachesLabel(event)}
               </span>
+              {hasEventEnded && ratingSummary && (
+                <EventRatingInline summary={ratingSummary} />
+              )}
             </div>
             <h2
               id="booking-modal-title"
@@ -706,14 +740,31 @@ export function BookingModal({
               {event.title}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fermer la fenêtre"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white shrink-0 cursor-pointer"
-          >
-            <X className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {event.status === 'published' && onToggleLike && (
+              <EventLikeButton
+                count={event.likesCount ?? 0}
+                liked={Boolean(likedEventIds?.has(event.id))}
+                loading={likingEventId === event.id}
+                eventTitle={event.title}
+                onClick={() => onToggleLike(event)}
+              />
+            )}
+            {event.status === 'published' && onShareEvent && (
+              <EventShareButton
+                eventTitle={event.title}
+                onClick={() => onShareEvent(event)}
+              />
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fermer la fenêtre"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white shrink-0 cursor-pointer"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -2126,6 +2177,116 @@ export function BookingModal({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Reviews & Comments Section: visible & actionable only once session ended and validated */}
+          {hasEventEnded && event.status !== 'cancelled' && (
+            <>
+              {!isCoach &&
+              existingRegistration?.status === 'confirmed' &&
+              !existingRegistration.attended ? (
+                <div className="space-y-2.5 border-t border-slate-200 pt-4 dark:border-slate-800">
+                  <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3.5 dark:border-amber-800/80 dark:bg-amber-950/40 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="space-y-0.5 text-xs text-amber-950 dark:text-amber-100">
+                      <p className="font-semibold">
+                        Séance terminée — validation requise
+                      </p>
+                      <p className="text-amber-900/85 dark:text-amber-200/85">
+                        Validez votre séance pour laisser un avis et consulter les commentaires des participants.
+                      </p>
+                    </div>
+                    {onValidateSession ? (
+                      <button
+                        type="button"
+                        disabled={validatingSession}
+                        onClick={async () => {
+                          setValidationSessionError(null);
+                          setValidatingSession(true);
+                          try {
+                            await onValidateSession(existingRegistration);
+                          } catch (err) {
+                            setValidationSessionError(
+                              formatFirestoreActionError(
+                                err,
+                                'Impossible de valider cette séance pour le moment.',
+                                'La validation n’a pas encore été autorisée (vérifiez que la séance est bien terminée).'
+                              )
+                            );
+                          } finally {
+                            setValidatingSession(false);
+                          }
+                        }}
+                        className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        {validatingSession ? 'Validation...' : 'Valider ma séance'}
+                      </button>
+                    ) : (
+                      onOpenMemberTracking && (
+                        <button
+                          type="button"
+                          onClick={onOpenMemberTracking}
+                          className="inline-flex min-h-[38px] shrink-0 items-center justify-center rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                        >
+                          Valider dans Mon suivi
+                        </button>
+                      )
+                    )}
+                  </div>
+                  {validationSessionError && (
+                    <div
+                      role="alert"
+                      className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
+                    >
+                      {validationSessionError}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                (eventReviews.length > 0 ||
+                  Boolean(eligibleReviewRegistration) ||
+                  isCoach) && (
+                  <EventReviewsSection
+                    reviews={eventReviews}
+                    summary={ratingSummary}
+                    currentUserUid={currentUserUid}
+                    isCoach={isCoach}
+                    eligibleRegistration={eligibleReviewRegistration}
+                    myReview={
+                      (currentUserUid
+                        ? eventReviews.find((r) => r.authorUid === currentUserUid)
+                        : undefined) ??
+                      (eligibleReviewRegistration
+                        ? eventReviews.find(
+                            (r) =>
+                              r.registrationId === eligibleReviewRegistration.id
+                          )
+                        : undefined) ??
+                      null
+                    }
+                    onSubmitReview={
+                      currentUserUid
+                        ? async (reg, rating, comment) => {
+                            await upsertEventReview({
+                              registration: reg,
+                              matchedEvent: event,
+                              authorUid: currentUserUid,
+                              rating,
+                              comment,
+                              fallbackDisplayName: userDisplayName,
+                            });
+                          }
+                        : undefined
+                    }
+                    onDeleteReview={
+                      currentUserUid
+                        ? (reviewId) => deleteEventReview(reviewId)
+                        : undefined
+                    }
+                  />
+                )
+              )}
+            </>
           )}
         </div>
       </div>

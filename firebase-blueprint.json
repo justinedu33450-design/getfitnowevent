@@ -92,6 +92,16 @@
           "pattern": "^[a-zA-Z0-9_\\-]+$",
           "description": "Identifiant de la dernière inscription pour garantir l'atomicité."
         },
+        "likesCount": {
+          "type": "integer",
+          "description": "Nombre total de mentions J'aime sur l'événement."
+        },
+        "lastLikeId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Identifiant de la dernière mention J'aime ou retrait pour garantir l'atomicité."
+        },
         "status": {
           "type": "string",
           "enum": ["published", "cancelled"],
@@ -969,6 +979,135 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "EventLike": {
+      "title": "EventLike",
+      "description": "Mention J'aime d'un utilisateur authentifié sur un événement sportif.",
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Identifiant de l'événement aimé."
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID Firebase de l'utilisateur ayant aimé l'événement."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Horodatage serveur de la mention J'aime."
+        }
+      },
+      "required": [
+        "eventId",
+        "userId",
+        "createdAt"
+      ]
+    },
+    "EventReview": {
+      "title": "EventReview",
+      "description": "Avis et commentaire publié par un adhérent après avoir participé à un événement sportif.",
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Identifiant de l'événement évalué."
+        },
+        "registrationId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Identifiant de l'inscription associée (${eventId}__${emailKey})."
+        },
+        "emailKey": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 48,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Empreinte opaque de l'email du participant."
+        },
+        "authorUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID Firebase de l'auteur de l'avis."
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Nom public affiché (prénom + initiale du nom, sans PII)."
+        },
+        "eventTitle": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100,
+          "description": "Titre de l'événement au moment de l'avis."
+        },
+        "discipline": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 50,
+          "description": "Discipline de l'événement."
+        },
+        "eventStartAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date de début de l'événement."
+        },
+        "rating": {
+          "type": "integer",
+          "description": "Note de 1 à 5 étoiles attribuée à la séance."
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 800,
+          "description": "Commentaire détaillé de l'adhérent."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["published"],
+          "description": "Statut de publication de l'avis."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Horodatage serveur de création."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Horodatage serveur de mise à jour."
+        }
+      },
+      "required": [
+        "eventId",
+        "registrationId",
+        "emailKey",
+        "authorUid",
+        "authorName",
+        "eventTitle",
+        "discipline",
+        "eventStartAt",
+        "rating",
+        "comment",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -1011,6 +1150,14 @@
     "/memberNotifications/{notificationId}": {
       "schema": { "$ref": "#/entities/MemberNotification" },
       "description": "Notifications de fin de séance destinées à l'adhérent pour valider sa séance."
+    },
+    "/eventLikes/{likeId}": {
+      "schema": { "$ref": "#/entities/EventLike" },
+      "description": "Mentions J'aime par utilisateur authentifié pour chaque événement (${eventId}__${uid})."
+    },
+    "/eventReviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/EventReview" },
+      "description": "Avis et commentaires publics laissés par les adhérents après leur séance (${eventId}__${emailKey})."
     }
   }
 }

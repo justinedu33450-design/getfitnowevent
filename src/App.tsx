@@ -4,8 +4,10 @@ import {
   signOut,
   User,
 } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { APIProvider } from '@vis.gl/react-google-maps';
-import { auth, BOOTSTRAPPED_COACH_EMAIL } from './firebase';
+import { Heart, X } from 'lucide-react';
+import { auth, BOOTSTRAPPED_COACH_EMAIL, db } from './firebase';
 import {
   autoDeleteCancelledEvent,
   cancelMyRegistration,
@@ -29,10 +31,13 @@ import {
   subscribeMyAdminStatus,
   subscribeMyCoachAccessRequest,
   subscribeMyCoachNotifications,
+  subscribeMyEventLikes,
   subscribeMyMemberNotifications,
   subscribeMyMemberProfile,
   subscribeMyRegistrations,
+  subscribePublishedEventReviews,
   subscribeRegistrations,
+  toggleEventLike,
   validateMemberSession,
 } from './services/firestoreService';
 import {
@@ -44,6 +49,8 @@ import {
   CoachNotification,
   CoachRole,
   CustomDiscipline,
+  EventRatingSummary,
+  EventReview,
   MemberNotification,
   MemberProfile,
   Registration,
@@ -70,9 +77,11 @@ import { CoachesAdminView } from './components/CoachesAdminView';
 import { CoachAuthGate } from './components/CoachAuthGate';
 import { MemberAuthGate } from './components/MemberAuthGate';
 import { MemberPortalView } from './components/MemberPortalView';
+import { EmailPasswordAuthForm } from './components/EmailPasswordAuthForm';
+import { EventShareModal } from './components/EventShareModal';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
-const MAPS_LIBRARIES = ['places', 'marker', 'core'];
+const MAPS_LIBRARIES = ['places', 'marker'];
 const THEME_STORAGE_KEY = 'getfitnow-theme';
 
 function getInitialTheme(): 'light' | 'dark' {
@@ -161,6 +170,26 @@ export default function App() {
     duplicatingEvent?: SportEvent | null;
   }>({ open: false });
   const [rosterEventId, setRosterEventId] = useState<string | null>(null);
+  const [rosterInitialTab, setRosterInitialTab] = useState<'roster' | 'reviews'>(
+    'roster'
+  );
+  const [likedEventIds, setLikedEventIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [likingEventId, setLikingEventId] = useState<string | null>(null);
+  const [pendingLikeEvent, setPendingLikeEvent] = useState<SportEvent | null>(
+    null
+  );
+  const [publishedReviews, setPublishedReviews] = useState<EventReview[]>([]);
+  const [pendingReviewRegId, setPendingReviewRegId] = useState<string | null>(
+    null
+  );
+  const [sharingEvent, setSharingEvent] = useState<SportEvent | null>(null);
+  const initialDeepLinkEventIdRef = useRef<string | null>(
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('event')
+      : null
+  );
 
   const hasMapsApiKey = Boolean(GOOGLE_MAPS_API_KEY);
   const isVerifiedUser = Boolean(user && user.email);
@@ -412,10 +441,49 @@ export default function App() {
     return () => unsub();
   }, [authLoading, isCoach]);
 
+  // Open event detail modal automatically when arriving via shared ?event=<id> link
+  useEffect(() => {
+    if (authLoading || eventsLoading || !initialDeepLinkEventIdRef.current) {
+      return;
+    }
+    const targetId = initialDeepLinkEventIdRef.current;
+    initialDeepLinkEventIdRef.current = null;
+    const matched = events.find((e) => e.id === targetId);
+    if (matched) {
+      setSelectedEventForBooking(matched);
+    }
+  }, [authLoading, eventsLoading, events]);
+
   useEffect(() => {
     const unsub = subscribeDisciplines(setCustomDisciplines);
     return () => unsub();
   }, []);
+
+  // Signed-in user's liked events (/eventLikes)
+  useEffect(() => {
+    if (authLoading || !isVerifiedUser || !user?.uid) {
+      setLikedEventIds(new Set());
+      return;
+    }
+    const unsub = subscribeMyEventLikes(
+      user.uid,
+      setLikedEventIds,
+      () => setLikedEventIds(new Set())
+    );
+    return () => unsub();
+  }, [authLoading, isVerifiedUser, user?.uid]);
+
+  // Published event reviews & comments (/eventReviews, public read)
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+    const unsub = subscribePublishedEventReviews(
+      setPublishedReviews,
+      () => setPublishedReviews([])
+    );
+    return () => unsub();
+  }, [authLoading]);
 
   const myAdminProfile = useMemo(
     () => (user ? coachAdmins.find((a) => a.id === user.uid) ?? null : null),
@@ -543,6 +611,75 @@ export default function App() {
     return ids;
   }, [user, myRegistrations]);
 
+  const visibleReviews = useMemo(() => {
+    const eventsById = new Map(events.map((ev) => [ev.id, ev]));
+    return publishedReviews.filter((rev) => {
+      const matchedEvent = eventsById.get(rev.eventId);
+      if (!matchedEvent) {
+        return rev.eventStartAt.toMillis() <= nowMs;
+      }
+      if (matchedEvent.status === 'cancelled') return false;
+      const endMs =
+        matchedEvent.startAt.toMillis() +
+        matchedEvent.durationMinutes * 60 * 1000;
+      return nowMs >= endMs;
+    });
+  }, [publishedReviews, events, nowMs]);
+
+  const reviewsByEventId = useMemo(() => {
+    const map = new Map<string, EventReview[]>();
+    visibleReviews.forEach((rev) => {
+      const list = map.get(rev.eventId) ?? [];
+      list.push(rev);
+      map.set(rev.eventId, list);
+    });
+    return map;
+  }, [visibleReviews]);
+
+  const ratingSummaryByEventId = useMemo(() => {
+    const map = new Map<string, EventRatingSummary>();
+    reviewsByEventId.forEach((list, eventId) => {
+      if (list.length === 0) return;
+      const sum = list.reduce((acc, r) => acc + r.rating, 0);
+      map.set(eventId, {
+        count: list.length,
+        averageRating: sum / list.length,
+      });
+    });
+    return map;
+  }, [reviewsByEventId]);
+
+  const reviewsByRegId = useMemo(() => {
+    const map = new Map<string, EventReview>();
+    visibleReviews.forEach((rev) => {
+      if (rev.registrationId) {
+        map.set(rev.registrationId, rev);
+      }
+    });
+    return map;
+  }, [visibleReviews]);
+
+  const reviewedRegIds = useMemo(
+    () => new Set(reviewsByRegId.keys()),
+    [reviewsByRegId]
+  );
+
+  const handleToggleLike = async (event: SportEvent) => {
+    if (!isVerifiedUser || !user?.uid) {
+      setPendingLikeEvent(event);
+      return;
+    }
+    if (likingEventId === event.id) return;
+    setLikingEventId(event.id);
+    try {
+      await toggleEventLike(event, user.uid);
+    } catch (err) {
+      console.error('Impossible de mettre à jour le j’aime :', err);
+    } finally {
+      setLikingEventId(null);
+    }
+  };
+
   const handleAuthenticatedUser = async (
     signedInUser: User,
     target: 'member' | 'coach'
@@ -609,6 +746,10 @@ export default function App() {
     setSelectedEventForBooking(null);
     setEventFormState({ open: false });
     setRosterEventId(null);
+    setRosterInitialTab('roster');
+    setLikedEventIds(new Set());
+    setPendingLikeEvent(null);
+    setPendingReviewRegId(null);
     setAuthError(null);
     autoDeleteAttemptedRef.current.clear();
     endedNotifyAttemptedRef.current.clear();
@@ -624,6 +765,19 @@ export default function App() {
       selectedEventForBooking
     );
   }, [events, selectedEventForBooking]);
+
+  const handleCloseBookingModal = () => {
+    setSelectedEventForBooking(null);
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('event')) {
+        url.searchParams.delete('event');
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch {
+      // Ignore history access errors
+    }
+  };
 
   const isCurrentBookingEventActive = useMemo(() => {
     if (!currentBookingEvent) return false;
@@ -642,6 +796,28 @@ export default function App() {
       ) ?? null
     );
   }, [currentBookingEvent, isVerifiedUser, user, myRegistrations]);
+
+  const eligibleReviewRegistrationForBooking = useMemo(() => {
+    if (
+      !currentBookingEvent ||
+      !isVerifiedUser ||
+      !user?.email ||
+      currentBookingEvent.status === 'cancelled'
+    ) {
+      return null;
+    }
+    const userEmailLower = user.email.trim().toLowerCase();
+    return (
+      myRegistrations.find(
+        (r) =>
+          r.eventId === currentBookingEvent.id &&
+          r.status === 'confirmed' &&
+          r.attended === true &&
+          r.email.trim().toLowerCase() === userEmailLower &&
+          getRegistrationEndMs(r, currentBookingEvent) <= nowMs
+      ) ?? null
+    );
+  }, [currentBookingEvent, isVerifiedUser, user, myRegistrations, nowMs]);
 
   const invitedGuestRegistrationsForBooking = useMemo(() => {
     if (!currentBookingEvent || !isVerifiedUser || !user?.email) return [];
@@ -830,13 +1006,18 @@ export default function App() {
                   void markAllCoachNotificationsRead(coachNotifications)
                 }
                 onDelete={(id) => void deleteCoachNotification(id)}
-                onOpenEventRoster={(eventId) => setRosterEventId(eventId)}
+                onOpenEventRoster={(eventId) => {
+                  setRosterInitialTab('roster');
+                  setRosterEventId(eventId);
+                }}
               />
             )}
 
             {isVerifiedUser && !isCoach && !coachGateIntent && (
               <MemberNotificationsBar
                 notifications={memberNotifications}
+                reviewedRegIds={reviewedRegIds}
+                nowMs={nowMs}
                 panelOpen={memberNotificationsPanelOpen}
                 onClosePanel={() => setMemberNotificationsPanelOpen(false)}
                 onValidateSession={async (registrationId) => {
@@ -857,6 +1038,11 @@ export default function App() {
                 onDelete={(id) => void deleteMemberNotification(id)}
                 onOpenMyTracking={() => {
                   setMemberNotificationsPanelOpen(false);
+                  setActiveSection('member-profile');
+                }}
+                onOpenReview={(registrationId) => {
+                  setMemberNotificationsPanelOpen(false);
+                  setPendingReviewRegId(registrationId);
                   setActiveSection('member-profile');
                 }}
               />
@@ -901,6 +1087,11 @@ export default function App() {
                 isCoach={isCoach}
                 isCoachAdmin={isCoachAdmin}
                 registeredEventIds={registeredEventIds}
+                likedEventIds={likedEventIds}
+                likingEventId={likingEventId}
+                onToggleLike={(ev) => void handleToggleLike(ev)}
+                onShareEvent={(ev) => setSharingEvent(ev)}
+                ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
                 hasMapsApiKey={hasMapsApiKey}
                 onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
@@ -924,6 +1115,11 @@ export default function App() {
                 isCoach={isCoach}
                 isCoachAdmin={isCoachAdmin}
                 registeredEventIds={registeredEventIds}
+                likedEventIds={likedEventIds}
+                likingEventId={likingEventId}
+                onToggleLike={(ev) => void handleToggleLike(ev)}
+                onShareEvent={(ev) => setSharingEvent(ev)}
+                ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
                 hasMapsApiKey={hasMapsApiKey}
                 onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
@@ -938,6 +1134,14 @@ export default function App() {
                 events={activeEvents}
                 disciplines={disciplineCatalog}
                 nowMs={nowMs}
+                likedEventIds={likedEventIds}
+                likingEventId={likingEventId}
+                onToggleLike={(ev) => void handleToggleLike(ev)}
+                onShareEvent={(ev) => setSharingEvent(ev)}
+                reviewsByRegId={reviewsByRegId}
+                ratingSummaryByEventId={ratingSummaryByEventId}
+                initialReviewRegId={pendingReviewRegId}
+                onClearInitialReviewRegId={() => setPendingReviewRegId(null)}
                 onValidateSession={
                   isVerifiedUser ? (reg) => validateMemberSession(reg) : undefined
                 }
@@ -961,6 +1165,7 @@ export default function App() {
                   registrations={registrations}
                   disciplines={disciplineCatalog}
                   nowMs={nowMs}
+                  ratingSummaryByEventId={ratingSummaryByEventId}
                   isCoachAdmin={isCoachAdmin}
                   pendingCoachRequestsCount={pendingCoachRequestsCount}
                   onOpenCoachesAdmin={() => setActiveSection('coaches')}
@@ -989,7 +1194,11 @@ export default function App() {
                       duplicatingEvent: ev,
                     })
                   }
-                  onOpenRoster={(ev) => setRosterEventId(ev.id)}
+                  onOpenRoster={(ev, tab) => {
+                    setRosterInitialTab(tab ?? 'roster');
+                    setRosterEventId(ev.id);
+                  }}
+                  onShareEvent={(ev) => setSharingEvent(ev)}
                 />
               ) : coachGateIntent ? (
                 <CoachAuthGate
@@ -1152,15 +1361,29 @@ export default function App() {
           existingRegistration={existingMemberBookingRegistration}
           invitedGuestRegistrations={invitedGuestRegistrationsForBooking}
           isEventActive={isCurrentBookingEventActive}
+          currentUserUid={user?.uid ?? null}
+          likedEventIds={likedEventIds}
+          likingEventId={likingEventId}
+          onToggleLike={(ev) => void handleToggleLike(ev)}
+          onShareEvent={(ev) => setSharingEvent(ev)}
+          eventReviews={reviewsByEventId.get(currentBookingEvent.id) ?? []}
+          ratingSummary={ratingSummaryByEventId.get(currentBookingEvent.id)}
+          eligibleReviewRegistration={eligibleReviewRegistrationForBooking}
+          onValidateSession={
+            isVerifiedUser && !isCoach
+              ? (reg) => validateMemberSession(reg)
+              : undefined
+          }
           onCancelRegistration={
             isVerifiedUser ? (reg) => cancelMyRegistration(reg) : undefined
           }
           onMemberEmailAuthSuccess={(u) =>
             void handleAuthenticatedUser(u, 'member')
           }
-          onClose={() => setSelectedEventForBooking(null)}
+          onClose={handleCloseBookingModal}
           onOpenCoachRoster={(ev) => {
             setSelectedEventForBooking(null);
+            setRosterInitialTab('roster');
             setRosterEventId(ev.id);
           }}
           onOpenMemberTracking={
@@ -1207,13 +1430,108 @@ export default function App() {
       )}
 
       {/* Coach Roster & Attendance Drawer */}
-      {currentRosterEvent && isCoach && isVerifiedUser && (
+      {currentRosterEvent && isCoach && isVerifiedUser && user && (
         <EventRosterDrawer
           event={currentRosterEvent}
           registrations={registrations}
           memberProfiles={memberProfiles}
           coachAdmins={coachAdmins}
-          onClose={() => setRosterEventId(null)}
+          eventReviews={reviewsByEventId.get(currentRosterEvent.id) ?? []}
+          ratingSummary={ratingSummaryByEventId.get(currentRosterEvent.id)}
+          currentUserUid={user.uid}
+          initialTab={rosterInitialTab}
+          onClose={() => {
+            setRosterEventId(null);
+            setRosterInitialTab('roster');
+          }}
+        />
+      )}
+
+      {/* Quick Member Auth Modal triggered by unauthenticated Like click */}
+      {pendingLikeEvent && !isVerifiedUser && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quick-like-auth-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          onClick={() => setPendingLikeEvent(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
+                  <Heart className="h-4 w-4 fill-current" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <h2
+                    id="quick-like-auth-title"
+                    className="font-display text-base font-bold text-slate-900 dark:text-white"
+                  >
+                    Connectez-vous pour aimer cette séance
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+                    {pendingLikeEvent.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPendingLikeEvent(null)}
+                aria-label="Fermer la fenêtre"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <EmailPasswordAuthForm
+                audience="member"
+                onSuccess={(signedInUser) => {
+                  const targetEv = pendingLikeEvent;
+                  setPendingLikeEvent(null);
+                  void (async () => {
+                    await handleAuthenticatedUser(signedInUser, 'member');
+                    if (
+                      targetEv &&
+                      targetEv.status === 'published' &&
+                      signedInUser.uid
+                    ) {
+                      try {
+                        const existingLikeSnap = await getDoc(
+                          doc(
+                            db,
+                            'eventLikes',
+                            `${targetEv.id}__${signedInUser.uid}`
+                          )
+                        );
+                        if (!existingLikeSnap.exists()) {
+                          await toggleEventLike(targetEv, signedInUser.uid);
+                        }
+                      } catch (err) {
+                        console.error(
+                          'Erreur lors du j’aime après connexion :',
+                          err
+                        );
+                      }
+                    }
+                  })();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Event Social Share Modal */}
+      {sharingEvent && (
+        <EventShareModal
+          event={sharingEvent}
+          disciplines={disciplineCatalog}
+          onClose={() => setSharingEvent(null)}
         />
       )}
     </div>

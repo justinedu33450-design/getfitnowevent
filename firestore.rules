@@ -103,7 +103,7 @@ service cloud.firestore {
         'title', 'discipline', 'description', 'location', 'city', 'region',
         'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
         'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity', 'registeredCount',
-        'lastRegId', 'status', 'cancelReason',
+        'lastRegId', 'likesCount', 'lastLikeId', 'status', 'cancelReason',
         'isPaid', 'priceCents', 'currency', 'paymentMode',
         'createdBy', 'createdAt', 'updatedAt'
       ]) &&
@@ -141,6 +141,8 @@ service cloud.firestore {
         (data.isUnlimitedCapacity == false && data.maxCapacity >= 1 && data.maxCapacity <= 200 && data.registeredCount <= data.maxCapacity)
       ) &&
       isValidId(data.lastRegId) &&
+      (!('likesCount' in data) || (data.likesCount is int && data.likesCount >= 0 && data.likesCount <= 100000)) &&
+      (!('lastLikeId' in data) || isValidId(data.lastLikeId)) &&
       data.status in ['published', 'cancelled'] &&
       (!('cancelReason' in data) || data.cancelReason in ['manual', 'no_registrants', '']) &&
       (!('isPaid' in data) || data.isPaid is bool) &&
@@ -548,6 +550,8 @@ service cloud.firestore {
         incoming().createdBy == request.auth.uid &&
         incoming().registeredCount == 0 &&
         incoming().lastRegId == 'none' &&
+        (!('likesCount' in incoming()) || incoming().likesCount == 0) &&
+        (!('lastLikeId' in incoming()) || incoming().lastLikeId == 'none') &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time;
 
@@ -616,6 +620,33 @@ service cloud.firestore {
               'registeredCount', 'lastRegId', 'updatedAt'
             ])
           )
+        ) ||
+        (
+          hasAuthenticatedEmail() &&
+          existing().status == 'published' &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'lastLikeId', 'updatedAt']) &&
+          incoming().likesCount == existing().get('likesCount', 0) + 1 &&
+          isValidId(incoming().lastLikeId) &&
+          incoming().lastLikeId == eventId + '__' + request.auth.uid &&
+          incoming().updatedAt == request.time &&
+          !exists(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)) &&
+          existsAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)) &&
+          getAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)).data.eventId == eventId &&
+          getAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)).data.userId == request.auth.uid
+        ) ||
+        (
+          hasAuthenticatedEmail() &&
+          existing().status == 'published' &&
+          existing().get('likesCount', 0) >= 1 &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'lastLikeId', 'updatedAt']) &&
+          incoming().likesCount == existing().get('likesCount', 0) - 1 &&
+          isValidId(incoming().lastLikeId) &&
+          incoming().lastLikeId == eventId + '__' + request.auth.uid &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)) &&
+          !existsAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)) &&
+          get(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)).data.eventId == eventId &&
+          get(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)).data.userId == request.auth.uid
         )
       );
 
@@ -685,7 +716,15 @@ service cloud.firestore {
             incoming().eventStartAt == existing().eventStartAt &&
             incoming().email == existing().email &&
             incoming().status == existing().status &&
-            (('eventEndAt' in existing()) ? request.time >= existing().eventEndAt - duration.value(2, 'm') : request.time >= existing().eventStartAt - duration.value(2, 'm')) &&
+            (
+              ('eventEndAt' in existing())
+                ? request.time >= existing().eventEndAt - duration.value(2, 'm')
+                : (
+                    ('eventDurationMinutes' in existing())
+                      ? request.time >= existing().eventStartAt + duration.value(existing().eventDurationMinutes, 'm') - duration.value(2, 'm')
+                      : request.time >= existing().eventStartAt - duration.value(2, 'm')
+                  )
+            ) &&
             incoming().diff(existing()).affectedKeys().hasOnly(['attended', 'memberValidated', 'updatedAt'])
           ) ||
           (
@@ -1345,6 +1384,181 @@ service cloud.firestore {
       allow delete: if isValidId(notificationId) && (
         isAdmin() ||
         (hasAuthenticatedEmail() && existing().memberEmail == request.auth.token.email.lower())
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // /eventLikes/{likeId} (Authenticated user likes synced atomically with events.likesCount)
+    // -------------------------------------------------------------------------
+    function isValidEventLike(data) {
+      return data.keys().hasAll(['eventId', 'userId', 'createdAt']) &&
+        data.keys().hasOnly(['eventId', 'userId', 'createdAt']) &&
+        isValidId(data.eventId) &&
+        data.eventId.size() >= 4 &&
+        data.eventId.size() <= 64 &&
+        isValidId(data.userId) &&
+        data.userId == request.auth.uid &&
+        data.createdAt is timestamp;
+    }
+
+    match /eventLikes/{likeId} {
+      allow get: if isValidId(likeId) && (
+        isAdmin() ||
+        (
+          hasAuthenticatedEmail() && (
+            (resource != null && existing().userId == request.auth.uid) ||
+            (resource == null && likeId.split('__').size() == 2 && likeId.split('__')[1] == request.auth.uid)
+          )
+        )
+      );
+      allow list: if isAdmin() || (
+        hasAuthenticatedEmail() &&
+        resource.data.userId == request.auth.uid
+      );
+
+      allow create: if hasAuthenticatedEmail() &&
+        isValidId(likeId) &&
+        isValidEventLike(incoming()) &&
+        likeId == incoming().eventId + '__' + request.auth.uid &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/events/$(incoming().eventId)) &&
+        get(/databases/$(database)/documents/events/$(incoming().eventId)).data.status == 'published' &&
+        getAfter(/databases/$(database)/documents/events/$(incoming().eventId)).data.likesCount == get(/databases/$(database)/documents/events/$(incoming().eventId)).data.get('likesCount', 0) + 1 &&
+        getAfter(/databases/$(database)/documents/events/$(incoming().eventId)).data.lastLikeId == likeId;
+
+      allow update: if false;
+
+      allow delete: if isValidId(likeId) && (
+        isAdmin() ||
+        (
+          hasAuthenticatedEmail() &&
+          existing().userId == request.auth.uid &&
+          exists(/databases/$(database)/documents/events/$(existing().eventId)) &&
+          get(/databases/$(database)/documents/events/$(existing().eventId)).data.status == 'published' &&
+          get(/databases/$(database)/documents/events/$(existing().eventId)).data.get('likesCount', 0) >= 1 &&
+          getAfter(/databases/$(database)/documents/events/$(existing().eventId)).data.likesCount == get(/databases/$(database)/documents/events/$(existing().eventId)).data.get('likesCount', 0) - 1 &&
+          getAfter(/databases/$(database)/documents/events/$(existing().eventId)).data.lastLikeId == likeId
+        )
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // /eventReviews/{reviewId} (Public non-PII reviews & comments from verified participants)
+    // -------------------------------------------------------------------------
+    function isValidEventReview(data) {
+      return data.keys().hasAll([
+        'eventId', 'registrationId', 'emailKey', 'authorUid', 'authorName',
+        'eventTitle', 'discipline', 'eventStartAt', 'rating', 'comment',
+        'status', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'eventId', 'registrationId', 'emailKey', 'authorUid', 'authorName',
+        'eventTitle', 'discipline', 'eventStartAt', 'rating', 'comment',
+        'status', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.eventId) &&
+      data.eventId.size() >= 4 &&
+      data.eventId.size() <= 64 &&
+      isValidId(data.registrationId) &&
+      data.registrationId.size() >= 4 &&
+      data.registrationId.size() <= 128 &&
+      isValidEmailKey(data.emailKey) &&
+      isValidId(data.authorUid) &&
+      data.authorName is string && data.authorName.size() >= 2 && data.authorName.size() <= 80 &&
+      data.eventTitle is string && data.eventTitle.size() >= 2 && data.eventTitle.size() <= 100 &&
+      isValidDiscipline(data.discipline) &&
+      data.eventStartAt is timestamp &&
+      data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+      data.comment is string && data.comment.size() >= 3 && data.comment.size() <= 800 &&
+      data.status == 'published' &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isEligibleRegistrationForReview(regData, reviewData) {
+      return regData.eventId == reviewData.eventId &&
+        regData.emailKey == reviewData.emailKey &&
+        regData.email.lower() == request.auth.token.email.lower() &&
+        regData.status == 'confirmed' &&
+        regData.attended == true &&
+        (
+          ('eventEndAt' in regData)
+            ? request.time >= regData.eventEndAt
+            : (
+                ('eventDurationMinutes' in regData)
+                  ? request.time >= regData.eventStartAt + duration.value(regData.eventDurationMinutes, 'm')
+                  : request.time >= regData.eventStartAt
+              )
+        );
+    }
+
+    match /eventReviews/{reviewId} {
+      allow get: if isValidId(reviewId) && (
+        (resource != null && existing().status == 'published') ||
+        isAdmin() ||
+        (
+          hasAuthenticatedEmail() &&
+          resource == null &&
+          exists(/databases/$(database)/documents/registrations/$(reviewId)) &&
+          get(/databases/$(database)/documents/registrations/$(reviewId)).data.email.lower() == request.auth.token.email.lower()
+        )
+      );
+      allow list: if resource.data.status == 'published' || isAdmin();
+
+      allow create: if hasAuthenticatedEmail() &&
+        isValidId(reviewId) &&
+        isValidEventReview(incoming()) &&
+        incoming().authorUid == request.auth.uid &&
+        reviewId == incoming().registrationId &&
+        incoming().registrationId == incoming().eventId + '__' + incoming().emailKey &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/registrations/$(reviewId)) &&
+        isEligibleRegistrationForReview(
+          get(/databases/$(database)/documents/registrations/$(reviewId)).data,
+          incoming()
+        ) &&
+        (
+          !exists(/databases/$(database)/documents/events/$(incoming().eventId)) ||
+          (
+            get(/databases/$(database)/documents/events/$(incoming().eventId)).data.status == 'published' &&
+            request.time >= get(/databases/$(database)/documents/events/$(incoming().eventId)).data.startAt + duration.value(get(/databases/$(database)/documents/events/$(incoming().eventId)).data.durationMinutes, 'm')
+          )
+        );
+
+      allow update: if hasAuthenticatedEmail() &&
+        isValidId(reviewId) &&
+        isValidEventReview(incoming()) &&
+        existing().authorUid == request.auth.uid &&
+        incoming().authorUid == existing().authorUid &&
+        incoming().eventId == existing().eventId &&
+        incoming().registrationId == existing().registrationId &&
+        incoming().emailKey == existing().emailKey &&
+        incoming().eventTitle == existing().eventTitle &&
+        incoming().discipline == existing().discipline &&
+        incoming().eventStartAt == existing().eventStartAt &&
+        incoming().status == existing().status &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'comment', 'authorName', 'updatedAt']) &&
+        (
+          !exists(/databases/$(database)/documents/registrations/$(reviewId)) ||
+          (
+            get(/databases/$(database)/documents/registrations/$(reviewId)).data.status == 'confirmed' &&
+            get(/databases/$(database)/documents/registrations/$(reviewId)).data.attended == true
+          )
+        ) &&
+        (
+          !exists(/databases/$(database)/documents/events/$(existing().eventId)) ||
+          (
+            get(/databases/$(database)/documents/events/$(existing().eventId)).data.status == 'published' &&
+            request.time >= get(/databases/$(database)/documents/events/$(existing().eventId)).data.startAt + duration.value(get(/databases/$(database)/documents/events/$(existing().eventId)).data.durationMinutes, 'm')
+          )
+        );
+
+      allow delete: if isValidId(reviewId) && (
+        isAdmin() ||
+        (hasAuthenticatedEmail() && existing().authorUid == request.auth.uid)
       );
     }
   }

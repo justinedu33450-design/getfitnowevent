@@ -85,6 +85,12 @@ export const VALIDATION_LIMITS = {
   BOOKING_CUTOFF_MS: 60 * 60 * 1000, // 1 heure avant le début
   ENDED_EVENT_RETENTION_DAYS: 30,
   ENDED_EVENT_RETENTION_MS: 30 * 24 * 60 * 60 * 1000, // 30 jours après la fin
+  REVIEW_COMMENT_MIN: 3,
+  REVIEW_COMMENT_MAX: 800,
+  REVIEW_RATING_MIN: 1,
+  REVIEW_RATING_MAX: 5,
+  REVIEW_AUTHOR_NAME_MIN: 2,
+  REVIEW_AUTHOR_NAME_MAX: 80,
 } as const;
 
 export interface SportEvent {
@@ -107,6 +113,8 @@ export interface SportEvent {
   maxCapacity: number;
   registeredCount: number;
   lastRegId: string;
+  likesCount?: number;
+  lastLikeId?: string;
   status: EventStatus;
   cancelReason?: EventCancelReason;
   isPaid?: boolean;
@@ -315,4 +323,33 @@ export interface MemberNotification {
   validated: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface EventLike {
+  id: string;
+  eventId: string;
+  userId: string;
+  createdAt: Timestamp;
+}
+
+export interface EventReview {
+  id: string;
+  eventId: string;
+  registrationId: string;
+  emailKey: string;
+  authorUid: string;
+  authorName: string;
+  eventTitle: string;
+  discipline: string;
+  eventStartAt: Timestamp;
+  rating: number;
+  comment: string;
+  status: 'published';
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface EventRatingSummary {
+  averageRating: number;
+  count: number;
 }

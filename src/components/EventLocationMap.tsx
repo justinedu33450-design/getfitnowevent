@@ -171,7 +171,8 @@ function GoogleEventLocationMapInner({
   const [resolvedPos, setResolvedPos] = useState<{ lat: number; lng: number } | null>(
     event.hasCoords ? { lat: event.lat, lng: event.lng } : null
   );
-  const [resolving, setResolving] = useState(false);
+  const [resolving, setResolving] = useState(!event.hasCoords);
+  const [lookupCompleted, setLookupCompleted] = useState(event.hasCoords);
 
   useEffect(() => {
     setInfoOpen(false);
@@ -181,12 +182,16 @@ function GoogleEventLocationMapInner({
     if (event.hasCoords) {
       setResolvedPos({ lat: event.lat, lng: event.lng });
       setResolving(false);
+      setLookupCompleted(true);
       return;
     }
 
+    setResolvedPos(null);
+    setLookupCompleted(false);
+    setResolving(true);
+
     if (!placesLib) return;
     let cancelled = false;
-    setResolving(true);
 
     const primaryQuery = [event.location, event.city, event.region]
       .filter(Boolean)
@@ -226,7 +231,10 @@ function GoogleEventLocationMapInner({
           window.dispatchEvent(new CustomEvent('gmp-quota-exceeded'));
         }
       } finally {
-        if (!cancelled) setResolving(false);
+        if (!cancelled) {
+          setResolving(false);
+          setLookupCompleted(true);
+        }
       }
     };
 
@@ -250,7 +258,7 @@ function GoogleEventLocationMapInner({
     hasRenderError ||
     status === APILoadingStatus.FAILED ||
     status === APILoadingStatus.AUTH_FAILURE ||
-    (!resolving && !resolvedPos && status === APILoadingStatus.LOADED)
+    (lookupCompleted && !resolving && !resolvedPos)
   ) {
     return <FallbackLocationCard event={event} />;
   }
@@ -383,7 +391,7 @@ function EventsOverviewMapInner({
   const placesLib = useMapsLibrary('places');
   const { hasRenderError, containerRef } = useMapRenderError();
   const [coordsCache, setCoordsCache] = useState<
-    Record<string, { lat: number; lng: number }>
+    Record<string, { lat: number; lng: number } | null>
   >({});
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
@@ -398,38 +406,48 @@ function EventsOverviewMapInner({
     let cancelled = false;
 
     const toResolve = events.filter(
-      (ev) => !ev.hasCoords && !coordsCache[ev.id]
+      (ev) => !ev.hasCoords && !(ev.id in coordsCache)
     );
     if (toResolve.length === 0) return;
 
     Promise.all(
       toResolve.slice(0, 10).map(async (ev) => {
+        const primaryQuery = [ev.location, ev.city, ev.region].filter(Boolean).join(', ');
+        const cityFallbackQuery = [ev.city, ev.region].filter(Boolean).join(', ');
         try {
           const res = await placesLib.Place.searchByText({
-            textQuery: [ev.location, ev.city, ev.region].filter(Boolean).join(', '),
+            textQuery: primaryQuery,
             fields: ['location'],
             language: 'fr',
             region: 'fr',
             maxResultCount: 1,
           });
-          const loc = res.places?.[0]?.location;
+          let loc = res.places?.[0]?.location;
+          if (!loc && cityFallbackQuery && cityFallbackQuery !== primaryQuery) {
+            const fallbackRes = await placesLib.Place.searchByText({
+              textQuery: cityFallbackQuery,
+              fields: ['location'],
+              language: 'fr',
+              region: 'fr',
+              maxResultCount: 1,
+            });
+            loc = fallbackRes.places?.[0]?.location;
+          }
           if (loc) {
-            return { id: ev.id, lat: loc.lat(), lng: loc.lng() };
+            return { id: ev.id, pos: { lat: loc.lat(), lng: loc.lng() } };
           }
         } catch (err) {
           if (isQuotaError(err)) {
             window.dispatchEvent(new CustomEvent('gmp-quota-exceeded'));
           }
         }
-        return null;
+        return { id: ev.id, pos: null };
       })
     ).then((results) => {
       if (cancelled) return;
-      const updates: Record<string, { lat: number; lng: number }> = {};
+      const updates: Record<string, { lat: number; lng: number } | null> = {};
       results.forEach((item) => {
-        if (item) {
-          updates[item.id] = { lat: item.lat, lng: item.lng };
-        }
+        updates[item.id] = item.pos;
       });
       if (Object.keys(updates).length > 0) {
         setCoordsCache((prev) => ({ ...prev, ...updates }));

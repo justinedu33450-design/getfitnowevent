@@ -11,7 +11,12 @@ import {
   Users,
   XCircle,
 } from 'lucide-react';
-import { Discipline, DisciplineItem, SportEvent } from '../types';
+import {
+  Discipline,
+  DisciplineItem,
+  EventRatingSummary,
+  SportEvent,
+} from '../types';
 import {
   evaluateEventBooking,
   formatEventCoachesLabel,
@@ -24,6 +29,11 @@ import {
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import { EventsOverviewMap } from './EventLocationMap';
+import {
+  EventLikeButton,
+  EventRatingInline,
+  EventShareButton,
+} from './EventEngagementWidgets';
 
 interface SessionsListViewProps {
   events: SportEvent[];
@@ -32,6 +42,11 @@ interface SessionsListViewProps {
   isCoach: boolean;
   isCoachAdmin?: boolean;
   registeredEventIds?: Set<string>;
+  likedEventIds?: Set<string>;
+  likingEventId?: string | null;
+  onToggleLike?: (event: SportEvent) => void;
+  onShareEvent?: (event: SportEvent) => void;
+  ratingSummaryByEventId?: Map<string, EventRatingSummary>;
   loading: boolean;
   hasMapsApiKey: boolean;
   onSelectEvent: (event: SportEvent) => void;
@@ -46,6 +61,11 @@ export function SessionsListView({
   isCoach,
   isCoachAdmin = false,
   registeredEventIds,
+  likedEventIds,
+  likingEventId,
+  onToggleLike,
+  onShareEvent,
+  ratingSummaryByEventId,
   loading,
   hasMapsApiKey,
   onSelectEvent,
@@ -447,6 +467,14 @@ export function SessionsListView({
                     {ev.title}
                   </h3>
 
+                  {ratingSummaryByEventId?.get(ev.id) && (
+                    <div className="mt-1">
+                      <EventRatingInline
+                        summary={ratingSummaryByEventId.get(ev.id)}
+                      />
+                    </div>
+                  )}
+
                   {ev.description && (
                     <p className="mt-1.5 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
                       {ev.description}
@@ -502,29 +530,48 @@ export function SessionsListView({
                       (evalInfo.state === 'open' ||
                         (isCoachAdmin && evalInfo.state === 'cutoff_closed'));
                     return (
-                      <button
-                        type="button"
-                        onClick={() => onSelectEvent(ev)}
-                        className={`w-full min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold transition-colors cursor-pointer ${
-                          canBookFromCard
-                            ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                            : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        {evalInfo.state === 'open' && hasSpots
-                          ? ev.isPaid
-                            ? `Réserver (${formatEventPrice(ev)})`
-                            : 'Réserver & voir la carte'
-                          : isCoachAdmin &&
-                              evalInfo.state === 'cutoff_closed' &&
-                              hasSpots
+                      <div className="flex items-center gap-2">
+                        {ev.status === 'published' && onToggleLike && (
+                          <EventLikeButton
+                            compact
+                            count={ev.likesCount ?? 0}
+                            liked={Boolean(likedEventIds?.has(ev.id))}
+                            loading={likingEventId === ev.id}
+                            eventTitle={ev.title}
+                            onClick={() => onToggleLike(ev)}
+                          />
+                        )}
+                        {ev.status === 'published' && onShareEvent && (
+                          <EventShareButton
+                            compact
+                            eventTitle={ev.title}
+                            onClick={() => onShareEvent(ev)}
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onSelectEvent(ev)}
+                          className={`flex-1 min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold transition-colors cursor-pointer ${
+                            canBookFromCard
+                              ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                              : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          {evalInfo.state === 'open' && hasSpots
                             ? ev.isPaid
-                              ? `Réserver (${formatEventPrice(ev)}) · admin`
-                              : 'Réserver (accès admin)'
-                            : evalInfo.state === 'cutoff_closed'
-                              ? 'Clôturé (< 1h avant début)'
-                              : 'Voir la carte et détails'}
-                      </button>
+                              ? `Réserver (${formatEventPrice(ev)})`
+                              : 'Réserver & voir la carte'
+                            : isCoachAdmin &&
+                                evalInfo.state === 'cutoff_closed' &&
+                                hasSpots
+                              ? ev.isPaid
+                                ? `Réserver (${formatEventPrice(ev)}) · admin`
+                                : 'Réserver (accès admin)'
+                              : evalInfo.state === 'cutoff_closed'
+                                ? 'Clôturé (< 1h avant début)'
+                                : 'Voir la carte et détails'}
+                        </button>
+                      </div>
                     );
                   })()}
                 </div>
