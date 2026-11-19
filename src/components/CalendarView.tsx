@@ -12,7 +12,6 @@ import {
   Plus,
   Search,
   UserCheck,
-  Users,
 } from 'lucide-react';
 import {
   Discipline,
@@ -22,7 +21,6 @@ import {
 } from '../types';
 import {
   evaluateEventBooking,
-  formatCapacityCompact,
   formatEventCoachesLabel,
   formatEventPrice,
   formatFrenchDateLong,
@@ -237,9 +235,11 @@ export function CalendarView({
     const statusColor =
       evalState === 'open'
         ? 'text-emerald-700 dark:text-emerald-400'
-        : evalState === 'full' || evalState === 'cancelled'
-          ? 'text-rose-700 dark:text-rose-400'
-          : 'text-slate-500 dark:text-slate-400';
+        : evalState === 'closed'
+          ? 'text-amber-700 dark:text-amber-400'
+          : evalState === 'full' || evalState === 'cancelled'
+            ? 'text-rose-700 dark:text-rose-400'
+            : 'text-slate-500 dark:text-slate-400';
 
     const container =
       evalState === 'cancelled'
@@ -587,9 +587,13 @@ export function CalendarView({
                                   />
                                   {formatFrenchTime(ev.startAt.toDate())}
                                 </span>
-                                {isCoach ? (
-                                  <span className="hidden md:inline opacity-80">
-                                    {ev.isPaid ? formatEventPrice(ev) : formatCapacityCompact(ev)}
+                                {style.evalState === 'cancelled' ? (
+                                  <span className="hidden md:inline text-rose-700 dark:text-rose-400 font-semibold">
+                                    Annulée
+                                  </span>
+                                ) : style.evalState === 'closed' ? (
+                                  <span className="hidden md:inline text-amber-700 dark:text-amber-400 font-semibold">
+                                    Clôturée
                                   </span>
                                 ) : style.evalState === 'full' ? (
                                   <span className="hidden md:inline text-rose-700 dark:text-rose-400 font-semibold">
@@ -755,15 +759,8 @@ export function CalendarView({
                                       {evalInfo.statusLabel}
                                     </p>
                                   </div>
-                                  <p className="mt-0.5 font-mono text-xs tabular-nums opacity-80">
-                                    {isCoach
-                                      ? ev.isUnlimitedCapacity
-                                        ? `${ev.registeredCount} · Illimité`
-                                        : `${ev.registeredCount}/${ev.maxCapacity} places`
-                                      : evalInfo.capacityLabel}
-                                  </p>
                                 </div>
-                                {ev.status === 'published' && (onToggleLike || onShareEvent) && (
+                                {evalInfo.state !== 'cancelled' && (onToggleLike || onShareEvent) && (
                                   <div className="flex items-center gap-1.5 shrink-0">
                                     {onToggleLike && (
                                       <EventLikeButton
@@ -994,15 +991,17 @@ export function CalendarView({
                             className={`inline-flex items-center gap-1 font-semibold shrink-0 ${
                               evalInfo.state === 'open'
                                 ? 'text-emerald-700 dark:text-emerald-400'
-                                : evalInfo.state === 'full' ||
-                                    evalInfo.state === 'cancelled'
-                                  ? 'text-rose-700 dark:text-rose-400'
-                                  : 'text-slate-500 dark:text-slate-400'
+                                : evalInfo.state === 'closed'
+                                  ? 'text-amber-700 dark:text-amber-400'
+                                  : evalInfo.state === 'full' ||
+                                      evalInfo.state === 'cancelled'
+                                    ? 'text-rose-700 dark:text-rose-400'
+                                    : 'text-slate-500 dark:text-slate-400'
                             }`}
                           >
                             {evalInfo.statusLabel}
                           </span>
-                          {ev.status === 'published' && onToggleLike && (
+                          {evalInfo.state !== 'cancelled' && onToggleLike && (
                             <EventLikeButton
                               compact
                               count={ev.likesCount ?? 0}
@@ -1012,7 +1011,7 @@ export function CalendarView({
                               onClick={() => onToggleLike(ev)}
                             />
                           )}
-                          {ev.status === 'published' && onShareEvent && (
+                          {evalInfo.state !== 'cancelled' && onShareEvent && (
                             <EventShareButton
                               compact
                               eventTitle={ev.title}
@@ -1052,10 +1051,6 @@ export function CalendarView({
                           <UserCheck className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
                           <span className="truncate">{formatEventCoachesLabel(ev)}</span>
                         </div>
-                        <div className="flex items-center gap-2 font-mono tabular-nums">
-                          <Users className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
-                          <span>{evalInfo.capacityLabel}</span>
-                        </div>
                       </div>
 
                       {ev.isPaid && (
@@ -1093,7 +1088,9 @@ export function CalendarView({
                               ? ev.isPaid
                                 ? `Réserver (${formatEventPrice(ev)})`
                                 : 'Réserver & voir la carte'
-                              : 'Voir la carte et détails'}
+                              : evalInfo.state === 'cancelled'
+                                ? 'Séance annulée · Voir détails'
+                                : 'Voir la carte et détails'}
                           </button>
                         );
                       })()}
@@ -1108,7 +1105,7 @@ export function CalendarView({
 
           {dayAgendaExpanded && (
             <div className="mt-6 border-t border-slate-100 pt-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              Règle d’inscription : s’il n’y a aucun inscrit 1 heure avant le début, les inscriptions ferment et l’événement est annulé puis supprimé. Dès 1 inscrit, les inscriptions restent ouvertes jusqu’à l’heure de début.
+              Règle d’inscription : chaque séance reste ouverte jusqu’à l’heure de début ou selon le délai de clôture défini par le coach lors de sa création. Les événements passés ou annulés restent affichés puis sont supprimés 30 jours après la fin de la séance.
             </div>
           )}
         </aside>

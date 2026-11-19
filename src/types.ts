@@ -106,7 +106,8 @@ export const VALIDATION_LIMITS = {
   BIRTH_DATE_MAX: 10,
   BIRTH_DATE_REGEX: /^\d{4}-\d{2}-\d{2}$/,
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  BOOKING_CUTOFF_MS: 60 * 60 * 1000, // 1 heure avant le début
+  BOOKING_CUTOFF_MINUTES_MIN: 0,
+  BOOKING_CUTOFF_MINUTES_MAX: 10080, // 7 jours avant le début
   ENDED_EVENT_RETENTION_DAYS: 30,
   ENDED_EVENT_RETENTION_MS: 30 * 24 * 60 * 60 * 1000, // 30 jours après la fin
   REVIEW_COMMENT_MIN: 3,
@@ -145,6 +146,8 @@ export interface SportEvent {
   lastLikeId?: string;
   status: EventStatus;
   cancelReason?: EventCancelReason;
+  bookingCutoffMinutes?: number;
+  disableAutoClose?: boolean;
   isPaid?: boolean;
   priceCents?: number;
   currency?: 'EUR';
@@ -305,6 +308,7 @@ export interface CoachAdminInvite {
 export type BookingAvailabilityState =
   | 'open'
   | 'full'
+  | 'closed'
   | 'past'
   | 'cancelled';
 

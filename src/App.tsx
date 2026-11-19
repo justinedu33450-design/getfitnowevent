@@ -10,7 +10,6 @@ import { AlertTriangle, Heart, Sparkles, X } from 'lucide-react';
 import { auth, BOOTSTRAPPED_COACH_EMAIL, db } from './firebase';
 import {
   cancelMyRegistration,
-  deleteAutoCancelledEventIfEligible,
   deleteCoachNotification,
   deleteEndedEventAfterRetention,
   deleteMemberNotification,
@@ -184,7 +183,7 @@ export default function App() {
     [customDisciplines]
   );
 
-  // Live clock updated every 15s so H-1 cutoff, 0-registrant cancellation, and end-of-duration cleanup trigger promptly
+  // Live clock updated every 15s so booking cutoffs and end-of-duration cleanup trigger promptly
   const [nowMs, setNowMs] = useState(() => Date.now());
   const autoDeleteAttemptedRef = useRef<Set<string>>(new Set());
   const endedNotifyAttemptedRef = useRef<Set<string>>(new Set());
@@ -258,26 +257,11 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // Automatically delete cancelled events (manual or H-1 0-registrant), notify members on ended events,
-  // and delete ended events automatically 30 days after their end time
+  // Notify members on ended events, and delete ALL events (published or cancelled)
+  // automatically 30 days after their end time
   useEffect(() => {
-    if (authLoading || !isVerifiedUser || eventsLoading) return;
+    if (authLoading || !isVerifiedUser || eventsLoading || !isCoach) return;
     events.forEach((ev) => {
-      const evalInfo = evaluateEventBooking(ev, nowMs);
-      if (ev.status === 'cancelled' || evalInfo.isAutoCancelledNoRegistrants) {
-        if (!autoDeleteAttemptedRef.current.has(ev.id)) {
-          autoDeleteAttemptedRef.current.add(ev.id);
-          void deleteAutoCancelledEventIfEligible(ev.id, isCoach).then((ok) => {
-            if (!ok) {
-              autoDeleteAttemptedRef.current.delete(ev.id);
-            }
-          });
-        }
-        return;
-      }
-
-      if (!isCoach) return;
-
       const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
       const deleteAfterMs = endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS;
 
@@ -291,9 +275,11 @@ export default function App() {
           });
         }
         return;
+      } else {
+        autoDeleteAttemptedRef.current.delete(ev.id);
       }
 
-      if (nowMs >= endMs) {
+      if (ev.status === 'published' && nowMs >= endMs) {
         if (!endedNotifyAttemptedRef.current.has(ev.id)) {
           endedNotifyAttemptedRef.current.add(ev.id);
           void notifyMembersOfEndedEvent(ev).then((ok) => {
@@ -640,12 +626,6 @@ export default function App() {
   const activeEvents = useMemo(
     () =>
       events.filter((ev) => {
-        if (
-          ev.status === 'cancelled' ||
-          evaluateEventBooking(ev, nowMs).isAutoCancelledNoRegistrants
-        ) {
-          return false;
-        }
         const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
         return nowMs < endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS;
       }),

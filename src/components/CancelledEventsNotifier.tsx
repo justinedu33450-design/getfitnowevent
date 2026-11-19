@@ -69,11 +69,11 @@ export function CancelledEventsNotifier({
             <div className="min-w-0 flex-1">
               <p className="font-display text-sm font-bold text-rose-950 dark:text-rose-100">
                 {visibleNotifications.length === 1
-                  ? 'Inscription fermée : événement annulé'
-                  : `Inscription fermée : ${visibleNotifications.length} événements annulés`}
+                  ? 'Inscriptions clôturées · Séance annulée'
+                  : `Inscriptions clôturées · ${visibleNotifications.length} séances annulées`}
               </p>
               <p className="mt-0.5 text-xs text-rose-800 dark:text-rose-300">
-                Inscription fermée : événement annulé.
+                Inscriptions clôturées — pas d’inscrit à cette séance, séance annulée.
               </p>
             </div>
           </div>
@@ -103,7 +103,7 @@ export function CancelledEventsNotifier({
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
-                      Inscription fermée : événement annulé
+                      Inscriptions clôturées · Séance annulée
                     </span>
                     <span
                       className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}

@@ -14,6 +14,7 @@ import {
 import { ExternalLink, MapPin } from 'lucide-react';
 import { DisciplineItem, SportEvent } from '../types';
 import {
+  evaluateEventBooking,
   formatEventCoachesLabel,
   formatEventPrice,
   formatFrenchDateShort,
@@ -564,15 +565,43 @@ function EventsOverviewMapInner({
                     {formatEventPrice(selectedEntry.event)}
                   </span>
                 </p>
-                <button
-                  type="button"
-                  onClick={() => onSelectEvent(selectedEntry.event)}
-                  className="mt-1 w-full rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
-                >
-                  {selectedEntry.event.isPaid
-                    ? `Réserver (${formatEventPrice(selectedEntry.event)})`
-                    : 'Voir & réserver'}
-                </button>
+                {(() => {
+                  const evalInfo = evaluateEventBooking(selectedEntry.event);
+                  const isCancelled = evalInfo.state === 'cancelled';
+                  const isClosed = evalInfo.state === 'closed';
+                  return (
+                    <>
+                      {(isCancelled || isClosed) && (
+                        <p
+                          className={`text-[11px] font-semibold ${
+                            isCancelled
+                              ? 'text-rose-700 dark:text-rose-400'
+                              : 'text-amber-700 dark:text-amber-400'
+                          }`}
+                        >
+                          {evalInfo.helperText}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onSelectEvent(selectedEntry.event)}
+                        className={`mt-1 w-full rounded-md px-3 py-1.5 text-xs font-semibold cursor-pointer ${
+                          evalInfo.state === 'open'
+                            ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                            : 'border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                        }`}
+                      >
+                        {evalInfo.state === 'open'
+                          ? selectedEntry.event.isPaid
+                            ? `Réserver (${formatEventPrice(selectedEntry.event)})`
+                            : 'Voir & réserver'
+                          : isCancelled
+                            ? 'Séance annulée · Voir détails'
+                            : 'Voir les détails'}
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
             </InfoWindow>
           )}

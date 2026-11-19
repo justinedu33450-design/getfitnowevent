@@ -103,7 +103,7 @@ service cloud.firestore {
         'title', 'discipline', 'description', 'location', 'city', 'region',
         'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
         'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity', 'registeredCount',
-        'lastRegId', 'likesCount', 'lastLikeId', 'status', 'cancelReason',
+        'lastRegId', 'likesCount', 'lastLikeId', 'status', 'cancelReason', 'bookingCutoffMinutes', 'disableAutoClose',
         'isPaid', 'priceCents', 'currency', 'paymentMode',
         'createdBy', 'createdAt', 'updatedAt'
       ]) &&
@@ -145,6 +145,8 @@ service cloud.firestore {
       (!('lastLikeId' in data) || isValidId(data.lastLikeId)) &&
       data.status in ['published', 'cancelled'] &&
       (!('cancelReason' in data) || data.cancelReason in ['manual', 'no_registrants', '']) &&
+      (!('bookingCutoffMinutes' in data) || (data.bookingCutoffMinutes is int && data.bookingCutoffMinutes >= 0 && data.bookingCutoffMinutes <= 10080)) &&
+      (!('disableAutoClose' in data) || data.disableAutoClose is bool) &&
       (!('isPaid' in data) || data.isPaid is bool) &&
       (!('priceCents' in data) || (data.priceCents is int && data.priceCents >= 0 && data.priceCents <= 100000)) &&
       (!('currency' in data) || data.currency == 'EUR') &&
@@ -276,12 +278,8 @@ service cloud.firestore {
         eventAfter.lastRegId == regId &&
         isValidRegistrationPaymentForEvent(regIncoming, eventBefore, regId) &&
         (
-          request.time < eventBefore.startAt - duration.value(1, 'h') ||
-          (eventBefore.registeredCount >= 1 && request.time < eventBefore.startAt) ||
-          (
-            (eventBefore.registeredCount >= 1 || request.time < eventBefore.startAt - duration.value(1, 'h')) &&
-            canBypassCutoffForRegistration(regIncoming)
-          )
+          canBypassCutoffForRegistration(regIncoming) ||
+          request.time < eventBefore.startAt - duration.value(eventBefore.get('bookingCutoffMinutes', 0), 'm')
         );
     }
 
@@ -570,18 +568,12 @@ service cloud.firestore {
           isValidId(incoming().lastRegId) &&
           incoming().updatedAt == request.time &&
           (
-            request.time < existing().startAt - duration.value(1, 'h') ||
-            (existing().registeredCount >= 1 && request.time < existing().startAt) ||
+            request.time < existing().startAt - duration.value(existing().get('bookingCutoffMinutes', 0), 'm') ||
+            isCoachAdmin() ||
             (
-              (existing().registeredCount >= 1 || request.time < existing().startAt - duration.value(1, 'h')) &&
-              (
-                isCoachAdmin() ||
-                (
-                  isCoach() &&
-                  getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.get('isGuest', false) == false &&
-                  getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.email.lower() != request.auth.token.email.lower()
-                )
-              )
+              isCoach() &&
+              getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.get('isGuest', false) == false &&
+              getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.email.lower() != request.auth.token.email.lower()
             )
           ) &&
           (
@@ -625,7 +617,7 @@ service cloud.firestore {
               'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
               'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity',
               'isPaid', 'priceCents', 'currency', 'paymentMode',
-              'status', 'cancelReason', 'updatedAt'
+              'status', 'cancelReason', 'bookingCutoffMinutes', 'disableAutoClose', 'updatedAt'
             ]) ||
             incoming().diff(existing()).affectedKeys().hasOnly([
               'registeredCount', 'lastRegId', 'updatedAt'
@@ -657,19 +649,7 @@ service cloud.firestore {
         )
       );
 
-      allow delete: if isValidId(eventId) && (
-        isAdmin() ||
-        (
-          hasAuthenticatedEmail() &&
-          (
-            existing().status == 'cancelled' ||
-            (
-              existing().registeredCount == 0 &&
-              request.time >= existing().startAt - duration.value(1, 'h')
-            )
-          )
-        )
-      );
+      allow delete: if isValidId(eventId) && isAdmin();
     }
 
     // -------------------------------------------------------------------------

@@ -110,7 +110,15 @@
         "cancelReason": {
           "type": "string",
           "enum": ["manual", "no_registrants", ""],
-          "description": "Motif d'annulation (manuelle par le coach ou automatique à H-1 sans inscrit)."
+          "description": "Motif d'annulation (manuelle par le coach ou historique)."
+        },
+        "bookingCutoffMinutes": {
+          "type": "integer",
+          "description": "Délai de clôture des inscriptions en minutes avant le début de la séance (0 à 10080 ; 0 = ouvert jusqu'au début)."
+        },
+        "disableAutoClose": {
+          "type": "boolean",
+          "description": "Champ historique conservé pour rétrocompatibilité."
         },
         "isPaid": {
           "type": "boolean",

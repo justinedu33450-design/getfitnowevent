@@ -157,13 +157,13 @@ export function HeroSection({
           <div className="border-l border-slate-200 dark:border-slate-800 p-3.5 sm:border-l-0 sm:p-4 sm:px-5">
             <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
               <span>Clôture réservation</span>
-              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+              <Clock className="h-4 w-4 text-emerald-700 dark:text-emerald-400 shrink-0" aria-hidden="true" />
             </div>
             <p className="mt-1.5 font-mono text-xl font-semibold text-slate-900 dark:text-white tabular-nums sm:text-2xl">
-              H - 1h00
+              Sur mesure
             </p>
             <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
-              Verrouillage automatique avant début
+              Ouvert jusqu’au début ou délai choisi
             </p>
           </div>
         </div>

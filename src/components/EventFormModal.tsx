@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { AlertTriangle, Check, CreditCard, Plus, Trash2, UserCheck, X } from 'lucide-react';
+import { AlertTriangle, Check, Clock, CreditCard, Plus, Trash2, UserCheck, X } from 'lucide-react';
 import {
   CoachAdminUser,
   Discipline,
@@ -17,6 +17,10 @@ import {
   updateEvent,
 } from '../services/firestoreService';
 import {
+  formatBookingCutoffLabel,
+  formatFrenchDateShort,
+  formatFrenchTime,
+  normalizeBookingCutoffMinutes,
   toLocalDateInputValue,
   toLocalTimeInputValue,
 } from '../utils/dateAndValidation';
@@ -100,6 +104,37 @@ export function EventFormModal({
   const [discError, setDiscError] = useState<string | null>(null);
   const [dateStr, setDateStr] = useState(toLocalDateInputValue(defaultStart));
   const [timeStr, setTimeStr] = useState(toLocalTimeInputValue(defaultStart));
+  const initialCutoffMinutes = sourceEvent
+    ? normalizeBookingCutoffMinutes(sourceEvent.bookingCutoffMinutes)
+    : 0;
+  const presetCutoffValues = [0, 15, 30, 60, 120, 360, 1440];
+  const [bookingCutoffMinutes, setBookingCutoffMinutes] = useState<number>(
+    initialCutoffMinutes
+  );
+  const [customCutoffMode, setCustomCutoffMode] = useState<boolean>(
+    initialCutoffMinutes > 0 && !presetCutoffValues.includes(initialCutoffMinutes)
+  );
+  const [customCutoffUnit, setCustomCutoffUnit] = useState<
+    'minutes' | 'hours' | 'days'
+  >(() => {
+    if (initialCutoffMinutes >= 1440 && initialCutoffMinutes % 1440 === 0) {
+      return 'days';
+    }
+    if (initialCutoffMinutes >= 60 && initialCutoffMinutes % 60 === 0) {
+      return 'hours';
+    }
+    return 'minutes';
+  });
+  const [customCutoffValue, setCustomCutoffValue] = useState<string>(() => {
+    if (initialCutoffMinutes === 0) return '45';
+    if (initialCutoffMinutes >= 1440 && initialCutoffMinutes % 1440 === 0) {
+      return String(initialCutoffMinutes / 1440);
+    }
+    if (initialCutoffMinutes >= 60 && initialCutoffMinutes % 60 === 0) {
+      return String(initialCutoffMinutes / 60);
+    }
+    return String(initialCutoffMinutes);
+  });
   const [durationMinutes, setDurationMinutes] = useState(
     sourceEvent?.durationMinutes ?? 60
   );
@@ -197,6 +232,41 @@ export function EventFormModal({
         (d) => d.name.trim().toLowerCase() === discipline.trim().toLowerCase()
       ) ?? null,
     [disciplines, discipline]
+  );
+
+  const parsedPreviewStart = useMemo(() => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    if (!year || !month || !day || Number.isNaN(hours) || Number.isNaN(minutes)) {
+      return null;
+    }
+    return new Date(year, month - 1, day, hours, minutes, 0, 0);
+  }, [dateStr, timeStr]);
+
+  const rawCustomMultiplier =
+    customCutoffUnit === 'days' ? 1440 : customCutoffUnit === 'hours' ? 60 : 1;
+  const parsedCustomNumber = Number(customCutoffValue.replace(',', '.'));
+  const rawComputedCutoffMinutes = customCutoffMode
+    ? Number.isFinite(parsedCustomNumber)
+      ? Math.round(parsedCustomNumber * rawCustomMultiplier)
+      : 0
+    : bookingCutoffMinutes;
+  const effectiveCutoffMinutes = normalizeBookingCutoffMinutes(
+    rawComputedCutoffMinutes
+  );
+
+  const nowSnapshotMs = Date.now();
+  const previewCutoffDate = useMemo(() => {
+    if (!parsedPreviewStart || effectiveCutoffMinutes <= 0) return null;
+    return new Date(
+      parsedPreviewStart.getTime() - effectiveCutoffMinutes * 60 * 1000
+    );
+  }, [parsedPreviewStart, effectiveCutoffMinutes]);
+  const isCustomCutoffPassed = Boolean(
+    previewCutoffDate && previewCutoffDate.getTime() <= nowSnapshotMs
+  );
+  const isStartTimePassed = Boolean(
+    parsedPreviewStart && parsedPreviewStart.getTime() <= nowSnapshotMs
   );
 
   const activeDiscStyle = getDisciplineStyle(discipline, disciplines);
@@ -374,6 +444,18 @@ export function EventFormModal({
       }
     }
 
+    if (
+      customCutoffMode &&
+      (!Number.isFinite(parsedCustomNumber) ||
+        parsedCustomNumber < 0 ||
+        rawComputedCutoffMinutes > VALIDATION_LIMITS.BOOKING_CUTOFF_MINUTES_MAX)
+    ) {
+      setErrorMsg(
+        'Le délai personnalisé de clôture doit être compris entre 0 et 7 jours (10 080 minutes).'
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -396,12 +478,21 @@ export function EventFormModal({
         isPaid,
         priceCents,
         paymentMode,
+        bookingCutoffMinutes: effectiveCutoffMinutes,
       };
 
       if (editingEvent) {
+        const canReopenCancelledNoRegistrants =
+          editingEvent.status === 'cancelled' &&
+          editingEvent.cancelReason === 'no_registrants' &&
+          (effectiveCutoffMinutes === 0 ||
+            startDate.getTime() - effectiveCutoffMinutes * 60 * 1000 > Date.now());
+        const nextStatus = canReopenCancelledNoRegistrants
+          ? 'published'
+          : editingEvent.status;
         await updateEvent(
           editingEvent.id,
-          { ...payload, status: editingEvent.status },
+          { ...payload, status: nextStatus },
           editingEvent.registeredCount
         );
       } else {
@@ -899,6 +990,157 @@ export function EventFormModal({
             </span>
           </label>
 
+          {/* Configurable booking closure offset before session start */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/50">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100">
+                <Clock
+                  className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
+                Clôture des inscriptions avant le début
+              </span>
+              <span className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                {effectiveCutoffMinutes === 0
+                  ? 'Jusqu’au début'
+                  : `${formatBookingCutoffLabel(effectiveCutoffMinutes)} avant`}
+              </span>
+            </div>
+
+            <div
+              role="group"
+              aria-label="Délai de clôture des inscriptions avant le début de la séance"
+              className="flex flex-wrap gap-1.5"
+            >
+              {(
+                [
+                  { minutes: 0, label: 'Aucune (au début)' },
+                  { minutes: 15, label: '15 min' },
+                  { minutes: 30, label: '30 min' },
+                  { minutes: 60, label: '1h' },
+                  { minutes: 120, label: '2h' },
+                  { minutes: 360, label: '6h' },
+                  { minutes: 1440, label: '24h' },
+                ] as const
+              ).map((preset) => {
+                const isSelected =
+                  !customCutoffMode && bookingCutoffMinutes === preset.minutes;
+                return (
+                  <button
+                    key={preset.minutes}
+                    type="button"
+                    onClick={() => {
+                      setCustomCutoffMode(false);
+                      setBookingCutoffMinutes(preset.minutes);
+                    }}
+                    className={`min-h-[34px] rounded-md border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setCustomCutoffMode(true)}
+                className={`min-h-[34px] rounded-md border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
+                  customCutoffMode
+                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                }`}
+              >
+                Personnalisée
+              </button>
+            </div>
+
+            {customCutoffMode && (
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label
+                    htmlFor="ev-cutoff-value"
+                    className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                  >
+                    Durée avant le début
+                  </label>
+                  <input
+                    id="ev-cutoff-value"
+                    type="number"
+                    min={0}
+                    max={
+                      customCutoffUnit === 'days'
+                        ? 7
+                        : customCutoffUnit === 'hours'
+                          ? 168
+                          : VALIDATION_LIMITS.BOOKING_CUTOFF_MINUTES_MAX
+                    }
+                    value={customCutoffValue}
+                    onChange={(e) => setCustomCutoffValue(e.target.value)}
+                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-mono tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="ev-cutoff-unit"
+                    className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                  >
+                    Unité
+                  </label>
+                  <select
+                    id="ev-cutoff-unit"
+                    value={customCutoffUnit}
+                    onChange={(e) =>
+                      setCustomCutoffUnit(
+                        e.target.value as 'minutes' | 'hours' | 'days'
+                      )
+                    }
+                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Heures</option>
+                    <option value="days">Jours</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              {effectiveCutoffMinutes === 0 ? (
+                <>
+                  Les inscriptions restent ouvertes jusqu’au début de la séance
+                  {parsedPreviewStart
+                    ? ` (${formatFrenchDateShort(parsedPreviewStart)} à ${formatFrenchTime(parsedPreviewStart)})`
+                    : ''}
+                  . Aucune clôture ni annulation automatique.
+                </>
+              ) : previewCutoffDate ? (
+                <>
+                  Clôture prévue le{' '}
+                  <strong className="text-slate-900 dark:text-white capitalize">
+                    {formatFrenchDateShort(previewCutoffDate)}
+                  </strong>{' '}
+                  à{' '}
+                  <strong className="font-mono text-slate-900 dark:text-white">
+                    {formatFrenchTime(previewCutoffDate)}
+                  </strong>{' '}
+                  ({formatBookingCutoffLabel(effectiveCutoffMinutes)} avant le début).
+                </>
+              ) : (
+                `Clôture ${formatBookingCutoffLabel(effectiveCutoffMinutes)} avant le début.`
+              )}
+            </p>
+
+            {(isCustomCutoffPassed || isStartTimePassed) && (
+              <p className="rounded-md border border-amber-200 bg-amber-50/90 px-3 py-2 text-xs text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-200">
+                {isStartTimePassed
+                  ? 'L’heure de début choisie est déjà dépassée : la séance sera tout de même enregistrée dans le planning.'
+                  : 'Ce délai de clôture est déjà dépassé : sans inscrit, la séance affichera « Inscriptions clôturées · Séance annulée » pour les adhérents (choisissez « Aucune (au début) » pour la laisser ouverte).'}
+              </p>
+            )}
+          </div>
+
           {/* Pricing & Payment Mode Configuration */}
           <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/50">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1085,7 +1327,7 @@ export function EventFormModal({
           </div>
 
           <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
-            Rappel : s’il n’y a aucun inscrit 1 heure avant le début, les inscriptions seront fermées et l’événement annulé puis supprimé. Dès 1 inscrit, les inscriptions restent ouvertes jusqu’à l’heure de début.
+            Rappel : aucune clôture automatique n’est imposée par défaut. Si vous définissez un délai de clôture et qu’il n’y a aucun inscrit à l’échéance, la séance indiquera « Inscriptions clôturées · Séance annulée » ; dès 1 inscrit, elle reste maintenue au planning. Chaque événement reste affiché puis est supprimé 30 jours après la fin de la séance.
           </p>
 
           {errorMsg && (

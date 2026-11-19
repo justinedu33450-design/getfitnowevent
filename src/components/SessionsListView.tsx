@@ -7,7 +7,6 @@ import {
   MapPin,
   Search,
   UserCheck,
-  Users,
   XCircle,
 } from 'lucide-react';
 import {
@@ -161,7 +160,7 @@ export function SessionsListView({
             Toutes les séances sportives
           </h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            Recherchez par ville ou région, localisez sur la carte et réservez votre place jusqu’au début de la séance (dès 1 inscrit 1h avant).
+            Recherchez par ville ou région, localisez sur la carte et réservez votre place jusqu’au début de la séance ou selon la clôture définie par le coach.
           </p>
         </div>
 
@@ -438,14 +437,19 @@ export function SessionsListView({
                       className={`inline-flex items-center gap-1 font-semibold shrink-0 ${
                         evalInfo.state === 'open'
                           ? 'text-emerald-700 dark:text-emerald-400'
-                          : evalInfo.state === 'full' ||
-                              evalInfo.state === 'cancelled'
-                            ? 'text-rose-700 dark:text-rose-400'
-                            : 'text-slate-500 dark:text-slate-400'
+                          : evalInfo.state === 'closed'
+                            ? 'text-amber-700 dark:text-amber-400'
+                            : evalInfo.state === 'full' ||
+                                evalInfo.state === 'cancelled'
+                              ? 'text-rose-700 dark:text-rose-400'
+                              : 'text-slate-500 dark:text-slate-400'
                       }`}
                     >
                       {evalInfo.state === 'open' && (
                         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      )}
+                      {evalInfo.state === 'closed' && (
+                        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                       )}
                       {(evalInfo.state === 'full' ||
                         evalInfo.state === 'cancelled') && (
@@ -492,10 +496,6 @@ export function SessionsListView({
                       <UserCheck className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
                       <span className="truncate">{formatEventCoachesLabel(ev)}</span>
                     </div>
-                    <div className="flex items-center gap-2 font-mono tabular-nums">
-                      <Users className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
-                      <span>{evalInfo.capacityLabel}</span>
-                    </div>
                   </div>
                 </div>
 
@@ -521,7 +521,7 @@ export function SessionsListView({
                       hasSpots && evalInfo.state === 'open';
                     return (
                       <div className="flex items-center gap-2">
-                        {ev.status === 'published' && onToggleLike && (
+                        {evalInfo.state !== 'cancelled' && onToggleLike && (
                           <EventLikeButton
                             compact
                             count={ev.likesCount ?? 0}
@@ -531,7 +531,7 @@ export function SessionsListView({
                             onClick={() => onToggleLike(ev)}
                           />
                         )}
-                        {ev.status === 'published' && onShareEvent && (
+                        {evalInfo.state !== 'cancelled' && onShareEvent && (
                           <EventShareButton
                             compact
                             eventTitle={ev.title}
@@ -551,7 +551,9 @@ export function SessionsListView({
                             ? ev.isPaid
                               ? `Réserver (${formatEventPrice(ev)})`
                               : 'Réserver & voir la carte'
-                            : 'Voir la carte et détails'}
+                            : evalInfo.state === 'cancelled'
+                              ? 'Séance annulée · Voir détails'
+                              : 'Voir la carte et détails'}
                         </button>
                       </div>
                     );

@@ -6,7 +6,6 @@ import {
   Crown,
   Dumbbell,
   Flame,
-  Lock,
   Medal,
   Sparkles,
   Target,
@@ -85,11 +84,33 @@ export function MemberBadgesCard({
     [highlightedBadgeIds]
   );
 
+  const unlockedMilestoneBadges = useMemo(
+    () => summary.milestoneBadges.filter((b) => b.unlocked),
+    [summary.milestoneBadges]
+  );
+
+  const unlockedStreakBadges = useMemo(
+    () => summary.streakBadges.filter((b) => b.unlocked),
+    [summary.streakBadges]
+  );
+
+  const unlockedDisciplineGroups = useMemo<DisciplineBadgeGroup[]>(
+    () =>
+      summary.disciplineGroups
+        .filter((g) => g.unlockedCount > 0)
+        .map((g) => ({
+          ...g,
+          badges: g.badges.filter((b) => b.unlocked),
+        }))
+        .filter((g) => g.badges.length > 0),
+    [summary.disciplineGroups]
+  );
+
   // Auto-expand discipline groups that contain newly unlocked highlighted badges
   useEffect(() => {
     if (highlightedBadgeIds.length === 0) return;
     const toOpen: Record<string, boolean> = {};
-    summary.disciplineGroups.forEach((group) => {
+    unlockedDisciplineGroups.forEach((group) => {
       if (group.badges.some((b) => highlightedSet.has(b.id))) {
         toOpen[group.key] = true;
       }
@@ -97,34 +118,32 @@ export function MemberBadgesCard({
     if (Object.keys(toOpen).length > 0) {
       setExpandedDisciplines((prev) => ({ ...prev, ...toOpen }));
     }
-  }, [highlightedBadgeIds, highlightedSet, summary.disciplineGroups]);
+  }, [highlightedBadgeIds, highlightedSet, unlockedDisciplineGroups]);
 
   const visibleMilestoneBadges =
     activeTab === 'all' || activeTab === 'milestone'
-      ? summary.milestoneBadges
+      ? unlockedMilestoneBadges
       : [];
   const visibleStreakBadges =
     activeTab === 'all' || activeTab === 'streak'
-      ? summary.streakBadges
+      ? unlockedStreakBadges
       : [];
   const visibleDisciplineGroups =
     activeTab === 'all' || activeTab === 'discipline'
-      ? summary.disciplineGroups
+      ? unlockedDisciplineGroups
       : [];
 
   const collapsedSummaryText = useMemo(() => {
+    if (summary.unlockedCount === 0) {
+      return 'Aucun badge validé pour le moment · Ils apparaîtront au fil des paliers franchis';
+    }
     const parts: string[] = [
-      `${summary.unlockedCount} / ${summary.totalCount} badge${summary.totalCount > 1 ? 's' : ''} débloqué${summary.unlockedCount > 1 ? 's' : ''}`,
+      `${summary.unlockedCount} badge${summary.unlockedCount > 1 ? 's' : ''} validé${summary.unlockedCount > 1 ? 's' : ''}`,
     ];
     if (summary.currentStreakDays > 0) {
       parts.push(`Série : ${summary.currentStreakDays} j`);
     } else if (summary.bestStreakDays > 0) {
       parts.push(`Meilleure série : ${summary.bestStreakDays} j`);
-    }
-    if (summary.nextMilestoneBadge) {
-      parts.push(
-        `Prochain palier : ${summary.totalValidatedEvents}/${formatCountShort(summary.nextMilestoneBadge.target)}`
-      );
     }
     return parts.join(' · ');
   }, [summary]);
@@ -179,23 +198,19 @@ export function MemberBadgesCard({
       <div
         key={badge.id}
         className={`flex flex-col justify-between gap-2.5 rounded-lg border p-3.5 transition-colors ${
-          badge.unlocked
-            ? isHighlighted
-              ? 'border-emerald-500 bg-emerald-50/80 ring-1 ring-emerald-500/30 dark:border-emerald-500 dark:bg-emerald-950/50 dark:ring-emerald-400/30'
-              : 'border-emerald-200 bg-emerald-50/45 dark:border-emerald-800/80 dark:bg-emerald-950/25'
-            : 'border-slate-200 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/50'
+          isHighlighted
+            ? 'border-emerald-500 bg-emerald-50/80 ring-1 ring-emerald-500/30 dark:border-emerald-500 dark:bg-emerald-950/50 dark:ring-emerald-400/30'
+            : 'border-emerald-200 bg-emerald-50/45 dark:border-emerald-800/80 dark:bg-emerald-950/25'
         }`}
       >
         <div className="flex items-start gap-3">
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
-              badge.unlocked
-                ? badge.category === 'discipline' && disciplinePreset
-                  ? `${disciplinePreset.softBg} ${disciplinePreset.border} ${disciplinePreset.text}`
-                  : badge.category === 'streak'
-                    ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800/80 dark:bg-amber-950/60 dark:text-amber-300'
-                    : 'border-emerald-200 bg-emerald-100/80 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'
-                : 'border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500'
+              badge.category === 'discipline' && disciplinePreset
+                ? `${disciplinePreset.softBg} ${disciplinePreset.border} ${disciplinePreset.text}`
+                : badge.category === 'streak'
+                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800/80 dark:bg-amber-950/60 dark:text-amber-300'
+                  : 'border-emerald-200 bg-emerald-100/80 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'
             }`}
           >
             <IconComponent className="h-4 w-4" aria-hidden="true" />
@@ -203,26 +218,13 @@ export function MemberBadgesCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <p
-                className={`text-xs font-bold leading-snug ${
-                  badge.unlocked
-                    ? 'text-slate-900 dark:text-white'
-                    : 'text-slate-700 dark:text-slate-300'
-                }`}
-              >
+              <p className="text-xs font-bold leading-snug text-slate-900 dark:text-white">
                 {displayTitle}
               </p>
-              {badge.unlocked ? (
-                <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  {isHighlighted ? 'Nouveau' : 'Débloqué'}
-                </span>
-              ) : (
-                <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  <Lock className="h-3 w-3" aria-hidden="true" />
-                  À débloquer
-                </span>
-              )}
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {isHighlighted ? 'Nouveau' : 'Validé'}
+              </span>
             </div>
 
             <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
@@ -234,32 +236,14 @@ export function MemberBadgesCard({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-2 text-[11px]">
             <span className="text-slate-500 dark:text-slate-400 capitalize">
-              {badge.unlocked
-                ? unlockedDateText
-                  ? `Obtenu le ${unlockedDateText}`
-                  : 'Accompli'
-                : 'Progression'}
+              {unlockedDateText ? `Obtenu le ${unlockedDateText}` : 'Validé'}
             </span>
-            <span className="font-mono font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
-              {`${formatCountShort(badge.current)}/${formatCountShort(badge.target)}`}
+            <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+              {`${formatCountShort(badge.target)}/${formatCountShort(badge.target)}`}
             </span>
           </div>
-          <div
-            className="h-1.5 w-full overflow-hidden rounded-sm bg-slate-200/80 dark:bg-slate-800"
-            role="progressbar"
-            aria-valuenow={badge.progressPct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Progression pour ${badge.title}`}
-          >
-            <div
-              className={`h-full transition-all duration-300 ${
-                badge.unlocked
-                  ? 'bg-emerald-600 dark:bg-emerald-500'
-                  : 'bg-slate-400 dark:bg-slate-600'
-              }`}
-              style={{ width: `${badge.progressPct}%` }}
-            />
+          <div className="h-1.5 w-full overflow-hidden rounded-sm bg-emerald-100 dark:bg-emerald-950">
+            <div className="h-full w-full bg-emerald-600 dark:bg-emerald-500" />
           </div>
         </div>
       </div>
@@ -272,10 +256,6 @@ export function MemberBadgesCard({
       group.colorKey,
       group.disciplineName
     );
-    const groupPct =
-      group.totalCount > 0
-        ? Math.round((group.unlockedCount / group.totalCount) * 100)
-        : 0;
 
     return (
       <div key={group.key} className="p-3.5 sm:p-4">
@@ -307,27 +287,14 @@ export function MemberBadgesCard({
                   {group.disciplineName}
                 </p>
                 <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                  {group.unlockedCount}/{group.totalCount} badges
+                  {group.unlockedCount} badge{group.unlockedCount > 1 ? 's' : ''} validé{group.unlockedCount > 1 ? 's' : ''}
                 </span>
               </div>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 tabular-nums">
                 {formatCountShort(group.validatedCount)} séance
                 {group.validatedCount > 1 ? 's' : ''} validée
                 {group.validatedCount > 1 ? 's' : ''}
-                {group.nextBadge
-                  ? ` · Prochain palier : ${group.nextBadge.shortTitle ?? group.nextBadge.title} (${formatCountShort(group.validatedCount)}/${formatCountShort(group.nextBadge.target)})`
-                  : ' · Tous les paliers débloqués'}
               </p>
-              <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-sm bg-slate-200/80 dark:bg-slate-800">
-                <div
-                  className={`h-full transition-all duration-300 ${
-                    group.unlockedCount > 0
-                      ? 'bg-emerald-600 dark:bg-emerald-500'
-                      : 'bg-slate-300 dark:bg-slate-700'
-                  }`}
-                  style={{ width: `${groupPct}%` }}
-                />
-              </div>
             </div>
           </button>
 
@@ -370,6 +337,11 @@ export function MemberBadgesCard({
       </div>
     );
   };
+
+  const hasVisibleBadgesInTab =
+    visibleMilestoneBadges.length > 0 ||
+    visibleStreakBadges.length > 0 ||
+    visibleDisciplineGroups.length > 0;
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
@@ -431,19 +403,19 @@ export function MemberBadgesCard({
                 [
                   {
                     id: 'all',
-                    label: `Tous (${summary.unlockedCount}/${summary.totalCount})`,
+                    label: `Tous (${summary.unlockedCount})`,
                   },
                   {
                     id: 'milestone',
-                    label: `Événements (${summary.milestoneBadges.filter((b) => b.unlocked).length}/${summary.milestoneBadges.length})`,
+                    label: `Événements (${unlockedMilestoneBadges.length})`,
                   },
                   {
                     id: 'streak',
-                    label: `Séries (${summary.streakBadges.filter((b) => b.unlocked).length}/${summary.streakBadges.length})`,
+                    label: `Séries (${unlockedStreakBadges.length})`,
                   },
                   {
                     id: 'discipline',
-                    label: `Disciplines (${summary.unlockedDisciplineBadgesCount}/${summary.totalDisciplineBadgesCount})`,
+                    label: `Disciplines (${summary.unlockedDisciplineBadgesCount})`,
                   },
                 ] as const
               ).map((tab) => (
@@ -471,14 +443,10 @@ export function MemberBadgesCard({
           <div className="grid grid-cols-1 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-slate-50/70 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <div className="p-3">
               <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                Badges obtenus
+                Badges validés
               </p>
               <p className="mt-0.5 font-mono text-lg font-bold text-slate-900 dark:text-white tabular-nums">
                 {summary.unlockedCount}
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {' '}
-                  / {summary.totalCount}
-                </span>
               </p>
             </div>
             <div className="p-3">
@@ -499,10 +467,6 @@ export function MemberBadgesCard({
               </p>
               <p className="mt-0.5 font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
                 {summary.unlockedDisciplinesCount}
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {' '}
-                  / {summary.totalDisciplinesCount}
-                </span>
               </p>
             </div>
           </div>
@@ -521,69 +485,81 @@ export function MemberBadgesCard({
             </div>
           )}
 
-          {/* Category 1: Paliers d'événements validés */}
-          {visibleMilestoneBadges.length > 0 && (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Paliers d’événements validés
-                </h4>
-                <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                  {formatCountShort(summary.totalValidatedEvents)} validé
-                  {summary.totalValidatedEvents > 1 ? 's' : ''}
-                </span>
-              </div>
-              <div
-                className={`grid grid-cols-1 gap-2.5 ${
-                  compact ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3'
-                }`}
-              >
-                {visibleMilestoneBadges.map((b) => renderBadgeCard(b))}
-              </div>
+          {!hasVisibleBadgesInTab ? (
+            <div className="rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center dark:border-slate-800">
+              <Trophy
+                className="mx-auto h-7 w-7 text-slate-300 dark:text-slate-600"
+                aria-hidden="true"
+              />
+              <p className="mt-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                {summary.unlockedCount === 0
+                  ? 'Aucun badge validé pour le moment'
+                  : 'Aucun badge validé dans cette catégorie pour le moment'}
+              </p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Les badges et récompenses apparaîtront ici automatiquement au fur et à mesure des paliers franchis.
+              </p>
             </div>
-          )}
+          ) : (
+            <>
+              {/* Category 1: Paliers d'événements validés */}
+              {visibleMilestoneBadges.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Paliers d’événements validés
+                    </h4>
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                      {formatCountShort(summary.totalValidatedEvents)} validé
+                      {summary.totalValidatedEvents > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div
+                    className={`grid grid-cols-1 gap-2.5 ${
+                      compact ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3'
+                    }`}
+                  >
+                    {visibleMilestoneBadges.map((b) => renderBadgeCard(b))}
+                  </div>
+                </div>
+              )}
 
-          {/* Category 2: Enchaînements (séries consécutives) */}
-          {visibleStreakBadges.length > 0 && (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Enchaînements consécutifs
-                </h4>
-                <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                  Record : {summary.bestStreakDays} j d’affilée
-                </span>
-              </div>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {visibleStreakBadges.map((b) => renderBadgeCard(b))}
-              </div>
-            </div>
-          )}
+              {/* Category 2: Enchaînements (séries consécutives) */}
+              {visibleStreakBadges.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Enchaînements consécutifs
+                    </h4>
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                      Record : {summary.bestStreakDays} j d’affilée
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    {visibleStreakBadges.map((b) => renderBadgeCard(b))}
+                  </div>
+                </div>
+              )}
 
-          {/* Category 3: Badges par discipline (paliers 1, 5, 10, 25, 50, 100, 250, 500, 1000 par discipline) */}
-          {visibleDisciplineGroups.length > 0 && (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Paliers par discipline (1 à 1 000 séances)
-                </h4>
-                <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                  {summary.unlockedDisciplineBadgesCount}/
-                  {summary.totalDisciplineBadgesCount} badges
-                </span>
-              </div>
-              <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-                {visibleDisciplineGroups.map(renderDisciplineGroup)}
-              </div>
-            </div>
+              {/* Category 3: Badges par discipline validés */}
+              {visibleDisciplineGroups.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Paliers par discipline validés
+                    </h4>
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                      {summary.unlockedDisciplineBadgesCount} validé
+                      {summary.unlockedDisciplineBadgesCount > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+                    {visibleDisciplineGroups.map(renderDisciplineGroup)}
+                  </div>
+                </div>
+              )}
+            </>
           )}
-
-          {activeTab === 'discipline' &&
-            visibleDisciplineGroups.length === 0 && (
-              <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                Aucune discipline enregistrée pour le moment. Les badges apparaîtront dès qu’une discipline sera ajoutée ou validée.
-              </div>
-            )}
         </div>
       )}
     </div>

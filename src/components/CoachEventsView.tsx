@@ -36,6 +36,7 @@ import {
 import {
   evaluateEventBooking,
   exportCsv,
+  formatBookingCutoffLabel,
   formatCapacityCompact,
   formatEventCoachesLabel,
   formatEventPrice,
@@ -678,7 +679,7 @@ export function CoachEventsView({
             Aucun événement sportif programmé
           </h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
-            Créez votre première séance sportive ou générez un planning d’exemple incluant une séance dans 75 minutes pour tester la règle d’annulation H-1 sans inscrit.
+            Créez votre première séance sportive ou générez un planning d’exemple pour démarrer immédiatement.
           </p>
           <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <button
@@ -771,18 +772,31 @@ export function CoachEventsView({
                         <span>{formatEventCoachesLabel(ev)}</span>
                       </p>
                     </div>
-                    <span
-                      className={`shrink-0 text-xs font-semibold ${
-                        evalInfo.state === 'open'
-                          ? 'text-emerald-700 dark:text-emerald-400'
-                          : evalInfo.state === 'full' ||
-                              evalInfo.state === 'cancelled'
-                            ? 'text-rose-700 dark:text-rose-400'
-                            : 'text-slate-500 dark:text-slate-400'
-                      }`}
-                    >
-                      {evalInfo.statusLabel}
-                    </span>
+                    <div className="shrink-0 text-right">
+                      <span
+                        className={`text-xs font-semibold ${
+                          evalInfo.state === 'open'
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : evalInfo.state === 'closed'
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : evalInfo.state === 'full' ||
+                                  evalInfo.state === 'cancelled'
+                                ? 'text-rose-700 dark:text-rose-400'
+                                : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {evalInfo.statusLabel}
+                      </span>
+                      {evalInfo.isAutoCancelledNoRegistrants ? (
+                        <p className="mt-0.5 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                          Pas d’inscrit à cette séance
+                        </p>
+                      ) : evalInfo.cutoffMinutes > 0 && evalInfo.state !== 'cancelled' ? (
+                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          Clôture {formatBookingCutoffLabel(evalInfo.cutoffMinutes)} avant
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300">
@@ -827,7 +841,7 @@ export function CoachEventsView({
                       Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
                     </button>
 
-                    {ev.status === 'published' && onShareEvent && (
+                    {evalInfo.state !== 'cancelled' && onShareEvent && (
                       <EventShareButton
                         compact
                         eventTitle={ev.title}
@@ -1015,19 +1029,30 @@ export function CoachEventsView({
                           )}
                         </td>
 
-                        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top whitespace-nowrap">
+                        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top">
                           <span
-                            className={`text-xs font-semibold ${
+                            className={`block whitespace-nowrap text-xs font-semibold ${
                               evalInfo.state === 'open'
                                 ? 'text-emerald-700 dark:text-emerald-400'
-                                : evalInfo.state === 'full' ||
-                                    evalInfo.state === 'cancelled'
-                                  ? 'text-rose-700 dark:text-rose-400'
-                                  : 'text-slate-500 dark:text-slate-400'
+                                : evalInfo.state === 'closed'
+                                  ? 'text-amber-700 dark:text-amber-400'
+                                  : evalInfo.state === 'full' ||
+                                      evalInfo.state === 'cancelled'
+                                    ? 'text-rose-700 dark:text-rose-400'
+                                    : 'text-slate-500 dark:text-slate-400'
                             }`}
                           >
                             {evalInfo.statusLabel}
                           </span>
+                          {evalInfo.isAutoCancelledNoRegistrants ? (
+                            <span className="mt-0.5 block text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                              Pas d’inscrit à cette séance
+                            </span>
+                          ) : evalInfo.cutoffMinutes > 0 && evalInfo.state !== 'cancelled' ? (
+                            <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                              Clôture {formatBookingCutoffLabel(evalInfo.cutoffMinutes)} avant
+                            </span>
+                          ) : null}
                         </td>
 
                         <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top">
@@ -1051,7 +1076,7 @@ export function CoachEventsView({
                               Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
                             </button>
 
-                            {ev.status === 'published' && onShareEvent && (
+                            {evalInfo.state !== 'cancelled' && onShareEvent && (
                               <EventShareButton
                                 compact
                                 eventTitle={ev.title}

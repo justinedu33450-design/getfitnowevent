@@ -571,7 +571,9 @@ export function MemberPortalView({
             {attendedCount}
           </p>
           <p className="mt-0.5 font-mono text-[11px] text-emerald-700 dark:text-emerald-400 tabular-nums">
-            {badgesSummary.unlockedCount}/{badgesSummary.totalCount} badges débloqués
+            {badgesSummary.unlockedCount} badge
+            {badgesSummary.unlockedCount > 1 ? 's' : ''} validé
+            {badgesSummary.unlockedCount > 1 ? 's' : ''}
           </p>
         </div>
       </div>

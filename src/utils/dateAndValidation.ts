@@ -55,6 +55,30 @@ export function getRegistrationEndMs(
   return reg.eventStartAt.toMillis();
 }
 
+export function normalizeBookingCutoffMinutes(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  const rounded = Math.round(value);
+  if (rounded <= VALIDATION_LIMITS.BOOKING_CUTOFF_MINUTES_MIN) return 0;
+  if (rounded >= VALIDATION_LIMITS.BOOKING_CUTOFF_MINUTES_MAX) {
+    return VALIDATION_LIMITS.BOOKING_CUTOFF_MINUTES_MAX;
+  }
+  return rounded;
+}
+
+export function formatBookingCutoffLabel(minutes: number): string {
+  const safe = normalizeBookingCutoffMinutes(minutes);
+  if (safe === 0) return 'au début de la séance';
+  if (safe < 60) return `${safe} min`;
+  if (safe % 1440 === 0) {
+    const days = safe / 1440;
+    return `${days} jour${days > 1 ? 's' : ''}`;
+  }
+  const hours = Math.floor(safe / 60);
+  const mins = safe % 60;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${String(mins).padStart(2, '0')}`;
+}
+
 export interface BookingEvaluation {
   state: BookingAvailabilityState;
   isAutoCancelledNoRegistrants: boolean;
@@ -62,6 +86,7 @@ export interface BookingEvaluation {
   remainingSpots: number | null;
   startMs: number;
   endMs: number;
+  cutoffMinutes: number;
   cutoffMs: number;
   msUntilCutoff: number;
   msUntilStart: number;
@@ -78,7 +103,8 @@ export function evaluateEventBooking(
   const hideRegisteredCount = Boolean(options?.hideRegisteredCount);
   const startMs = event.startAt.toMillis();
   const endMs = startMs + event.durationMinutes * 60 * 1000;
-  const cutoffMs = startMs - VALIDATION_LIMITS.BOOKING_CUTOFF_MS;
+  const cutoffMinutes = normalizeBookingCutoffMinutes(event.bookingCutoffMinutes);
+  const cutoffMs = startMs - cutoffMinutes * 60 * 1000;
   const msUntilCutoff = cutoffMs - nowMs;
   const msUntilStart = startMs - nowMs;
   const isUnlimited = Boolean(event.isUnlimitedCapacity);
@@ -86,30 +112,35 @@ export function evaluateEventBooking(
     ? null
     : Math.max(0, event.maxCapacity - event.registeredCount);
 
-  const hasRegistrants = event.registeredCount >= 1;
+  const isClosedZeroRegistrants =
+    event.status === 'published' &&
+    cutoffMinutes > 0 &&
+    nowMs >= cutoffMs &&
+    event.registeredCount === 0;
 
   const isAutoCancelledNoRegistrants =
-    event.registeredCount === 0 &&
-    nowMs >= cutoffMs &&
-    (event.status === 'published' ||
-      event.cancelReason === 'no_registrants' ||
-      event.cancelReason !== 'manual');
+    (event.status === 'cancelled' && event.cancelReason === 'no_registrants') ||
+    isClosedZeroRegistrants;
 
   const capacityLabel = hideRegisteredCount
-    ? isAutoCancelledNoRegistrants || event.status === 'cancelled'
-      ? 'Séance annulée'
-      : isUnlimited
-        ? 'Places illimitées'
-        : (remainingSpots ?? 0) <= 0
-          ? 'Séance complète'
-          : nowMs >= startMs || (remainingSpots ?? 0) <= 3
-            ? 'Places limitées'
-            : 'Places disponibles'
+    ? isAutoCancelledNoRegistrants
+      ? 'Pas d’inscrit · Séance annulée'
+      : event.status === 'cancelled'
+        ? 'Séance annulée'
+        : isUnlimited
+          ? 'Places illimitées'
+          : (remainingSpots ?? 0) <= 0
+            ? 'Séance complète'
+            : nowMs >= startMs || (remainingSpots ?? 0) <= 3
+              ? 'Places limitées'
+              : 'Places disponibles'
     : isUnlimited
       ? `${event.registeredCount} inscrit${event.registeredCount > 1 ? 's' : ''} · Places illimitées`
       : `${event.registeredCount}/${event.maxCapacity} inscrits · ${remainingSpots} place${(remainingSpots ?? 0) > 1 ? 's' : ''} restante${(remainingSpots ?? 0) > 1 ? 's' : ''}`;
 
   if (isAutoCancelledNoRegistrants) {
+    const cutoffDate = new Date(cutoffMs);
+    const cutoffTimeLabel = formatFrenchTime(cutoffDate);
     return {
       state: 'cancelled',
       isAutoCancelledNoRegistrants: true,
@@ -117,11 +148,15 @@ export function evaluateEventBooking(
       remainingSpots,
       startMs,
       endMs,
+      cutoffMinutes,
       cutoffMs,
       msUntilCutoff,
       msUntilStart,
-      statusLabel: 'Inscription fermée : événement annulé',
-      helperText: 'Inscription fermée : événement annulé.',
+      statusLabel: 'Inscriptions clôturées · Séance annulée',
+      helperText:
+        isClosedZeroRegistrants
+          ? `Inscriptions clôturées (${formatBookingCutoffLabel(cutoffMinutes)} avant le début, à ${cutoffTimeLabel}) — pas d’inscrit à cette séance, séance annulée.`
+          : 'Inscriptions clôturées — pas d’inscrit à cette séance, séance annulée.',
       capacityLabel,
     };
   }
@@ -134,11 +169,12 @@ export function evaluateEventBooking(
       remainingSpots,
       startMs,
       endMs,
+      cutoffMinutes,
       cutoffMs,
       msUntilCutoff,
       msUntilStart,
-      statusLabel: 'Inscription fermée : événement annulé',
-      helperText: 'Inscription fermée : événement annulé.',
+      statusLabel: 'Inscriptions clôturées · Séance annulée',
+      helperText: 'Inscriptions clôturées : séance annulée.',
       capacityLabel,
     };
   }
@@ -151,6 +187,7 @@ export function evaluateEventBooking(
       remainingSpots,
       startMs,
       endMs,
+      cutoffMinutes,
       cutoffMs,
       msUntilCutoff,
       msUntilStart,
@@ -163,6 +200,26 @@ export function evaluateEventBooking(
     };
   }
 
+  if (cutoffMinutes > 0 && nowMs >= cutoffMs) {
+    const cutoffDate = new Date(cutoffMs);
+    const cutoffTimeLabel = formatFrenchTime(cutoffDate);
+    return {
+      state: 'closed',
+      isAutoCancelledNoRegistrants: false,
+      isUnlimited,
+      remainingSpots,
+      startMs,
+      endMs,
+      cutoffMinutes,
+      cutoffMs,
+      msUntilCutoff,
+      msUntilStart,
+      statusLabel: 'Inscriptions clôturées',
+      helperText: `Inscriptions clôturées (${formatBookingCutoffLabel(cutoffMinutes)} avant le début, à ${cutoffTimeLabel}).`,
+      capacityLabel,
+    };
+  }
+
   if (!isUnlimited && (remainingSpots ?? 0) <= 0) {
     return {
       state: 'full',
@@ -171,6 +228,7 @@ export function evaluateEventBooking(
       remainingSpots: 0,
       startMs,
       endMs,
+      cutoffMinutes,
       cutoffMs,
       msUntilCutoff,
       msUntilStart,
@@ -183,9 +241,9 @@ export function evaluateEventBooking(
   const startTimeLabel = formatFrenchTime(new Date(startMs));
   const cutoffTimeLabel = formatFrenchTime(new Date(cutoffMs));
   const helperText =
-    nowMs >= cutoffMs || hasRegistrants
-      ? `Inscriptions ouvertes jusqu’au début de la séance à ${startTimeLabel} (${formatDurationRemaining(msUntilStart)} restant).`
-      : `Inscriptions ouvertes · Clôture à ${cutoffTimeLabel} (${formatDurationRemaining(msUntilCutoff)} restant).`;
+    cutoffMinutes > 0
+      ? `Inscriptions ouvertes · Clôture ${formatBookingCutoffLabel(cutoffMinutes)} avant le début (${cutoffTimeLabel}, ${formatDurationRemaining(msUntilCutoff)} restant).`
+      : `Inscriptions ouvertes jusqu’au début de la séance à ${startTimeLabel} (${formatDurationRemaining(msUntilStart)} restant).`;
 
   return {
     state: 'open',
@@ -194,6 +252,7 @@ export function evaluateEventBooking(
     remainingSpots,
     startMs,
     endMs,
+    cutoffMinutes,
     cutoffMs,
     msUntilCutoff,
     msUntilStart,

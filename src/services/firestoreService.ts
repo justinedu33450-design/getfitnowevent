@@ -10,6 +10,7 @@ import {
   increment,
   onSnapshot,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   Timestamp,
@@ -67,6 +68,7 @@ import {
   getRegistrationEndMs,
   hashEmailKey,
   isValidBirthDateString,
+  normalizeBookingCutoffMinutes,
 } from '../utils/dateAndValidation';
 import {
   inferDisciplineIconKey,
@@ -1067,6 +1069,10 @@ export function subscribeEvents(
             typeof raw.lastLikeId === 'string' && raw.lastLikeId
               ? raw.lastLikeId
               : 'none',
+          bookingCutoffMinutes: normalizeBookingCutoffMinutes(
+            raw.bookingCutoffMinutes
+          ),
+          disableAutoClose: Boolean(raw.disableAutoClose),
         };
       });
       list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
@@ -1259,6 +1265,8 @@ export interface EventFormInput {
   priceCents?: number;
   paymentMode?: EventPaymentMode;
   status?: EventStatus;
+  bookingCutoffMinutes?: number;
+  disableAutoClose?: boolean;
 }
 
 function normalizeEventPricing(input: EventFormInput): {
@@ -1410,6 +1418,9 @@ export async function createEvent(
       lastLikeId: 'none',
       status: 'published',
       cancelReason: '',
+      bookingCutoffMinutes: normalizeBookingCutoffMinutes(
+        input.bookingCutoffMinutes
+      ),
       isPaid: pricing.isPaid,
       priceCents: pricing.priceCents,
       currency: pricing.currency,
@@ -1491,6 +1502,9 @@ export async function updateEvent(
       paymentMode: pricing.paymentMode,
       status: input.status ?? 'published',
       cancelReason: (input.status ?? 'published') === 'published' ? '' : 'manual',
+      bookingCutoffMinutes: normalizeBookingCutoffMinutes(
+        input.bookingCutoffMinutes
+      ),
       updatedAt: serverTimestamp(),
     });
 
@@ -1747,23 +1761,6 @@ export async function toggleEventStatus(
   }
 }
 
-export async function autoCancelZeroRegistrationEvent(
-  eventId: string
-): Promise<void> {
-  try {
-    await updateDoc(doc(db, 'events', eventId), {
-      status: 'cancelled',
-      cancelReason: 'no_registrants',
-      updatedAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.warn(
-      `Annulation automatique différée pour events/${eventId}:`,
-      error
-    );
-  }
-}
-
 export async function autoDeleteCancelledEvent(
   eventId: string
 ): Promise<boolean> {
@@ -1906,7 +1903,9 @@ export async function deleteEndedEventAfterRetention(
   event: SportEvent
 ): Promise<boolean> {
   try {
-    await notifyMembersOfEndedEvent(event);
+    if (event.status === 'published') {
+      await notifyMembersOfEndedEvent(event);
+    }
     await deleteEventLikesForEvent(event.id);
     await deleteDoc(doc(db, 'events', event.id));
     return true;
@@ -2284,6 +2283,10 @@ function parseLiveSportEventSnapshot(
       typeof raw.lastLikeId === 'string' && raw.lastLikeId
         ? raw.lastLikeId
         : 'none',
+    bookingCutoffMinutes: normalizeBookingCutoffMinutes(
+      raw.bookingCutoffMinutes
+    ),
+    disableAutoClose: Boolean(raw.disableAutoClose),
   };
 }
 
@@ -2612,14 +2615,20 @@ async function commitSingleParticipantRegistration(params: {
           latestSnap.data() as Partial<SportEvent>
         );
         const latestEval = evaluateEventBooking(latestEvent, Date.now());
-        if (latestEval.state === 'cancelled') {
-          if (latestEval.isAutoCancelledNoRegistrants) {
-            void deleteAutoCancelledEventIfEligible(
-              latestEvent.id,
-              Boolean(params.bypassCutoffAsCoach)
-            );
-          }
-          throw new Error('Inscription fermée : événement annulé.');
+        if (
+          latestEval.state === 'cancelled' &&
+          (!params.bypassCutoffAsCoach || latestEvent.status === 'cancelled')
+        ) {
+          throw new Error(
+            latestEval.isAutoCancelledNoRegistrants
+              ? 'Inscriptions clôturées : pas d’inscrit à cette séance, séance annulée.'
+              : 'Inscriptions clôturées : séance annulée.'
+          );
+        }
+        if (latestEval.state === 'closed' && !params.bypassCutoffAsCoach) {
+          throw new Error(
+            'Les inscriptions pour cette séance sont clôturées.'
+          );
         }
         if (latestEval.state === 'past' && !params.bypassCutoffAsCoach) {
           throw new Error(
@@ -2641,7 +2650,8 @@ async function commitSingleParticipantRegistration(params: {
     } catch (innerError) {
       if (
         innerError instanceof Error &&
-        (innerError.message.includes('fermée') ||
+        (innerError.message.includes('clôturées') ||
+          innerError.message.includes('fermée') ||
           innerError.message.includes('commencé') ||
           innerError.message.includes('dernière place') ||
           innerError.message.includes('annulé') ||
@@ -2762,17 +2772,21 @@ export async function registerEventWithGuests(params: {
   }
 
   const evaluation = evaluateEventBooking(liveEvent, Date.now());
-  if (evaluation.state === 'cancelled') {
-    if (evaluation.isAutoCancelledNoRegistrants) {
-      void deleteAutoCancelledEventIfEligible(
-        liveEvent.id,
-        Boolean(params.bypassCutoffAsCoach)
-      );
-    }
-    throw new Error('Inscription fermée : événement annulé.');
+  if (
+    evaluation.state === 'cancelled' &&
+    (!params.bypassCutoffAsCoach || liveEvent.status === 'cancelled')
+  ) {
+    throw new Error(
+      evaluation.isAutoCancelledNoRegistrants
+        ? 'Inscriptions clôturées : pas d’inscrit à cette séance, séance annulée.'
+        : 'Inscriptions clôturées : séance annulée.'
+    );
   }
   if (evaluation.state === 'full') {
     throw new Error('Cet événement est complet.');
+  }
+  if (!params.bypassCutoffAsCoach && evaluation.state === 'closed') {
+    throw new Error('Les inscriptions pour cette séance sont clôturées.');
   }
   if (!params.bypassCutoffAsCoach && evaluation.state === 'past') {
     throw new Error(
@@ -3135,15 +3149,6 @@ export async function cancelMyRegistration(
     }
 
     await batch.commit();
-
-    if (
-      eventData &&
-      eventData.status === 'published' &&
-      eventData.registeredCount === 1 &&
-      Date.now() >= eventStartMs - VALIDATION_LIMITS.BOOKING_CUTOFF_MS
-    ) {
-      await deleteAutoCancelledEventIfEligible(registration.eventId, false);
-    }
   } catch (error) {
     if (
       error instanceof Error &&
@@ -3884,6 +3889,7 @@ export async function seedDemoEvents(
       durationMinutes: 45,
       isUnlimitedCapacity: false,
       maxCapacity: 12,
+      bookingCutoffMinutes: 0,
     },
     {
       title: 'Circuit Training Plein Air (Places illimitées)',

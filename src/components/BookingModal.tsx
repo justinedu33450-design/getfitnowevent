@@ -17,7 +17,6 @@ import {
   Trash2,
   UserCheck,
   UserPlus,
-  Users,
   Wallet,
   X,
   XCircle,
@@ -744,7 +743,7 @@ export function BookingModal({
             </h2>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {event.status === 'published' && onToggleLike && (
+            {evaluation.state !== 'cancelled' && onToggleLike && (
               <EventLikeButton
                 count={event.likesCount ?? 0}
                 liked={Boolean(likedEventIds?.has(event.id))}
@@ -753,7 +752,7 @@ export function BookingModal({
                 onClick={() => onToggleLike(event)}
               />
             )}
-            {event.status === 'published' && onShareEvent && (
+            {evaluation.state !== 'cancelled' && onShareEvent && (
               <EventShareButton
                 eventTitle={event.title}
                 onClick={() => onShareEvent(event)}
@@ -782,21 +781,27 @@ export function BookingModal({
             <div className="pl-6 font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums">
               Horaire : {formatTimeRange(startDate, event.durationMinutes)} ({event.durationMinutes} min) ·{' '}
               {evaluation.state === 'cancelled'
-                ? 'Inscription fermée : événement annulé'
+                ? evaluation.isAutoCancelledNoRegistrants
+                  ? 'Inscriptions clôturées — pas d’inscrit à cette séance, séance annulée'
+                  : 'Inscriptions clôturées : séance annulée'
                 : evaluation.state === 'past'
                   ? 'Inscriptions fermées'
-                  : nowMs >= evaluation.cutoffMs || event.registeredCount >= 1
-                    ? `Inscriptions ouvertes jusqu’à ${formatFrenchTime(startDate)}`
-                    : `Clôture à ${formatFrenchTime(cutoffDate)}`}
+                  : evaluation.state === 'closed'
+                    ? `Inscriptions clôturées (${formatFrenchTime(cutoffDate)})`
+                    : evaluation.cutoffMinutes > 0
+                      ? `Clôture à ${formatFrenchTime(cutoffDate)}`
+                      : `Inscriptions ouvertes jusqu’à ${formatFrenchTime(startDate)}`}
             </div>
             <div className="pl-6">
               <span
                 className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${
                   evaluation.state === 'open'
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                    : evaluation.state === 'cancelled' || evaluation.state === 'full'
-                      ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                      : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                    : evaluation.state === 'closed'
+                      ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                      : evaluation.state === 'cancelled' || evaluation.state === 'full'
+                        ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                        : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
                 }`}
               >
                 {evaluation.statusLabel}
@@ -812,10 +817,6 @@ export function BookingModal({
             <div className="flex items-center gap-2.5">
               <UserCheck className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
               <span>{formatEventCoachesLabel(event)}</span>
-            </div>
-            <div className="flex items-center gap-2.5 font-mono text-xs tabular-nums">
-              <Users className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
-              <span>{evaluation.capacityLabel}</span>
             </div>
             <div className="flex items-center justify-between gap-2.5 border-t border-slate-200/80 pt-2.5 dark:border-slate-700/80">
               <div className="flex items-center gap-2.5">
@@ -857,9 +858,14 @@ export function BookingModal({
 
           {isCoach && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60">
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                {isCoachAdmin ? 'Mode administrateur actif' : 'Mode coach actif'}
-              </span>
+              <div className="space-y-0.5">
+                <span className="block text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {isCoachAdmin ? 'Mode administrateur actif' : 'Mode coach actif'}
+                </span>
+                <span className="block font-mono text-xs font-semibold text-slate-900 tabular-nums dark:text-white">
+                  {evaluation.capacityLabel}
+                </span>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 {onDuplicateEvent && (
                   <button
@@ -2177,21 +2183,19 @@ export function BookingModal({
               className={`rounded-xl border p-4 ${
                 evaluation.state === 'cancelled'
                   ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100'
-                  : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
+                  : evaluation.state === 'closed'
+                    ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-100'
+                    : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
               }`}
             >
               <div className="flex items-start gap-3">
                 <Lock className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="font-display text-sm font-bold">
-                    {evaluation.state === 'cancelled'
-                      ? 'Inscription fermée : événement annulé'
-                      : evaluation.statusLabel}
+                    {evaluation.statusLabel}
                   </h3>
                   <p className="mt-1 text-sm">
-                    {evaluation.state === 'cancelled'
-                      ? 'Inscription fermée : événement annulé.'
-                      : evaluation.helperText}
+                    {evaluation.helperText}
                   </p>
                 </div>
               </div>
@@ -2199,7 +2203,7 @@ export function BookingModal({
           )}
 
           {/* Reviews & Comments Section: visible & actionable only once session ended and validated */}
-          {hasEventEnded && event.status !== 'cancelled' && (
+          {hasEventEnded && evaluation.state !== 'cancelled' && (
             <>
               {!isCoach &&
               existingRegistration?.status === 'confirmed' &&
