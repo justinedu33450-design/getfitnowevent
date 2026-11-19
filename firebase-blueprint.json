@@ -660,7 +660,7 @@
     },
     "DisciplineConfig": {
       "title": "DisciplineConfig",
-      "description": "Discipline sportive personnalisée et son code couleur associé.",
+      "description": "Discipline sportive personnalisée, son code couleur et son picto associé.",
       "type": "object",
       "properties": {
         "name": {
@@ -676,7 +676,11 @@
         },
         "colorKey": {
           "type": "string",
-          "enum": ["emerald", "orange", "sky", "violet", "rose", "teal", "amber", "indigo", "lime", "slate"]
+          "enum": ["emerald", "orange", "sky", "violet", "rose", "teal", "amber", "indigo", "lime", "slate", "cyan", "fuchsia", "blue", "pink"]
+        },
+        "iconKey": {
+          "type": "string",
+          "enum": ["dumbbell", "running-shoe", "flame", "yoga", "bike", "waves", "boxing", "heart-pulse", "zap", "mountain", "music", "ball", "timer", "footprints", "target", "trophy"]
         },
         "createdBy": {
           "type": "string",
@@ -1108,6 +1112,337 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "CoachDirectoryEntry": {
+      "title": "CoachDirectoryEntry",
+      "description": "Annuaire public non-PII des coachs actifs permettant aux adhérents de démarrer une conversation de suivi.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "specialty": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "region": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "photoUrl": {
+          "type": "string",
+          "maxLength": 80000
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "active",
+        "updatedAt"
+      ]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Fil de messagerie directe 1-à-1 entre un coach et un adhérent (${coachUid}__${memberEmailKey}).",
+      "type": "object",
+      "properties": {
+        "coachUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "coachName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "coachPhotoUrl": {
+          "type": "string",
+          "maxLength": 80000
+        },
+        "memberEmail": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 120,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "memberEmailKey": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 48,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "memberName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 125
+        },
+        "memberPhotoUrl": {
+          "type": "string",
+          "maxLength": 80000
+        },
+        "memberUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "lastMessageText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "lastMessageSenderRole": {
+          "type": "string",
+          "enum": ["coach", "member"]
+        },
+        "lastMessageSenderUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "lastMessageAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "coachUnreadCount": {
+          "type": "integer"
+        },
+        "memberUnreadCount": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "coachUid",
+        "coachName",
+        "memberEmail",
+        "memberEmailKey",
+        "memberName",
+        "memberUid",
+        "lastMessageText",
+        "lastMessageSenderRole",
+        "lastMessageSenderUid",
+        "lastMessageAt",
+        "coachUnreadCount",
+        "memberUnreadCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DirectMessage": {
+      "title": "DirectMessage",
+      "description": "Message individuel échangé entre un coach et un adhérent dans une conversation.",
+      "type": "object",
+      "properties": {
+        "conversationId": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "coachUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "memberEmail": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 120,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "senderUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderEmail": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 120,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "senderName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 125
+        },
+        "senderRole": {
+          "type": "string",
+          "enum": ["coach", "member"]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        },
+        "contextEventId": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "contextEventTitle": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "likedByCoach": {
+          "type": "boolean",
+          "description": "Indique si le coach participant a liké ce message."
+        },
+        "likedByMember": {
+          "type": "boolean",
+          "description": "Indique si l'adhérent participant a liké ce message."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "conversationId",
+        "coachUid",
+        "memberEmail",
+        "senderUid",
+        "senderEmail",
+        "senderName",
+        "senderRole",
+        "text",
+        "createdAt"
+      ]
+    },
+    "MemberScheduleSession": {
+      "title": "MemberScheduleSession",
+      "description": "Séance personnalisée du planning hebdomadaire d'un adhérent (programme sur mesure coach ou entraînement personnel en dehors des événements publics).",
+      "type": "object",
+      "properties": {
+        "memberEmail": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 120,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "memberEmailKey": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 48,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "memberName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 125
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "discipline": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 50
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "startAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "durationMinutes": {
+          "type": "integer"
+        },
+        "coachUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "coachName": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "createdByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdByRole": {
+          "type": "string",
+          "enum": ["coach", "member"]
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "memberEmail",
+        "memberEmailKey",
+        "memberName",
+        "title",
+        "discipline",
+        "notes",
+        "location",
+        "startAt",
+        "durationMinutes",
+        "coachUid",
+        "coachName",
+        "createdByUid",
+        "createdByRole",
+        "completed",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -1130,6 +1465,10 @@
     "/admins/{adminId}": {
       "schema": { "$ref": "#/entities/AdminUser" },
       "description": "Comptes coachs administrateurs actifs ou désactivés et leur fiche de renseignement."
+    },
+    "/coachDirectory/{coachUid}": {
+      "schema": { "$ref": "#/entities/CoachDirectoryEntry" },
+      "description": "Annuaire non-PII des coachs actifs accessible aux utilisateurs connectés pour la messagerie."
     },
     "/coachAccessRequests/{requestId}": {
       "schema": { "$ref": "#/entities/CoachAccessRequest" },
@@ -1158,6 +1497,18 @@
     "/eventReviews/{reviewId}": {
       "schema": { "$ref": "#/entities/EventReview" },
       "description": "Avis et commentaires publics laissés par les adhérents après leur séance (${eventId}__${emailKey})."
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Fils de messagerie privée entre un coach et un adhérent (${coachUid}__${memberEmailKey})."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/DirectMessage" },
+      "description": "Messages directs horodatés au sein d'une conversation coach-adhérent."
+    },
+    "/memberSchedules/{sessionId}": {
+      "schema": { "$ref": "#/entities/MemberScheduleSession" },
+      "description": "Séances hebdomadaires personnalisées du programme individuel d'un adhérent (privées pour l'adhérent et les coachs)."
     }
   }
 }

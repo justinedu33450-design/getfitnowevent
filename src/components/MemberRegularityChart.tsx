@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, PieChart } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, PieChart } from 'lucide-react';
 import { Registration, SportEvent } from '../types';
 
 export type RegularityPeriod = 'week' | 'month' | 'year';
@@ -12,6 +12,8 @@ interface MemberRegularityChartProps {
   title?: string;
   subtitle?: string;
   compact?: boolean;
+  collapsible?: boolean;
+  defaultExpanded?: boolean;
   onExploreCalendar?: () => void;
 }
 
@@ -181,11 +183,17 @@ export function MemberRegularityChart({
   title = 'Régularité de l’adhérent',
   subtitle = 'Répartition des événements inscrits, validés et annulés sur la période.',
   compact = false,
+  collapsible = false,
+  defaultExpanded = false,
   onExploreCalendar,
 }: MemberRegularityChartProps) {
+  const [expanded, setExpanded] = useState(
+    collapsible ? defaultExpanded : true
+  );
   const [period, setPeriod] = useState<RegularityPeriod>('month');
   const [offset, setOffset] = useState(0);
   const [activeSlice, setActiveSlice] = useState<SliceKey | null>(null);
+  const isBodyVisible = !collapsible || expanded;
 
   const eventsById = useMemo(
     () => new Map(events.map((ev) => [ev.id, ev])),
@@ -318,47 +326,130 @@ export function MemberRegularityChart({
           .join(', ')}.`;
 
   return (
-    <div className="border-b border-slate-100 pb-5 mb-5 dark:border-slate-800">
+    <div
+      className={
+        collapsible
+          ? 'rounded-xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900'
+          : 'border-b border-slate-100 pb-5 mb-5 dark:border-slate-800'
+      }
+    >
       {/* Header + Period Controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <PieChart
-              className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
-              aria-hidden="true"
-            />
-            <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
-              {title}
-            </h4>
-          </div>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            {subtitle}
-          </p>
-        </div>
+      <div
+        className={`flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between ${
+          collapsible && isBodyVisible
+            ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+            : ''
+        }`}
+      >
+        {collapsible ? (
+          <div className="flex w-full items-start justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setExpanded((prev) => !prev)}
+              aria-expanded={expanded}
+              aria-controls="member-regularity-chart-body"
+              className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                <PieChart className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                  {title}
+                </h4>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  {subtitle}
+                </p>
+              </div>
+            </button>
 
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          <div
-            role="group"
-            aria-label="Échelle de régularité"
-            className="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
-          >
-            {(['week', 'month', 'year'] as RegularityPeriod[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => handleSelectPeriod(p)}
-                className={`min-h-[32px] rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                  period === p
-                    ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+            <button
+              type="button"
+              onClick={() => setExpanded((prev) => !prev)}
+              aria-expanded={expanded}
+              aria-controls="member-regularity-chart-body"
+              aria-label={
+                expanded ? 'Replier la régularité' : 'Déplier la régularité'
+              }
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            >
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${
+                  expanded ? 'rotate-180' : ''
                 }`}
-              >
-                {PERIOD_LABELS[p]}
-              </button>
-            ))}
+                aria-hidden="true"
+              />
+            </button>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <PieChart
+                  className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
+                <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                  {title}
+                </h4>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {subtitle}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              <div
+                role="group"
+                aria-label="Échelle de régularité"
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+              >
+                {(['week', 'month', 'year'] as RegularityPeriod[]).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => handleSelectPeriod(p)}
+                    className={`min-h-[32px] rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                      period === p
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                    }`}
+                  >
+                    {PERIOD_LABELS[p]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
+      {isBodyVisible && (
+        <div id="member-regularity-chart-body">
+          {collapsible && (
+            <div className="mt-3 flex flex-wrap items-center">
+              <div
+                role="group"
+                aria-label="Échelle de régularité"
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+              >
+                {(['week', 'month', 'year'] as RegularityPeriod[]).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => handleSelectPeriod(p)}
+                    className={`min-h-[32px] rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                      period === p
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                    }`}
+                  >
+                    {PERIOD_LABELS[p]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
       {/* Period Navigator */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -601,6 +692,8 @@ export function MemberRegularityChart({
               );
             })}
           </div>
+        </div>
+      )}
         </div>
       )}
     </div>

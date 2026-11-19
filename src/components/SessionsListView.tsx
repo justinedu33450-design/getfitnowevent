@@ -3,7 +3,6 @@ import {
   CheckCircle2,
   Clock,
   List,
-  Lock,
   Map as MapIcon,
   MapPin,
   Search,
@@ -28,6 +27,7 @@ import {
   isSameCalendarDay,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
 import { EventsOverviewMap } from './EventLocationMap';
 import {
   EventLikeButton,
@@ -52,7 +52,7 @@ interface SessionsListViewProps {
   onSelectEvent: (event: SportEvent) => void;
 }
 
-type StatusFilter = 'upcoming' | 'today' | 'open' | 'cutoff' | 'all';
+type StatusFilter = 'upcoming' | 'today' | 'open' | 'all';
 
 export function SessionsListView({
   events,
@@ -149,12 +149,9 @@ export function SessionsListView({
       if (statusFilter === 'open') {
         return evalInfo.state === 'open';
       }
-      if (statusFilter === 'cutoff') {
-        return evalInfo.state === 'cutoff_closed';
-      }
       return true;
     });
-  }, [events, search, cityFilter, regionFilter, statusFilter, disciplineFilter, nowMs]);
+  }, [events, search, cityFilter, regionFilter, statusFilter, disciplineFilter, nowMs, isCoach]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -164,7 +161,7 @@ export function SessionsListView({
             Toutes les séances sportives
           </h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            Recherchez par ville ou région, localisez sur la carte et réservez votre place jusqu’à 1 heure avant le début.
+            Recherchez par ville ou région, localisez sur la carte et réservez votre place jusqu’au début de la séance (dès 1 inscrit 1h avant).
           </p>
         </div>
 
@@ -221,7 +218,6 @@ export function SessionsListView({
               { id: 'upcoming', label: 'À venir' },
               { id: 'today', label: 'Aujourd’hui' },
               { id: 'open', label: 'Ouvertes' },
-              { id: 'cutoff', label: 'Clôturées H-1' },
               { id: 'all', label: 'Historique' },
             ] as const
           ).map((tab) => (
@@ -412,9 +408,10 @@ export function SessionsListView({
                       <span
                         className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                       >
-                        <span
-                          className={`h-2 w-2 rounded-sm ${discStyle.swatchBg}`}
-                          aria-hidden="true"
+                        <DisciplineIcon
+                          disciplineName={ev.discipline}
+                          catalog={disciplines}
+                          className="h-3 w-3 shrink-0"
                         />
                         {ev.discipline}
                       </span>
@@ -441,19 +438,14 @@ export function SessionsListView({
                       className={`inline-flex items-center gap-1 font-semibold shrink-0 ${
                         evalInfo.state === 'open'
                           ? 'text-emerald-700 dark:text-emerald-400'
-                          : evalInfo.state === 'cutoff_closed'
-                            ? 'text-amber-700 dark:text-amber-400'
-                            : evalInfo.state === 'full' ||
-                                evalInfo.state === 'cancelled'
-                              ? 'text-rose-700 dark:text-rose-400'
-                              : 'text-slate-500 dark:text-slate-400'
+                          : evalInfo.state === 'full' ||
+                              evalInfo.state === 'cancelled'
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : 'text-slate-500 dark:text-slate-400'
                       }`}
                     >
                       {evalInfo.state === 'open' && (
                         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      )}
-                      {evalInfo.state === 'cutoff_closed' && (
-                        <Lock className="h-3.5 w-3.5" aria-hidden="true" />
                       )}
                       {(evalInfo.state === 'full' ||
                         evalInfo.state === 'cancelled') && (
@@ -526,9 +518,7 @@ export function SessionsListView({
                     const hasSpots =
                       evalInfo.isUnlimited || (evalInfo.remainingSpots ?? 0) > 0;
                     const canBookFromCard =
-                      hasSpots &&
-                      (evalInfo.state === 'open' ||
-                        (isCoachAdmin && evalInfo.state === 'cutoff_closed'));
+                      hasSpots && evalInfo.state === 'open';
                     return (
                       <div className="flex items-center gap-2">
                         {ev.status === 'published' && onToggleLike && (
@@ -561,15 +551,7 @@ export function SessionsListView({
                             ? ev.isPaid
                               ? `Réserver (${formatEventPrice(ev)})`
                               : 'Réserver & voir la carte'
-                            : isCoachAdmin &&
-                                evalInfo.state === 'cutoff_closed' &&
-                                hasSpots
-                              ? ev.isPaid
-                                ? `Réserver (${formatEventPrice(ev)}) · admin`
-                                : 'Réserver (accès admin)'
-                              : evalInfo.state === 'cutoff_closed'
-                                ? 'Clôturé (< 1h avant début)'
-                                : 'Voir la carte et détails'}
+                            : 'Voir la carte et détails'}
                         </button>
                       </div>
                     );

@@ -20,6 +20,7 @@ import {
   formatFrenchTime,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
 
 const MAPS_ATTRIBUTION_IDS = ['gmp_mcp_codeassist_v1_aistudio'];
 
@@ -514,6 +515,7 @@ function EventsOverviewMapInner({
               <EventPinMarker
                 key={event.id}
                 event={event}
+                disciplines={disciplines}
                 position={pos}
                 pinBackground={discStyle.hex}
                 pinBorderColor={discStyle.borderHex}
@@ -536,12 +538,17 @@ function EventsOverviewMapInner({
             >
               <div className="space-y-1.5 pt-0.5">
                 <p
-                  className="text-[11px] font-semibold"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold"
                   style={{
                     color: getDisciplineStyle(selectedEntry.event.discipline, disciplines)
                       .hex,
                   }}
                 >
+                  <DisciplineIcon
+                    disciplineName={selectedEntry.event.discipline}
+                    catalog={disciplines}
+                    className="h-3 w-3 shrink-0"
+                  />
                   {selectedEntry.event.discipline} · {selectedEntry.event.city}
                 </p>
                 <p className="text-xs capitalize opacity-90">
@@ -577,6 +584,7 @@ function EventsOverviewMapInner({
 
 function EventPinMarker({
   event,
+  disciplines,
   position,
   pinBackground,
   pinBorderColor,
@@ -584,6 +592,7 @@ function EventPinMarker({
   onSelect,
 }: {
   event: SportEvent;
+  disciplines: DisciplineItem[];
   position: { lat: number; lng: number };
   pinBackground: string;
   pinBorderColor: string;
@@ -601,7 +610,13 @@ function EventPinMarker({
         borderColor={isSelected ? '#020617' : pinBorderColor}
         glyphColor="#ffffff"
         scale={isSelected ? 1.15 : 1}
-      />
+      >
+        <DisciplineIcon
+          disciplineName={event.discipline}
+          catalog={disciplines}
+          className="h-3.5 w-3.5 text-white"
+        />
+      </Pin>
     </AdvancedMarker>
   );
 }

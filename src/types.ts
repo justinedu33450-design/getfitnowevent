@@ -12,13 +12,36 @@ export type DisciplineColorKey =
   | 'amber'
   | 'indigo'
   | 'lime'
-  | 'slate';
+  | 'slate'
+  | 'cyan'
+  | 'fuchsia'
+  | 'blue'
+  | 'pink';
+
+export type DisciplineIconKey =
+  | 'dumbbell'
+  | 'running-shoe'
+  | 'flame'
+  | 'yoga'
+  | 'bike'
+  | 'waves'
+  | 'boxing'
+  | 'heart-pulse'
+  | 'zap'
+  | 'mountain'
+  | 'music'
+  | 'ball'
+  | 'timer'
+  | 'footprints'
+  | 'target'
+  | 'trophy';
 
 export interface CustomDiscipline {
   id: string;
   name: string;
   slug: string;
   colorKey: DisciplineColorKey;
+  iconKey?: DisciplineIconKey;
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -28,6 +51,7 @@ export interface DisciplineItem {
   id: string;
   name: string;
   colorKey: DisciplineColorKey;
+  iconKey: DisciplineIconKey;
   customDoc?: CustomDiscipline;
 }
 
@@ -91,6 +115,10 @@ export const VALIDATION_LIMITS = {
   REVIEW_RATING_MAX: 5,
   REVIEW_AUTHOR_NAME_MIN: 2,
   REVIEW_AUTHOR_NAME_MAX: 80,
+  MESSAGE_TEXT_MIN: 1,
+  MESSAGE_TEXT_MAX: 1500,
+  MESSAGE_PREVIEW_MAX: 240,
+  SCHEDULE_NOTES_MAX: 600,
 } as const;
 
 export interface SportEvent {
@@ -276,7 +304,6 @@ export interface CoachAdminInvite {
 
 export type BookingAvailabilityState =
   | 'open'
-  | 'cutoff_closed'
   | 'full'
   | 'past'
   | 'cancelled';
@@ -285,6 +312,7 @@ export type AppSection =
   | 'calendar'
   | 'sessions'
   | 'member-profile'
+  | 'messages'
   | 'members'
   | 'manage'
   | 'coaches';
@@ -352,4 +380,89 @@ export interface EventReview {
 export interface EventRatingSummary {
   averageRating: number;
   count: number;
+}
+
+export interface CoachDirectoryEntry {
+  id: string;
+  uid: string;
+  displayName: string;
+  specialty?: string;
+  city?: string;
+  region?: string;
+  bio?: string;
+  photoUrl?: string;
+  active: boolean;
+  updatedAt: Timestamp;
+}
+
+export type ConversationSenderRole = 'coach' | 'member';
+
+export interface Conversation {
+  id: string;
+  coachUid: string;
+  coachName: string;
+  coachPhotoUrl?: string;
+  memberEmail: string;
+  memberEmailKey: string;
+  memberName: string;
+  memberPhotoUrl?: string;
+  memberUid: string;
+  lastMessageText: string;
+  lastMessageSenderRole: ConversationSenderRole;
+  lastMessageSenderUid: string;
+  lastMessageAt: Timestamp;
+  coachUnreadCount: number;
+  memberUnreadCount: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface DirectMessage {
+  id: string;
+  conversationId: string;
+  coachUid: string;
+  memberEmail: string;
+  senderUid: string;
+  senderEmail: string;
+  senderName: string;
+  senderRole: ConversationSenderRole;
+  text: string;
+  contextEventId?: string;
+  contextEventTitle?: string;
+  likedByCoach?: boolean;
+  likedByMember?: boolean;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface PendingMessageTarget {
+  coachUid: string;
+  coachName?: string;
+  coachPhotoUrl?: string;
+  memberEmail: string;
+  memberEmailKey?: string;
+  memberName?: string;
+  memberPhotoUrl?: string;
+  contextEventId?: string;
+  contextEventTitle?: string;
+}
+
+export interface MemberScheduleSession {
+  id: string;
+  memberEmail: string;
+  memberEmailKey: string;
+  memberName: string;
+  title: string;
+  discipline: Discipline;
+  notes: string;
+  location: string;
+  startAt: Timestamp;
+  durationMinutes: number;
+  coachUid: string;
+  coachName: string;
+  createdByUid: string;
+  createdByRole: 'coach' | 'member';
+  completed: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }

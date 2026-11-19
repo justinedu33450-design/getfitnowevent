@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ClipboardList,
   Dumbbell,
+  MessageSquare,
   Moon,
   ShieldCheck,
   Sun,
@@ -23,6 +24,7 @@ interface TopBarProps {
   pendingCoachRequestsCount?: number;
   unreadCoachNotificationsCount?: number;
   unreadMemberNotificationsCount?: number;
+  unreadMessagesCount?: number;
   memberTrackingBadgeCount?: number;
   notificationsOpen?: boolean;
   onToggleNotifications?: () => void;
@@ -43,6 +45,7 @@ export function TopBar({
   pendingCoachRequestsCount = 0,
   unreadCoachNotificationsCount = 0,
   unreadMemberNotificationsCount = 0,
+  unreadMessagesCount = 0,
   memberTrackingBadgeCount = 0,
   notificationsOpen = false,
   onToggleNotifications,
@@ -97,6 +100,14 @@ export function TopBar({
             icon: Users,
           },
           {
+            id: 'messages',
+            label: 'Messagerie',
+            mobileLabel: 'Messages',
+            icon: MessageSquare,
+            badge:
+              unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
+          },
+          {
             id: 'manage',
             label: 'Gestion',
             mobileLabel: 'Gestion',
@@ -125,6 +136,14 @@ export function TopBar({
             label: 'Séances',
             mobileLabel: 'Séances',
             icon: Dumbbell,
+          },
+          {
+            id: 'messages',
+            label: 'Messagerie',
+            mobileLabel: 'Messages',
+            icon: MessageSquare,
+            badge:
+              unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
           },
           {
             id: 'member-profile',
@@ -274,7 +293,7 @@ export function TopBar({
         <nav
           aria-label="Navigation mobile"
           className={`fixed bottom-0 left-0 right-0 z-40 grid h-16 border-t border-slate-200 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 md:hidden ${
-            !isSignedIn ? 'grid-cols-2' : isCoach ? 'grid-cols-5' : 'grid-cols-3'
+            !isSignedIn ? 'grid-cols-2' : isCoach ? 'grid-cols-6' : 'grid-cols-4'
           }`}
         >
           {navItems.map((item) => {

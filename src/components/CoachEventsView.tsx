@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import {
   DisciplineColorKey,
+  DisciplineIconKey,
   DisciplineItem,
   EventRatingSummary,
   Registration,
@@ -30,6 +31,7 @@ import {
   deleteEvent,
   seedDemoEvents,
   updateCustomDisciplineColor,
+  updateCustomDisciplineIcon,
 } from '../services/firestoreService';
 import {
   evaluateEventBooking,
@@ -46,8 +48,13 @@ import {
 import {
   DISCIPLINE_COLOR_KEYS,
   DISCIPLINE_COLOR_PRESETS,
+  DISCIPLINE_ICON_KEYS,
+  DISCIPLINE_ICON_PRESETS,
   getDisciplineStyle,
+  inferDisciplineIconKey,
+  pickNextUnusedColorKey,
 } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
 import { EventRatingInline, EventShareButton } from './EventEngagementWidgets';
 
 interface CoachEventsViewProps {
@@ -100,7 +107,13 @@ export function CoachEventsView({
   // Discipline management drawer/panel
   const [showDisciplinesPanel, setShowDisciplinesPanel] = useState(false);
   const [newDiscName, setNewDiscName] = useState('');
-  const [newDiscColor, setNewDiscColor] = useState<DisciplineColorKey>('indigo');
+  const [manualDiscColor, setManualDiscColor] =
+    useState<DisciplineColorKey | null>(null);
+  const [manualDiscIcon, setManualDiscIcon] =
+    useState<DisciplineIconKey | null>(null);
+  const [editingIconDiscId, setEditingIconDiscId] = useState<string | null>(
+    null
+  );
   const [confirmDeleteDiscId, setConfirmDeleteDiscId] = useState<string | null>(
     null
   );
@@ -109,6 +122,12 @@ export function CoachEventsView({
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+
+  const usedDisciplineColorKeys = new Set(disciplines.map((d) => d.colorKey));
+  const selectedNewDiscColor =
+    manualDiscColor ?? pickNextUnusedColorKey(disciplines);
+  const selectedNewDiscIcon =
+    manualDiscIcon ?? inferDisciplineIconKey(newDiscName);
 
   const handleConfirmDelete = async (ev: SportEvent) => {
     setEventActionFeedback(null);
@@ -158,11 +177,14 @@ export function CoachEventsView({
     try {
       const added = await createCustomDiscipline({
         name: newDiscName,
-        colorKey: newDiscColor,
+        colorKey: selectedNewDiscColor,
+        iconKey: selectedNewDiscIcon,
         coachUid,
-        existingNames: disciplines.map((d) => d.name),
+        existingDisciplines: disciplines,
       });
       setNewDiscName('');
+      setManualDiscColor(null);
+      setManualDiscIcon(null);
       setDiscFeedback({
         type: 'success',
         text: `Discipline « ${added} » ajoutée au planning.`,
@@ -336,32 +358,90 @@ export function CoachEventsView({
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Code couleur :
-              </span>
-              {DISCIPLINE_COLOR_KEYS.map((key) => {
-                const preset = DISCIPLINE_COLOR_PRESETS[key];
-                const selected = newDiscColor === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setNewDiscColor(key)}
-                    title={preset.label}
-                    aria-label={`Choisir la couleur ${preset.label}`}
-                    className={`flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-transform ${preset.swatchBg} ${
-                      selected
-                        ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-slate-100 dark:ring-offset-slate-900 scale-105'
-                        : 'opacity-80 hover:opacity-100'
-                    }`}
-                  >
-                    {selected && (
-                      <Check className="h-3.5 w-3.5 text-white" aria-hidden="true" />
-                    )}
-                  </button>
-                );
-              })}
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Code couleur :{' '}
+                  <strong className="text-slate-900 dark:text-white">
+                    {DISCIPLINE_COLOR_PRESETS[selectedNewDiscColor].label}
+                  </strong>
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {!manualDiscColor && !usedDisciplineColorKeys.has(selectedNewDiscColor)
+                    ? 'Couleur disponible attribuée automatiquement'
+                    : usedDisciplineColorKeys.has(selectedNewDiscColor)
+                      ? 'Couleur déjà utilisée par une autre discipline'
+                      : 'Couleur disponible'}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {DISCIPLINE_COLOR_KEYS.map((key) => {
+                  const preset = DISCIPLINE_COLOR_PRESETS[key];
+                  const selected = selectedNewDiscColor === key;
+                  const isUsed = usedDisciplineColorKeys.has(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setManualDiscColor(key)}
+                      title={`${preset.label}${isUsed ? ' (déjà utilisée)' : ' (disponible)'}`}
+                      aria-label={`Choisir la couleur ${preset.label}${isUsed ? ' (déjà utilisée)' : ''}`}
+                      className={`relative flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-transform ${preset.swatchBg} ${
+                        selected
+                          ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-slate-100 dark:ring-offset-slate-900 scale-105'
+                          : isUsed
+                            ? 'opacity-45 hover:opacity-90'
+                            : 'opacity-85 hover:opacity-100'
+                      }`}
+                    >
+                      {selected && (
+                        <Check className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Picto de la discipline :{' '}
+                  <strong className="text-slate-900 dark:text-white">
+                    {DISCIPLINE_ICON_PRESETS[selectedNewDiscIcon].label}
+                  </strong>
+                </span>
+                {!manualDiscIcon && newDiscName.trim().length >= 2 && (
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                    Suggestion automatique
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {DISCIPLINE_ICON_KEYS.map((iconKey) => {
+                  const meta = DISCIPLINE_ICON_PRESETS[iconKey];
+                  const selected = selectedNewDiscIcon === iconKey;
+                  const activePreset =
+                    DISCIPLINE_COLOR_PRESETS[selectedNewDiscColor];
+                  return (
+                    <button
+                      key={iconKey}
+                      type="button"
+                      onClick={() => setManualDiscIcon(iconKey)}
+                      title={meta.label}
+                      aria-label={`Picto ${meta.label}`}
+                      aria-pressed={selected}
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg border cursor-pointer transition-colors ${
+                        selected
+                          ? `${activePreset.softBg} ${activePreset.border} ${activePreset.text} ring-2 ring-slate-900/20 dark:ring-white/25`
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                      }`}
+                    >
+                      <DisciplineIcon iconKey={iconKey} className="h-4 w-4" />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {discFeedback && (
@@ -391,83 +471,154 @@ export function CoachEventsView({
                 {disciplines.map((item) => {
                   const preset = DISCIPLINE_COLOR_PRESETS[item.colorKey];
                   const isConfirming = confirmDeleteDiscId === item.id;
+                  const isEditingIcon = editingIconDiscId === item.id;
                   return (
                     <li
                       key={item.id}
-                      className={`flex flex-col gap-3 border-l-4 p-3.5 sm:flex-row sm:items-center sm:justify-between ${preset.leftBorder}`}
+                      className={`border-l-4 p-3.5 ${preset.leftBorder}`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span
-                          className={`h-3.5 w-3.5 shrink-0 rounded-sm ${preset.swatchBg}`}
-                          aria-hidden="true"
-                        />
-                        <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">
-                          {item.name}
-                        </span>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${preset.softBg} ${preset.border} ${preset.text}`}
+                            title={DISCIPLINE_ICON_PRESETS[item.iconKey].label}
+                          >
+                            <DisciplineIcon
+                              iconKey={item.iconKey}
+                              className="h-4 w-4"
+                            />
+                          </span>
+                          <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                            {item.name}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2.5 sm:justify-end">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {DISCIPLINE_COLOR_KEYS.map((key) => {
+                              const c = DISCIPLINE_COLOR_PRESETS[key];
+                              const active = item.colorKey === key;
+                              return (
+                                <button
+                                  key={key}
+                                  type="button"
+                                  onClick={() =>
+                                    void updateCustomDisciplineColor({
+                                      name: item.name,
+                                      slug: item.id,
+                                      colorKey: key,
+                                      iconKey: item.iconKey,
+                                      coachUid,
+                                    })
+                                  }
+                                  title={`Appliquer ${c.label} à ${item.name}`}
+                                  aria-label={`Couleur ${c.label} pour ${item.name}`}
+                                  className={`h-5 w-5 rounded-sm cursor-pointer ${c.swatchBg} ${
+                                    active
+                                      ? 'ring-2 ring-slate-900 ring-offset-1 dark:ring-slate-100 dark:ring-offset-slate-900'
+                                      : 'opacity-55 hover:opacity-100'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditingIconDiscId((prev) =>
+                                prev === item.id ? null : item.id
+                              )
+                            }
+                            aria-expanded={isEditingIcon}
+                            title={`Changer le picto de ${item.name}`}
+                            className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium cursor-pointer ${
+                              isEditingIcon
+                                ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
+                                : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                            }`}
+                          >
+                            <DisciplineIcon
+                              iconKey={item.iconKey}
+                              className="h-3.5 w-3.5"
+                            />
+                            Picto
+                          </button>
+
+                          {isConfirming ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await deleteCustomDiscipline(item.id);
+                                  setConfirmDeleteDiscId(null);
+                                }}
+                                className="min-h-[32px] rounded-md bg-rose-600 px-2.5 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                              >
+                                Supprimer
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteDiscId(null)}
+                                className="min-h-[32px] rounded-md border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteDiscId(item.id)}
+                              title={`Supprimer ${item.name}`}
+                              aria-label={`Supprimer la discipline ${item.name}`}
+                              className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 px-2.5 text-xs font-medium text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                              Supprimer
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {DISCIPLINE_COLOR_KEYS.map((key) => {
-                            const c = DISCIPLINE_COLOR_PRESETS[key];
-                            const active = item.colorKey === key;
+                      {isEditingIcon && (
+                        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
+                          <span className="mr-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                            Choisir un picto :
+                          </span>
+                          {DISCIPLINE_ICON_KEYS.map((iconKey) => {
+                            const meta = DISCIPLINE_ICON_PRESETS[iconKey];
+                            const active = item.iconKey === iconKey;
                             return (
                               <button
-                                key={key}
+                                key={iconKey}
                                 type="button"
-                                onClick={() =>
-                                  void updateCustomDisciplineColor({
+                                onClick={async () => {
+                                  await updateCustomDisciplineIcon({
                                     name: item.name,
                                     slug: item.id,
-                                    colorKey: key,
+                                    colorKey: item.colorKey,
+                                    iconKey,
                                     coachUid,
-                                  })
-                                }
-                                title={`Appliquer ${c.label} à ${item.name}`}
-                                aria-label={`Couleur ${c.label} pour ${item.name}`}
-                                className={`h-5 w-5 rounded-sm cursor-pointer ${c.swatchBg} ${
+                                  });
+                                  setEditingIconDiscId(null);
+                                }}
+                                title={meta.label}
+                                aria-label={`${meta.label} pour ${item.name}`}
+                                className={`flex h-8 w-8 items-center justify-center rounded-md border cursor-pointer transition-colors ${
                                   active
-                                    ? 'ring-2 ring-slate-900 ring-offset-1 dark:ring-slate-100 dark:ring-offset-slate-900'
-                                    : 'opacity-55 hover:opacity-100'
+                                    ? `${preset.softBg} ${preset.border} ${preset.text} ring-2 ring-slate-900/20 dark:ring-white/25`
+                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
                                 }`}
-                              />
+                              >
+                                <DisciplineIcon
+                                  iconKey={iconKey}
+                                  className="h-4 w-4"
+                                />
+                              </button>
                             );
                           })}
                         </div>
-
-                        {isConfirming ? (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                await deleteCustomDiscipline(item.id);
-                                setConfirmDeleteDiscId(null);
-                              }}
-                              className="min-h-[32px] rounded-md bg-rose-600 px-2.5 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
-                            >
-                              Supprimer
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteDiscId(null)}
-                              className="min-h-[32px] rounded-md border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
-                            >
-                              Annuler
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteDiscId(item.id)}
-                            title={`Supprimer ${item.name}`}
-                            aria-label={`Supprimer la discipline ${item.name}`}
-                            className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 px-2.5 text-xs font-medium text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                            Supprimer
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </li>
                   );
                 })}
@@ -527,7 +678,7 @@ export function CoachEventsView({
             Aucun événement sportif programmé
           </h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
-            Créez votre première séance sportive ou générez un planning d’exemple incluant une séance dans 42 minutes pour tester la clôture automatique H-1.
+            Créez votre première séance sportive ou générez un planning d’exemple incluant une séance dans 75 minutes pour tester la règle d’annulation H-1 sans inscrit.
           </p>
           <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <button
@@ -587,9 +738,10 @@ export function CoachEventsView({
                         <span
                           className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                         >
-                          <span
-                            className={`h-2 w-2 rounded-sm ${discStyle.swatchBg}`}
-                            aria-hidden="true"
+                          <DisciplineIcon
+                            disciplineName={ev.discipline}
+                            catalog={disciplines}
+                            className="h-3 w-3 shrink-0"
                           />
                           {ev.discipline}
                         </span>
@@ -623,12 +775,10 @@ export function CoachEventsView({
                       className={`shrink-0 text-xs font-semibold ${
                         evalInfo.state === 'open'
                           ? 'text-emerald-700 dark:text-emerald-400'
-                          : evalInfo.state === 'cutoff_closed'
-                            ? 'text-amber-700 dark:text-amber-400'
-                            : evalInfo.state === 'full' ||
-                                evalInfo.state === 'cancelled'
-                              ? 'text-rose-700 dark:text-rose-400'
-                              : 'text-slate-500 dark:text-slate-400'
+                          : evalInfo.state === 'full' ||
+                              evalInfo.state === 'cancelled'
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : 'text-slate-500 dark:text-slate-400'
                       }`}
                     >
                       {evalInfo.statusLabel}
@@ -802,9 +952,10 @@ export function CoachEventsView({
                             <span
                               className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                             >
-                              <span
-                                className={`h-2 w-2 rounded-sm ${discStyle.swatchBg}`}
-                                aria-hidden="true"
+                              <DisciplineIcon
+                                disciplineName={ev.discipline}
+                                catalog={disciplines}
+                                className="h-3 w-3 shrink-0"
                               />
                               {ev.discipline}
                             </span>
@@ -869,12 +1020,10 @@ export function CoachEventsView({
                             className={`text-xs font-semibold ${
                               evalInfo.state === 'open'
                                 ? 'text-emerald-700 dark:text-emerald-400'
-                                : evalInfo.state === 'cutoff_closed'
-                                  ? 'text-amber-700 dark:text-amber-400'
-                                  : evalInfo.state === 'full' ||
-                                      evalInfo.state === 'cancelled'
-                                    ? 'text-rose-700 dark:text-rose-400'
-                                    : 'text-slate-500 dark:text-slate-400'
+                                : evalInfo.state === 'full' ||
+                                    evalInfo.state === 'cancelled'
+                                  ? 'text-rose-700 dark:text-rose-400'
+                                  : 'text-slate-500 dark:text-slate-400'
                             }`}
                           >
                             {evalInfo.statusLabel}

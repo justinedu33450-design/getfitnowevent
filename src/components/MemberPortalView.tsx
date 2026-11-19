@@ -11,17 +11,22 @@ import {
   MapPin,
   MessageSquare,
   Save,
+  Sparkles,
   Trash2,
   UserCheck,
+  X,
   XCircle,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
+  CoachDirectoryEntry,
+  Conversation,
   DisciplineItem,
   EventRatingSummary,
   EventReview,
   FitnessLevel,
   MemberProfile,
+  MemberScheduleSession,
   Registration,
   SportEvent,
   VALIDATION_LIMITS,
@@ -45,6 +50,12 @@ import {
   toLocalDateInputValue,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
+import {
+  computeMemberBadges,
+  getNewlyUnlockedBadges,
+  MemberBadgeItem,
+} from '../utils/memberBadges';
 import { downloadPaymentReceipt } from '../utils/paymentHelpers';
 import { PhotoUploadField, ProfileAvatar } from './ProfileAvatar';
 import { PasswordSettingsCard } from './PasswordSettingsCard';
@@ -56,6 +67,8 @@ import {
   StarRatingDisplay,
 } from './EventEngagementWidgets';
 import { MemberRegularityChart } from './MemberRegularityChart';
+import { MemberBadgesCard } from './MemberBadgesCard';
+import { MemberWeeklyScheduleCard } from './MemberWeeklyScheduleCard';
 
 interface MemberPortalViewProps {
   user: User;
@@ -72,10 +85,18 @@ interface MemberPortalViewProps {
   ratingSummaryByEventId?: Map<string, EventRatingSummary>;
   initialReviewRegId?: string | null;
   onClearInitialReviewRegId?: () => void;
+  initialBadgesExpandNonce?: number;
+  initialHighlightedBadgeIds?: string[];
   onValidateSession?: (registration: Registration) => Promise<void>;
   onCancelRegistration?: (registration: Registration) => Promise<void>;
   onSelectEvent: (event: SportEvent) => void;
   onExploreCalendar: () => void;
+  unreadMessagesCount?: number;
+  recentConversations?: Conversation[];
+  onOpenMessages?: (conversation?: Conversation) => void;
+  customScheduleSessions?: MemberScheduleSession[];
+  coachDirectory?: CoachDirectoryEntry[];
+  onRequestCoachProgram?: (coach?: CoachDirectoryEntry) => void;
   onSignOut: () => void;
 }
 
@@ -94,10 +115,18 @@ export function MemberPortalView({
   ratingSummaryByEventId,
   initialReviewRegId,
   onClearInitialReviewRegId,
+  initialBadgesExpandNonce = 0,
+  initialHighlightedBadgeIds = [],
   onValidateSession,
   onCancelRegistration,
   onSelectEvent,
   onExploreCalendar,
+  unreadMessagesCount = 0,
+  recentConversations = [],
+  onOpenMessages,
+  customScheduleSessions = [],
+  coachDirectory = [],
+  onRequestCoachProgram,
   onSignOut,
 }: MemberPortalViewProps) {
   const defaultNames = useMemo(() => {
@@ -130,7 +159,8 @@ export function MemberPortalView({
   const [trackingTab, setTrackingTab] = useState<'upcoming' | 'history' | 'cancelled'>(
     'upcoming'
   );
-  const [profileExpanded, setProfileExpanded] = useState(true);
+  const [profileExpanded, setProfileExpanded] = useState(false);
+  const [trackingExpanded, setTrackingExpanded] = useState(false);
   const [validatingRegId, setValidatingRegId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [confirmCancelRegId, setConfirmCancelRegId] = useState<string | null>(null);
@@ -148,9 +178,28 @@ export function MemberPortalView({
     string | null
   >(null);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+  const [badgesExpandNonce, setBadgesExpandNonce] = useState(
+    initialBadgesExpandNonce
+  );
+  const [newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<
+    MemberBadgeItem[]
+  >([]);
+  const [highlightedBadgeIds, setHighlightedBadgeIds] = useState<string[]>(
+    initialHighlightedBadgeIds
+  );
+
+  useEffect(() => {
+    if (initialBadgesExpandNonce > 0) {
+      setBadgesExpandNonce(initialBadgesExpandNonce);
+      if (initialHighlightedBadgeIds.length > 0) {
+        setHighlightedBadgeIds(initialHighlightedBadgeIds);
+      }
+    }
+  }, [initialBadgesExpandNonce, initialHighlightedBadgeIds]);
 
   useEffect(() => {
     if (!initialReviewRegId) return;
+    setTrackingExpanded(true);
     setTrackingTab('history');
     setReviewingRegId(initialReviewRegId);
     setReviewError(null);
@@ -252,6 +301,19 @@ export function MemberPortalView({
     [confirmedRegistrations, userEmailLower]
   );
 
+  const badgesSummary = useMemo(
+    () =>
+      computeMemberBadges({
+        registrations,
+        events,
+        disciplines,
+        memberEmail: user.email,
+        reviewsByRegId,
+        nowMs,
+      }),
+    [registrations, events, disciplines, user.email, reviewsByRegId, nowMs]
+  );
+
   const fullName =
     `${firstName} ${lastName}`.trim() ||
     user.displayName ||
@@ -295,8 +357,26 @@ export function MemberPortalView({
     if (!onValidateSession) return;
     setValidationError(null);
     setValidatingRegId(reg.id);
+    const beforeSummary = badgesSummary;
     try {
       await onValidateSession(reg);
+      const afterRegs = registrations.map((item) =>
+        item.id === reg.id ? { ...item, attended: true } : item
+      );
+      const afterSummary = computeMemberBadges({
+        registrations: afterRegs,
+        events,
+        disciplines,
+        memberEmail: user.email,
+        reviewsByRegId,
+        nowMs,
+      });
+      const unlockedNow = getNewlyUnlockedBadges(beforeSummary, afterSummary);
+      if (unlockedNow.length > 0) {
+        setNewlyUnlockedBadges(unlockedNow);
+        setHighlightedBadgeIds(unlockedNow.map((b) => b.id));
+        setBadgesExpandNonce((prev) => prev + 1);
+      }
       setReviewError(null);
       setReviewingRegId(reg.id);
     } catch (err) {
@@ -396,6 +476,21 @@ export function MemberPortalView({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          {onOpenMessages && (
+            <button
+              type="button"
+              onClick={() => onOpenMessages()}
+              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
+            >
+              <MessageSquare className="h-4 w-4 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+              <span>Messagerie</span>
+              {unreadMessagesCount > 0 && (
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 font-mono text-[10px] font-bold text-white tabular-nums">
+                  {unreadMessagesCount}
+                </span>
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={onExploreCalendar}
@@ -414,6 +509,37 @@ export function MemberPortalView({
           </button>
         </div>
       </div>
+
+      {onOpenMessages && (
+        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+              <MessageSquare className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 text-xs">
+              <p className="font-semibold text-slate-900 dark:text-white">
+                {unreadMessagesCount > 0
+                  ? `${unreadMessagesCount} nouveau${unreadMessagesCount > 1 ? 'x' : ''} message${unreadMessagesCount > 1 ? 's' : ''} de votre coach`
+                  : 'Échanger avec un coach'}
+              </p>
+              <p className="mt-0.5 truncate text-slate-500 dark:text-slate-400">
+                {recentConversations.length > 0
+                  ? `${recentConversations[0].coachName} : « ${recentConversations[0].lastMessageText} »`
+                  : 'Posez vos questions sur les séances ou faites le point sur votre progression.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpenMessages(recentConversations[0])}
+            className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+          >
+            {recentConversations.length > 0
+              ? 'Ouvrir la discussion'
+              : 'Contacter un coach'}
+          </button>
+        </div>
+      )}
 
       {/* 4-Column Personal KPI Strip */}
       <div className="mt-6 grid grid-cols-2 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-4 sm:divide-x sm:divide-y-0">
@@ -444,10 +570,79 @@ export function MemberPortalView({
           <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
             {attendedCount}
           </p>
+          <p className="mt-0.5 font-mono text-[11px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+            {badgesSummary.unlockedCount}/{badgesSummary.totalCount} badges débloqués
+          </p>
         </div>
       </div>
 
-      {/* Main Split: Profile Editor + Personal Event Tracking */}
+      {newlyUnlockedBadges.length > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mt-5 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-2.5 min-w-0">
+            <Sparkles
+              className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 text-xs">
+              <p className="font-bold">
+                {newlyUnlockedBadges.length === 1
+                  ? `Félicitations ! Nouveau badge débloqué : ${newlyUnlockedBadges[0].title}`
+                  : `Félicitations ! ${newlyUnlockedBadges.length} nouveaux badges débloqués`}
+              </p>
+              <p className="mt-0.5 text-emerald-800 dark:text-emerald-200">
+                {newlyUnlockedBadges.map((b) => b.title).join(' · ')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setBadgesExpandNonce((prev) => prev + 1);
+                document
+                  .getElementById('member-badges-section')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }}
+              className="inline-flex min-h-[36px] items-center rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+            >
+              Voir mes badges
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewlyUnlockedBadges([])}
+              aria-label="Fermer la notification de badge"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-900/50 cursor-pointer"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Personal Weekly Schedule (Custom Program + Self-Registered Events) */}
+      <div className="mt-6">
+        <MemberWeeklyScheduleCard
+          mode="member"
+          memberEmail={user.email ?? ''}
+          memberName={fullName}
+          currentUserUid={user.uid}
+          customSessions={customScheduleSessions}
+          registrations={registrations}
+          events={events}
+          disciplines={disciplines}
+          coachDirectory={coachDirectory}
+          nowMs={nowMs}
+          defaultExpanded
+          onSelectEvent={onSelectEvent}
+          onRequestCoachProgram={onRequestCoachProgram}
+        />
+      </div>
+
+      {/* Main Split: Profile Editor + Personal Event Tracking & Badges */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
         {/* Left Column: Profile + Password */}
         <div className="space-y-6 lg:col-span-5">
@@ -478,11 +673,10 @@ export function MemberPortalView({
                   ? 'Replier les informations du profil'
                   : 'Déplier les informations du profil'
               }
-              className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer whitespace-nowrap"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
             >
-              <span>{profileExpanded ? 'Replier' : 'Déplier'}</span>
               <ChevronDown
-                className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                className={`h-4 w-4 transition-transform duration-200 ${
                   profileExpanded ? 'rotate-180' : ''
                 }`}
                 aria-hidden="true"
@@ -675,78 +869,113 @@ export function MemberPortalView({
           <PasswordSettingsCard user={user} stacked collapsible />
         </div>
 
-        {/* Event Tracking Card */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 lg:col-span-7">
-          <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                Mon suivi des événements
-              </h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Retrouvez vos séances réservées et l’historique de vos présences.
-              </p>
+        {/* Right Column: Personal Event Tracking + Member Badges */}
+        <div className="space-y-6 lg:col-span-7">
+          {/* Event Tracking Card */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div
+            className={
+              trackingExpanded
+                ? 'border-b border-slate-100 pb-4 dark:border-slate-800'
+                : ''
+            }
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                  Mon suivi des événements
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Retrouvez vos séances réservées et l’historique de vos présences.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTrackingExpanded((prev) => !prev)}
+                aria-expanded={trackingExpanded}
+                aria-controls="member-tracking-details"
+                aria-label={
+                  trackingExpanded
+                    ? 'Replier le suivi des événements'
+                    : 'Déplier le suivi des événements'
+                }
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              >
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    trackingExpanded ? 'rotate-180' : ''
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
             </div>
 
-            <div
-              role="group"
-              aria-label="Filtrer mes événements"
-              className="inline-flex flex-wrap items-center gap-1 self-start rounded-lg bg-slate-100 p-1 dark:bg-slate-800 sm:self-auto"
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setTrackingTab('upcoming');
-                  setConfirmCancelRegId(null);
-                }}
-                className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
-                  trackingTab === 'upcoming'
-                    ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                À venir ({upcomingRegistrations.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setTrackingTab('history');
-                  setConfirmCancelRegId(null);
-                }}
-                className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
-                  trackingTab === 'history'
-                    ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                <span>Historique ({pastRegistrations.length})</span>
-                {endedUnvalidatedRegistrations.length > 0 && (
-                  <span
-                    aria-label={`${endedUnvalidatedRegistrations.length} séance(s) à valider`}
-                    className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums"
-                  >
-                    {endedUnvalidatedRegistrations.length}
-                  </span>
-                )}
-              </button>
-              {(cancelledRegistrations.length > 0 || trackingTab === 'cancelled') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTrackingTab('cancelled');
-                    setConfirmCancelRegId(null);
-                  }}
-                  className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
-                    trackingTab === 'cancelled'
-                      ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                  }`}
+            {trackingExpanded && (
+              <div className="mt-3 flex flex-wrap items-center">
+                <div
+                  role="group"
+                  aria-label="Filtrer mes événements"
+                  className="inline-flex flex-wrap items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
                 >
-                  Annulées ({cancelledRegistrations.length})
-                </button>
-              )}
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTrackingTab('upcoming');
+                      setConfirmCancelRegId(null);
+                    }}
+                    className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
+                      trackingTab === 'upcoming'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                    }`}
+                  >
+                    À venir ({upcomingRegistrations.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTrackingTab('history');
+                      setConfirmCancelRegId(null);
+                    }}
+                    className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
+                      trackingTab === 'history'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                    }`}
+                  >
+                    <span>Historique ({pastRegistrations.length})</span>
+                    {endedUnvalidatedRegistrations.length > 0 && (
+                      <span
+                        aria-label={`${endedUnvalidatedRegistrations.length} séance(s) à valider`}
+                        className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums"
+                      >
+                        {endedUnvalidatedRegistrations.length}
+                      </span>
+                    )}
+                  </button>
+                  {(cancelledRegistrations.length > 0 || trackingTab === 'cancelled') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTrackingTab('cancelled');
+                        setConfirmCancelRegId(null);
+                      }}
+                      className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
+                        trackingTab === 'cancelled'
+                          ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                      }`}
+                    >
+                      Annulées ({cancelledRegistrations.length})
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
+          {trackingExpanded && (
+          <div id="member-tracking-details">
           {endedUnvalidatedRegistrations.length > 0 && (
             <div className="mt-4 flex flex-col gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3.5 dark:border-amber-800 dark:bg-amber-950/45 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-2.5 min-w-0">
@@ -897,9 +1126,10 @@ export function MemberPortalView({
                             <span
                               className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                             >
-                              <span
-                                className={`h-2 w-2 rounded-sm ${discStyle.swatchBg}`}
-                                aria-hidden="true"
+                              <DisciplineIcon
+                                disciplineName={matchedEvent.discipline}
+                                catalog={disciplines}
+                                className="h-3 w-3 shrink-0"
                               />
                               {matchedEvent.discipline}
                             </span>
@@ -1322,6 +1552,19 @@ export function MemberPortalView({
               })}
             </div>
           )}
+          </div>
+          )}
+        </div>
+
+          {/* Member Badges Card */}
+          <div id="member-badges-section">
+            <MemberBadgesCard
+              summary={badgesSummary}
+              disciplines={disciplines}
+              forceExpandNonce={badgesExpandNonce}
+              highlightedBadgeIds={highlightedBadgeIds}
+            />
+          </div>
         </div>
       </div>
     </section>

@@ -158,7 +158,11 @@ export function CoachesAdminView({
   >(null);
 
   const [requestingAdmin, setRequestingAdmin] = useState(false);
-  const [coachBookingsExpanded, setCoachBookingsExpanded] = useState(true);
+  const [coachBookingsExpanded, setCoachBookingsExpanded] = useState(false);
+  const [coachProfileExpanded, setCoachProfileExpanded] = useState(false);
+  const [addCoachExpanded, setAddCoachExpanded] = useState(false);
+  const [accessRequestsExpanded, setAccessRequestsExpanded] = useState(false);
+  const [adminPromotionsExpanded, setAdminPromotionsExpanded] = useState(false);
   const [confirmCancelRegId, setConfirmCancelRegId] = useState<string | null>(
     null
   );
@@ -867,21 +871,60 @@ export function CoachesAdminView({
 
       {/* Section 0: My Coach Info Sheet */}
       <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-        <div className="flex items-start gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
-            <UserCog className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-              Ma fiche de renseignement coach
-            </h3>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Personnalisez votre nom affiché sur vos séances, vos spécialités, diplômes, coordonnées et présentation.
-            </p>
-          </div>
+        <div
+          className={`flex items-start justify-between gap-3 ${
+            coachProfileExpanded
+              ? 'border-b border-slate-100 dark:border-slate-800 pb-4'
+              : ''
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => setCoachProfileExpanded((prev) => !prev)}
+            aria-expanded={coachProfileExpanded}
+            aria-controls="coach-profile-sheet-form"
+            className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
+              <UserCog className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                Ma fiche de renseignement coach
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                Personnalisez votre nom affiché sur vos séances, vos spécialités, diplômes, coordonnées et présentation.
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCoachProfileExpanded((prev) => !prev)}
+            aria-expanded={coachProfileExpanded}
+            aria-controls="coach-profile-sheet-form"
+            aria-label={
+              coachProfileExpanded
+                ? 'Replier ma fiche de renseignement coach'
+                : 'Déplier ma fiche de renseignement coach'
+            }
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-200 ${
+                coachProfileExpanded ? 'rotate-180' : ''
+              }`}
+              aria-hidden="true"
+            />
+          </button>
         </div>
 
-        <form onSubmit={handleSaveProfile} className="mt-4 space-y-4">
+        {coachProfileExpanded && (
+        <form
+          id="coach-profile-sheet-form"
+          onSubmit={handleSaveProfile}
+          className="mt-4 space-y-4"
+        >
           <PhotoUploadField
             label="Photo de profil du coach"
             name={profileName || currentAdminUser.email || 'Coach'}
@@ -1042,11 +1085,12 @@ export function CoachesAdminView({
             </button>
           </div>
         </form>
+        )}
       </div>
 
       {/* Section 0b: Coach Password Settings */}
       <div className="mt-6">
-        <PasswordSettingsCard user={currentAdminUser} />
+        <PasswordSettingsCard user={currentAdminUser} collapsible />
       </div>
 
       {/* Section 0c: Standard Coach Admin Status & Promotion Request */}
@@ -1111,21 +1155,57 @@ export function CoachesAdminView({
       {/* Section 1: Add a new Coach (Coach Admin only — added as standard Coach, NOT admin) */}
       {isCoachAdmin && (
         <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
-              <UserPlus className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                Ajouter un coach
-              </h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Ajoutez un nouveau coach par son nom et son adresse email. Il reçoit automatiquement le rôle <strong>Coach</strong> (sans droits administrateur). Seul un coach administrateur pourra ensuite accepter ou refuser de le nommer administrateur.
-              </p>
-            </div>
+          <div
+            className={`flex items-start justify-between gap-3 ${
+              addCoachExpanded
+                ? 'border-b border-slate-100 dark:border-slate-800 pb-4'
+                : ''
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setAddCoachExpanded((prev) => !prev)}
+              aria-expanded={addCoachExpanded}
+              aria-controls="add-coach-form"
+              className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                <UserPlus className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                  Ajouter un coach
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Ajoutez un nouveau coach par son nom et son adresse email. Il reçoit automatiquement le rôle <strong>Coach</strong> (sans droits administrateur). Seul un coach administrateur pourra ensuite accepter ou refuser de le nommer administrateur.
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAddCoachExpanded((prev) => !prev)}
+              aria-expanded={addCoachExpanded}
+              aria-controls="add-coach-form"
+              aria-label={
+                addCoachExpanded
+                  ? 'Replier le formulaire d’ajout de coach'
+                  : 'Déplier le formulaire d’ajout de coach'
+              }
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            >
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${
+                  addCoachExpanded ? 'rotate-180' : ''
+                }`}
+                aria-hidden="true"
+              />
+            </button>
           </div>
 
+          {addCoachExpanded && (
           <form
+            id="add-coach-form"
             onSubmit={handleNominate}
             className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end"
           >
@@ -1179,30 +1259,67 @@ export function CoachesAdminView({
               </button>
             </div>
           </form>
+          )}
         </div>
       )}
 
       {/* Section 2: Incoming Access Requests & Admin Promotion Requests (Coach Admin only) */}
       {isCoachAdmin && (
-        <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-6">
+        <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-5">
           {/* 2a. New coach access requests */}
           <div>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
-              <div>
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                  Demandes d’accès de nouveaux coachs
-                </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  Seul un coach administrateur peut accepter ou refuser un nouveau coach. L’acceptation attribue le rôle Coach (non administrateur).
-                </p>
-              </div>
-              {pendingRequests.length > 0 && (
-                <span className="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
-                  {pendingRequests.length} en attente
-                </span>
-              )}
+            <div
+              className={`flex items-start justify-between gap-3 ${
+                accessRequestsExpanded
+                  ? 'border-b border-slate-100 dark:border-slate-800 pb-4'
+                  : ''
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setAccessRequestsExpanded((prev) => !prev)}
+                aria-expanded={accessRequestsExpanded}
+                aria-controls="coach-access-requests-panel"
+                className="flex flex-1 flex-wrap items-center justify-between gap-2 text-left min-w-0 cursor-pointer"
+              >
+                <div className="min-w-0">
+                  <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                    Demandes d’accès de nouveaux coachs
+                  </h3>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    Seul un coach administrateur peut accepter ou refuser un nouveau coach. L’acceptation attribue le rôle Coach (non administrateur).
+                  </p>
+                </div>
+                {pendingRequests.length > 0 && (
+                  <span className="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums shrink-0">
+                    {pendingRequests.length} en attente
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAccessRequestsExpanded((prev) => !prev)}
+                aria-expanded={accessRequestsExpanded}
+                aria-controls="coach-access-requests-panel"
+                aria-label={
+                  accessRequestsExpanded
+                    ? 'Replier les demandes d’accès de nouveaux coachs'
+                    : 'Déplier les demandes d’accès de nouveaux coachs'
+                }
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              >
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    accessRequestsExpanded ? 'rotate-180' : ''
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
             </div>
 
+            {accessRequestsExpanded && (
+            <div id="coach-access-requests-panel">
             {pendingRequests.length === 0 ? (
               <div className="py-5 text-center text-sm text-slate-500 dark:text-slate-400">
                 Aucune demande d’accès coach en attente pour le moment.
@@ -1264,26 +1381,111 @@ export function CoachesAdminView({
                 ))}
               </div>
             )}
+
+            {processedRequests.length > 0 && (
+              <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2.5">
+                  Historique des demandes d’accès traitées
+                </p>
+                <div className="space-y-2">
+                  {processedRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-semibold text-slate-900 dark:text-white">
+                          {req.displayName}
+                        </span>{' '}
+                        <span className="text-slate-500 dark:text-slate-400">({req.email})</span>
+                        {req.reviewedByEmail && (
+                          <span className="text-slate-400 dark:text-slate-500">
+                            {' '}
+                            · par {req.reviewedByEmail}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`font-semibold ${
+                            req.status === 'approved'
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-rose-700 dark:text-rose-400'
+                          }`}
+                        >
+                          {req.status === 'approved' ? 'Approuvée' : 'Refusée'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void deleteCoachAccessRequest(req.id)}
+                          aria-label={`Effacer la demande de ${req.displayName}`}
+                          title="Effacer de l’historique"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            </div>
+            )}
           </div>
 
           {/* 2b. Pending admin promotion requests */}
           <div className="border-t border-slate-100 dark:border-slate-800 pt-5">
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
-              <div>
-                <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
-                  Demandes de nomination administrateur
-                </h4>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  Acceptez ou refusez de nommer un coach existant comme coach administrateur.
-                </p>
-              </div>
-              {pendingAdminPromotions.length > 0 && (
-                <span className="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
-                  {pendingAdminPromotions.length} en attente
-                </span>
-              )}
+            <div
+              className={`flex items-start justify-between gap-3 ${
+                adminPromotionsExpanded ? 'pb-3' : ''
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setAdminPromotionsExpanded((prev) => !prev)}
+                aria-expanded={adminPromotionsExpanded}
+                aria-controls="coach-admin-promotions-panel"
+                className="flex flex-1 flex-wrap items-center justify-between gap-2 text-left min-w-0 cursor-pointer"
+              >
+                <div className="min-w-0">
+                  <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                    Demandes de nomination administrateur
+                  </h4>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    Acceptez ou refusez de nommer un coach existant comme coach administrateur.
+                  </p>
+                </div>
+                {pendingAdminPromotions.length > 0 && (
+                  <span className="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums shrink-0">
+                    {pendingAdminPromotions.length} en attente
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAdminPromotionsExpanded((prev) => !prev)}
+                aria-expanded={adminPromotionsExpanded}
+                aria-controls="coach-admin-promotions-panel"
+                aria-label={
+                  adminPromotionsExpanded
+                    ? 'Replier les demandes de nomination administrateur'
+                    : 'Déplier les demandes de nomination administrateur'
+                }
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              >
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    adminPromotionsExpanded ? 'rotate-180' : ''
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
             </div>
 
+            {adminPromotionsExpanded && (
+            <div id="coach-admin-promotions-panel">
             {pendingAdminPromotions.length === 0 ? (
               <p className="py-3 text-center text-xs text-slate-500 dark:text-slate-400">
                 Aucune demande de rôle administrateur en attente.
@@ -1339,56 +1541,9 @@ export function CoachesAdminView({
                 ))}
               </div>
             )}
-          </div>
-
-          {processedRequests.length > 0 && (
-            <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2.5">
-                Historique des demandes d’accès traitées
-              </p>
-              <div className="space-y-2">
-                {processedRequests.map((req) => (
-                  <div
-                    key={req.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs"
-                  >
-                    <div className="min-w-0">
-                      <span className="font-semibold text-slate-900 dark:text-white">
-                        {req.displayName}
-                      </span>{' '}
-                      <span className="text-slate-500 dark:text-slate-400">({req.email})</span>
-                      {req.reviewedByEmail && (
-                        <span className="text-slate-400 dark:text-slate-500">
-                          {' '}
-                          · par {req.reviewedByEmail}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`font-semibold ${
-                          req.status === 'approved'
-                            ? 'text-emerald-700 dark:text-emerald-400'
-                            : 'text-rose-700 dark:text-rose-400'
-                        }`}
-                      >
-                        {req.status === 'approved' ? 'Approuvée' : 'Refusée'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => void deleteCoachAccessRequest(req.id)}
-                        aria-label={`Effacer la demande de ${req.displayName}`}
-                        title="Effacer de l’historique"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 

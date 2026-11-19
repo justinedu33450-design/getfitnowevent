@@ -138,7 +138,7 @@ export function MemberAuthGate({
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
-                Inscription gratuite jusqu’à 1h avant la séance
+                Inscription en ligne jusqu’au début de la séance
               </li>
             </ul>
           </div>

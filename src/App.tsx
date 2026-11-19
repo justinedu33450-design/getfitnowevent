@@ -4,13 +4,13 @@ import {
   signOut,
   User,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, getDocsFromServer, query, where } from 'firebase/firestore';
 import { APIProvider } from '@vis.gl/react-google-maps';
-import { Heart, X } from 'lucide-react';
+import { AlertTriangle, Heart, Sparkles, X } from 'lucide-react';
 import { auth, BOOTSTRAPPED_COACH_EMAIL, db } from './firebase';
 import {
-  autoDeleteCancelledEvent,
   cancelMyRegistration,
+  deleteAutoCancelledEventIfEligible,
   deleteCoachNotification,
   deleteEndedEventAfterRetention,
   deleteMemberNotification,
@@ -22,11 +22,15 @@ import {
   markMemberNotificationRead,
   notifyMembersOfEndedEvent,
   resolveCoachSession,
+  subscribeAllMemberSchedules,
   subscribeCoachAccessRequests,
   subscribeCoachAdmins,
+  subscribeCoachConversations,
+  subscribeCoachDirectory,
   subscribeCoachInvites,
   subscribeDisciplines,
   subscribeEvents,
+  subscribeMemberConversations,
   subscribeMembers,
   subscribeMyAdminStatus,
   subscribeMyCoachAccessRequest,
@@ -34,9 +38,11 @@ import {
   subscribeMyEventLikes,
   subscribeMyMemberNotifications,
   subscribeMyMemberProfile,
+  subscribeMyMemberSchedule,
   subscribeMyRegistrations,
   subscribePublishedEventReviews,
   subscribeRegistrations,
+  syncCoachDirectoryFromAdmins,
   toggleEventLike,
   validateMemberSession,
 } from './services/firestoreService';
@@ -46,13 +52,18 @@ import {
   CoachAccessResolution,
   CoachAdminInvite,
   CoachAdminUser,
+  CoachDirectoryEntry,
   CoachNotification,
   CoachRole,
+  Conversation,
   CustomDiscipline,
   EventRatingSummary,
   EventReview,
+  MemberAggregate,
   MemberNotification,
   MemberProfile,
+  MemberScheduleSession,
+  PendingMessageTarget,
   Registration,
   SportEvent,
   VALIDATION_LIMITS,
@@ -62,6 +73,11 @@ import {
   evaluateEventBooking,
   getRegistrationEndMs,
 } from './utils/dateAndValidation';
+import {
+  computeMemberBadges,
+  getNewlyUnlockedBadges,
+  MemberBadgeItem,
+} from './utils/memberBadges';
 import { TopBar } from './components/TopBar';
 import { CoachNotificationsBar } from './components/CoachNotificationsBar';
 import { MemberNotificationsBar } from './components/MemberNotificationsBar';
@@ -77,6 +93,7 @@ import { CoachesAdminView } from './components/CoachesAdminView';
 import { CoachAuthGate } from './components/CoachAuthGate';
 import { MemberAuthGate } from './components/MemberAuthGate';
 import { MemberPortalView } from './components/MemberPortalView';
+import { MessagesView } from './components/MessagesView';
 import { EmailPasswordAuthForm } from './components/EmailPasswordAuthForm';
 import { EventShareModal } from './components/EventShareModal';
 
@@ -149,6 +166,19 @@ export default function App() {
   const [memberNotificationsPanelOpen, setMemberNotificationsPanelOpen] =
     useState(false);
 
+  const [coachDirectory, setCoachDirectory] = useState<CoachDirectoryEntry[]>(
+    []
+  );
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [memberSchedules, setMemberSchedules] = useState<
+    MemberScheduleSession[]
+  >([]);
+  const [pendingMessageTarget, setPendingMessageTarget] =
+    useState<PendingMessageTarget | null>(null);
+  const [pendingMemberTrackingKey, setPendingMemberTrackingKey] = useState<
+    string | null
+  >(null);
+
   const disciplineCatalog = useMemo(
     () => buildDisciplineCatalog(customDisciplines),
     [customDisciplines]
@@ -180,10 +210,18 @@ export default function App() {
   const [pendingLikeEvent, setPendingLikeEvent] = useState<SportEvent | null>(
     null
   );
+  const [likeError, setLikeError] = useState<string | null>(null);
   const [publishedReviews, setPublishedReviews] = useState<EventReview[]>([]);
   const [pendingReviewRegId, setPendingReviewRegId] = useState<string | null>(
     null
   );
+  const [badgeToast, setBadgeToast] = useState<{
+    badges: MemberBadgeItem[];
+  } | null>(null);
+  const [portalBadgesExpandNonce, setPortalBadgesExpandNonce] = useState(0);
+  const [portalHighlightedBadgeIds, setPortalHighlightedBadgeIds] = useState<
+    string[]
+  >([]);
   const [sharingEvent, setSharingEvent] = useState<SportEvent | null>(null);
   const initialDeepLinkEventIdRef = useRef<string | null>(
     typeof window !== 'undefined'
@@ -223,13 +261,13 @@ export default function App() {
   // Automatically delete cancelled events (manual or H-1 0-registrant), notify members on ended events,
   // and delete ended events automatically 30 days after their end time
   useEffect(() => {
-    if (authLoading || !isVerifiedUser || !isCoach || eventsLoading) return;
+    if (authLoading || !isVerifiedUser || eventsLoading) return;
     events.forEach((ev) => {
       const evalInfo = evaluateEventBooking(ev, nowMs);
       if (ev.status === 'cancelled' || evalInfo.isAutoCancelledNoRegistrants) {
         if (!autoDeleteAttemptedRef.current.has(ev.id)) {
           autoDeleteAttemptedRef.current.add(ev.id);
-          void autoDeleteCancelledEvent(ev.id).then((ok) => {
+          void deleteAutoCancelledEventIfEligible(ev.id, isCoach).then((ok) => {
             if (!ok) {
               autoDeleteAttemptedRef.current.delete(ev.id);
             }
@@ -237,6 +275,8 @@ export default function App() {
         }
         return;
       }
+
+      if (!isCoach) return;
 
       const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
       const deleteAfterMs = endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS;
@@ -540,6 +580,63 @@ export default function App() {
     };
   }, [authLoading, isCoachAdmin, user]);
 
+  // Public active coach directory for authenticated member/coach messaging
+  useEffect(() => {
+    if (authLoading || !isVerifiedUser) {
+      setCoachDirectory([]);
+      return;
+    }
+    const unsub = subscribeCoachDirectory(setCoachDirectory, () =>
+      setCoachDirectory([])
+    );
+    return () => unsub();
+  }, [authLoading, isVerifiedUser]);
+
+  // Keep /coachDirectory synced with /admins when coaches sign in
+  useEffect(() => {
+    if (authLoading || !isCoach || !user?.uid || coachAdmins.length === 0) {
+      return;
+    }
+    void syncCoachDirectoryFromAdmins({
+      admins: coachAdmins,
+      existingDirectory: coachDirectory,
+      isCoachAdmin,
+      currentUid: user.uid,
+    });
+  }, [authLoading, isCoach, isCoachAdmin, user?.uid, coachAdmins, coachDirectory]);
+
+  // Real-time 1-to-1 conversations for the signed-in user (Coach or Member)
+  useEffect(() => {
+    if (authLoading || !isVerifiedUser || !user?.uid || !user.email) {
+      setConversations([]);
+      return;
+    }
+    const unsub = isCoach
+      ? subscribeCoachConversations(user.uid, setConversations, () =>
+          setConversations([])
+        )
+      : subscribeMemberConversations(user.email, setConversations, () =>
+          setConversations([])
+        );
+    return () => unsub();
+  }, [authLoading, isVerifiedUser, isCoach, user?.uid, user?.email]);
+
+  // Real-time personalized weekly schedule sessions (coach sees all, member sees own)
+  useEffect(() => {
+    if (authLoading || !isVerifiedUser || !user?.email) {
+      setMemberSchedules([]);
+      return;
+    }
+    const unsub = isCoach
+      ? subscribeAllMemberSchedules(setMemberSchedules, () =>
+          setMemberSchedules([])
+        )
+      : subscribeMyMemberSchedule(user.email, setMemberSchedules, () =>
+          setMemberSchedules([])
+        );
+    return () => unsub();
+  }, [authLoading, isVerifiedUser, isCoach, user?.email]);
+
   const activeEvents = useMemo(
     () =>
       events.filter((ev) => {
@@ -580,6 +677,35 @@ export default function App() {
         n.type === 'event_cancelled' ? !n.read : !n.validated
       ).length,
     [memberNotifications]
+  );
+
+  const unreadMessagesCount = useMemo(
+    () =>
+      conversations.reduce(
+        (sum, conv) =>
+          sum + (isCoach ? conv.coachUnreadCount : conv.memberUnreadCount),
+        0
+      ),
+    [conversations, isCoach]
+  );
+
+  const unreadMessagesByMemberKey = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!isCoach) return map;
+    conversations.forEach((conv) => {
+      if (conv.coachUnreadCount > 0 && conv.memberEmailKey) {
+        map.set(
+          conv.memberEmailKey,
+          (map.get(conv.memberEmailKey) ?? 0) + conv.coachUnreadCount
+        );
+      }
+    });
+    return map;
+  }, [conversations, isCoach]);
+
+  const coachDirectoryByUid = useMemo(
+    () => new Map(coachDirectory.map((entry) => [entry.uid, entry])),
+    [coachDirectory]
   );
 
   const endedUnvalidatedRegistrationsCount = useMemo(() => {
@@ -664,7 +790,27 @@ export default function App() {
     [reviewsByRegId]
   );
 
+  const formatLikeErrorMessage = (err: unknown): string => {
+    if (err instanceof Error) {
+      const msg = err.message.trim();
+      if (msg.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(msg) as { error?: string };
+          if (parsed.error?.toLowerCase().includes('permission')) {
+            return 'Autorisation refusée pour enregistrer votre j’aime. Réessayez dans un instant.';
+          }
+          if (parsed.error) return parsed.error;
+        } catch {
+          return msg;
+        }
+      }
+      return msg || 'Impossible de mettre à jour votre j’aime.';
+    }
+    return 'Impossible de mettre à jour votre j’aime.';
+  };
+
   const handleToggleLike = async (event: SportEvent) => {
+    setLikeError(null);
     if (!isVerifiedUser || !user?.uid) {
       setPendingLikeEvent(event);
       return;
@@ -675,8 +821,40 @@ export default function App() {
       await toggleEventLike(event, user.uid);
     } catch (err) {
       console.error('Impossible de mettre à jour le j’aime :', err);
+      setLikeError(formatLikeErrorMessage(err));
     } finally {
       setLikingEventId(null);
+    }
+  };
+
+  const handleValidateSessionWithBadgeNotice = async (
+    reg: Registration,
+    showFloatingToast: boolean
+  ) => {
+    const beforeSummary = computeMemberBadges({
+      registrations: myRegistrations,
+      events: activeEvents,
+      disciplines: disciplineCatalog,
+      memberEmail: user?.email,
+      reviewsByRegId,
+      nowMs,
+    });
+    await validateMemberSession(reg);
+    const afterRegs = myRegistrations.map((item) =>
+      item.id === reg.id ? { ...item, attended: true } : item
+    );
+    const afterSummary = computeMemberBadges({
+      registrations: afterRegs,
+      events: activeEvents,
+      disciplines: disciplineCatalog,
+      memberEmail: user?.email,
+      reviewsByRegId,
+      nowMs,
+    });
+    const newlyUnlocked = getNewlyUnlockedBadges(beforeSummary, afterSummary);
+    if (newlyUnlocked.length > 0 && showFloatingToast) {
+      setBadgeToast({ badges: newlyUnlocked });
+      setPortalHighlightedBadgeIds(newlyUnlocked.map((b) => b.id));
     }
   };
 
@@ -750,6 +928,14 @@ export default function App() {
     setLikedEventIds(new Set());
     setPendingLikeEvent(null);
     setPendingReviewRegId(null);
+    setBadgeToast(null);
+    setPortalBadgesExpandNonce(0);
+    setPortalHighlightedBadgeIds([]);
+    setCoachDirectory([]);
+    setConversations([]);
+    setMemberSchedules([]);
+    setPendingMessageTarget(null);
+    setPendingMemberTrackingKey(null);
     setAuthError(null);
     autoDeleteAttemptedRef.current.clear();
     endedNotifyAttemptedRef.current.clear();
@@ -922,6 +1108,7 @@ export default function App() {
         pendingCoachRequestsCount={pendingCoachRequestsCount}
         unreadCoachNotificationsCount={unreadCoachNotificationsCount}
         unreadMemberNotificationsCount={unreadMemberNotificationsCount}
+        unreadMessagesCount={unreadMessagesCount}
         memberTrackingBadgeCount={endedUnvalidatedRegistrationsCount}
         notificationsOpen={
           isCoach ? notificationsPanelOpen : memberNotificationsPanelOpen
@@ -975,7 +1162,8 @@ export default function App() {
               setActiveSection('calendar');
             }}
           />
-        ) : !user && activeSection === 'member-profile' ? (
+        ) : !user &&
+          (activeSection === 'member-profile' || activeSection === 'messages') ? (
           <MemberAuthGate
             key={`member-gate-${signOutNonce}`}
             authLoading={authLoading}
@@ -1029,7 +1217,10 @@ export default function App() {
                       'Inscription introuvable pour cette séance.'
                     );
                   }
-                  await validateMemberSession(reg);
+                  await handleValidateSessionWithBadgeNotice(
+                    reg,
+                    activeSection !== 'member-profile'
+                  );
                 }}
                 onMarkRead={(id) => void markMemberNotificationRead(id)}
                 onMarkAllRead={() =>
@@ -1142,6 +1333,8 @@ export default function App() {
                 ratingSummaryByEventId={ratingSummaryByEventId}
                 initialReviewRegId={pendingReviewRegId}
                 onClearInitialReviewRegId={() => setPendingReviewRegId(null)}
+                initialBadgesExpandNonce={portalBadgesExpandNonce}
+                initialHighlightedBadgeIds={portalHighlightedBadgeIds}
                 onValidateSession={
                   isVerifiedUser ? (reg) => validateMemberSession(reg) : undefined
                 }
@@ -1150,7 +1343,68 @@ export default function App() {
                 }
                 onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
                 onExploreCalendar={() => setActiveSection('calendar')}
+                unreadMessagesCount={unreadMessagesCount}
+                recentConversations={conversations}
+                customScheduleSessions={memberSchedules}
+                coachDirectory={coachDirectory}
+                onRequestCoachProgram={(coach) => {
+                  if (coach && user.email) {
+                    setPendingMessageTarget({
+                      coachUid: coach.uid,
+                      coachName: coach.displayName,
+                      coachPhotoUrl: coach.photoUrl,
+                      memberEmail: user.email,
+                      memberName: memberDisplayName,
+                      memberPhotoUrl: myMemberProfile?.photoUrl,
+                    });
+                  }
+                  setActiveSection('messages');
+                }}
+                onOpenMessages={(conv) => {
+                  if (conv) {
+                    setPendingMessageTarget({
+                      coachUid: conv.coachUid,
+                      coachName: conv.coachName,
+                      coachPhotoUrl: conv.coachPhotoUrl,
+                      memberEmail: conv.memberEmail,
+                      memberEmailKey: conv.memberEmailKey,
+                      memberName: conv.memberName,
+                      memberPhotoUrl: conv.memberPhotoUrl,
+                    });
+                  }
+                  setActiveSection('messages');
+                }}
                 onSignOut={() => void handleSignOut()}
+              />
+            )}
+
+            {activeSection === 'messages' && user && isVerifiedUser && (
+              <MessagesView
+                user={user}
+                isCoach={isCoach}
+                currentUserDisplayName={
+                  isCoach ? coachDisplayName : memberDisplayName
+                }
+                currentUserPhotoUrl={
+                  isCoach ? myAdminProfile?.photoUrl : myMemberProfile?.photoUrl
+                }
+                conversations={conversations}
+                coachDirectory={coachDirectory}
+                memberProfiles={memberProfiles}
+                registrations={registrations}
+                coachAdmins={coachAdmins}
+                events={activeEvents}
+                initialTarget={pendingMessageTarget}
+                onConsumeInitialTarget={() => setPendingMessageTarget(null)}
+                onOpenMemberProfile={
+                  isCoach
+                    ? (memberEmailKey) => {
+                        setPendingMemberTrackingKey(memberEmailKey);
+                        setActiveSection('members');
+                      }
+                    : undefined
+                }
+                onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
               />
             )}
 
@@ -1223,11 +1477,36 @@ export default function App() {
               (isCoach ? (
                 <MembersTrackingView
                   coachEmail={user.email || ''}
+                  currentCoachUid={user.uid}
+                  currentCoachName={coachDisplayName}
                   coachAdmins={coachAdmins}
+                  coachDirectory={coachDirectory}
                   events={activeEvents}
                   registrations={registrations}
                   memberProfiles={memberProfiles}
+                  memberSchedules={memberSchedules}
+                  disciplines={disciplineCatalog}
                   nowMs={nowMs}
+                  unreadMessagesByMemberKey={unreadMessagesByMemberKey}
+                  initialSelectedMemberKey={pendingMemberTrackingKey}
+                  onConsumeInitialSelectedMemberKey={() =>
+                    setPendingMemberTrackingKey(null)
+                  }
+                  onMessageMember={(member: MemberAggregate) => {
+                    if (!user?.uid || !member.email) return;
+                    setPendingMessageTarget({
+                      coachUid: user.uid,
+                      coachName: coachDisplayName,
+                      coachPhotoUrl: myAdminProfile?.photoUrl,
+                      memberEmail: member.email,
+                      memberEmailKey: member.emailKey,
+                      memberName:
+                        `${member.firstName} ${member.lastName}`.trim() ||
+                        member.email,
+                      memberPhotoUrl: member.profile?.photoUrl,
+                    });
+                    setActiveSection('messages');
+                  }}
                   onSignOut={() => void handleSignOut()}
                 />
               ) : coachGateIntent ? (
@@ -1306,6 +1585,15 @@ export default function App() {
             >
               Séances
             </button>
+            {isVerifiedUser && (
+              <button
+                type="button"
+                onClick={() => setActiveSection('messages')}
+                className="hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
+              >
+                Messagerie
+              </button>
+            )}
             {!isCoach && (
               <button
                 type="button"
@@ -1371,7 +1659,11 @@ export default function App() {
           eligibleReviewRegistration={eligibleReviewRegistrationForBooking}
           onValidateSession={
             isVerifiedUser && !isCoach
-              ? (reg) => validateMemberSession(reg)
+              ? (reg) =>
+                  handleValidateSessionWithBadgeNotice(
+                    reg,
+                    activeSection !== 'member-profile'
+                  )
               : undefined
           }
           onCancelRegistration={
@@ -1411,6 +1703,32 @@ export default function App() {
               duplicatingEvent: ev,
             });
           }}
+          onMessageCoach={
+            isVerifiedUser && !isCoach && user?.email
+              ? (ev) => {
+                  const targetCoachUid = ev.coachUids?.[0] || ev.createdBy;
+                  if (!targetCoachUid) return;
+                  const dirEntry = coachDirectoryByUid.get(targetCoachUid);
+                  const fallbackCoachName =
+                    dirEntry?.displayName ||
+                    ev.coachNames?.[0] ||
+                    ev.coachName?.split(',')[0]?.trim() ||
+                    'Coach GetFitNow';
+                  setPendingMessageTarget({
+                    coachUid: targetCoachUid,
+                    coachName: fallbackCoachName,
+                    coachPhotoUrl: dirEntry?.photoUrl,
+                    memberEmail: user.email || '',
+                    memberName: memberDisplayName,
+                    memberPhotoUrl: myMemberProfile?.photoUrl,
+                    contextEventId: ev.id,
+                    contextEventTitle: ev.title,
+                  });
+                  handleCloseBookingModal();
+                  setActiveSection('messages');
+                }
+              : undefined
+          }
         />
       )}
 
@@ -1440,6 +1758,28 @@ export default function App() {
           ratingSummary={ratingSummaryByEventId.get(currentRosterEvent.id)}
           currentUserUid={user.uid}
           initialTab={rosterInitialTab}
+          onMessageParticipant={(reg, ev) => {
+            const matchedProfile = memberProfiles.find(
+              (p) =>
+                p.emailKey === reg.emailKey ||
+                p.email.trim().toLowerCase() === reg.email.trim().toLowerCase()
+            );
+            setPendingMessageTarget({
+              coachUid: user.uid,
+              coachName: coachDisplayName,
+              coachPhotoUrl: myAdminProfile?.photoUrl,
+              memberEmail: reg.email,
+              memberEmailKey: reg.emailKey,
+              memberName:
+                `${reg.firstName} ${reg.lastName}`.trim() || reg.email,
+              memberPhotoUrl: matchedProfile?.photoUrl,
+              contextEventId: ev.id,
+              contextEventTitle: ev.title,
+            });
+            setRosterEventId(null);
+            setRosterInitialTab('roster');
+            setActiveSection('messages');
+          }}
           onClose={() => {
             setRosterEventId(null);
             setRosterInitialTab('roster');
@@ -1501,14 +1841,18 @@ export default function App() {
                       signedInUser.uid
                     ) {
                       try {
-                        const existingLikeSnap = await getDoc(
-                          doc(
-                            db,
-                            'eventLikes',
-                            `${targetEv.id}__${signedInUser.uid}`
+                        const existingLikesSnap = await getDocsFromServer(
+                          query(
+                            collection(db, 'eventLikes'),
+                            where('userId', '==', signedInUser.uid)
                           )
                         );
-                        if (!existingLikeSnap.exists()) {
+                        const alreadyLiked = existingLikesSnap.docs.some(
+                          (d) =>
+                            d.id === `${targetEv.id}__${signedInUser.uid}` ||
+                            d.data().eventId === targetEv.id
+                        );
+                        if (!alreadyLiked) {
                           await toggleEventLike(targetEv, signedInUser.uid);
                         }
                       } catch (err) {
@@ -1516,6 +1860,7 @@ export default function App() {
                           'Erreur lors du j’aime après connexion :',
                           err
                         );
+                        setLikeError(formatLikeErrorMessage(err));
                       }
                     }
                   })();
@@ -1533,6 +1878,77 @@ export default function App() {
           disciplines={disciplineCatalog}
           onClose={() => setSharingEvent(null)}
         />
+      )}
+
+      {badgeToast && badgeToast.badges.length > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 left-4 z-50 flex max-w-sm items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-950 shadow-lg dark:border-emerald-800 dark:bg-emerald-950/95 dark:text-emerald-100 md:bottom-5"
+        >
+          <Sparkles
+            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+            aria-hidden="true"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold">
+              {badgeToast.badges.length === 1
+                ? `Nouveau badge débloqué : ${badgeToast.badges[0].title}`
+                : `${badgeToast.badges.length} nouveaux badges débloqués`}
+            </p>
+            <p className="mt-0.5 text-emerald-800 dark:text-emerald-200">
+              {badgeToast.badges.map((b) => b.title).join(' · ')}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setPortalHighlightedBadgeIds(
+                  badgeToast.badges.map((b) => b.id)
+                );
+                setPortalBadgesExpandNonce((prev) => prev + 1);
+                setBadgeToast(null);
+                setActiveSection('member-profile');
+                window.setTimeout(() => {
+                  document
+                    .getElementById('member-badges-section')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+              }}
+              className="mt-2 inline-flex min-h-[30px] items-center rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+            >
+              Voir mes badges
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBadgeToast(null)}
+            aria-label="Fermer la notification de badge"
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-900/60 cursor-pointer"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {likeError && (
+        <div
+          role="alert"
+          className="fixed bottom-20 right-4 z-50 flex max-w-sm items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-900 shadow-lg dark:border-rose-800 dark:bg-rose-950/95 dark:text-rose-100 md:bottom-5"
+        >
+          <AlertTriangle
+            className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400"
+            aria-hidden="true"
+          />
+          <span className="flex-1">{likeError}</span>
+          <button
+            type="button"
+            onClick={() => setLikeError(null)}
+            aria-label="Fermer le message d’erreur"
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-rose-600 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-900/60 cursor-pointer"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
       )}
     </div>
   );

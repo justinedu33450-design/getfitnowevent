@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { DisciplineItem, SportEvent } from '../types';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
 import {
   formatEventPrice,
   formatFrenchDateShort,
@@ -208,9 +209,10 @@ export function EventShareModal({
               <span
                 className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
               >
-                <span
-                  className={`h-2 w-2 rounded-sm ${discStyle.swatchBg}`}
-                  aria-hidden="true"
+                <DisciplineIcon
+                  disciplineName={event.discipline}
+                  catalog={disciplines}
+                  className="h-3 w-3 shrink-0"
                 />
                 {event.discipline}
               </span>

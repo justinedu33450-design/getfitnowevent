@@ -6,6 +6,7 @@ import {
   formatTimeRange,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
 
 interface CancelledEventsNotifierProps {
   events: SportEvent[];
@@ -68,17 +69,11 @@ export function CancelledEventsNotifier({
             <div className="min-w-0 flex-1">
               <p className="font-display text-sm font-bold text-rose-950 dark:text-rose-100">
                 {visibleNotifications.length === 1
-                  ? isCoach
-                    ? 'Notification : événement annulé (aucun inscrit à H-1)'
-                    : 'Notification : événement annulé'
-                  : isCoach
-                    ? `Notification : ${visibleNotifications.length} événements annulés (aucun inscrit à H-1)`
-                    : `Notification : ${visibleNotifications.length} événements annulés`}
+                  ? 'Inscription fermée : événement annulé'
+                  : `Inscription fermée : ${visibleNotifications.length} événements annulés`}
               </p>
               <p className="mt-0.5 text-xs text-rose-800 dark:text-rose-300">
-                {isCoach
-                  ? 'Conformément à la règle de planification, tout événement sans inscrit 1 heure avant le début est automatiquement annulé et supprimé.'
-                  : 'Cet événement programmé a été automatiquement annulé 1 heure avant le début et retiré du planning.'}
+                Inscription fermée : événement annulé.
               </p>
             </div>
           </div>
@@ -108,14 +103,15 @@ export function CancelledEventsNotifier({
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
-                      {isCoach ? 'Annulé · 0 inscrit' : 'Annulé'}
+                      Inscription fermée : événement annulé
                     </span>
                     <span
                       className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                     >
-                      <span
-                        className={`h-2 w-2 rounded-sm ${discStyle.swatchBg}`}
-                        aria-hidden="true"
+                      <DisciplineIcon
+                        disciplineName={ev.discipline}
+                        catalog={disciplines}
+                        className="h-3 w-3 shrink-0"
                       />
                       {ev.discipline}
                     </span>

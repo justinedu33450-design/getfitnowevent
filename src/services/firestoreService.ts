@@ -33,11 +33,16 @@ import {
   CoachAdminInvite,
   CoachAdminRequestStatus,
   CoachAdminUser,
+  CoachDirectoryEntry,
   CoachNotification,
   CoachRole,
+  Conversation,
+  ConversationSenderRole,
   CustomDiscipline,
+  DirectMessage,
   Discipline,
   DisciplineColorKey,
+  DisciplineIconKey,
   EventCancelReason,
   EventLike,
   EventPaymentMode,
@@ -48,6 +53,7 @@ import {
   GuestInput,
   MemberNotification,
   MemberProfile,
+  MemberScheduleSession,
   PaymentMethod,
   PaymentRecord,
   PaymentStatus,
@@ -62,7 +68,11 @@ import {
   hashEmailKey,
   isValidBirthDateString,
 } from '../utils/dateAndValidation';
-import { slugifyDiscipline } from '../utils/disciplineColors';
+import {
+  inferDisciplineIconKey,
+  pickNextUnusedColorKey,
+  slugifyDiscipline,
+} from '../utils/disciplineColors';
 import { generatePaymentReference } from '../utils/paymentHelpers';
 
 export async function resolveCoachSession(user: User | null): Promise<{
@@ -818,6 +828,17 @@ export async function updateMyCoachProfile(params: {
     } else {
       await updateDoc(adminRef, payload);
     }
+    await setDoc(doc(db, 'coachDirectory', params.user.uid), {
+      uid: params.user.uid,
+      displayName,
+      specialty: payload.specialty,
+      city: payload.city,
+      region: payload.region,
+      bio: payload.bio,
+      photoUrl: payload.photoUrl,
+      active: true,
+      updatedAt: serverTimestamp(),
+    });
   } catch (error) {
     handleFirestoreError(
       error,
@@ -857,9 +878,11 @@ export function subscribeDisciplines(
 
 export async function createCustomDiscipline(params: {
   name: string;
-  colorKey: DisciplineColorKey;
+  colorKey?: DisciplineColorKey;
+  iconKey?: DisciplineIconKey;
   coachUid: string;
-  existingNames: string[];
+  existingNames?: string[];
+  existingDisciplines?: Array<{ name: string; colorKey: DisciplineColorKey }>;
 }): Promise<string> {
   const cleanName = params.name
     .trim()
@@ -869,12 +892,21 @@ export async function createCustomDiscipline(params: {
     throw new Error('Le nom de la discipline doit contenir au moins 2 caractères.');
   }
 
-  const duplicate = params.existingNames.some(
+  const allExistingNames = [
+    ...(params.existingNames ?? []),
+    ...(params.existingDisciplines ?? []).map((d) => d.name),
+  ];
+  const duplicate = allExistingNames.some(
     (n) => n.trim().toLowerCase() === cleanName.toLowerCase()
   );
   if (duplicate) {
     throw new Error('Cette discipline existe déjà dans votre catalogue.');
   }
+
+  const resolvedColorKey =
+    params.colorKey ??
+    pickNextUnusedColorKey(params.existingDisciplines ?? []);
+  const resolvedIconKey = params.iconKey ?? inferDisciplineIconKey(cleanName);
 
   const slug = slugifyDiscipline(cleanName);
   const discRef = doc(db, 'disciplines', slug);
@@ -884,14 +916,16 @@ export async function createCustomDiscipline(params: {
     if (existingSnap.exists()) {
       await updateDoc(discRef, {
         name: cleanName,
-        colorKey: params.colorKey,
+        colorKey: resolvedColorKey,
+        iconKey: resolvedIconKey,
         updatedAt: serverTimestamp(),
       });
     } else {
       await setDoc(discRef, {
         name: cleanName,
         slug,
-        colorKey: params.colorKey,
+        colorKey: resolvedColorKey,
+        iconKey: resolvedIconKey,
         createdBy: params.coachUid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -907,6 +941,7 @@ export async function updateCustomDisciplineColor(params: {
   name: string;
   slug: string;
   colorKey: DisciplineColorKey;
+  iconKey?: DisciplineIconKey;
   coachUid: string;
 }): Promise<void> {
   const discRef = doc(db, 'disciplines', params.slug);
@@ -925,6 +960,45 @@ export async function updateCustomDisciplineColor(params: {
         name: cleanName,
         slug: params.slug,
         colorKey: params.colorKey,
+        iconKey: params.iconKey ?? inferDisciplineIconKey(cleanName),
+        createdBy: params.coachUid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `disciplines/${params.slug}`
+    );
+  }
+}
+
+export async function updateCustomDisciplineIcon(params: {
+  name: string;
+  slug: string;
+  colorKey: DisciplineColorKey;
+  iconKey: DisciplineIconKey;
+  coachUid: string;
+}): Promise<void> {
+  const discRef = doc(db, 'disciplines', params.slug);
+  const cleanName = params.name.trim().slice(0, VALIDATION_LIMITS.DISCIPLINE_MAX);
+
+  try {
+    const existingSnap = await getDoc(discRef);
+    if (existingSnap.exists()) {
+      await updateDoc(discRef, {
+        name: cleanName,
+        iconKey: params.iconKey,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await setDoc(discRef, {
+        name: cleanName,
+        slug: params.slug,
+        colorKey: params.colorKey,
+        iconKey: params.iconKey,
         createdBy: params.coachUid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -1729,6 +1803,36 @@ export async function autoDeleteCancelledEvent(
   }
 }
 
+export async function deleteAutoCancelledEventIfEligible(
+  eventId: string,
+  isCoachUser: boolean
+): Promise<boolean> {
+  if (isCoachUser) {
+    return autoDeleteCancelledEvent(eventId);
+  }
+  try {
+    const eventRef = doc(db, 'events', eventId);
+    const snap = await getDocFromServer(eventRef);
+    if (!snap.exists()) return true;
+    const ev = parseLiveSportEventSnapshot(
+      snap.id,
+      snap.data() as Partial<SportEvent>
+    );
+    const evalInfo = evaluateEventBooking(ev, Date.now());
+    if (ev.status === 'cancelled' || evalInfo.isAutoCancelledNoRegistrants) {
+      await deleteDoc(eventRef);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.warn(
+      `Suppression d’événement annulé différée pour events/${eventId}:`,
+      error
+    );
+    return false;
+  }
+}
+
 export async function notifyMembersOfEndedEvent(
   event: SportEvent
 ): Promise<boolean> {
@@ -2508,16 +2612,22 @@ async function commitSingleParticipantRegistration(params: {
           latestSnap.data() as Partial<SportEvent>
         );
         const latestEval = evaluateEventBooking(latestEvent, Date.now());
-        if (latestEval.state === 'cutoff_closed' && !params.bypassCutoffAsCoach) {
+        if (latestEval.state === 'cancelled') {
+          if (latestEval.isAutoCancelledNoRegistrants) {
+            void deleteAutoCancelledEventIfEligible(
+              latestEvent.id,
+              Boolean(params.bypassCutoffAsCoach)
+            );
+          }
+          throw new Error('Inscription fermée : événement annulé.');
+        }
+        if (latestEval.state === 'past' && !params.bypassCutoffAsCoach) {
           throw new Error(
-            'Les inscriptions ont été clôturées (moins d’1 heure avant le début).'
+            'Les inscriptions sont fermées : cette séance a déjà commencé.'
           );
         }
         if (latestEval.state === 'full') {
           throw new Error('La dernière place vient d’être réservée.');
-        }
-        if (latestEval.state === 'cancelled') {
-          throw new Error('Cet événement vient d’être annulé.');
         }
       }
       const latestReg = await findExistingRegistration();
@@ -2531,7 +2641,8 @@ async function commitSingleParticipantRegistration(params: {
     } catch (innerError) {
       if (
         innerError instanceof Error &&
-        (innerError.message.includes('clôturées') ||
+        (innerError.message.includes('fermée') ||
+          innerError.message.includes('commencé') ||
           innerError.message.includes('dernière place') ||
           innerError.message.includes('annulé') ||
           innerError.message.includes('déjà inscrit'))
@@ -2652,20 +2763,21 @@ export async function registerEventWithGuests(params: {
 
   const evaluation = evaluateEventBooking(liveEvent, Date.now());
   if (evaluation.state === 'cancelled') {
-    throw new Error('Cet événement a été annulé.');
+    if (evaluation.isAutoCancelledNoRegistrants) {
+      void deleteAutoCancelledEventIfEligible(
+        liveEvent.id,
+        Boolean(params.bypassCutoffAsCoach)
+      );
+    }
+    throw new Error('Inscription fermée : événement annulé.');
   }
   if (evaluation.state === 'full') {
     throw new Error('Cet événement est complet.');
   }
-  if (!params.bypassCutoffAsCoach) {
-    if (evaluation.state === 'past') {
-      throw new Error('Cet événement est déjà commencé ou terminé.');
-    }
-    if (evaluation.state === 'cutoff_closed') {
-      throw new Error(
-        'Les inscriptions sont clôturées 1 heure avant le début de la séance.'
-      );
-    }
+  if (!params.bypassCutoffAsCoach && evaluation.state === 'past') {
+    throw new Error(
+      'Les inscriptions sont fermées : cet événement est déjà commencé ou terminé.'
+    );
   }
 
   const neededSpots = (params.skipSelf ? 0 : 1) + normalizedGuests.length;
@@ -3023,6 +3135,15 @@ export async function cancelMyRegistration(
     }
 
     await batch.commit();
+
+    if (
+      eventData &&
+      eventData.status === 'published' &&
+      eventData.registeredCount === 1 &&
+      Date.now() >= eventStartMs - VALIDATION_LIMITS.BOOKING_CUTOFF_MS
+    ) {
+      await deleteAutoCancelledEventIfEligible(registration.eventId, false);
+    }
   } catch (error) {
     if (
       error instanceof Error &&
@@ -3650,6 +3771,70 @@ export async function deleteMemberCompletely(params: {
       ops.push((batch) => batch.delete(doc(db, 'coachNotifications', id)));
     });
 
+    const convQueryPromises = [
+      getDocsFromServer(
+        query(
+          collection(db, 'conversations'),
+          where('memberEmailKey', '==', params.emailKey)
+        )
+      ),
+    ];
+    if (cleanEmail) {
+      convQueryPromises.push(
+        getDocsFromServer(
+          query(
+            collection(db, 'conversations'),
+            where('memberEmail', '==', cleanEmail)
+          )
+        )
+      );
+    }
+    const convSnaps = await Promise.all(convQueryPromises);
+    const convIds = new Set<string>();
+    convSnaps.forEach((snap) => {
+      snap.docs.forEach((d) => convIds.add(d.id));
+    });
+    await Promise.all(
+      Array.from(convIds).map(async (convId) => {
+        const msgsSnap = await getDocsFromServer(
+          collection(db, 'conversations', convId, 'messages')
+        );
+        msgsSnap.docs.forEach((mDoc) => {
+          ops.push((batch) =>
+            batch.delete(doc(db, 'conversations', convId, 'messages', mDoc.id))
+          );
+        });
+        ops.push((batch) => batch.delete(doc(db, 'conversations', convId)));
+      })
+    );
+
+    const scheduleQueryPromises = [
+      getDocsFromServer(
+        query(
+          collection(db, 'memberSchedules'),
+          where('memberEmailKey', '==', params.emailKey)
+        )
+      ),
+    ];
+    if (cleanEmail) {
+      scheduleQueryPromises.push(
+        getDocsFromServer(
+          query(
+            collection(db, 'memberSchedules'),
+            where('memberEmail', '==', cleanEmail)
+          )
+        )
+      );
+    }
+    const scheduleSnaps = await Promise.all(scheduleQueryPromises);
+    const scheduleIds = new Set<string>();
+    scheduleSnaps.forEach((snap) => {
+      snap.docs.forEach((d) => scheduleIds.add(d.id));
+    });
+    scheduleIds.forEach((id) => {
+      ops.push((batch) => batch.delete(doc(db, 'memberSchedules', id)));
+    });
+
     const CHUNK_SIZE = 350;
     for (let i = 0; i < ops.length; i += CHUNK_SIZE) {
       const batch = writeBatch(db);
@@ -3695,7 +3880,7 @@ export async function seedDemoEvents(
       lat: 0,
       lng: 0,
       coachName,
-      startDate: makeDate(42 * 60 * 1000),
+      startDate: makeDate(75 * 60 * 1000),
       durationMinutes: 45,
       isUnlimitedCapacity: false,
       maxCapacity: 12,
@@ -3770,12 +3955,16 @@ export async function seedDemoEvents(
     },
   ];
 
-  const demoDisciplines: Array<{ name: string; colorKey: DisciplineColorKey }> = [
-    { name: 'Circuit Training', colorKey: 'violet' },
-    { name: 'Course à pied', colorKey: 'sky' },
-    { name: 'HIIT', colorKey: 'rose' },
-    { name: 'Mobilité', colorKey: 'teal' },
-    { name: 'Renforcement', colorKey: 'orange' },
+  const demoDisciplines: Array<{
+    name: string;
+    colorKey: DisciplineColorKey;
+    iconKey: DisciplineIconKey;
+  }> = [
+    { name: 'Circuit Training', colorKey: 'violet', iconKey: 'zap' },
+    { name: 'Course à pied', colorKey: 'sky', iconKey: 'running-shoe' },
+    { name: 'HIIT', colorKey: 'rose', iconKey: 'flame' },
+    { name: 'Mobilité', colorKey: 'teal', iconKey: 'yoga' },
+    { name: 'Renforcement', colorKey: 'orange', iconKey: 'dumbbell' },
   ];
 
   for (const d of demoDisciplines) {
@@ -3787,6 +3976,7 @@ export async function seedDemoEvents(
         name: d.name,
         slug,
         colorKey: d.colorKey,
+        iconKey: d.iconKey,
         createdBy: coachUid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -3859,9 +4049,11 @@ export async function toggleEventLike(
   const likeRef = doc(db, 'eventLikes', likeId);
 
   try {
-    const [eventSnap, likeSnap] = await Promise.all([
+    const [eventSnap, likeQuerySnap] = await Promise.all([
       getDocFromServer(eventRef),
-      getDocFromServer(likeRef),
+      getDocsFromServer(
+        query(collection(db, 'eventLikes'), where('userId', '==', userId))
+      ),
     ]);
 
     if (!eventSnap.exists()) {
@@ -3877,19 +4069,27 @@ export async function toggleEventLike(
       throw new Error('Impossible d’aimer une séance annulée.');
     }
 
+    const existingLikeDoc =
+      likeQuerySnap.docs.find(
+        (d) =>
+          d.id === likeId ||
+          (d.data() as Partial<EventLike>).eventId === event.id
+      ) ?? null;
+
     const currentLikes = Math.max(0, liveEvent.likesCount ?? 0);
     const batch = writeBatch(db);
 
-    if (likeSnap.exists()) {
+    if (existingLikeDoc) {
+      const targetLikeRef = doc(db, 'eventLikes', existingLikeDoc.id);
       if (currentLikes < 1) {
-        batch.delete(likeRef);
+        batch.delete(targetLikeRef);
         await batch.commit();
         return false;
       }
-      batch.delete(likeRef);
+      batch.delete(targetLikeRef);
       batch.update(eventRef, {
         likesCount: currentLikes - 1,
-        lastLikeId: likeId,
+        lastLikeId: existingLikeDoc.id,
         updatedAt: serverTimestamp(),
       });
       await batch.commit();
@@ -4071,3 +4271,743 @@ export async function deleteEventReview(reviewId: string): Promise<void> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Annuaire Coachs (/coachDirectory) & Messagerie directe (/conversations)
+// ---------------------------------------------------------------------------
+
+export function subscribeCoachDirectory(
+  onData: (coaches: CoachDirectoryEntry[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, 'coachDirectory'),
+    where('active', '==', true)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list: CoachDirectoryEntry[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<CoachDirectoryEntry, 'id'>),
+      }));
+      list.sort((a, b) => a.displayName.localeCompare(b.displayName, 'fr'));
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'coachDirectory');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export async function syncCoachDirectoryFromAdmins(params: {
+  admins: CoachAdminUser[];
+  existingDirectory: CoachDirectoryEntry[];
+  isCoachAdmin: boolean;
+  currentUid?: string | null;
+}): Promise<void> {
+  const existingByUid = new Map(
+    params.existingDirectory.map((entry) => [entry.uid, entry])
+  );
+
+  const candidates = params.admins.filter((admin) => {
+    if (!params.isCoachAdmin && admin.uid !== params.currentUid) {
+      return false;
+    }
+    const existing = existingByUid.get(admin.uid);
+    if (!admin.active && !existing) {
+      return false;
+    }
+    if (!existing) return true;
+    return (
+      existing.displayName !== admin.displayName ||
+      (existing.specialty ?? '') !== (admin.specialty ?? '') ||
+      (existing.city ?? '') !== (admin.city ?? '') ||
+      (existing.region ?? '') !== (admin.region ?? '') ||
+      (existing.bio ?? '') !== (admin.bio ?? '') ||
+      (existing.photoUrl ?? '') !== (admin.photoUrl ?? '') ||
+      existing.active !== admin.active
+    );
+  });
+
+  if (candidates.length === 0) return;
+
+  try {
+    const batch = writeBatch(db);
+    candidates.forEach((admin) => {
+      batch.set(doc(db, 'coachDirectory', admin.uid), {
+        uid: admin.uid,
+        displayName: admin.displayName.slice(
+          0,
+          VALIDATION_LIMITS.DISPLAY_NAME_MAX
+        ),
+        specialty: (admin.specialty ?? '').slice(
+          0,
+          VALIDATION_LIMITS.SPECIALTY_MAX
+        ),
+        city: (admin.city ?? '').slice(0, VALIDATION_LIMITS.CITY_MAX),
+        region: (admin.region ?? '').slice(0, VALIDATION_LIMITS.REGION_MAX),
+        bio: (admin.bio ?? '').slice(0, VALIDATION_LIMITS.BIO_MAX),
+        photoUrl: (admin.photoUrl ?? '').slice(
+          0,
+          VALIDATION_LIMITS.PHOTO_URL_MAX
+        ),
+        active: Boolean(admin.active),
+        updatedAt: serverTimestamp(),
+      });
+    });
+    await batch.commit();
+  } catch (error) {
+    console.warn('Synchronisation annuaire coach impossible:', error);
+  }
+}
+
+export function subscribeCoachConversations(
+  coachUid: string,
+  onData: (conversations: Conversation[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, 'conversations'),
+    where('coachUid', '==', coachUid)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list: Conversation[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Conversation, 'id'>),
+      }));
+      list.sort((a, b) => {
+        const aMs = a.lastMessageAt?.toMillis?.() ?? a.updatedAt?.toMillis?.() ?? 0;
+        const bMs = b.lastMessageAt?.toMillis?.() ?? b.updatedAt?.toMillis?.() ?? 0;
+        return bMs - aMs;
+      });
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'conversations');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export function subscribeMemberConversations(
+  memberEmail: string,
+  onData: (conversations: Conversation[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const cleanEmail = memberEmail.trim().toLowerCase();
+  const q = query(
+    collection(db, 'conversations'),
+    where('memberEmail', '==', cleanEmail)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list: Conversation[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Conversation, 'id'>),
+      }));
+      list.sort((a, b) => {
+        const aMs = a.lastMessageAt?.toMillis?.() ?? a.updatedAt?.toMillis?.() ?? 0;
+        const bMs = b.lastMessageAt?.toMillis?.() ?? b.updatedAt?.toMillis?.() ?? 0;
+        return bMs - aMs;
+      });
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'conversations');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export function subscribeConversationMessages(params: {
+  conversationId: string;
+  isCoach: boolean;
+  coachUid: string;
+  memberEmail: string;
+  onData: (messages: DirectMessage[]) => void;
+  onError?: (err: Error) => void;
+}): Unsubscribe {
+  const msgsCollection = collection(
+    db,
+    'conversations',
+    params.conversationId,
+    'messages'
+  );
+  const q = params.isCoach
+    ? query(msgsCollection, where('coachUid', '==', params.coachUid))
+    : query(
+        msgsCollection,
+        where('memberEmail', '==', params.memberEmail.trim().toLowerCase())
+      );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list: DirectMessage[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<DirectMessage, 'id'>),
+      }));
+      list.sort((a, b) => {
+        const aMs = a.createdAt?.toMillis?.() ?? Number.MAX_SAFE_INTEGER;
+        const bMs = b.createdAt?.toMillis?.() ?? Number.MAX_SAFE_INTEGER;
+        return aMs - bMs;
+      });
+      params.onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(
+          error,
+          OperationType.LIST,
+          `conversations/${params.conversationId}/messages`
+        );
+      } catch (wrapped) {
+        if (params.onError && wrapped instanceof Error) {
+          params.onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export async function sendDirectMessage(params: {
+  coachUid: string;
+  coachName: string;
+  coachPhotoUrl?: string;
+  memberEmail: string;
+  memberName: string;
+  memberPhotoUrl?: string;
+  senderUid: string;
+  senderEmail: string;
+  senderName: string;
+  senderRole: ConversationSenderRole;
+  text: string;
+  contextEventId?: string;
+  contextEventTitle?: string;
+}): Promise<string> {
+  const cleanMemberEmail = params.memberEmail
+    .trim()
+    .toLowerCase()
+    .slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+  const cleanSenderEmail = params.senderEmail
+    .trim()
+    .toLowerCase()
+    .slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+
+  if (!VALIDATION_LIMITS.EMAIL_REGEX.test(cleanMemberEmail)) {
+    throw new Error('Adresse email du destinataire invalide.');
+  }
+
+  const trimmedText = params.text
+    .trim()
+    .slice(0, VALIDATION_LIMITS.MESSAGE_TEXT_MAX);
+  if (trimmedText.length < VALIDATION_LIMITS.MESSAGE_TEXT_MIN) {
+    throw new Error('Veuillez saisir un message avant d’envoyer.');
+  }
+
+  const memberEmailKey = await hashEmailKey(cleanMemberEmail);
+  const conversationId = `${params.coachUid}__${memberEmailKey}`;
+  const previewText =
+    trimmedText.length > VALIDATION_LIMITS.MESSAGE_PREVIEW_MAX
+      ? `${trimmedText.slice(0, VALIDATION_LIMITS.MESSAGE_PREVIEW_MAX - 1)}…`
+      : trimmedText;
+
+  const coachName = (params.coachName.trim() || 'Coach GetFitNow').slice(
+    0,
+    VALIDATION_LIMITS.DISPLAY_NAME_MAX
+  );
+  const memberName = (
+    params.memberName.trim() ||
+    cleanMemberEmail.split('@')[0] ||
+    'Adhérent'
+  ).slice(0, 125);
+  const senderName = (
+    params.senderName.trim() ||
+    (params.senderRole === 'coach' ? coachName : memberName)
+  ).slice(0, 125);
+  const coachPhotoUrl = (params.coachPhotoUrl ?? '').slice(
+    0,
+    VALIDATION_LIMITS.PHOTO_URL_MAX
+  );
+  const memberPhotoUrl = (params.memberPhotoUrl ?? '').slice(
+    0,
+    VALIDATION_LIMITS.PHOTO_URL_MAX
+  );
+
+  try {
+    const existingSnap = await getDocsFromServer(
+      params.senderRole === 'coach'
+        ? query(
+            collection(db, 'conversations'),
+            where('coachUid', '==', params.coachUid)
+          )
+        : query(
+            collection(db, 'conversations'),
+            where('memberEmail', '==', cleanMemberEmail)
+          )
+    );
+    const existingConv =
+      existingSnap.docs.find((d) => d.id === conversationId) ?? null;
+
+    const batch = writeBatch(db);
+    const convRef = doc(db, 'conversations', conversationId);
+    const msgRef = doc(collection(db, 'conversations', conversationId, 'messages'));
+
+    if (existingConv) {
+      if (params.senderRole === 'coach') {
+        batch.update(convRef, {
+          coachName,
+          coachPhotoUrl,
+          lastMessageText: previewText,
+          lastMessageSenderRole: 'coach',
+          lastMessageSenderUid: params.senderUid,
+          lastMessageAt: serverTimestamp(),
+          coachUnreadCount: 0,
+          memberUnreadCount: increment(1),
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        batch.update(convRef, {
+          memberUid: params.senderUid,
+          memberName,
+          memberPhotoUrl,
+          lastMessageText: previewText,
+          lastMessageSenderRole: 'member',
+          lastMessageSenderUid: params.senderUid,
+          lastMessageAt: serverTimestamp(),
+          memberUnreadCount: 0,
+          coachUnreadCount: increment(1),
+          updatedAt: serverTimestamp(),
+        });
+      }
+    } else {
+      batch.set(convRef, {
+        coachUid: params.coachUid,
+        coachName,
+        coachPhotoUrl,
+        memberEmail: cleanMemberEmail,
+        memberEmailKey,
+        memberName,
+        memberPhotoUrl,
+        memberUid: params.senderRole === 'member' ? params.senderUid : '',
+        lastMessageText: previewText,
+        lastMessageSenderRole: params.senderRole,
+        lastMessageSenderUid: params.senderUid,
+        lastMessageAt: serverTimestamp(),
+        coachUnreadCount: params.senderRole === 'member' ? 1 : 0,
+        memberUnreadCount: params.senderRole === 'coach' ? 1 : 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    const cleanContextTitle = (params.contextEventTitle ?? '')
+      .trim()
+      .slice(0, VALIDATION_LIMITS.TITLE_MAX);
+    const includeEventContext =
+      Boolean(params.contextEventId?.trim()) && cleanContextTitle.length >= 2;
+
+    batch.set(msgRef, {
+      conversationId,
+      coachUid: params.coachUid,
+      memberEmail: cleanMemberEmail,
+      senderUid: params.senderUid,
+      senderEmail: cleanSenderEmail,
+      senderName,
+      senderRole: params.senderRole,
+      text: trimmedText,
+      ...(includeEventContext
+        ? {
+            contextEventId: params.contextEventId!.trim(),
+            contextEventTitle: cleanContextTitle,
+          }
+        : {}),
+      createdAt: serverTimestamp(),
+    });
+
+    await batch.commit();
+    return conversationId;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.WRITE,
+      `conversations/${conversationId}`
+    );
+  }
+}
+
+export async function markConversationAsRead(params: {
+  conversationId: string;
+  isCoach: boolean;
+  currentUid: string;
+}): Promise<void> {
+  if (!params.conversationId || !params.currentUid) return;
+  try {
+    const convRef = doc(db, 'conversations', params.conversationId);
+    if (params.isCoach) {
+      await updateDoc(convRef, {
+        coachUnreadCount: 0,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(convRef, {
+        memberUnreadCount: 0,
+        memberUid: params.currentUid,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    console.warn('Impossible de marquer la conversation comme lue:', error);
+  }
+}
+
+export async function toggleDirectMessageLike(params: {
+  conversationId: string;
+  message: DirectMessage;
+  isCoach: boolean;
+}): Promise<boolean> {
+  const currentUid = auth.currentUser?.uid ?? '';
+  const actingAsCoach = params.isCoach && params.message.coachUid === currentUid;
+  const nextLiked = actingAsCoach
+    ? !Boolean(params.message.likedByCoach)
+    : !Boolean(params.message.likedByMember);
+  const msgRef = doc(
+    db,
+    'conversations',
+    params.conversationId,
+    'messages',
+    params.message.id
+  );
+  try {
+    await updateDoc(
+      msgRef,
+      actingAsCoach
+        ? { likedByCoach: nextLiked, updatedAt: serverTimestamp() }
+        : { likedByMember: nextLiked, updatedAt: serverTimestamp() }
+    );
+    return nextLiked;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `conversations/${params.conversationId}/messages/${params.message.id}`
+    );
+  }
+}
+
+export async function deleteConversationThread(params: {
+  conversation: Conversation;
+  currentUid: string;
+  currentEmail: string;
+}): Promise<void> {
+  const convId = params.conversation.id;
+  const isThreadCoach = params.conversation.coachUid === params.currentUid;
+  const cleanEmail = (params.currentEmail || params.conversation.memberEmail || '')
+    .trim()
+    .toLowerCase();
+
+  try {
+    const msgsCollection = collection(db, 'conversations', convId, 'messages');
+    const msgsQuery = isThreadCoach
+      ? query(msgsCollection, where('coachUid', '==', params.conversation.coachUid))
+      : query(msgsCollection, where('memberEmail', '==', cleanEmail));
+
+    const msgsSnap = await getDocsFromServer(msgsQuery);
+    const CHUNK_SIZE = 400;
+    const msgDocs = msgsSnap.docs;
+
+    for (let i = 0; i < msgDocs.length; i += CHUNK_SIZE) {
+      const batch = writeBatch(db);
+      const slice = msgDocs.slice(i, i + CHUNK_SIZE);
+      slice.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+
+    await deleteDoc(doc(db, 'conversations', convId));
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.DELETE,
+      `conversations/${convId}`
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Planning hebdomadaire personnalisé par adhérent (/memberSchedules)
+// ---------------------------------------------------------------------------
+
+export function subscribeAllMemberSchedules(
+  onData: (sessions: MemberScheduleSession[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    collection(db, 'memberSchedules'),
+    (snapshot) => {
+      const list: MemberScheduleSession[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<MemberScheduleSession, 'id'>),
+      }));
+      list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'memberSchedules');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export function subscribeMyMemberSchedule(
+  memberEmail: string,
+  onData: (sessions: MemberScheduleSession[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const cleanEmail = memberEmail.trim().toLowerCase();
+  const q = query(
+    collection(db, 'memberSchedules'),
+    where('memberEmail', '==', cleanEmail)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list: MemberScheduleSession[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<MemberScheduleSession, 'id'>),
+      }));
+      list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'memberSchedules');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export async function createMemberScheduleSession(params: {
+  memberEmail: string;
+  memberName: string;
+  title: string;
+  discipline: string;
+  notes: string;
+  location: string;
+  startDate: Date;
+  durationMinutes: number;
+  coachUid?: string;
+  coachName?: string;
+  createdByUid: string;
+  createdByRole: 'coach' | 'member';
+}): Promise<string> {
+  const cleanEmail = params.memberEmail
+    .trim()
+    .toLowerCase()
+    .slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+  if (!VALIDATION_LIMITS.EMAIL_REGEX.test(cleanEmail)) {
+    throw new Error('Adresse email adhérent invalide.');
+  }
+
+  const title = params.title.trim().slice(0, VALIDATION_LIMITS.TITLE_MAX);
+  if (title.length < VALIDATION_LIMITS.TITLE_MIN) {
+    throw new Error(
+      `Le titre de la séance doit contenir au moins ${VALIDATION_LIMITS.TITLE_MIN} caractères.`
+    );
+  }
+
+  const discipline = params.discipline
+    .trim()
+    .slice(0, VALIDATION_LIMITS.DISCIPLINE_MAX);
+  if (discipline.length < VALIDATION_LIMITS.DISCIPLINE_MIN) {
+    throw new Error('Veuillez indiquer une discipline valide.');
+  }
+
+  if (Number.isNaN(params.startDate.getTime())) {
+    throw new Error('Date et heure de séance invalides.');
+  }
+
+  const durationMinutes = Math.min(
+    VALIDATION_LIMITS.DURATION_MAX,
+    Math.max(
+      VALIDATION_LIMITS.DURATION_MIN,
+      Math.round(Number(params.durationMinutes) || 45)
+    )
+  );
+  const memberEmailKey = await hashEmailKey(cleanEmail);
+  const memberName = (
+    params.memberName.trim() ||
+    cleanEmail.split('@')[0] ||
+    'Adhérent'
+  ).slice(0, 125);
+  const notes = params.notes
+    .trim()
+    .slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX);
+  const location = params.location
+    .trim()
+    .slice(0, VALIDATION_LIMITS.LOCATION_MAX);
+  const coachUid = (params.coachUid ?? '').trim().slice(0, 128);
+  const coachName = (params.coachName ?? '')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
+
+  const sessionRef = doc(collection(db, 'memberSchedules'));
+  try {
+    await setDoc(sessionRef, {
+      memberEmail: cleanEmail,
+      memberEmailKey,
+      memberName,
+      title,
+      discipline,
+      notes,
+      location,
+      startAt: Timestamp.fromDate(params.startDate),
+      durationMinutes,
+      coachUid,
+      coachName,
+      createdByUid: params.createdByUid,
+      createdByRole: params.createdByRole,
+      completed: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return sessionRef.id;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.CREATE,
+      `memberSchedules/${sessionRef.id}`
+    );
+  }
+}
+
+export async function updateMemberScheduleSession(
+  sessionId: string,
+  params: {
+    title: string;
+    discipline: string;
+    notes: string;
+    location: string;
+    startDate: Date;
+    durationMinutes: number;
+    coachUid?: string;
+    coachName?: string;
+    completed?: boolean;
+  }
+): Promise<void> {
+  const title = params.title.trim().slice(0, VALIDATION_LIMITS.TITLE_MAX);
+  if (title.length < VALIDATION_LIMITS.TITLE_MIN) {
+    throw new Error(
+      `Le titre de la séance doit contenir au moins ${VALIDATION_LIMITS.TITLE_MIN} caractères.`
+    );
+  }
+
+  const discipline = params.discipline
+    .trim()
+    .slice(0, VALIDATION_LIMITS.DISCIPLINE_MAX);
+  if (discipline.length < VALIDATION_LIMITS.DISCIPLINE_MIN) {
+    throw new Error('Veuillez indiquer une discipline valide.');
+  }
+
+  if (Number.isNaN(params.startDate.getTime())) {
+    throw new Error('Date et heure de séance invalides.');
+  }
+
+  const durationMinutes = Math.min(
+    VALIDATION_LIMITS.DURATION_MAX,
+    Math.max(
+      VALIDATION_LIMITS.DURATION_MIN,
+      Math.round(Number(params.durationMinutes) || 45)
+    )
+  );
+  const notes = params.notes
+    .trim()
+    .slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX);
+  const location = params.location
+    .trim()
+    .slice(0, VALIDATION_LIMITS.LOCATION_MAX);
+  const coachUid = (params.coachUid ?? '').trim().slice(0, 128);
+  const coachName = (params.coachName ?? '')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
+
+  try {
+    await updateDoc(doc(db, 'memberSchedules', sessionId), {
+      title,
+      discipline,
+      notes,
+      location,
+      startAt: Timestamp.fromDate(params.startDate),
+      durationMinutes,
+      coachUid,
+      coachName,
+      completed: Boolean(params.completed),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `memberSchedules/${sessionId}`
+    );
+  }
+}
+
+export async function toggleMemberScheduleCompleted(
+  sessionId: string,
+  completed: boolean
+): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'memberSchedules', sessionId), {
+      completed,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `memberSchedules/${sessionId}`
+    );
+  }
+}
+
+export async function deleteMemberScheduleSession(
+  sessionId: string
+): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'memberSchedules', sessionId));
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.DELETE,
+      `memberSchedules/${sessionId}`
+    );
+  }
+}

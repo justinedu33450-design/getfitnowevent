@@ -277,7 +277,11 @@ service cloud.firestore {
         isValidRegistrationPaymentForEvent(regIncoming, eventBefore, regId) &&
         (
           request.time < eventBefore.startAt - duration.value(1, 'h') ||
-          canBypassCutoffForRegistration(regIncoming)
+          (eventBefore.registeredCount >= 1 && request.time < eventBefore.startAt) ||
+          (
+            (eventBefore.registeredCount >= 1 || request.time < eventBefore.startAt - duration.value(1, 'h')) &&
+            canBypassCutoffForRegistration(regIncoming)
+          )
         );
     }
 
@@ -432,11 +436,12 @@ service cloud.firestore {
         'name', 'slug', 'colorKey', 'createdBy', 'createdAt', 'updatedAt'
       ]) &&
       data.keys().hasOnly([
-        'name', 'slug', 'colorKey', 'createdBy', 'createdAt', 'updatedAt'
+        'name', 'slug', 'colorKey', 'iconKey', 'createdBy', 'createdAt', 'updatedAt'
       ]) &&
       data.name is string && data.name.size() >= 2 && data.name.size() <= 50 &&
       isValidId(data.slug) && data.slug.size() >= 2 && data.slug.size() <= 64 &&
-      data.colorKey in ['emerald', 'orange', 'sky', 'violet', 'rose', 'teal', 'amber', 'indigo', 'lime', 'slate'] &&
+      data.colorKey in ['emerald', 'orange', 'sky', 'violet', 'rose', 'teal', 'amber', 'indigo', 'lime', 'slate', 'cyan', 'fuchsia', 'blue', 'pink'] &&
+      (!('iconKey' in data) || data.iconKey in ['dumbbell', 'running-shoe', 'flame', 'yoga', 'bike', 'waves', 'boxing', 'heart-pulse', 'zap', 'mountain', 'music', 'ball', 'timer', 'footprints', 'target', 'trophy']) &&
       isValidId(data.createdBy) &&
       data.createdAt is timestamp &&
       data.updatedAt is timestamp;
@@ -566,11 +571,17 @@ service cloud.firestore {
           incoming().updatedAt == request.time &&
           (
             request.time < existing().startAt - duration.value(1, 'h') ||
-            isCoachAdmin() ||
+            (existing().registeredCount >= 1 && request.time < existing().startAt) ||
             (
-              isCoach() &&
-              getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.get('isGuest', false) == false &&
-              getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.email.lower() != request.auth.token.email.lower()
+              (existing().registeredCount >= 1 || request.time < existing().startAt - duration.value(1, 'h')) &&
+              (
+                isCoachAdmin() ||
+                (
+                  isCoach() &&
+                  getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.get('isGuest', false) == false &&
+                  getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data.email.lower() != request.auth.token.email.lower()
+                )
+              )
             )
           ) &&
           (
@@ -630,9 +641,7 @@ service cloud.firestore {
           incoming().lastLikeId == eventId + '__' + request.auth.uid &&
           incoming().updatedAt == request.time &&
           !exists(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)) &&
-          existsAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)) &&
-          getAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)).data.eventId == eventId &&
-          getAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)).data.userId == request.auth.uid
+          existsAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId))
         ) ||
         (
           hasAuthenticatedEmail() &&
@@ -644,13 +653,23 @@ service cloud.firestore {
           incoming().lastLikeId == eventId + '__' + request.auth.uid &&
           incoming().updatedAt == request.time &&
           exists(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)) &&
-          !existsAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)) &&
-          get(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)).data.eventId == eventId &&
-          get(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId)).data.userId == request.auth.uid
+          !existsAfter(/databases/$(database)/documents/eventLikes/$(incoming().lastLikeId))
         )
       );
 
-      allow delete: if isAdmin() && isValidId(eventId);
+      allow delete: if isValidId(eventId) && (
+        isAdmin() ||
+        (
+          hasAuthenticatedEmail() &&
+          (
+            existing().status == 'cancelled' ||
+            (
+              existing().registeredCount == 0 &&
+              request.time >= existing().startAt - duration.value(1, 'h')
+            )
+          )
+        )
+      );
     }
 
     // -------------------------------------------------------------------------
@@ -1221,7 +1240,7 @@ service cloud.firestore {
         incoming().createdBy == existing().createdBy &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
-        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'colorKey', 'updatedAt']);
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'colorKey', 'iconKey', 'updatedAt']);
 
       allow delete: if isAdmin() && isValidId(disciplineId);
     }
@@ -1407,7 +1426,7 @@ service cloud.firestore {
         (
           hasAuthenticatedEmail() && (
             (resource != null && existing().userId == request.auth.uid) ||
-            (resource == null && likeId.split('__').size() == 2 && likeId.split('__')[1] == request.auth.uid)
+            (resource == null && likeId.split('__').size() >= 2 && likeId.split('__')[likeId.split('__').size() - 1] == request.auth.uid)
           )
         )
       );
@@ -1559,6 +1578,399 @@ service cloud.firestore {
       allow delete: if isValidId(reviewId) && (
         isAdmin() ||
         (hasAuthenticatedEmail() && existing().authorUid == request.auth.uid)
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // /coachDirectory/{coachUid} (Non-PII public coach roster for member messaging)
+    // -------------------------------------------------------------------------
+    function isValidCoachDirectoryEntry(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'active', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'uid', 'displayName', 'specialty', 'city', 'region', 'bio', 'photoUrl', 'active', 'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+        (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 120)) &&
+        (!('city' in data) || (data.city is string && data.city.size() <= 80)) &&
+        (!('region' in data) || (data.region is string && data.region.size() <= 80)) &&
+        (!('bio' in data) || (data.bio is string && data.bio.size() <= 600)) &&
+        (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 80000)) &&
+        data.active is bool &&
+        data.updatedAt is timestamp;
+    }
+
+    match /coachDirectory/{coachUid} {
+      allow get: if isValidId(coachUid) && hasAuthenticatedEmail();
+      allow list: if hasAuthenticatedEmail() && resource.data.active == true;
+
+      allow create, update: if isValidId(coachUid) &&
+        (isCoachAdmin() || (isCoach() && request.auth.uid == coachUid)) &&
+        isValidCoachDirectoryEntry(incoming()) &&
+        incoming().uid == coachUid &&
+        incoming().updatedAt == request.time;
+
+      allow delete: if isValidId(coachUid) && isCoachAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // /conversations/{conversationId} & /messages/{messageId}
+    // Private 1-to-1 messaging between Coach and Member (${coachUid}__${memberEmailKey})
+    // -------------------------------------------------------------------------
+    function isValidConversation(data) {
+      return data.keys().hasAll([
+        'coachUid', 'coachName', 'memberEmail', 'memberEmailKey', 'memberName',
+        'memberUid', 'lastMessageText', 'lastMessageSenderRole',
+        'lastMessageSenderUid', 'lastMessageAt',
+        'coachUnreadCount', 'memberUnreadCount', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'coachUid', 'coachName', 'coachPhotoUrl',
+        'memberEmail', 'memberEmailKey', 'memberName', 'memberPhotoUrl', 'memberUid',
+        'lastMessageText', 'lastMessageSenderRole', 'lastMessageSenderUid', 'lastMessageAt',
+        'coachUnreadCount', 'memberUnreadCount', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.coachUid) &&
+      data.coachName is string && data.coachName.size() >= 1 && data.coachName.size() <= 80 &&
+      (!('coachPhotoUrl' in data) || (data.coachPhotoUrl is string && data.coachPhotoUrl.size() <= 80000)) &&
+      isValidEmail(data.memberEmail) &&
+      isValidEmailKey(data.memberEmailKey) &&
+      data.memberName is string && data.memberName.size() >= 1 && data.memberName.size() <= 125 &&
+      (!('memberPhotoUrl' in data) || (data.memberPhotoUrl is string && data.memberPhotoUrl.size() <= 80000)) &&
+      data.memberUid is string &&
+      data.memberUid.size() <= 128 &&
+      (data.memberUid == '' || isValidId(data.memberUid)) &&
+      data.lastMessageText is string && data.lastMessageText.size() >= 1 && data.lastMessageText.size() <= 240 &&
+      data.lastMessageSenderRole in ['coach', 'member'] &&
+      isValidId(data.lastMessageSenderUid) &&
+      data.lastMessageAt is timestamp &&
+      data.coachUnreadCount is int && data.coachUnreadCount >= 0 && data.coachUnreadCount <= 100000 &&
+      data.memberUnreadCount is int && data.memberUnreadCount >= 0 && data.memberUnreadCount <= 100000 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidDirectMessage(data) {
+      return data.keys().hasAll([
+        'conversationId', 'coachUid', 'memberEmail',
+        'senderUid', 'senderEmail', 'senderName', 'senderRole',
+        'text', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'conversationId', 'coachUid', 'memberEmail',
+        'senderUid', 'senderEmail', 'senderName', 'senderRole',
+        'text', 'contextEventId', 'contextEventTitle',
+        'likedByCoach', 'likedByMember', 'updatedAt', 'createdAt'
+      ]) &&
+      isValidId(data.conversationId) &&
+      data.conversationId.size() >= 10 &&
+      isValidId(data.coachUid) &&
+      isValidEmail(data.memberEmail) &&
+      isValidId(data.senderUid) &&
+      isValidEmail(data.senderEmail) &&
+      data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 125 &&
+      data.senderRole in ['coach', 'member'] &&
+      data.text is string && data.text.size() >= 1 && data.text.size() <= 1500 &&
+      (!('contextEventId' in data) || isValidId(data.contextEventId)) &&
+      (!('contextEventTitle' in data) || (data.contextEventTitle is string && data.contextEventTitle.size() >= 2 && data.contextEventTitle.size() <= 100)) &&
+      (!('likedByCoach' in data) || data.likedByCoach is bool) &&
+      (!('likedByMember' in data) || data.likedByMember is bool) &&
+      (!('updatedAt' in data) || data.updatedAt is timestamp) &&
+      data.createdAt is timestamp;
+    }
+
+    match /conversations/{conversationId} {
+      allow get: if isValidId(conversationId) &&
+        hasAuthenticatedEmail() &&
+        resource != null &&
+        (
+          existing().coachUid == request.auth.uid ||
+          existing().memberEmail == request.auth.token.email.lower()
+        );
+
+      allow list: if hasAuthenticatedEmail() && (
+        resource.data.coachUid == request.auth.uid ||
+        resource.data.memberEmail == request.auth.token.email.lower()
+      );
+
+      allow create: if hasAuthenticatedEmail() &&
+        isValidId(conversationId) &&
+        isValidConversation(incoming()) &&
+        conversationId == incoming().coachUid + '__' + incoming().memberEmailKey &&
+        incoming().lastMessageSenderUid == request.auth.uid &&
+        incoming().lastMessageAt == request.time &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            isCoach() &&
+            incoming().coachUid == request.auth.uid &&
+            incoming().lastMessageSenderRole == 'coach' &&
+            incoming().coachUnreadCount == 0 &&
+            incoming().memberUnreadCount == 1 &&
+            incoming().memberEmail != request.auth.token.email.lower()
+          ) ||
+          (
+            incoming().memberEmail == request.auth.token.email.lower() &&
+            incoming().coachUid != request.auth.uid &&
+            incoming().memberUid == request.auth.uid &&
+            incoming().lastMessageSenderRole == 'member' &&
+            incoming().memberUnreadCount == 0 &&
+            incoming().coachUnreadCount == 1 &&
+            (
+              exists(/databases/$(database)/documents/coachDirectory/$(incoming().coachUid)) ||
+              exists(/databases/$(database)/documents/admins/$(incoming().coachUid))
+            )
+          )
+        );
+
+      allow update: if isValidId(conversationId) &&
+        hasAuthenticatedEmail() &&
+        isValidConversation(incoming()) &&
+        incoming().coachUid == existing().coachUid &&
+        incoming().memberEmail == existing().memberEmail &&
+        incoming().memberEmailKey == existing().memberEmailKey &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            isCoach() &&
+            existing().coachUid == request.auth.uid &&
+            incoming().lastMessageSenderRole == 'coach' &&
+            incoming().lastMessageSenderUid == request.auth.uid &&
+            incoming().lastMessageAt == request.time &&
+            incoming().coachUnreadCount == 0 &&
+            incoming().memberUnreadCount == existing().memberUnreadCount + 1 &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'coachName', 'coachPhotoUrl',
+              'lastMessageText', 'lastMessageSenderRole', 'lastMessageSenderUid', 'lastMessageAt',
+              'coachUnreadCount', 'memberUnreadCount', 'updatedAt'
+            ])
+          ) ||
+          (
+            existing().memberEmail == request.auth.token.email.lower() &&
+            existing().coachUid != request.auth.uid &&
+            incoming().memberUid == request.auth.uid &&
+            incoming().lastMessageSenderRole == 'member' &&
+            incoming().lastMessageSenderUid == request.auth.uid &&
+            incoming().lastMessageAt == request.time &&
+            incoming().memberUnreadCount == 0 &&
+            incoming().coachUnreadCount == existing().coachUnreadCount + 1 &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'memberUid', 'memberName', 'memberPhotoUrl',
+              'lastMessageText', 'lastMessageSenderRole', 'lastMessageSenderUid', 'lastMessageAt',
+              'coachUnreadCount', 'memberUnreadCount', 'updatedAt'
+            ])
+          ) ||
+          (
+            isCoach() &&
+            existing().coachUid == request.auth.uid &&
+            incoming().coachUnreadCount == 0 &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['coachUnreadCount', 'updatedAt'])
+          ) ||
+          (
+            existing().memberEmail == request.auth.token.email.lower() &&
+            existing().coachUid != request.auth.uid &&
+            incoming().memberUid == request.auth.uid &&
+            incoming().memberUnreadCount == 0 &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['memberUnreadCount', 'memberUid', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isValidId(conversationId) && (
+        isAdmin() ||
+        (
+          hasAuthenticatedEmail() &&
+          resource != null &&
+          existing().memberEmail == request.auth.token.email.lower()
+        )
+      );
+
+      match /messages/{messageId} {
+        allow get: if isValidId(conversationId) &&
+          isValidId(messageId) &&
+          hasAuthenticatedEmail() &&
+          exists(/databases/$(database)/documents/conversations/$(conversationId)) &&
+          (
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.coachUid == request.auth.uid ||
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.memberEmail == request.auth.token.email.lower()
+          );
+
+        allow list: if hasAuthenticatedEmail() && (
+          resource.data.coachUid == request.auth.uid ||
+          resource.data.memberEmail == request.auth.token.email.lower()
+        );
+
+        allow create: if hasAuthenticatedEmail() &&
+          isValidId(conversationId) &&
+          isValidId(messageId) &&
+          isValidDirectMessage(incoming()) &&
+          incoming().senderUid == request.auth.uid &&
+          incoming().senderEmail == request.auth.token.email.lower() &&
+          (!('likedByCoach' in incoming()) || incoming().likedByCoach == false) &&
+          (!('likedByMember' in incoming()) || incoming().likedByMember == false) &&
+          (!('updatedAt' in incoming()) || incoming().updatedAt == request.time) &&
+          incoming().conversationId == conversationId &&
+          incoming().createdAt == request.time &&
+          existsAfter(/databases/$(database)/documents/conversations/$(conversationId)) &&
+          incoming().coachUid == getAfter(/databases/$(database)/documents/conversations/$(conversationId)).data.coachUid &&
+          incoming().memberEmail == getAfter(/databases/$(database)/documents/conversations/$(conversationId)).data.memberEmail &&
+          getAfter(/databases/$(database)/documents/conversations/$(conversationId)).data.lastMessageSenderUid == request.auth.uid &&
+          getAfter(/databases/$(database)/documents/conversations/$(conversationId)).data.lastMessageSenderRole == incoming().senderRole &&
+          getAfter(/databases/$(database)/documents/conversations/$(conversationId)).data.lastMessageAt == request.time &&
+          (
+            (
+              incoming().senderRole == 'coach' &&
+              isCoach() &&
+              incoming().coachUid == request.auth.uid &&
+              incoming().memberEmail != request.auth.token.email.lower()
+            ) ||
+            (
+              incoming().senderRole == 'member' &&
+              incoming().memberEmail == request.auth.token.email.lower() &&
+              incoming().coachUid != request.auth.uid
+            )
+          );
+
+        allow update: if isValidId(conversationId) &&
+          isValidId(messageId) &&
+          hasAuthenticatedEmail() &&
+          isValidDirectMessage(incoming()) &&
+          exists(/databases/$(database)/documents/conversations/$(conversationId)) &&
+          incoming().conversationId == existing().conversationId &&
+          incoming().coachUid == existing().coachUid &&
+          incoming().memberEmail == existing().memberEmail &&
+          incoming().senderUid == existing().senderUid &&
+          incoming().senderEmail == existing().senderEmail &&
+          incoming().senderName == existing().senderName &&
+          incoming().senderRole == existing().senderRole &&
+          incoming().text == existing().text &&
+          incoming().get('contextEventId', '') == existing().get('contextEventId', '') &&
+          incoming().get('contextEventTitle', '') == existing().get('contextEventTitle', '') &&
+          incoming().createdAt == existing().createdAt &&
+          ('updatedAt' in incoming()) &&
+          incoming().updatedAt == request.time &&
+          (
+            (
+              isCoach() &&
+              existing().coachUid == request.auth.uid &&
+              get(/databases/$(database)/documents/conversations/$(conversationId)).data.coachUid == request.auth.uid &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['likedByCoach', 'updatedAt']) &&
+              ('likedByCoach' in incoming()) &&
+              incoming().likedByCoach is bool
+            ) ||
+            (
+              existing().memberEmail == request.auth.token.email.lower() &&
+              existing().coachUid != request.auth.uid &&
+              get(/databases/$(database)/documents/conversations/$(conversationId)).data.memberEmail == request.auth.token.email.lower() &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['likedByMember', 'updatedAt']) &&
+              ('likedByMember' in incoming()) &&
+              incoming().likedByMember is bool
+            )
+          );
+
+        allow delete: if isValidId(conversationId) &&
+          isValidId(messageId) &&
+          exists(/databases/$(database)/documents/conversations/$(conversationId)) &&
+          (
+            isAdmin() ||
+            (
+              hasAuthenticatedEmail() &&
+              resource != null &&
+              get(/databases/$(database)/documents/conversations/$(conversationId)).data.memberEmail == request.auth.token.email.lower() &&
+              existing().memberEmail == request.auth.token.email.lower()
+            )
+          );
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // /memberSchedules/{sessionId}
+    // Private personalized weekly coaching/training schedule per member
+    // -------------------------------------------------------------------------
+    function isValidMemberScheduleSession(data) {
+      return data.keys().hasAll([
+        'memberEmail', 'memberEmailKey', 'memberName',
+        'title', 'discipline', 'notes', 'location',
+        'startAt', 'durationMinutes', 'coachUid', 'coachName',
+        'createdByUid', 'createdByRole', 'completed',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'memberEmail', 'memberEmailKey', 'memberName',
+        'title', 'discipline', 'notes', 'location',
+        'startAt', 'durationMinutes', 'coachUid', 'coachName',
+        'createdByUid', 'createdByRole', 'completed',
+        'createdAt', 'updatedAt'
+      ]) &&
+      isValidEmail(data.memberEmail) &&
+      isValidEmailKey(data.memberEmailKey) &&
+      data.memberName is string && data.memberName.size() >= 1 && data.memberName.size() <= 125 &&
+      data.title is string && data.title.size() >= 2 && data.title.size() <= 100 &&
+      isValidDiscipline(data.discipline) &&
+      data.notes is string && data.notes.size() <= 600 &&
+      data.location is string && data.location.size() <= 120 &&
+      data.startAt is timestamp &&
+      data.durationMinutes is int && data.durationMinutes >= 15 && data.durationMinutes <= 240 &&
+      data.coachUid is string && data.coachUid.size() <= 128 &&
+      (data.coachUid == '' || isValidId(data.coachUid)) &&
+      data.coachName is string && data.coachName.size() <= 80 &&
+      isValidId(data.createdByUid) &&
+      data.createdByRole in ['coach', 'member'] &&
+      data.completed is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    match /memberSchedules/{sessionId} {
+      allow get: if isValidId(sessionId) && (
+        isAdmin() ||
+        (hasAuthenticatedEmail() && resource != null && existing().memberEmail == request.auth.token.email.lower())
+      );
+
+      allow list: if isAdmin() || (
+        hasAuthenticatedEmail() &&
+        resource.data.memberEmail == request.auth.token.email.lower()
+      );
+
+      allow create: if hasAuthenticatedEmail() &&
+        isValidId(sessionId) &&
+        isValidMemberScheduleSession(incoming()) &&
+        incoming().createdByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (
+          (isAdmin() && incoming().createdByRole == 'coach') ||
+          (incoming().memberEmail == request.auth.token.email.lower() && incoming().createdByRole == 'member')
+        );
+
+      allow update: if isValidId(sessionId) &&
+        hasAuthenticatedEmail() &&
+        isValidMemberScheduleSession(incoming()) &&
+        incoming().memberEmail == existing().memberEmail &&
+        incoming().memberEmailKey == existing().memberEmailKey &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().createdByRole == existing().createdByRole &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (
+            existing().memberEmail == request.auth.token.email.lower() &&
+            (
+              incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'title', 'discipline', 'notes', 'location',
+                'startAt', 'durationMinutes', 'coachUid', 'coachName',
+                'completed', 'updatedAt'
+              ])
+            )
+          )
+        );
+
+      allow delete: if isValidId(sessionId) && (
+        isAdmin() ||
+        (hasAuthenticatedEmail() && resource != null && existing().memberEmail == request.auth.token.email.lower())
       );
     }
   }

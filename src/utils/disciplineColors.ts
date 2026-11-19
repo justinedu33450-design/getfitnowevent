@@ -1,6 +1,7 @@
 import {
   CustomDiscipline,
   DisciplineColorKey,
+  DisciplineIconKey,
   DisciplineItem,
 } from '../types';
 
@@ -27,6 +28,10 @@ export const DISCIPLINE_COLOR_KEYS: DisciplineColorKey[] = [
   'amber',
   'indigo',
   'lime',
+  'cyan',
+  'fuchsia',
+  'blue',
+  'pink',
   'slate',
 ];
 
@@ -142,6 +147,54 @@ export const DISCIPLINE_COLOR_PRESETS: Record<
     leftBorder: 'border-l-lime-600 dark:border-l-lime-500',
     swatchBg: 'bg-lime-600',
   },
+  cyan: {
+    key: 'cyan',
+    label: 'Cyan',
+    hex: '#0891b2',
+    borderHex: '#155e75',
+    softBg: 'bg-cyan-50 dark:bg-cyan-950/60',
+    cardBg: 'bg-cyan-50/90 hover:bg-cyan-100/90 dark:bg-cyan-950/45 dark:hover:bg-cyan-900/55',
+    text: 'text-cyan-800 dark:text-cyan-300',
+    border: 'border-cyan-200 dark:border-cyan-800/80',
+    leftBorder: 'border-l-cyan-600 dark:border-l-cyan-500',
+    swatchBg: 'bg-cyan-600',
+  },
+  fuchsia: {
+    key: 'fuchsia',
+    label: 'Fuchsia',
+    hex: '#c026d3',
+    borderHex: '#86198f',
+    softBg: 'bg-fuchsia-50 dark:bg-fuchsia-950/60',
+    cardBg: 'bg-fuchsia-50/90 hover:bg-fuchsia-100/90 dark:bg-fuchsia-950/45 dark:hover:bg-fuchsia-900/55',
+    text: 'text-fuchsia-800 dark:text-fuchsia-300',
+    border: 'border-fuchsia-200 dark:border-fuchsia-800/80',
+    leftBorder: 'border-l-fuchsia-600 dark:border-l-fuchsia-500',
+    swatchBg: 'bg-fuchsia-600',
+  },
+  blue: {
+    key: 'blue',
+    label: 'Bleu roi',
+    hex: '#2563eb',
+    borderHex: '#1e40af',
+    softBg: 'bg-blue-50 dark:bg-blue-950/60',
+    cardBg: 'bg-blue-50/90 hover:bg-blue-100/90 dark:bg-blue-950/45 dark:hover:bg-blue-900/55',
+    text: 'text-blue-800 dark:text-blue-300',
+    border: 'border-blue-200 dark:border-blue-800/80',
+    leftBorder: 'border-l-blue-600 dark:border-l-blue-500',
+    swatchBg: 'bg-blue-600',
+  },
+  pink: {
+    key: 'pink',
+    label: 'Rose',
+    hex: '#db2777',
+    borderHex: '#9d174d',
+    softBg: 'bg-pink-50 dark:bg-pink-950/60',
+    cardBg: 'bg-pink-50/90 hover:bg-pink-100/90 dark:bg-pink-950/45 dark:hover:bg-pink-900/55',
+    text: 'text-pink-800 dark:text-pink-300',
+    border: 'border-pink-200 dark:border-pink-800/80',
+    leftBorder: 'border-l-pink-600 dark:border-l-pink-500',
+    swatchBg: 'bg-pink-600',
+  },
   slate: {
     key: 'slate',
     label: 'Ardoise',
@@ -156,12 +209,283 @@ export const DISCIPLINE_COLOR_PRESETS: Record<
   },
 };
 
-export function slugifyDiscipline(name: string): string {
-  const normalized = name
+export interface DisciplineIconPreset {
+  key: DisciplineIconKey;
+  label: string;
+}
+
+export const DISCIPLINE_ICON_KEYS: DisciplineIconKey[] = [
+  'dumbbell',
+  'running-shoe',
+  'flame',
+  'yoga',
+  'bike',
+  'waves',
+  'boxing',
+  'heart-pulse',
+  'zap',
+  'mountain',
+  'music',
+  'ball',
+  'timer',
+  'footprints',
+  'target',
+  'trophy',
+];
+
+export const DISCIPLINE_ICON_PRESETS: Record<
+  DisciplineIconKey,
+  DisciplineIconPreset
+> = {
+  dumbbell: { key: 'dumbbell', label: 'Haltère (Renforcement / Muscu)' },
+  'running-shoe': {
+    key: 'running-shoe',
+    label: 'Chaussure de sport (Running)',
+  },
+  flame: { key: 'flame', label: 'Flamme (HIIT / Cardio intense)' },
+  yoga: { key: 'yoga', label: 'Mobilité / Yoga / Pilates' },
+  bike: { key: 'bike', label: 'Vélo / Cyclisme / Spinning' },
+  waves: { key: 'waves', label: 'Natation / Aquagym' },
+  boxing: { key: 'boxing', label: 'Gant de boxe / Combat' },
+  'heart-pulse': { key: 'heart-pulse', label: 'Cardio / Remise en forme' },
+  zap: { key: 'zap', label: 'Éclair (Circuit / Explosivité)' },
+  mountain: { key: 'mountain', label: 'Montagne (Trail / Randonnée)' },
+  music: { key: 'music', label: 'Danse / Zumba / Rythme' },
+  ball: { key: 'ball', label: 'Sport collectif / Ballon' },
+  timer: { key: 'timer', label: 'Chrono / Fractionné' },
+  footprints: { key: 'footprints', label: 'Marche active / Nordique' },
+  target: { key: 'target', label: 'Objectif / Coaching' },
+  trophy: { key: 'trophy', label: 'Performance / Challenge' },
+};
+
+const ICON_KEYWORD_RULES: Array<{
+  key: DisciplineIconKey;
+  keywords: string[];
+}> = [
+  {
+    key: 'running-shoe',
+    keywords: [
+      'running',
+      'run',
+      'course',
+      'courir',
+      'jogging',
+      'jog',
+      'marathon',
+      'semi',
+      'footing',
+      'athle',
+      '10km',
+      'sprint',
+      'foulee',
+    ],
+  },
+  {
+    key: 'dumbbell',
+    keywords: [
+      'renforcement',
+      'renfo',
+      'muscul',
+      'force',
+      'halter',
+      'crossfit',
+      'bodypump',
+      'body pump',
+      'pump',
+      'poids',
+      'kettle',
+      'full body',
+      'fullbody',
+      'abdo',
+      'fessier',
+      'caf',
+      'sculpt',
+      'tonif',
+      'gainage',
+      'calisthen',
+      'street workout',
+      'trx',
+      'gym',
+    ],
+  },
+  {
+    key: 'boxing',
+    keywords: [
+      'boxe',
+      'boxing',
+      'combat',
+      'kick',
+      'mma',
+      'muay',
+      'thai',
+      'karate',
+      'judo',
+      'taekwondo',
+      'self',
+      'defense',
+      'lutte',
+      'savate',
+    ],
+  },
+  {
+    key: 'yoga',
+    keywords: [
+      'yoga',
+      'pilates',
+      'mobil',
+      'stretch',
+      'etir',
+      'soupl',
+      'relax',
+      'medit',
+      'zen',
+      'bien-etre',
+      'bien etre',
+      'postur',
+      'respir',
+      'dos',
+    ],
+  },
+  {
+    key: 'bike',
+    keywords: [
+      'velo',
+      'cycl',
+      'vtt',
+      'rpm',
+      'spinning',
+      'biking',
+      'bike',
+      'gravel',
+    ],
+  },
+  {
+    key: 'waves',
+    keywords: [
+      'natation',
+      'aqua',
+      'swim',
+      'piscine',
+      'nage',
+      'surf',
+      'aviron',
+      'paddle',
+      'kayak',
+      'triathlon',
+    ],
+  },
+  {
+    key: 'flame',
+    keywords: ['hiit', 'tabata', 'bootcamp', 'boot camp', 'brul', 'intense', 'metabolic'],
+  },
+  {
+    key: 'zap',
+    keywords: ['circuit', 'plyo', 'explos', 'agilit', 'hyrox', 'cross training', 'crosstraining'],
+  },
+  {
+    key: 'mountain',
+    keywords: ['trail', 'rando', 'montagne', 'escalade', 'grimpe', 'bloc', 'trek', 'alpin', 'outdoor'],
+  },
+  {
+    key: 'footprints',
+    keywords: ['marche', 'walk', 'nordique', 'nordic', 'step'],
+  },
+  {
+    key: 'music',
+    keywords: ['danse', 'dance', 'zumba', 'aerobic', 'bodyjam', 'salsa', 'hip hop', 'barre'],
+  },
+  {
+    key: 'ball',
+    keywords: ['foot', 'basket', 'volley', 'hand', 'rugby', 'tennis', 'padel', 'squash', 'badminton', 'collectif', 'golf'],
+  },
+  {
+    key: 'timer',
+    keywords: ['fraction', 'interval', 'chrono', 'vma', 'seuil'],
+  },
+  {
+    key: 'heart-pulse',
+    keywords: ['cardio', 'fitness', 'fit', 'sante', 'forme', 'remise', 'endurance'],
+  },
+  {
+    key: 'trophy',
+    keywords: ['compet', 'perform', 'challenge', 'defi'],
+  },
+];
+
+function normalizeForMatch(value: string): string {
+  return value
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+export function isValidDisciplineIconKey(
+  value: unknown
+): value is DisciplineIconKey {
+  return (
+    typeof value === 'string' &&
+    Boolean(DISCIPLINE_ICON_PRESETS[value as DisciplineIconKey])
+  );
+}
+
+export function inferDisciplineIconKey(
+  disciplineName: string
+): DisciplineIconKey {
+  const normalized = normalizeForMatch(disciplineName);
+  if (!normalized) return 'target';
+
+  for (const rule of ICON_KEYWORD_RULES) {
+    if (rule.keywords.some((kw) => normalized.includes(kw))) {
+      return rule.key;
+    }
+  }
+  return 'target';
+}
+
+export function pickNextUnusedColorKey(
+  existingDisciplines: Array<{ colorKey: DisciplineColorKey }>,
+  preferredKey?: DisciplineColorKey
+): DisciplineColorKey {
+  const usedCounts = new Map<DisciplineColorKey, number>();
+  DISCIPLINE_COLOR_KEYS.forEach((key) => usedCounts.set(key, 0));
+
+  for (const disc of existingDisciplines) {
+    if (DISCIPLINE_COLOR_PRESETS[disc.colorKey]) {
+      usedCounts.set(disc.colorKey, (usedCounts.get(disc.colorKey) ?? 0) + 1);
+    }
+  }
+
+  if (
+    preferredKey &&
+    DISCIPLINE_COLOR_PRESETS[preferredKey] &&
+    (usedCounts.get(preferredKey) ?? 0) === 0
+  ) {
+    return preferredKey;
+  }
+
+  const firstUnused = DISCIPLINE_COLOR_KEYS.find(
+    (key) => (usedCounts.get(key) ?? 0) === 0
+  );
+  if (firstUnused) {
+    return firstUnused;
+  }
+
+  // All palette colors are already used at least once: pick the least-used vibrant color first
+  let bestKey: DisciplineColorKey = DISCIPLINE_COLOR_KEYS[0];
+  let bestCount = Number.POSITIVE_INFINITY;
+  for (const key of DISCIPLINE_COLOR_KEYS) {
+    const count = usedCounts.get(key) ?? 0;
+    if (count < bestCount) {
+      bestCount = count;
+      bestKey = key;
+    }
+  }
+  return bestKey;
+}
+
+export function slugifyDiscipline(name: string): string {
+  const normalized = normalizeForMatch(name)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
@@ -195,6 +519,9 @@ export function buildDisciplineCatalog(
       colorKey: DISCIPLINE_COLOR_PRESETS[custom.colorKey]
         ? custom.colorKey
         : 'indigo',
+      iconKey: isValidDisciplineIconKey(custom.iconKey)
+        ? custom.iconKey
+        : inferDisciplineIconKey(cleanName),
       customDoc: custom,
     });
   }
@@ -213,10 +540,27 @@ export function getDisciplineStyle(
     (item) => item.name.trim().toLowerCase() === clean
   );
   if (fromCatalog) {
-    return DISCIPLINE_COLOR_PRESETS[fromCatalog.colorKey] ?? DISCIPLINE_COLOR_PRESETS.emerald;
+    return (
+      DISCIPLINE_COLOR_PRESETS[fromCatalog.colorKey] ??
+      DISCIPLINE_COLOR_PRESETS.emerald
+    );
   }
 
   const fallbackPool = DISCIPLINE_COLOR_KEYS.filter((k) => k !== 'slate');
   const idx = Math.abs(hashString(clean || 'sport')) % fallbackPool.length;
   return DISCIPLINE_COLOR_PRESETS[fallbackPool[idx]];
+}
+
+export function getDisciplineIconKey(
+  disciplineName: string,
+  catalog: DisciplineItem[] = []
+): DisciplineIconKey {
+  const clean = (disciplineName || '').trim().toLowerCase();
+  const fromCatalog = catalog.find(
+    (item) => item.name.trim().toLowerCase() === clean
+  );
+  if (fromCatalog && isValidDisciplineIconKey(fromCatalog.iconKey)) {
+    return fromCatalog.iconKey;
+  }
+  return inferDisciplineIconKey(disciplineName);
 }

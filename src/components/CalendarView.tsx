@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Calendar as CalendarIcon,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -33,6 +34,7 @@ import {
   isSameCalendarDay,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
 import { EventsOverviewMap } from './EventLocationMap';
 import {
   EventLikeButton,
@@ -86,6 +88,7 @@ export function CalendarView({
   );
   const [cityQuery, setCityQuery] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
+  const [dayAgendaExpanded, setDayAgendaExpanded] = useState(false);
 
   const disciplineFilterOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -214,6 +217,7 @@ export function CalendarView({
     setAnchorDate(today);
     setSelectedDate(today);
     setDayDisplayMode('map');
+    setDayAgendaExpanded(true);
     window.setTimeout(() => {
       document
         .getElementById('day-agenda-panel')
@@ -233,11 +237,9 @@ export function CalendarView({
     const statusColor =
       evalState === 'open'
         ? 'text-emerald-700 dark:text-emerald-400'
-        : evalState === 'cutoff_closed'
-          ? 'text-amber-700 dark:text-amber-400'
-          : evalState === 'full' || evalState === 'cancelled'
-            ? 'text-rose-700 dark:text-rose-400'
-            : 'text-slate-500 dark:text-slate-400';
+        : evalState === 'full' || evalState === 'cancelled'
+          ? 'text-rose-700 dark:text-rose-400'
+          : 'text-slate-500 dark:text-slate-400';
 
     const container =
       evalState === 'cancelled'
@@ -267,7 +269,7 @@ export function CalendarView({
             {headerTitle}
           </h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            Touchez un jour puis une séance pour voir l’emplacement sur la carte et réserver votre place jusqu’à 1h avant le début.
+            Touchez un jour puis une séance pour voir l’emplacement sur la carte et réserver votre place jusqu’au début de la séance (dès 1 inscrit 1h avant).
           </p>
         </div>
 
@@ -384,9 +386,15 @@ export function CalendarView({
           <div className="flex items-center gap-2 w-full sm:w-auto">
             {disciplineFilter !== 'all' && (
               <span
-                className={`h-3 w-3 shrink-0 rounded-sm ${getDisciplineStyle(disciplineFilter, disciplines).swatchBg}`}
+                className={`flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-lg border ${getDisciplineStyle(disciplineFilter, disciplines).softBg} ${getDisciplineStyle(disciplineFilter, disciplines).border} ${getDisciplineStyle(disciplineFilter, disciplines).text}`}
                 aria-hidden="true"
-              />
+              >
+                <DisciplineIcon
+                  disciplineName={disciplineFilter}
+                  catalog={disciplines}
+                  className="h-4 w-4"
+                />
+              </span>
             )}
             <select
               value={disciplineFilter}
@@ -571,7 +579,12 @@ export function CalendarView({
                               className={`w-full rounded border px-1.5 py-1 text-left text-[11px] leading-tight transition-colors cursor-pointer ${style.container}`}
                             >
                               <div className="flex items-center justify-between gap-1 font-mono tabular-nums">
-                                <span className="font-semibold">
+                                <span className="inline-flex items-center gap-1 font-semibold">
+                                  <DisciplineIcon
+                                    disciplineName={ev.discipline}
+                                    catalog={disciplines}
+                                    className="h-3 w-3 shrink-0"
+                                  />
                                   {formatFrenchTime(ev.startAt.toDate())}
                                 </span>
                                 {isCoach ? (
@@ -697,9 +710,10 @@ export function CalendarView({
                                   <span
                                     className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-semibold bg-white dark:bg-slate-900 ${style.discStyle.border} ${style.discStyle.text}`}
                                   >
-                                    <span
-                                      className={`h-2 w-2 rounded-sm ${style.discStyle.swatchBg}`}
-                                      aria-hidden="true"
+                                    <DisciplineIcon
+                                      disciplineName={ev.discipline}
+                                      catalog={disciplines}
+                                      className="h-3 w-3 shrink-0"
                                     />
                                     {ev.discipline}
                                   </span>
@@ -786,64 +800,112 @@ export function CalendarView({
         {/* Selected Day Agenda Panel */}
         <aside
           id="day-agenda-panel"
-          className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5 lg:col-span-4"
+          className={`flex flex-col rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5 lg:col-span-4 ${
+            dayAgendaExpanded ? 'justify-between' : 'self-start'
+          }`}
         >
           <div>
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
-              <div>
+            <div
+              className={`flex items-start justify-between gap-3 ${
+                dayAgendaExpanded
+                  ? 'border-b border-slate-100 pb-4 dark:border-slate-800'
+                  : ''
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setDayAgendaExpanded((prev) => !prev)}
+                aria-expanded={dayAgendaExpanded}
+                aria-controls="day-agenda-panel-body"
+                className="flex-1 text-left min-w-0 cursor-pointer"
+              >
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   Programme du jour sélectionné
                 </p>
                 <h3 className="mt-0.5 font-display text-base font-bold capitalize text-slate-900 dark:text-white sm:text-lg">
                   {formatFrenchDateLong(selectedDate)}
                 </h3>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {eventsForSelectedDay.length > 0 && (
-                  <div
-                    role="group"
-                    aria-label="Afficher le programme du jour en liste ou sur une carte"
-                    className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setDayDisplayMode('list')}
-                      className={`inline-flex min-h-[32px] items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                        dayDisplayMode === 'list'
-                          ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                      }`}
-                    >
-                      <List className="h-3.5 w-3.5" aria-hidden="true" />
-                      Liste
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDayDisplayMode('map')}
-                      className={`inline-flex min-h-[32px] items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                        dayDisplayMode === 'map'
-                          ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-                      }`}
-                    >
-                      <MapIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                      Carte
-                    </button>
+                {!dayAgendaExpanded && (
+                  <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                    {eventsForSelectedDay.length === 0
+                      ? 'Aucune séance ce jour'
+                      : `${eventsForSelectedDay.length} séance${eventsForSelectedDay.length > 1 ? 's' : ''} ce jour`}
+                  </p>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDayAgendaExpanded((prev) => !prev)}
+                aria-expanded={dayAgendaExpanded}
+                aria-controls="day-agenda-panel-body"
+                aria-label={
+                  dayAgendaExpanded
+                    ? 'Replier le programme du jour sélectionné'
+                    : 'Déplier le programme du jour sélectionné'
+                }
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              >
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    dayAgendaExpanded ? 'rotate-180' : ''
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+
+            {dayAgendaExpanded && (
+              <div id="day-agenda-panel-body">
+                {(eventsForSelectedDay.length > 0 || isCoach) && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    {eventsForSelectedDay.length > 0 ? (
+                      <div
+                        role="group"
+                        aria-label="Afficher le programme du jour en liste ou sur une carte"
+                        className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setDayDisplayMode('list')}
+                          className={`inline-flex min-h-[32px] items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                            dayDisplayMode === 'list'
+                              ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
+                              : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                          }`}
+                        >
+                          <List className="h-3.5 w-3.5" aria-hidden="true" />
+                          Liste
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDayDisplayMode('map')}
+                          className={`inline-flex min-h-[32px] items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                            dayDisplayMode === 'map'
+                              ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
+                              : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                          }`}
+                        >
+                          <MapIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                          Carte
+                        </button>
+                      </div>
+                    ) : (
+                      <span />
+                    )}
+
+                    {isCoach && (
+                      <button
+                        type="button"
+                        onClick={() => onCreateEventForDate(selectedDate)}
+                        className="inline-flex min-h-[38px] items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap shrink-0 cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                        Planifier
+                      </button>
+                    )}
                   </div>
                 )}
-
-                {isCoach && (
-                  <button
-                    type="button"
-                    onClick={() => onCreateEventForDate(selectedDate)}
-                    className="inline-flex min-h-[38px] items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap shrink-0 cursor-pointer"
-                  >
-                    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                    Planifier
-                  </button>
-                )}
-              </div>
-            </div>
 
             <div className="mt-4 space-y-3">
               {eventsForSelectedDay.length === 0 ? (
@@ -901,9 +963,10 @@ export function CalendarView({
                           <span
                             className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                           >
-                            <span
-                              className={`h-2 w-2 rounded-sm ${discStyle.swatchBg}`}
-                              aria-hidden="true"
+                            <DisciplineIcon
+                              disciplineName={ev.discipline}
+                              catalog={disciplines}
+                              className="h-3 w-3 shrink-0"
                             />
                             {ev.discipline}
                           </span>
@@ -931,17 +994,12 @@ export function CalendarView({
                             className={`inline-flex items-center gap-1 font-semibold shrink-0 ${
                               evalInfo.state === 'open'
                                 ? 'text-emerald-700 dark:text-emerald-400'
-                                : evalInfo.state === 'cutoff_closed'
-                                  ? 'text-amber-700 dark:text-amber-400'
-                                  : evalInfo.state === 'full' ||
-                                      evalInfo.state === 'cancelled'
-                                    ? 'text-rose-700 dark:text-rose-400'
-                                    : 'text-slate-500 dark:text-slate-400'
+                                : evalInfo.state === 'full' ||
+                                    evalInfo.state === 'cancelled'
+                                  ? 'text-rose-700 dark:text-rose-400'
+                                  : 'text-slate-500 dark:text-slate-400'
                             }`}
                           >
-                            {evalInfo.state === 'cutoff_closed' && (
-                              <Lock className="h-3 w-3" aria-hidden="true" />
-                            )}
                             {evalInfo.statusLabel}
                           </span>
                           {ev.status === 'published' && onToggleLike && (
@@ -1020,9 +1078,7 @@ export function CalendarView({
                         const hasSpots =
                           evalInfo.isUnlimited || (evalInfo.remainingSpots ?? 0) > 0;
                         const canBookFromCard =
-                          hasSpots &&
-                          (evalInfo.state === 'open' ||
-                            (isCoachAdmin && evalInfo.state === 'cutoff_closed'));
+                          hasSpots && evalInfo.state === 'open';
                         return (
                           <button
                             type="button"
@@ -1037,13 +1093,7 @@ export function CalendarView({
                               ? ev.isPaid
                                 ? `Réserver (${formatEventPrice(ev)})`
                                 : 'Réserver & voir la carte'
-                              : isCoachAdmin &&
-                                  evalInfo.state === 'cutoff_closed' &&
-                                  hasSpots
-                                ? ev.isPaid
-                                  ? `Réserver (${formatEventPrice(ev)}) · admin`
-                                  : 'Réserver (accès admin)'
-                                : 'Voir la carte et détails'}
+                              : 'Voir la carte et détails'}
                           </button>
                         );
                       })()}
@@ -1052,11 +1102,15 @@ export function CalendarView({
                 })
               )}
             </div>
+              </div>
+            )}
           </div>
 
-          <div className="mt-6 border-t border-slate-100 pt-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-            Règle d’inscription : chaque séance (gratuite ou payante) est accessible jusqu’à 60 minutes avant le coup d’envoi.
-          </div>
+          {dayAgendaExpanded && (
+            <div className="mt-6 border-t border-slate-100 pt-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              Règle d’inscription : s’il n’y a aucun inscrit 1 heure avant le début, les inscriptions ferment et l’événement est annulé puis supprimé. Dès 1 inscrit, les inscriptions restent ouvertes jusqu’à l’heure de début.
+            </div>
+          )}
         </aside>
       </div>
     </section>

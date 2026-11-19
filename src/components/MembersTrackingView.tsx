@@ -1,9 +1,12 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   Check,
+  ChevronDown,
   Clock,
   Download,
+  History,
   LogOut,
+  MessageSquare,
   Plus,
   Search,
   Trash2,
@@ -14,10 +17,13 @@ import {
 import { BOOTSTRAPPED_COACH_EMAIL } from '../firebase';
 import {
   CoachAdminUser,
+  CoachDirectoryEntry,
+  DisciplineItem,
   FitnessLevel,
   FollowUpStatus,
   MemberAggregate,
   MemberProfile,
+  MemberScheduleSession,
   Registration,
   SportEvent,
   VALIDATION_LIMITS,
@@ -40,14 +46,26 @@ import {
 } from '../utils/dateAndValidation';
 import { PhotoUploadField, ProfileAvatar } from './ProfileAvatar';
 import { MemberRegularityChart } from './MemberRegularityChart';
+import { MemberBadgesCard } from './MemberBadgesCard';
+import { MemberWeeklyScheduleCard } from './MemberWeeklyScheduleCard';
+import { computeMemberBadges } from '../utils/memberBadges';
 
 interface MembersTrackingViewProps {
   coachEmail: string;
+  currentCoachUid?: string;
+  currentCoachName?: string;
   coachAdmins?: CoachAdminUser[];
+  coachDirectory?: CoachDirectoryEntry[];
   events: SportEvent[];
   registrations: Registration[];
   memberProfiles: MemberProfile[];
+  memberSchedules?: MemberScheduleSession[];
+  disciplines?: DisciplineItem[];
   nowMs: number;
+  unreadMessagesByMemberKey?: Map<string, number>;
+  initialSelectedMemberKey?: string | null;
+  onConsumeInitialSelectedMemberKey?: () => void;
+  onMessageMember?: (member: MemberAggregate) => void;
   onSignOut: () => void;
 }
 
@@ -59,11 +77,20 @@ const FOLLOW_UP_LABELS: Record<FollowUpStatus, string> = {
 
 export function MembersTrackingView({
   coachEmail,
+  currentCoachUid = '',
+  currentCoachName = '',
   coachAdmins = [],
+  coachDirectory = [],
   events,
   registrations,
   memberProfiles,
+  memberSchedules = [],
+  disciplines = [],
   nowMs,
+  unreadMessagesByMemberKey,
+  initialSelectedMemberKey,
+  onConsumeInitialSelectedMemberKey,
+  onMessageMember,
   onSignOut,
 }: MembersTrackingViewProps) {
   const [search, setSearch] = useState('');
@@ -205,6 +232,12 @@ export function MembersTrackingView({
     });
   }, [members, search, statusFilter]);
 
+  useEffect(() => {
+    if (!initialSelectedMemberKey) return;
+    setSelectedMemberKey(initialSelectedMemberKey);
+    onConsumeInitialSelectedMemberKey?.();
+  }, [initialSelectedMemberKey, onConsumeInitialSelectedMemberKey]);
+
   const selectedMember = useMemo(
     () => members.find((m) => m.emailKey === selectedMemberKey) ?? null,
     [members, selectedMemberKey]
@@ -214,6 +247,16 @@ export function MembersTrackingView({
     if (!selectedMember) return [];
     return registrations.filter((r) => r.emailKey === selectedMember.emailKey);
   }, [registrations, selectedMember]);
+
+  const selectedMemberScheduleSessions = useMemo(() => {
+    if (!selectedMember) return [];
+    const emailLower = selectedMember.email.trim().toLowerCase();
+    return memberSchedules.filter(
+      (s) =>
+        s.memberEmailKey === selectedMember.emailKey ||
+        (emailLower && s.memberEmail.trim().toLowerCase() === emailLower)
+    );
+  }, [memberSchedules, selectedMember]);
 
   const stats = useMemo(() => {
     const total = members.length;
@@ -543,6 +586,22 @@ export function MembersTrackingView({
                       className="flex items-center gap-1.5"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      {onMessageMember && member.email && (
+                        <button
+                          type="button"
+                          onClick={() => onMessageMember(member)}
+                          aria-label={`Envoyer un message à ${member.firstName} ${member.lastName}`}
+                          className="relative inline-flex min-h-[38px] items-center gap-1 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 cursor-pointer"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>Message</span>
+                          {(unreadMessagesByMemberKey?.get(member.emailKey) ?? 0) > 0 && (
+                            <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums">
+                              {unreadMessagesByMemberKey?.get(member.emailKey)}
+                            </span>
+                          )}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setSelectedMemberKey(member.emailKey)}
@@ -690,6 +749,22 @@ export function MembersTrackingView({
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center justify-end gap-1.5">
+                            {onMessageMember && member.email && (
+                              <button
+                                type="button"
+                                onClick={() => onMessageMember(member)}
+                                title={`Envoyer un message à ${member.firstName} ${member.lastName}`}
+                                aria-label={`Envoyer un message à ${member.firstName} ${member.lastName}`}
+                                className="relative inline-flex h-[34px] items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300 cursor-pointer"
+                              >
+                                <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                                {(unreadMessagesByMemberKey?.get(member.emailKey) ?? 0) > 0 && (
+                                  <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums">
+                                    {unreadMessagesByMemberKey?.get(member.emailKey)}
+                                  </span>
+                                )}
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => setSelectedMemberKey(member.emailKey)}
@@ -762,8 +837,25 @@ export function MembersTrackingView({
           key={selectedMember.emailKey}
           member={selectedMember}
           allRegistrations={selectedMemberAllRegistrations}
+          memberScheduleSessions={selectedMemberScheduleSessions}
+          currentCoachUid={currentCoachUid}
+          currentCoachName={currentCoachName}
+          coachDirectory={coachDirectory}
           events={events}
+          disciplines={disciplines}
           nowMs={nowMs}
+          unreadMessagesCount={
+            unreadMessagesByMemberKey?.get(selectedMember.emailKey) ?? 0
+          }
+          onMessageMember={
+            onMessageMember && selectedMember.email
+              ? () => {
+                  const target = selectedMember;
+                  setSelectedMemberKey(null);
+                  onMessageMember(target);
+                }
+              : undefined
+          }
           deleting={deletingKey === selectedMember.emailKey}
           onDelete={() => void handleDeleteMember(selectedMember)}
           onClose={() => setSelectedMemberKey(null)}
@@ -1109,8 +1201,15 @@ function AddMemberModal({
 interface MemberDetailDrawerProps {
   member: MemberAggregate;
   allRegistrations: Registration[];
+  memberScheduleSessions: MemberScheduleSession[];
+  currentCoachUid: string;
+  currentCoachName: string;
+  coachDirectory: CoachDirectoryEntry[];
   events: SportEvent[];
+  disciplines: DisciplineItem[];
   nowMs: number;
+  unreadMessagesCount?: number;
+  onMessageMember?: () => void;
   deleting: boolean;
   onDelete: () => void;
   onClose: () => void;
@@ -1119,8 +1218,15 @@ interface MemberDetailDrawerProps {
 function MemberDetailDrawer({
   member,
   allRegistrations,
+  memberScheduleSessions,
+  currentCoachUid,
+  currentCoachName,
+  coachDirectory,
   events,
+  disciplines,
   nowMs,
+  unreadMessagesCount = 0,
+  onMessageMember,
   deleting,
   onDelete,
   onClose,
@@ -1142,6 +1248,8 @@ function MemberDetailDrawer({
   const [savedNotice, setSavedNotice] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [profileExpanded, setProfileExpanded] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   useEffect(() => {
     setFirstName(member.firstName);
@@ -1174,6 +1282,17 @@ function MemberDetailDrawer({
   const headerLevelLabel = useMemo(
     () => formatFitnessLevelLabel(fitnessLevel, true),
     [fitnessLevel]
+  );
+  const memberBadgesSummary = useMemo(
+    () =>
+      computeMemberBadges({
+        registrations: allRegistrations,
+        events,
+        disciplines,
+        memberEmail: member.email,
+        nowMs,
+      }),
+    [allRegistrations, events, disciplines, member.email, nowMs]
   );
 
   const handleSave = async (e: FormEvent) => {
@@ -1258,12 +1377,90 @@ function MemberDetailDrawer({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 sm:p-6">
+          {onMessageMember && (
+            <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-emerald-800/80 dark:bg-emerald-950/35">
+              <div className="text-xs text-emerald-950 dark:text-emerald-100">
+                <p className="font-semibold">
+                  Échanger en direct avec {member.firstName}
+                </p>
+                <p className="text-emerald-800/85 dark:text-emerald-200/80">
+                  Posez vos questions de suivi ou partagez des consignes.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onMessageMember}
+                className="inline-flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+              >
+                <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Envoyer un message</span>
+                {unreadMessagesCount > 0 && (
+                  <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums">
+                    {unreadMessagesCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
           {/* Coaching Profile Form */}
-          <form onSubmit={handleSave} className="space-y-4">
-            <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
-              Informations & suivi du coach
-            </h3>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5">
+            <div
+              className={`flex items-start justify-between gap-3 ${
+                profileExpanded
+                  ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+                  : ''
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setProfileExpanded((prev) => !prev)}
+                aria-expanded={profileExpanded}
+                aria-controls="member-drawer-profile-form"
+                className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                  <UserCheck className="h-4 w-4" aria-hidden="true" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                    Informations & suivi du coach
+                  </h3>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+                    Statut : {FOLLOW_UP_LABELS[followUpStatus]}
+                    {headerLevelLabel ? ` · ${headerLevelLabel}` : ''}
+                    {goal.trim() ? ` · ${goal.trim()}` : ''}
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProfileExpanded((prev) => !prev)}
+                aria-expanded={profileExpanded}
+                aria-controls="member-drawer-profile-form"
+                aria-label={
+                  profileExpanded
+                    ? 'Replier les informations et le suivi du coach'
+                    : 'Déplier les informations et le suivi du coach'
+                }
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              >
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    profileExpanded ? 'rotate-180' : ''
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+
+            {profileExpanded && (
+              <form
+                id="member-drawer-profile-form"
+                onSubmit={handleSave}
+                className="mt-4 space-y-4"
+              >
 
             <PhotoUploadField
               label="Photo de profil de l’adhérent"
@@ -1463,75 +1660,155 @@ function MemberDetailDrawer({
                 {saving ? 'Enregistrement...' : 'Enregistrer le suivi'}
               </button>
             </div>
-          </form>
+              </form>
+            )}
+          </div>
 
-          {/* Regularity Pie Chart (Week / Month / Year) */}
-          <div className="border-t border-slate-200 dark:border-slate-800 pt-5">
+          {/* Weekly Personal Schedule + Regularity Pie Chart + Badges + History */}
+          <div className="space-y-4">
+            {member.email && currentCoachUid && (
+              <MemberWeeklyScheduleCard
+                mode="coach"
+                memberEmail={member.email}
+                memberName={`${member.firstName} ${member.lastName}`.trim() || member.email}
+                currentUserUid={currentCoachUid}
+                currentCoachName={currentCoachName}
+                customSessions={memberScheduleSessions}
+                registrations={allRegistrations}
+                events={events}
+                disciplines={disciplines}
+                coachDirectory={coachDirectory}
+                nowMs={nowMs}
+                compact
+                defaultExpanded={false}
+              />
+            )}
+
             <MemberRegularityChart
               registrations={allRegistrations}
               events={events}
               nowMs={nowMs}
               compact
+              collapsible
               title="Régularité de l’adhérent"
               subtitle="Événements inscrits, validés et annulés par semaine, mois ou année."
             />
 
-            <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
-              Historique des séances ({member.registrations.length})
-            </h3>
+            <MemberBadgesCard
+              summary={memberBadgesSummary}
+              disciplines={disciplines}
+              compact
+              title="Badges & récompenses obtenus"
+            />
 
-            {member.registrations.length === 0 ? (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                Aucune séance réservée pour le moment.
-              </p>
-            ) : (
-              <div className="mt-3 space-y-2">
-                {member.registrations.map((reg) => {
-                  const startDate = reg.eventStartAt.toDate();
-                  const isUpcoming = startDate.getTime() > nowMs;
-                  return (
-                    <div
-                      key={reg.id}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-900 dark:text-white truncate">
-                          {reg.eventTitle}
-                        </p>
-                        <p className="flex items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums capitalize">
-                          <Clock className="h-3 w-3" aria-hidden="true" />
-                          {formatFrenchDateShort(startDate)} ·{' '}
-                          {formatFrenchTime(startDate)}
-                          {isUpcoming && (
-                            <span className="text-emerald-700 dark:text-emerald-400 font-sans font-semibold">
-                              · À venir
-                            </span>
-                          )}
-                        </p>
-                      </div>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5">
+              <div
+                className={`flex items-start justify-between gap-3 ${
+                  historyExpanded
+                    ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+                    : ''
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setHistoryExpanded((prev) => !prev)}
+                  aria-expanded={historyExpanded}
+                  aria-controls="member-drawer-history-panel"
+                  className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    <History className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                      Historique des séances ({member.registrations.length})
+                    </h3>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      {member.attendedCount} présence
+                      {member.attendedCount > 1 ? 's' : ''} confirmée
+                      {member.attendedCount > 1 ? 's' : ''} · pointage et suivi des participations
+                    </p>
+                  </div>
+                </button>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void toggleRegistrationAttendance(
-                            reg.id,
-                            !reg.attended
-                          )
-                        }
-                        className={`inline-flex min-h-[38px] shrink-0 items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold cursor-pointer ${
-                          reg.attended
-                            ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
-                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                        {reg.attended ? 'Présent' : 'Pointer'}
-                      </button>
-                    </div>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={() => setHistoryExpanded((prev) => !prev)}
+                  aria-expanded={historyExpanded}
+                  aria-controls="member-drawer-history-panel"
+                  aria-label={
+                    historyExpanded
+                      ? 'Replier l’historique des séances'
+                      : 'Déplier l’historique des séances'
+                  }
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                >
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      historyExpanded ? 'rotate-180' : ''
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
               </div>
-            )}
+
+              {historyExpanded && (
+                <div id="member-drawer-history-panel" className="mt-4">
+                  {member.registrations.length === 0 ? (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Aucune séance réservée pour le moment.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {member.registrations.map((reg) => {
+                        const startDate = reg.eventStartAt.toDate();
+                        const isUpcoming = startDate.getTime() > nowMs;
+                        return (
+                          <div
+                            key={reg.id}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900 dark:text-white truncate">
+                                {reg.eventTitle}
+                              </p>
+                              <p className="flex items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums capitalize">
+                                <Clock className="h-3 w-3" aria-hidden="true" />
+                                {formatFrenchDateShort(startDate)} ·{' '}
+                                {formatFrenchTime(startDate)}
+                                {isUpcoming && (
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-sans font-semibold">
+                                    · À venir
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void toggleRegistrationAttendance(
+                                  reg.id,
+                                  !reg.attended
+                                )
+                              }
+                              className={`inline-flex min-h-[38px] shrink-0 items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold cursor-pointer ${
+                                reg.attended
+                                  ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                              {reg.attended ? 'Présent' : 'Pointer'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Delete Member Section */}

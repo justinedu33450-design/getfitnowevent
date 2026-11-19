@@ -86,6 +86,8 @@ export function evaluateEventBooking(
     ? null
     : Math.max(0, event.maxCapacity - event.registeredCount);
 
+  const hasRegistrants = event.registeredCount >= 1;
+
   const isAutoCancelledNoRegistrants =
     event.registeredCount === 0 &&
     nowMs >= cutoffMs &&
@@ -94,13 +96,13 @@ export function evaluateEventBooking(
       event.cancelReason !== 'manual');
 
   const capacityLabel = hideRegisteredCount
-    ? isUnlimited
-      ? 'Places illimitées'
-      : isAutoCancelledNoRegistrants || event.status === 'cancelled'
-        ? 'Séance annulée'
+    ? isAutoCancelledNoRegistrants || event.status === 'cancelled'
+      ? 'Séance annulée'
+      : isUnlimited
+        ? 'Places illimitées'
         : (remainingSpots ?? 0) <= 0
           ? 'Séance complète'
-          : nowMs >= startMs || nowMs >= cutoffMs
+          : nowMs >= startMs || (remainingSpots ?? 0) <= 3
             ? 'Places limitées'
             : 'Places disponibles'
     : isUnlimited
@@ -118,10 +120,8 @@ export function evaluateEventBooking(
       cutoffMs,
       msUntilCutoff,
       msUntilStart,
-      statusLabel: hideRegisteredCount ? 'Annulé' : 'Annulé (0 inscrit)',
-      helperText: hideRegisteredCount
-        ? 'Cet événement a été automatiquement annulé 1 heure avant le début.'
-        : 'Événement annulé automatiquement : aucun inscrit 1 heure avant le début.',
+      statusLabel: 'Inscription fermée : événement annulé',
+      helperText: 'Inscription fermée : événement annulé.',
       capacityLabel,
     };
   }
@@ -137,8 +137,8 @@ export function evaluateEventBooking(
       cutoffMs,
       msUntilCutoff,
       msUntilStart,
-      statusLabel: 'Annulé',
-      helperText: 'Cette séance a été annulée par l’animateur.',
+      statusLabel: 'Inscription fermée : événement annulé',
+      helperText: 'Inscription fermée : événement annulé.',
       capacityLabel,
     };
   }
@@ -157,26 +157,8 @@ export function evaluateEventBooking(
       statusLabel: nowMs < endMs ? 'En cours' : 'Terminée',
       helperText:
         nowMs < endMs
-          ? 'La séance est actuellement en cours.'
-          : 'Cette séance est terminée.',
-      capacityLabel,
-    };
-  }
-
-  if (nowMs >= cutoffMs) {
-    const minsLeft = Math.max(1, Math.ceil(msUntilStart / 60000));
-    return {
-      state: 'cutoff_closed',
-      isAutoCancelledNoRegistrants: false,
-      isUnlimited,
-      remainingSpots,
-      startMs,
-      endMs,
-      cutoffMs,
-      msUntilCutoff,
-      msUntilStart,
-      statusLabel: 'Clôturé (H-1)',
-      helperText: `Inscriptions fermées — la séance débute dans ${minsLeft} min (clôture 1h avant).`,
+          ? 'Inscriptions fermées — la séance est actuellement en cours.'
+          : 'Inscriptions fermées — cette séance est terminée.',
       capacityLabel,
     };
   }
@@ -198,6 +180,13 @@ export function evaluateEventBooking(
     };
   }
 
+  const startTimeLabel = formatFrenchTime(new Date(startMs));
+  const cutoffTimeLabel = formatFrenchTime(new Date(cutoffMs));
+  const helperText =
+    nowMs >= cutoffMs || hasRegistrants
+      ? `Inscriptions ouvertes jusqu’au début de la séance à ${startTimeLabel} (${formatDurationRemaining(msUntilStart)} restant).`
+      : `Inscriptions ouvertes · Clôture à ${cutoffTimeLabel} (${formatDurationRemaining(msUntilCutoff)} restant).`;
+
   return {
     state: 'open',
     isAutoCancelledNoRegistrants: false,
@@ -209,7 +198,7 @@ export function evaluateEventBooking(
     msUntilCutoff,
     msUntilStart,
     statusLabel: 'Inscriptions ouvertes',
-    helperText: `Clôture à ${formatFrenchTime(new Date(cutoffMs))} (${formatDurationRemaining(msUntilCutoff)} restant)`,
+    helperText,
     capacityLabel,
   };
 }

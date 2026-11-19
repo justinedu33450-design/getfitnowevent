@@ -78,7 +78,7 @@ export function HeroSection({
               Réservez vos séances sportives et suivez votre progression
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:mt-4 sm:text-base">
-              Consultez le calendrier par ville, région et discipline, visualisez les séances du jour sur la carte et réservez votre place en quelques clics jusqu’à 1 heure avant le début.
+              Consultez le calendrier par ville, région et discipline, visualisez les séances du jour sur la carte et réservez votre place en quelques clics jusqu’au début de la séance.
             </p>
           </div>
 

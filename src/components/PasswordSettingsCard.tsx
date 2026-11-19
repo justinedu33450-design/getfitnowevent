@@ -26,7 +26,9 @@ export function PasswordSettingsCard({
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPasswords, setShowPasswords] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'error';
@@ -64,6 +66,9 @@ export function PasswordSettingsCard({
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
       setFeedback({
         type: 'success',
         text:
@@ -136,42 +141,22 @@ export function PasswordSettingsCard({
           </div>
         )}
 
-        <div className="flex shrink-0 items-center gap-1.5">
-          {isBodyVisible && (
-            <button
-              type="button"
-              onClick={() => setShowPasswords((prev) => !prev)}
-              aria-label={
-                showPasswords
-                  ? 'Masquer les mots de passe'
-                  : 'Afficher les mots de passe'
-              }
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
-            >
-              {showPasswords ? (
-                <EyeOff className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Eye className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
-          )}
-          {collapsible && (
-            <button
-              type="button"
-              onClick={() => setExpanded((prev) => !prev)}
-              aria-expanded={expanded}
-              aria-label={expanded ? 'Replier la section mot de passe' : 'Déplier la section mot de passe'}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
-            >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform duration-200 ${
-                  expanded ? 'rotate-180' : ''
-                }`}
-                aria-hidden="true"
-              />
-            </button>
-          )}
-        </div>
+        {collapsible && (
+          <button
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Replier la section mot de passe' : 'Déplier la section mot de passe'}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-200 ${
+                expanded ? 'rotate-180' : ''
+              }`}
+              aria-hidden="true"
+            />
+          </button>
+        )}
       </div>
 
       {isBodyVisible && (
@@ -188,15 +173,34 @@ export function PasswordSettingsCard({
             >
               Mot de passe actuel *
             </label>
-            <input
-              id="pwd-current"
-              type={showPasswords ? 'text' : 'password'}
-              required
-              autoComplete="off"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            />
+            <div className="relative mt-1">
+              <input
+                id="pwd-current"
+                type={showCurrentPassword ? 'text' : 'password'}
+                required
+                autoComplete="off"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword((prev) => !prev)}
+                aria-label={
+                  showCurrentPassword
+                    ? 'Masquer le mot de passe actuel'
+                    : 'Afficher le mot de passe actuel'
+                }
+                aria-pressed={showCurrentPassword}
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 cursor-pointer"
+              >
+                {showCurrentPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         )}
 
@@ -214,17 +218,36 @@ export function PasswordSettingsCard({
             >
               Nouveau mot de passe *
             </label>
-            <input
-              id="pwd-new"
-              type={showPasswords ? 'text' : 'password'}
-              required
-              autoComplete="new-password"
-              minLength={6}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="6 caractères minimum"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-            />
+            <div className="relative mt-1">
+              <input
+                id="pwd-new"
+                type={showNewPassword ? 'text' : 'password'}
+                required
+                autoComplete="new-password"
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="6 caractères minimum"
+                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((prev) => !prev)}
+                aria-label={
+                  showNewPassword
+                    ? 'Masquer le nouveau mot de passe'
+                    : 'Afficher le nouveau mot de passe'
+                }
+                aria-pressed={showNewPassword}
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 cursor-pointer"
+              >
+                {showNewPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div>
@@ -234,17 +257,36 @@ export function PasswordSettingsCard({
             >
               Confirmer le mot de passe *
             </label>
-            <input
-              id="pwd-confirm"
-              type={showPasswords ? 'text' : 'password'}
-              required
-              autoComplete="new-password"
-              minLength={6}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Répétez le mot de passe"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-            />
+            <div className="relative mt-1">
+              <input
+                id="pwd-confirm"
+                type={showConfirmPassword ? 'text' : 'password'}
+                required
+                autoComplete="new-password"
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Répétez le mot de passe"
+                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                aria-label={
+                  showConfirmPassword
+                    ? 'Masquer la confirmation du mot de passe'
+                    : 'Afficher la confirmation du mot de passe'
+                }
+                aria-pressed={showConfirmPassword}
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 cursor-pointer"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 

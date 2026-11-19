@@ -52,6 +52,7 @@ interface EventRosterDrawerProps {
   ratingSummary?: EventRatingSummary | null;
   currentUserUid?: string | null;
   initialTab?: 'roster' | 'reviews';
+  onMessageParticipant?: (reg: Registration, event: SportEvent) => void;
   onClose: () => void;
 }
 
@@ -64,6 +65,7 @@ export function EventRosterDrawer({
   ratingSummary,
   currentUserUid,
   initialTab = 'roster',
+  onMessageParticipant,
   onClose,
 }: EventRosterDrawerProps) {
   const [drawerTab, setDrawerTab] = useState<'roster' | 'reviews'>(initialTab);
@@ -418,7 +420,7 @@ export function EventRosterDrawer({
             className="space-y-3 border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40 sm:p-6"
           >
             <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
-              Ajout manuel par l’animateur (autorisé même à moins d’1h du début)
+              Ajout manuel par l’animateur (si la séance est maintenue)
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <input
@@ -654,6 +656,18 @@ export function EventRosterDrawer({
                           {reg.attended ? 'Présent' : 'Pointer présent'}
                         </button>
 
+                        {onMessageParticipant && !participantIsCoach && reg.email && (
+                          <button
+                            type="button"
+                            onClick={() => onMessageParticipant(reg, event)}
+                            title={`Envoyer un message à ${reg.firstName} ${reg.lastName}`}
+                            aria-label={`Envoyer un message à ${reg.firstName} ${reg.lastName}`}
+                            className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300 cursor-pointer"
+                          >
+                            <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        )}
+
                         {confirmDeleteId === reg.id ? (
                           <div className="flex items-center gap-1.5">
                             <button
@@ -805,6 +819,18 @@ export function EventRosterDrawer({
                                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
                                 {reg.attended ? 'Présent' : 'Pointer'}
                               </button>
+
+                              {onMessageParticipant && !participantIsCoach && reg.email && (
+                                <button
+                                  type="button"
+                                  onClick={() => onMessageParticipant(reg, event)}
+                                  title={`Envoyer un message à ${reg.firstName} ${reg.lastName}`}
+                                  aria-label={`Envoyer un message à ${reg.firstName} ${reg.lastName}`}
+                                  className="flex h-[34px] w-[34px] items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300 cursor-pointer"
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                                </button>
+                              )}
 
                               {confirmDeleteId === reg.id ? (
                                 <div className="flex items-center gap-1">

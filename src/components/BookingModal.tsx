@@ -12,6 +12,7 @@ import {
   FileDown,
   Lock,
   MapPin,
+  MessageSquare,
   ShieldCheck,
   Trash2,
   UserCheck,
@@ -63,6 +64,7 @@ import {
   validateLuhn,
 } from '../utils/paymentHelpers';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
 import { EventLocationMap } from './EventLocationMap';
 import { EmailPasswordAuthForm } from './EmailPasswordAuthForm';
 import {
@@ -107,6 +109,7 @@ interface BookingModalProps {
   onOpenMemberTracking?: () => void;
   onOpenCoachRegistrations?: () => void;
   onDuplicateEvent?: (event: SportEvent) => void;
+  onMessageCoach?: (event: SportEvent) => void;
 }
 
 export function BookingModal({
@@ -140,6 +143,7 @@ export function BookingModal({
   onOpenMemberTracking,
   onOpenCoachRegistrations,
   onDuplicateEvent,
+  onMessageCoach,
 }: BookingModalProps) {
   const nameParts = (userDisplayName || '').trim().split(/\s+/).filter(Boolean);
   const initialFirst =
@@ -256,9 +260,7 @@ export function BookingModal({
   const hasAvailableSpots =
     evaluation.isUnlimited || (evaluation.remainingSpots ?? 0) > 0;
   const canBookInModal =
-    hasAvailableSpots &&
-    (evaluation.state === 'open' ||
-      (isCoachAdmin && evaluation.state === 'cutoff_closed'));
+    hasAvailableSpots && evaluation.state === 'open';
   const discStyle = getDisciplineStyle(event.discipline, disciplines);
   const startDate = event.startAt.toDate();
   const cutoffDate = new Date(evaluation.cutoffMs);
@@ -720,9 +722,10 @@ export function BookingModal({
               <span
                 className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
               >
-                <span
-                  className={`h-2 w-2 rounded-sm ${discStyle.swatchBg}`}
-                  aria-hidden="true"
+                <DisciplineIcon
+                  disciplineName={event.discipline}
+                  catalog={disciplines}
+                  className="h-3 w-3 shrink-0"
                 />
                 {event.discipline}
               </span>
@@ -777,7 +780,27 @@ export function BookingModal({
               </span>
             </div>
             <div className="pl-6 font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums">
-              Horaire : {formatTimeRange(startDate, event.durationMinutes)} ({event.durationMinutes} min) · Clôture à {formatFrenchTime(cutoffDate)}
+              Horaire : {formatTimeRange(startDate, event.durationMinutes)} ({event.durationMinutes} min) ·{' '}
+              {evaluation.state === 'cancelled'
+                ? 'Inscription fermée : événement annulé'
+                : evaluation.state === 'past'
+                  ? 'Inscriptions fermées'
+                  : nowMs >= evaluation.cutoffMs || event.registeredCount >= 1
+                    ? `Inscriptions ouvertes jusqu’à ${formatFrenchTime(startDate)}`
+                    : `Clôture à ${formatFrenchTime(cutoffDate)}`}
+            </div>
+            <div className="pl-6">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${
+                  evaluation.state === 'open'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                    : evaluation.state === 'cancelled' || evaluation.state === 'full'
+                      ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                      : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                }`}
+              >
+                {evaluation.statusLabel}
+              </span>
             </div>
             <div className="flex items-center gap-2.5">
               <MapPin className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
@@ -858,6 +881,25 @@ export function BookingModal({
               </div>
             </div>
           )}
+
+          {isSignedIn &&
+            !isCoach &&
+            onMessageCoach &&
+            Boolean(event.createdBy || event.coachUids?.[0]) && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/60">
+                <span className="text-xs text-slate-600 dark:text-slate-300">
+                  Une question sur cette séance ?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onMessageCoach(event)}
+                  className="inline-flex min-h-[36px] items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2 cursor-pointer"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                  Écrire au coach
+                </button>
+              </div>
+            )}
 
           {/* Confirmation Screen */}
           {confirmedMember ? (
@@ -1736,20 +1778,9 @@ export function BookingModal({
                     : 'Inscription gratuite'}
                 </h3>
                 <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                  {isCoachAdmin && evaluation.state === 'cutoff_closed'
-                    ? 'Accès administrateur actif (clôture H-1 contournée)'
-                    : evaluation.helperText}
+                  {evaluation.helperText}
                 </span>
               </div>
-
-              {isCoachAdmin && evaluation.state === 'cutoff_closed' && (
-                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/50 dark:text-amber-200">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
-                  <span>
-                    Cette séance débute dans moins d’1 heure. En tant qu’administrateur, vous pouvez tout de même finaliser votre inscription.
-                  </span>
-                </div>
-              )}
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
@@ -2146,33 +2177,21 @@ export function BookingModal({
               className={`rounded-xl border p-4 ${
                 evaluation.state === 'cancelled'
                   ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100'
-                  : evaluation.state === 'cutoff_closed' && hasAvailableSpots
-                    ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100'
-                    : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
+                  : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
               }`}
             >
               <div className="flex items-start gap-3">
                 <Lock className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="font-display text-sm font-bold">
-                    {evaluation.isAutoCancelledNoRegistrants
-                      ? isCoach
-                        ? 'Événement annulé — aucun inscrit à H-1'
-                        : 'Événement annulé (clôture H-1)'
-                      : !hasAvailableSpots && evaluation.state === 'cutoff_closed'
-                        ? 'Complet'
-                        : evaluation.statusLabel}
+                    {evaluation.state === 'cancelled'
+                      ? 'Inscription fermée : événement annulé'
+                      : evaluation.statusLabel}
                   </h3>
                   <p className="mt-1 text-sm">
-                    {evaluation.isAutoCancelledNoRegistrants
-                      ? isCoach
-                        ? 'Cet événement programmé n’a enregistré aucune inscription 1 heure avant le début et a été automatiquement annulé.'
-                        : 'Cet événement programmé a été automatiquement annulé 1 heure avant le début.'
-                      : !hasAvailableSpots && evaluation.state === 'cutoff_closed'
-                        ? 'Toutes les places disponibles ont été réservées.'
-                        : evaluation.state === 'cutoff_closed'
-                          ? 'Il n’est plus possible de s’inscrire à cet événement car la séance débute dans moins d’1 heure.'
-                          : evaluation.helperText}
+                    {evaluation.state === 'cancelled'
+                      ? 'Inscription fermée : événement annulé.'
+                      : evaluation.helperText}
                   </p>
                 </div>
               </div>

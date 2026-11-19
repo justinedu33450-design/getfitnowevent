@@ -4,6 +4,7 @@ import {
   CoachAdminUser,
   Discipline,
   DisciplineColorKey,
+  DisciplineIconKey,
   DisciplineItem,
   EventPaymentMode,
   SportEvent,
@@ -22,8 +23,13 @@ import {
 import {
   DISCIPLINE_COLOR_KEYS,
   DISCIPLINE_COLOR_PRESETS,
+  DISCIPLINE_ICON_KEYS,
+  DISCIPLINE_ICON_PRESETS,
   getDisciplineStyle,
+  inferDisciplineIconKey,
+  pickNextUnusedColorKey,
 } from '../utils/disciplineColors';
+import { DisciplineIcon } from './DisciplineIcon';
 import { PlaceAutocompleteInput } from './PlaceAutocompleteInput';
 import { ProfileAvatar } from './ProfileAvatar';
 
@@ -85,7 +91,10 @@ export function EventFormModal({
     () => disciplines.length === 0
   );
   const [newDiscName, setNewDiscName] = useState('');
-  const [newDiscColor, setNewDiscColor] = useState<DisciplineColorKey>('indigo');
+  const [manualDiscColor, setManualDiscColor] =
+    useState<DisciplineColorKey | null>(null);
+  const [manualDiscIcon, setManualDiscIcon] =
+    useState<DisciplineIconKey | null>(null);
   const [addingDisc, setAddingDisc] = useState(false);
   const [deletingDisc, setDeletingDisc] = useState(false);
   const [discError, setDiscError] = useState<string | null>(null);
@@ -191,6 +200,14 @@ export function EventFormModal({
   );
 
   const activeDiscStyle = getDisciplineStyle(discipline, disciplines);
+  const usedDisciplineColorKeys = useMemo(
+    () => new Set(disciplines.map((d) => d.colorKey)),
+    [disciplines]
+  );
+  const selectedNewDiscColor =
+    manualDiscColor ?? pickNextUnusedColorKey(disciplines);
+  const selectedNewDiscIcon =
+    manualDiscIcon ?? inferDisciplineIconKey(newDiscName);
 
   const handleAddInlineDiscipline = async () => {
     setDiscError(null);
@@ -198,12 +215,15 @@ export function EventFormModal({
     try {
       const createdName = await createCustomDiscipline({
         name: newDiscName,
-        colorKey: newDiscColor,
+        colorKey: selectedNewDiscColor,
+        iconKey: selectedNewDiscIcon,
         coachUid,
-        existingNames: disciplines.map((d) => d.name),
+        existingDisciplines: disciplines,
       });
       setDiscipline(createdName);
       setNewDiscName('');
+      setManualDiscColor(null);
+      setManualDiscIcon(null);
       setShowNewDiscForm(false);
     } catch (err) {
       setDiscError(
@@ -482,12 +502,20 @@ export function EventFormModal({
             </div>
             <div className="mt-1 flex items-center gap-2">
               <span
-                className={`h-4 w-4 shrink-0 rounded-sm ${
-                  discipline ? activeDiscStyle.swatchBg : 'bg-slate-200 dark:bg-slate-700'
+                className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border ${
+                  discipline
+                    ? `${activeDiscStyle.softBg} ${activeDiscStyle.border} ${activeDiscStyle.text}`
+                    : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-700 dark:bg-slate-800'
                 }`}
                 title={discipline ? `Couleur : ${activeDiscStyle.label}` : undefined}
                 aria-hidden="true"
-              />
+              >
+                <DisciplineIcon
+                  disciplineName={discipline}
+                  catalog={disciplines}
+                  className="h-4 w-4"
+                />
+              </span>
               <select
                 id="ev-discipline"
                 required
@@ -557,32 +585,89 @@ export function EventFormModal({
                   {addingDisc ? 'Ajout...' : 'Ajouter'}
                 </button>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                  Couleur :
-                </span>
-                {DISCIPLINE_COLOR_KEYS.map((key) => {
-                  const preset = DISCIPLINE_COLOR_PRESETS[key];
-                  const selected = newDiscColor === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setNewDiscColor(key)}
-                      title={preset.label}
-                      aria-label={`Couleur ${preset.label}`}
-                      className={`flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-transform ${preset.swatchBg} ${
-                        selected
-                          ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-slate-100 dark:ring-offset-slate-900 scale-105'
-                          : 'opacity-80 hover:opacity-100'
-                      }`}
-                    >
-                      {selected && (
-                        <Check className="h-3.5 w-3.5 text-white" aria-hidden="true" />
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                    Couleur :{' '}
+                    <strong className="text-slate-900 dark:text-white">
+                      {DISCIPLINE_COLOR_PRESETS[selectedNewDiscColor].label}
+                    </strong>
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {!manualDiscColor && !usedDisciplineColorKeys.has(selectedNewDiscColor)
+                      ? 'Auto (disponible)'
+                      : usedDisciplineColorKeys.has(selectedNewDiscColor)
+                        ? 'Déjà utilisée'
+                        : 'Disponible'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {DISCIPLINE_COLOR_KEYS.map((key) => {
+                    const preset = DISCIPLINE_COLOR_PRESETS[key];
+                    const selected = selectedNewDiscColor === key;
+                    const isUsed = usedDisciplineColorKeys.has(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setManualDiscColor(key)}
+                        title={`${preset.label}${isUsed ? ' (déjà utilisée)' : ' (disponible)'}`}
+                        aria-label={`Couleur ${preset.label}${isUsed ? ' (déjà utilisée)' : ''}`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-transform ${preset.swatchBg} ${
+                          selected
+                            ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-slate-100 dark:ring-offset-slate-900 scale-105'
+                            : isUsed
+                              ? 'opacity-45 hover:opacity-90'
+                              : 'opacity-85 hover:opacity-100'
+                        }`}
+                      >
+                        {selected && (
+                          <Check className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                    Picto :{' '}
+                    <strong className="text-slate-900 dark:text-white">
+                      {DISCIPLINE_ICON_PRESETS[selectedNewDiscIcon].label}
+                    </strong>
+                  </span>
+                  {!manualDiscIcon && newDiscName.trim().length >= 2 && (
+                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                      Suggestion auto
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {DISCIPLINE_ICON_KEYS.map((iconKey) => {
+                    const meta = DISCIPLINE_ICON_PRESETS[iconKey];
+                    const selected = selectedNewDiscIcon === iconKey;
+                    const activePreset =
+                      DISCIPLINE_COLOR_PRESETS[selectedNewDiscColor];
+                    return (
+                      <button
+                        key={iconKey}
+                        type="button"
+                        onClick={() => setManualDiscIcon(iconKey)}
+                        title={meta.label}
+                        aria-label={`Picto ${meta.label}`}
+                        aria-pressed={selected}
+                        className={`flex h-8 w-8 items-center justify-center rounded-md border cursor-pointer transition-colors ${
+                          selected
+                            ? `${activePreset.softBg} ${activePreset.border} ${activePreset.text} ring-2 ring-slate-900/20 dark:ring-white/25`
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                        }`}
+                      >
+                        <DisciplineIcon iconKey={iconKey} className="h-4 w-4" />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               {discError && (
                 <p className="text-xs font-medium text-rose-700 dark:text-rose-400">{discError}</p>
@@ -1000,7 +1085,7 @@ export function EventFormModal({
           </div>
 
           <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
-            Rappel : les inscriptions publiques seront automatiquement verrouillées 1 heure avant l’heure de début configurée.
+            Rappel : s’il n’y a aucun inscrit 1 heure avant le début, les inscriptions seront fermées et l’événement annulé puis supprimé. Dès 1 inscrit, les inscriptions restent ouvertes jusqu’à l’heure de début.
           </p>
 
           {errorMsg && (
