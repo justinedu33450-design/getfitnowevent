@@ -181,9 +181,16 @@ export function TopBar({
           <button
             type="button"
             onClick={() => onNavigate('calendar')}
-            className="font-display text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap shrink-0 cursor-pointer sm:text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 rounded"
+            className="inline-flex items-center gap-2.5 font-display text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap shrink-0 cursor-pointer sm:text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-lg"
           >
-            GetFitNow Event
+            <span className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 overflow-hidden rounded-lg bg-black ring-1 ring-slate-900/10 dark:ring-white/15">
+              <img
+                src="/assets/aistudio/Logo___Ge___en_orbite_dynamique_dd8ecb29.png"
+                alt="Logo GetFitNow Event"
+                className="h-full w-full scale-[1.08] object-cover"
+              />
+            </span>
+            <span>GetFitNow Event</span>
           </button>
 
           {/* Zone 2: Navigation links (Desktop) */}
