@@ -78,6 +78,7 @@ import {
   MemberBadgeItem,
 } from './utils/memberBadges';
 import { TopBar } from './components/TopBar';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { CoachNotificationsBar } from './components/CoachNotificationsBar';
 import { MemberNotificationsBar } from './components/MemberNotificationsBar';
 import { HeroSection } from './components/HeroSection';
@@ -1930,6 +1931,7 @@ export default function App() {
           </button>
         </div>
       )}
+      <OfflineIndicator />
     </div>
   );
 

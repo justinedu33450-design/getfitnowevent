@@ -11,6 +11,7 @@ import {
   Users,
 } from 'lucide-react';
 import { AppSection } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface TopBarProps {
   theme: 'light' | 'dark';
@@ -235,6 +236,7 @@ export function TopBar({
 
           {/* Zone 3: Primary Actions + Theme Toggle */}
           <div className="flex items-center gap-2 shrink-0">
+            <PWAInstallButton />
             {themeToggleButton}
 
             {isSignedIn &&
