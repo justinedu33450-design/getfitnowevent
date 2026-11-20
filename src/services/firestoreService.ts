@@ -3598,10 +3598,14 @@ export async function deleteMemberCompletely(params: {
   registrations: Registration[];
   events: SportEvent[];
 }): Promise<void> {
+  let failingOp: OperationType = OperationType.GET;
+  let failingPath = `members/${params.emailKey}`;
   try {
     const memberDocIds = new Set<string>([params.emailKey]);
     let cleanEmail = (params.email ?? '').trim().toLowerCase();
 
+    failingOp = OperationType.GET;
+    failingPath = `members/${params.emailKey}`;
     const directMemberSnap = await getDocFromServer(
       doc(db, 'members', params.emailKey)
     );
@@ -3626,11 +3630,16 @@ export async function deleteMemberCompletely(params: {
     }
 
     if (cleanEmail) {
+      failingOp = OperationType.LIST;
+      failingPath = 'members';
       const membersByEmailSnap = await getDocsFromServer(
         query(collection(db, 'members'), where('email', '==', cleanEmail))
       );
       membersByEmailSnap.docs.forEach((d) => memberDocIds.add(d.id));
     }
+
+    failingOp = OperationType.LIST;
+    failingPath = 'registrations / payments / notifications';
 
     const regQueryPromises = [
       getDocsFromServer(
@@ -3721,6 +3730,8 @@ export async function deleteMemberCompletely(params: {
     });
 
     // Also verify direct payment/{regId} docs in case any lacked memberEmailKey/memberEmail
+    failingOp = OperationType.GET;
+    failingPath = 'payments';
     const missingPayChecks = Array.from(regMap.keys())
       .filter((regId) => !paymentDocIds.has(regId))
       .map(async (regId) => {
@@ -3752,6 +3763,8 @@ export async function deleteMemberCompletely(params: {
     });
 
     const eventDecrements = new Map<string, number>();
+    failingOp = OperationType.GET;
+    failingPath = 'events';
     await Promise.all(
       Array.from(confirmedCountByEvent.entries()).map(
         async ([eventId, decCount]) => {
@@ -3796,43 +3809,48 @@ export async function deleteMemberCompletely(params: {
       ops.push((batch) => batch.delete(doc(db, 'coachNotifications', id)));
     });
 
-    const convQueryPromises = [
-      getDocsFromServer(
-        query(
-          collection(db, 'conversations'),
-          where('memberEmailKey', '==', params.emailKey)
-        )
-      ),
-    ];
-    if (cleanEmail) {
-      convQueryPromises.push(
-        getDocsFromServer(
-          query(
-            collection(db, 'conversations'),
-            where('memberEmail', '==', cleanEmail)
-          )
-        )
+    // Respect strict 1-to-1 conversation privacy rules: scope list queries to current coachUid
+    const currentUid = auth.currentUser?.uid ?? '';
+    if (currentUid) {
+      failingOp = OperationType.LIST;
+      failingPath = 'conversations';
+      const coachConvSnap = await getDocsFromServer(
+        query(collection(db, 'conversations'), where('coachUid', '==', currentUid))
+      );
+      const convIds = new Set<string>();
+      coachConvSnap.docs.forEach((d) => {
+        const data = d.data() as Partial<Conversation>;
+        const convEmail = (data.memberEmail ?? '').trim().toLowerCase();
+        if (
+          data.memberEmailKey === params.emailKey ||
+          (cleanEmail && convEmail === cleanEmail)
+        ) {
+          convIds.add(d.id);
+        }
+      });
+
+      await Promise.all(
+        Array.from(convIds).map(async (convId) => {
+          failingOp = OperationType.LIST;
+          failingPath = `conversations/${convId}/messages`;
+          const msgsSnap = await getDocsFromServer(
+            query(
+              collection(db, 'conversations', convId, 'messages'),
+              where('coachUid', '==', currentUid)
+            )
+          );
+          msgsSnap.docs.forEach((mDoc) => {
+            ops.push((batch) =>
+              batch.delete(doc(db, 'conversations', convId, 'messages', mDoc.id))
+            );
+          });
+          ops.push((batch) => batch.delete(doc(db, 'conversations', convId)));
+        })
       );
     }
-    const convSnaps = await Promise.all(convQueryPromises);
-    const convIds = new Set<string>();
-    convSnaps.forEach((snap) => {
-      snap.docs.forEach((d) => convIds.add(d.id));
-    });
-    await Promise.all(
-      Array.from(convIds).map(async (convId) => {
-        const msgsSnap = await getDocsFromServer(
-          collection(db, 'conversations', convId, 'messages')
-        );
-        msgsSnap.docs.forEach((mDoc) => {
-          ops.push((batch) =>
-            batch.delete(doc(db, 'conversations', convId, 'messages', mDoc.id))
-          );
-        });
-        ops.push((batch) => batch.delete(doc(db, 'conversations', convId)));
-      })
-    );
 
+    failingOp = OperationType.LIST;
+    failingPath = 'memberSchedules';
     const scheduleQueryPromises = [
       getDocsFromServer(
         query(
@@ -3860,6 +3878,8 @@ export async function deleteMemberCompletely(params: {
       ops.push((batch) => batch.delete(doc(db, 'memberSchedules', id)));
     });
 
+    failingOp = OperationType.LIST;
+    failingPath = 'trainingPrograms';
     const programQueryPromises = [
       getDocsFromServer(
         query(
@@ -3887,6 +3907,8 @@ export async function deleteMemberCompletely(params: {
       ops.push((batch) => batch.delete(doc(db, 'trainingPrograms', id)));
     });
 
+    failingOp = OperationType.DELETE;
+    failingPath = `members/${params.emailKey}`;
     const CHUNK_SIZE = 350;
     for (let i = 0; i < ops.length; i += CHUNK_SIZE) {
       const batch = writeBatch(db);
@@ -3895,11 +3917,7 @@ export async function deleteMemberCompletely(params: {
       await batch.commit();
     }
   } catch (error) {
-    handleFirestoreError(
-      error,
-      OperationType.DELETE,
-      `members/${params.emailKey}`
-    );
+    handleFirestoreError(error, failingOp, failingPath);
   }
 }
 
