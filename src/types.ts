@@ -600,8 +600,8 @@ export interface TrainingProgram {
   priceCents: number;
   currency: 'EUR';
   paymentMode: EventPaymentMode;
-  paymentStatus: 'pending' | 'paid';
-  paymentMethod: '' | 'card' | 'onsite';
+  paymentStatus: 'free' | 'pending' | 'paid';
+  paymentMethod: '' | 'free' | 'card' | 'onsite';
   paymentReference: string;
   cardBrand: string;
   cardLast4: string;

@@ -49,6 +49,7 @@ import {
   computeVmaPaceZones,
   formatDurationHMS,
   formatPaceMinPerKm,
+  getProgramDeliveryProgress,
   getProgramPhases,
   getProgramRunnerLevelLabel,
   RUNNING_DISTANCE_LIST,
@@ -70,6 +71,7 @@ interface ExerciseLibraryViewProps {
   memberCandidates: ProgramMemberCandidate[];
   trainingPrograms?: TrainingProgram[];
   memberSchedules?: MemberScheduleSession[];
+  nowMs?: number;
 }
 
 interface DisplayExerciseRow {
@@ -102,6 +104,7 @@ export function ExerciseLibraryView({
   memberCandidates,
   trainingPrograms = [],
   memberSchedules = [],
+  nowMs = Date.now(),
 }: ExerciseLibraryViewProps) {
   const [libraryTab, setLibraryTab] = useState<'exercises' | 'programs'>(
     'exercises'
@@ -465,7 +468,7 @@ export function ExerciseLibraryView({
       });
       setFeedback({
         type: 'success',
-        text: `Paiement de ${formatPriceEuros(program.priceCents)} validé pour ${program.memberName}. Le programme et le test VMA du Jour 1 sont débloqués.`,
+        text: `Paiement de ${formatPriceEuros(program.priceCents)} validé pour ${program.memberName}. La Semaine 1 vient d’être envoyée (les semaines suivantes suivront à la fin de chaque semaine) et le test VMA Jour 1 est ouvert.`,
       });
     } catch (err) {
       setFeedback({
@@ -633,7 +636,7 @@ export function ExerciseLibraryView({
           <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
             {libraryTab === 'exercises'
               ? `${counts.strength} renfo · ${counts.running} running · ${counts.mobility} mobilité`
-              : `${trainingPrograms.filter((p) => p.paymentStatus === 'paid').length} réglé(s) · ${trainingPrograms.filter((p) => p.vmaTestStatus === 'completed').length} VMA évaluée(s)`}
+              : `${trainingPrograms.filter((p) => !p.isPaid || p.paymentStatus === 'free').length} offert(s) · ${trainingPrograms.filter((p) => p.isPaid && p.paymentStatus === 'paid').length} réglé(s) · ${trainingPrograms.filter((p) => p.vmaTestStatus === 'completed').length} VMA évaluée(s)`}
           </p>
         </div>
 
@@ -838,6 +841,7 @@ export function ExerciseLibraryView({
                           prog.targetTimeSeconds
                         )
                       : null;
+                  const delivery = getProgramDeliveryProgress(prog, nowMs);
 
                   return (
                     <div
@@ -861,17 +865,25 @@ export function ExerciseLibraryView({
                           </div>
 
                           <div className="shrink-0 text-right">
-                            <p
-                              className={`font-mono text-xs font-bold tabular-nums ${
-                                prog.paymentStatus === 'paid'
-                                  ? 'text-emerald-700 dark:text-emerald-400'
-                                  : 'text-amber-700 dark:text-amber-400'
-                              }`}
-                            >
-                              {prog.paymentStatus === 'paid'
-                                ? `Payé · ${formatPriceEuros(prog.priceCents)}`
-                                : `À régler · ${formatPriceEuros(prog.priceCents)}`}
-                            </p>
+                            {(() => {
+                              const isFreeProgram = !prog.isPaid || prog.paymentStatus === 'free';
+                              const isPaid = prog.paymentStatus === 'paid';
+                              return (
+                                <p
+                                  className={`font-mono text-xs font-bold tabular-nums ${
+                                    isFreeProgram || isPaid
+                                      ? 'text-emerald-700 dark:text-emerald-400'
+                                      : 'text-amber-700 dark:text-amber-400'
+                                  }`}
+                                >
+                                  {isFreeProgram
+                                    ? 'Offert · Gratuit'
+                                    : isPaid
+                                      ? `Payé · ${formatPriceEuros(prog.priceCents)}`
+                                      : `À régler · ${formatPriceEuros(prog.priceCents)}`}
+                                </p>
+                              );
+                            })()}
                             <p className="mt-0.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
                               Jour 1 : {formatFrenchDateShort(prog.startAt.toDate())}
                             </p>
@@ -925,12 +937,53 @@ export function ExerciseLibraryView({
                             />
                           </div>
                         </div>
+
+                        {/* Progressive week-by-week delivery status */}
+                        <div className="mt-3 rounded-lg border border-slate-200/80 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900/50">
+                          <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              Envoi progressif :{' '}
+                              {!delivery.hasAccess
+                                ? 'en attente du paiement'
+                                : delivery.allWeeksReleased
+                                  ? `${delivery.totalWeeks}/${delivery.totalWeeks} sem. envoyées`
+                                  : `Sem. ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée`}
+                            </span>
+                            {delivery.hasAccess && delivery.nextWeekNumber && delivery.nextUnlockAtMs && (
+                              <span className="font-mono text-[10px] text-sky-700 dark:text-sky-400 tabular-nums">
+                                Sem. {delivery.nextWeekNumber} le{' '}
+                                {formatFrenchDateShort(new Date(delivery.nextUnlockAtMs))}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {delivery.weeks.map((wk) => (
+                              <span
+                                key={wk.weekNumber}
+                                title={
+                                  !delivery.hasAccess
+                                    ? `Semaine ${wk.weekNumber} : en attente du paiement`
+                                    : wk.unlocked
+                                      ? `Semaine ${wk.weekNumber} envoyée`
+                                      : `Semaine ${wk.weekNumber} : envoi auto le ${formatFrenchDateShort(new Date(wk.unlockAtMs))}`
+                                }
+                                className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums ${
+                                  wk.unlocked
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300'
+                                    : 'bg-slate-200/80 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                }`}
+                              >
+                                S{wk.weekNumber}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Actions */}
                       <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          {prog.paymentStatus !== 'paid' && (
+                          {prog.isPaid && prog.paymentStatus !== 'paid' && prog.paymentStatus !== 'free' && (
                             <button
                               type="button"
                               disabled={payingProgramId === prog.id}
@@ -1067,9 +1120,9 @@ export function ExerciseLibraryView({
                         >
                           {sess.isPaid
                             ? isPaid
-                              ? `Payé · ${formatPriceEuros(sess.priceCents ?? 1900)}`
-                              : `À régler · ${formatPriceEuros(sess.priceCents ?? 1900)}`
-                            : 'Inclus'}
+                              ? `Payé · ${formatPriceEuros(sess.priceCents ?? 900)}`
+                              : `À régler · ${formatPriceEuros(sess.priceCents ?? 900)}`
+                            : 'Offert · Gratuit'}
                         </span>
                       </div>
                       <p className="mt-2 font-mono text-[11px] text-slate-600 dark:text-slate-300 tabular-nums">
@@ -1752,7 +1805,7 @@ export function ExerciseLibraryView({
         <VmaTestModal
           program={vmaTestProgram}
           isCoach
-          nowMs={Date.now()}
+          nowMs={nowMs}
           onClose={() => setVmaTestProgram(null)}
           onSubmitted={(vma) =>
             setFeedback({

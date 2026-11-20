@@ -4932,6 +4932,7 @@ export async function createMemberScheduleSession(params: {
   coachName?: string;
   objective?: string;
   exercises?: ScheduledExerciseItem[];
+  isPaid?: boolean;
   priceCents?: number;
   paymentMode?: EventPaymentMode;
   markPaid?: boolean;
@@ -5017,31 +5018,48 @@ export async function createMemberScheduleSession(params: {
       updatedAt: serverTimestamp(),
     };
     if (isCoachCreated) {
-      const resolvedPriceCents = Math.min(
-        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
-        Math.max(
-          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
-          Math.round(Number(params.priceCents) || 1900)
-        )
-      );
-      const resolvedPaymentMode: EventPaymentMode =
-        params.paymentMode === 'online' ||
-        params.paymentMode === 'onsite' ||
-        params.paymentMode === 'both'
-          ? params.paymentMode
-          : 'both';
-      payload.isPaid = true;
-      payload.priceCents = resolvedPriceCents;
-      payload.currency = 'EUR';
-      payload.paymentMode = resolvedPaymentMode;
-      payload.paymentStatus = params.markPaid ? 'paid' : 'pending';
-      payload.paymentMethod = 'onsite';
-      payload.paymentReference = params.markPaid
-        ? generatePaymentReference('PGM')
-        : '';
-      payload.cardBrand = '';
-      payload.cardLast4 = '';
-      payload.paidAt = params.markPaid ? serverTimestamp() : null;
+      const shouldBePaid =
+        params.isPaid !== undefined
+          ? Boolean(params.isPaid)
+          : params.priceCents !== 0;
+      if (!shouldBePaid) {
+        payload.isPaid = false;
+        payload.priceCents = 0;
+        payload.currency = 'EUR';
+        payload.paymentMode = 'both';
+        payload.paymentStatus = 'free';
+        payload.paymentMethod = 'free';
+        payload.paymentReference = '';
+        payload.cardBrand = '';
+        payload.cardLast4 = '';
+        payload.paidAt = null;
+      } else {
+        const resolvedPriceCents = Math.min(
+          VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+          Math.max(
+            VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+            Math.round(Number(params.priceCents) || 900)
+          )
+        );
+        const resolvedPaymentMode: EventPaymentMode =
+          params.paymentMode === 'online' ||
+          params.paymentMode === 'onsite' ||
+          params.paymentMode === 'both'
+            ? params.paymentMode
+            : 'both';
+        payload.isPaid = true;
+        payload.priceCents = resolvedPriceCents;
+        payload.currency = 'EUR';
+        payload.paymentMode = resolvedPaymentMode;
+        payload.paymentStatus = params.markPaid ? 'paid' : 'pending';
+        payload.paymentMethod = 'onsite';
+        payload.paymentReference = params.markPaid
+          ? generatePaymentReference('PGM')
+          : '';
+        payload.cardBrand = '';
+        payload.cardLast4 = '';
+        payload.paidAt = params.markPaid ? serverTimestamp() : null;
+      }
     }
     if (objective) {
       payload.objective = objective;
@@ -5073,8 +5091,11 @@ export async function updateMemberScheduleSession(
     coachName?: string;
     objective?: string;
     exercises?: ScheduledExerciseItem[];
+    isPaid?: boolean;
     priceCents?: number;
     paymentMode?: EventPaymentMode;
+    paymentStatus?: 'free' | 'paid' | 'pending';
+    paymentMethod?: 'free' | 'card' | 'onsite';
     completed?: boolean;
   }
 ): Promise<void> {
@@ -5135,19 +5156,38 @@ export async function updateMemberScheduleSession(
     if (params.exercises !== undefined) {
       payload.exercises = sanitizeScheduledExercises(params.exercises);
     }
-    if (params.priceCents !== undefined) {
-      payload.isPaid = true;
-      payload.priceCents = Math.min(
-        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
-        Math.max(
-          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
-          Math.round(Number(params.priceCents) || 1900)
-        )
-      );
+    if (params.isPaid === false) {
+      payload.isPaid = false;
+      payload.priceCents = 0;
       payload.currency = 'EUR';
-    }
-    if (params.paymentMode !== undefined) {
-      payload.paymentMode = params.paymentMode;
+      payload.paymentMode = 'both';
+      payload.paymentStatus = 'free';
+      payload.paymentMethod = 'free';
+      payload.paymentReference = '';
+      payload.cardBrand = '';
+      payload.cardLast4 = '';
+      payload.paidAt = null;
+    } else {
+      if (params.priceCents !== undefined || params.isPaid === true) {
+        payload.isPaid = true;
+        payload.priceCents = Math.min(
+          VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+          Math.max(
+            VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+            Math.round(Number(params.priceCents) || 900)
+          )
+        );
+        payload.currency = 'EUR';
+      }
+      if (params.paymentMode !== undefined) {
+        payload.paymentMode = params.paymentMode;
+      }
+      if (params.paymentStatus !== undefined) {
+        payload.paymentStatus = params.paymentStatus;
+      }
+      if (params.paymentMethod !== undefined) {
+        payload.paymentMethod = params.paymentMethod;
+      }
     }
     await updateDoc(doc(db, 'memberSchedules', sessionId), payload);
   } catch (error) {
@@ -5174,7 +5214,7 @@ export async function payMemberScheduleSession(params: {
         isPaid: true,
         priceCents: Math.max(
           VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
-          params.session.priceCents ?? 1900
+          params.session.priceCents ?? 900
         ),
         currency: 'EUR',
         paymentMode: params.session.paymentMode ?? 'both',
@@ -5527,6 +5567,7 @@ export async function createTrainingProgram(params: {
   notes?: string;
   coachUid: string;
   coachName: string;
+  isPaid?: boolean;
   priceCents: number;
   paymentMode: EventPaymentMode;
   markPaid?: boolean;
@@ -5572,13 +5613,16 @@ export async function createTrainingProgram(params: {
       Math.round(Number(params.targetTimeSeconds) || tpl.defaultTargetTimeSeconds)
     )
   );
-  const priceCents = Math.min(
-    VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
-    Math.max(
-      VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
-      Math.round(Number(params.priceCents) || tpl.defaultPriceCents)
-    )
-  );
+  const isProgramPaid = params.isPaid ?? true;
+  const priceCents = isProgramPaid
+    ? Math.min(
+        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+        Math.max(
+          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+          Math.round(Number(params.priceCents) || tpl.defaultPriceCents)
+        )
+      )
+    : 0;
 
   const memberEmailKey = await hashEmailKey(cleanEmail);
   const memberName = (
@@ -5594,9 +5638,9 @@ export async function createTrainingProgram(params: {
     .trim()
     .slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX);
 
-  const isPaidAlready = Boolean(params.markPaid);
+  const isPaidAlready = isProgramPaid && Boolean(params.markPaid);
   const paymentRef = isPaidAlready ? generatePaymentReference('RUN') : '';
-  const status: TrainingProgramStatus = isPaidAlready
+  const status: TrainingProgramStatus = !isProgramPaid || isPaidAlready
     ? 'awaiting_vma'
     : 'awaiting_payment';
 
@@ -5623,12 +5667,12 @@ export async function createTrainingProgram(params: {
       notes,
       coachUid: params.coachUid,
       coachName,
-      isPaid: true,
+      isPaid: isProgramPaid,
       priceCents,
       currency: 'EUR',
-      paymentMode: params.paymentMode,
-      paymentStatus: isPaidAlready ? 'paid' : 'pending',
-      paymentMethod: isPaidAlready ? 'onsite' : '',
+      paymentMode: isProgramPaid ? params.paymentMode : 'both',
+      paymentStatus: !isProgramPaid ? 'free' : isPaidAlready ? 'paid' : 'pending',
+      paymentMethod: !isProgramPaid ? 'free' : isPaidAlready ? 'onsite' : '',
       paymentReference: paymentRef,
       cardBrand: '',
       cardLast4: '',
@@ -5661,8 +5705,10 @@ export async function updateTrainingProgramConfig(
     notes: string;
     coachUid: string;
     coachName: string;
+    isPaid?: boolean;
     priceCents: number;
     paymentMode: EventPaymentMode;
+    existingProgram?: TrainingProgram;
   }
 ): Promise<void> {
   const title = params.title.trim().slice(0, VALIDATION_LIMITS.TITLE_MAX);
@@ -5690,13 +5736,16 @@ export async function updateTrainingProgramConfig(
       Math.round(Number(params.targetTimeSeconds) || 3000)
     )
   );
-  const priceCents = Math.min(
-    VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
-    Math.max(
-      VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
-      Math.round(Number(params.priceCents) || 5900)
-    )
-  );
+  const isProgramPaid = params.isPaid ?? true;
+  const priceCents = isProgramPaid
+    ? Math.min(
+        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+        Math.max(
+          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+          Math.round(Number(params.priceCents) || 4900)
+        )
+      )
+    : 0;
   const coachName = (params.coachName.trim() || 'Coach').slice(
     0,
     VALIDATION_LIMITS.DISPLAY_NAME_MAX
@@ -5710,6 +5759,51 @@ export async function updateTrainingProgramConfig(
         }
       : {};
 
+  let paymentPatch: Record<string, unknown> = {};
+  if (!isProgramPaid) {
+    const nextStatus: TrainingProgramStatus =
+      params.existingProgram?.vmaTestStatus === 'completed'
+        ? params.existingProgram.status === 'completed'
+          ? 'completed'
+          : 'active'
+        : 'awaiting_vma';
+    paymentPatch = {
+      isPaid: false,
+      priceCents: 0,
+      paymentMode: 'both',
+      paymentStatus: 'free',
+      paymentMethod: 'free',
+      paymentReference: '',
+      cardBrand: '',
+      cardLast4: '',
+      paidAt: null,
+      status: nextStatus,
+    };
+  } else if (
+    params.existingProgram &&
+    (!params.existingProgram.isPaid ||
+      params.existingProgram.paymentStatus === 'free')
+  ) {
+    paymentPatch = {
+      isPaid: true,
+      priceCents,
+      paymentMode: params.paymentMode,
+      paymentStatus: 'pending',
+      paymentMethod: '',
+      paymentReference: '',
+      cardBrand: '',
+      cardLast4: '',
+      paidAt: null,
+      status: 'awaiting_payment' as TrainingProgramStatus,
+    };
+  } else {
+    paymentPatch = {
+      isPaid: true,
+      priceCents,
+      paymentMode: params.paymentMode,
+    };
+  }
+
   try {
     await updateDoc(doc(db, 'trainingPrograms', programId), {
       title,
@@ -5721,8 +5815,7 @@ export async function updateTrainingProgramConfig(
       notes: params.notes.trim().slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX),
       coachUid: params.coachUid,
       coachName,
-      priceCents,
-      paymentMode: params.paymentMode,
+      ...paymentPatch,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {

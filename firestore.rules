@@ -1992,8 +1992,10 @@ service cloud.firestore {
         incoming().updatedAt == request.time &&
         isAdmin() &&
         incoming().createdByRole == 'coach' &&
-        incoming().get('isPaid', false) == true &&
-        incoming().get('priceCents', 0) >= 100;
+        (
+          (incoming().get('isPaid', false) == false && incoming().get('priceCents', 0) == 0) ||
+          (incoming().get('isPaid', false) == true && incoming().get('priceCents', 0) >= 100)
+        );
 
       allow update: if isValidId(sessionId) &&
         hasAuthenticatedEmail() &&
@@ -2114,7 +2116,8 @@ service cloud.firestore {
 
     // -------------------------------------------------------------------------
     // /trainingPrograms/{programId}
-    // Paid personalized running programs (5km: 10/8w, 10km: 12/10w, 21km: 14/12w, 42km: 16/14w)
+    // Personalized running programs (5km: 10/8w, 10km: 12/10w, 21km: 14/12w, 42km: 16/14w)
+    // Optional payment (isPaid=false for free/offert or isPaid=true >= 100 cents)
     // with Day 1 VMA test & calibrated training paces
     // -------------------------------------------------------------------------
     function isValidProgramDurationForDistanceAndLevel(data) {
@@ -2194,12 +2197,26 @@ service cloud.firestore {
       data.notes is string && data.notes.size() <= 600 &&
       isValidId(data.coachUid) &&
       data.coachName is string && data.coachName.size() >= 1 && data.coachName.size() <= 80 &&
-      data.isPaid == true &&
-      data.priceCents is int && data.priceCents >= 100 && data.priceCents <= 200000 &&
+      data.isPaid is bool &&
+      data.priceCents is int && data.priceCents >= 0 && data.priceCents <= 200000 &&
       data.currency == 'EUR' &&
       data.paymentMode in ['online', 'onsite', 'both'] &&
-      data.paymentStatus in ['pending', 'paid'] &&
-      data.paymentMethod in ['', 'card', 'onsite'] &&
+      data.paymentStatus in ['free', 'pending', 'paid'] &&
+      data.paymentMethod in ['', 'free', 'card', 'onsite'] &&
+      (
+        (
+          data.isPaid == false &&
+          data.priceCents == 0 &&
+          data.paymentStatus == 'free' &&
+          data.paymentMethod in ['', 'free']
+        ) ||
+        (
+          data.isPaid == true &&
+          data.priceCents >= 100 &&
+          data.paymentStatus in ['pending', 'paid'] &&
+          data.paymentMethod in ['', 'card', 'onsite']
+        )
+      ) &&
       data.paymentReference is string && data.paymentReference.size() <= 64 &&
       data.cardBrand is string && data.cardBrand.size() <= 24 &&
       data.cardLast4 is string && (data.cardLast4.size() == 0 || (data.cardLast4.size() == 4 && data.cardLast4.matches('^[0-9]{4}$'))) &&
@@ -2244,7 +2261,7 @@ service cloud.firestore {
             incoming().diff(existing()).affectedKeys().hasOnly([
               'memberName', 'title', 'level', 'durationWeeks', 'sessionsPerWeek', 'preferredDays',
               'targetTimeSeconds', 'startAt', 'notes', 'coachUid', 'coachName',
-              'priceCents', 'paymentMode', 'paymentStatus', 'paymentMethod',
+              'isPaid', 'priceCents', 'paymentMode', 'paymentStatus', 'paymentMethod',
               'paymentReference', 'cardBrand', 'cardLast4', 'paidAt',
               'vmaTestStatus', 'vmaKmh', 'vmaTestDistanceMeters', 'vmaTestDurationSeconds', 'vmaTestedAt',
               'completedSessionKeys', 'status', 'updatedAt'
@@ -2260,6 +2277,7 @@ service cloud.firestore {
             incoming().get('level', '') == existing().get('level', '') &&
             (
               (
+                existing().isPaid == true &&
                 existing().paymentStatus == 'pending' &&
                 incoming().diff(existing()).affectedKeys().hasOnly([
                   'paymentStatus', 'paymentMethod', 'paymentReference',
@@ -2286,7 +2304,7 @@ service cloud.firestore {
                 )
               ) ||
               (
-                existing().paymentStatus == 'paid' &&
+                (existing().isPaid == false || existing().paymentStatus == 'paid') &&
                 request.time >= existing().startAt &&
                 incoming().diff(existing()).affectedKeys().hasOnly([
                   'vmaTestStatus', 'vmaKmh', 'vmaTestDistanceMeters',
@@ -2299,7 +2317,7 @@ service cloud.firestore {
                 incoming().status == 'active'
               ) ||
               (
-                existing().paymentStatus == 'paid' &&
+                (existing().isPaid == false || existing().paymentStatus == 'paid') &&
                 incoming().diff(existing()).affectedKeys().hasOnly([
                   'completedSessionKeys', 'status', 'updatedAt'
                 ]) &&

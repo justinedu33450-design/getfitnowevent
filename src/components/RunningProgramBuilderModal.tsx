@@ -201,8 +201,13 @@ export function RunningProgramBuilderModal({
       : toLocalDateInputValue(new Date())
   );
 
+  const [isPaid, setIsPaid] = useState<boolean>(() =>
+    editingProgram ? Boolean(editingProgram.isPaid) : true
+  );
   const [priceEuros, setPriceEuros] = useState<string>(() =>
-    ((editingProgram?.priceCents ?? tpl.defaultPriceCents) / 100).toFixed(2)
+    ((editingProgram?.priceCents && editingProgram.priceCents >= 100
+      ? editingProgram.priceCents
+      : tpl.defaultPriceCents) / 100).toFixed(2)
   );
   const [paymentMode, setPaymentMode] = useState<EventPaymentMode>(
     editingProgram?.paymentMode ?? 'both'
@@ -317,17 +322,20 @@ export function RunningProgramBuilderModal({
       return;
     }
 
-    const parsedPrice = Number(priceEuros.replace(',', '.'));
-    if (!Number.isFinite(parsedPrice) || parsedPrice < 1) {
-      setError(
-        'Tous les programmes personnalisés sont payants : le tarif minimum est de 1,00 €.'
+    let priceCents = 0;
+    if (isPaid) {
+      const parsedPrice = Number(priceEuros.replace(',', '.'));
+      if (!Number.isFinite(parsedPrice) || parsedPrice < 1) {
+        setError(
+          'Pour un programme payant, saisissez un tarif d’au moins 1,00 € (ou sélectionnez « Offert / gratuit »).'
+        );
+        return;
+      }
+      priceCents = Math.min(
+        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+        Math.round(parsedPrice * 100)
       );
-      return;
     }
-    const priceCents = Math.min(
-      VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
-      Math.round(parsedPrice * 100)
-    );
 
     if (!startDateStr) {
       setError('Veuillez sélectionner la date de début (Jour 1 · Test VMA).');
@@ -365,8 +373,10 @@ export function RunningProgramBuilderModal({
           notes,
           coachUid: resolvedCoachUid,
           coachName: resolvedCoachName,
+          isPaid,
           priceCents,
           paymentMode,
+          existingProgram: editingProgram,
         });
         onSaved?.(
           `Programme « ${title} » (${durationWeeks} semaines) mis à jour pour ${targetName}.`,
@@ -386,13 +396,14 @@ export function RunningProgramBuilderModal({
           notes,
           coachUid: resolvedCoachUid,
           coachName: resolvedCoachName,
+          isPaid,
           priceCents,
           paymentMode,
-          markPaid,
+          markPaid: isPaid ? markPaid : false,
           createdByUid: coachUid,
         });
         onSaved?.(
-          `Programme ${tpl.shortLabel} sur ${durationWeeks} semaines (${getProgramRunnerLevelLabel(runnerLevel)} · ${formatPriceEuros(priceCents)}) attribué à ${targetName}.`,
+          `Programme ${tpl.shortLabel} sur ${durationWeeks} semaines (${getProgramRunnerLevelLabel(runnerLevel)} · ${isPaid ? formatPriceEuros(priceCents) : 'Offert / gratuit'}) attribué à ${targetName}.`,
           startDate
         );
       }
@@ -750,68 +761,106 @@ export function RunningProgramBuilderModal({
               </div>
             </div>
 
-            {/* Mandatory Paid Pricing */}
+            {/* Pricing: Free (offert) or Paid */}
             <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20 space-y-3">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
-                <span className="text-xs font-bold text-slate-900 dark:text-white">
-                  Tarification du programme personnalisé (payant par l’adhérent)
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="rp-price"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
-                  >
-                    Tarif du programme (€) *
-                  </label>
-                  <input
-                    id="rp-price"
-                    type="number"
-                    min={1}
-                    max={2000}
-                    step="0.50"
-                    required
-                    value={priceEuros}
-                    onChange={(e) => setPriceEuros(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                    Tarification du programme personnalisé
+                  </span>
                 </div>
-
-                <div>
-                  <label
-                    htmlFor="rp-pay-mode"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                <div
+                  role="group"
+                  aria-label="Programme gratuit ou payant"
+                  className="inline-flex items-center gap-1 rounded-lg bg-slate-200/80 p-1 dark:bg-slate-900"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setIsPaid(false)}
+                    className={`min-h-[30px] rounded-md px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                      !isPaid
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
                   >
-                    Mode de règlement autorisé *
-                  </label>
-                  <select
-                    id="rp-pay-mode"
-                    value={paymentMode}
-                    onChange={(e) =>
-                      setPaymentMode(e.target.value as EventPaymentMode)
-                    }
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    Offert (gratuit)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPaid(true)}
+                    className={`min-h-[30px] rounded-md px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                      isPaid
+                        ? 'bg-emerald-700 text-white shadow-xs dark:bg-emerald-600'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
                   >
-                    <option value="both">Carte en ligne ou sur place</option>
-                    <option value="online">Carte en ligne uniquement</option>
-                    <option value="onsite">Sur place uniquement</option>
-                  </select>
+                    Payant
+                  </button>
                 </div>
               </div>
 
-              {!editingProgram && (
-                <label className="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={markPaid}
-                    onChange={(e) => setMarkPaid(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                  />
-                  <span>L’adhérent a déjà réglé sur place (débloquer immédiatement)</span>
-                </label>
+              {isPaid ? (
+                <>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="rp-price"
+                        className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Tarif du programme (€) *
+                      </label>
+                      <input
+                        id="rp-price"
+                        type="number"
+                        min={1}
+                        max={2000}
+                        step="0.50"
+                        required
+                        value={priceEuros}
+                        onChange={(e) => setPriceEuros(e.target.value)}
+                        className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="rp-pay-mode"
+                        className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Mode de règlement autorisé *
+                      </label>
+                      <select
+                        id="rp-pay-mode"
+                        value={paymentMode}
+                        onChange={(e) =>
+                          setPaymentMode(e.target.value as EventPaymentMode)
+                        }
+                        className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      >
+                        <option value="both">Carte en ligne ou sur place</option>
+                        <option value="online">Carte en ligne uniquement</option>
+                        <option value="onsite">Sur place uniquement</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {!editingProgram && (
+                    <label className="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={markPaid}
+                        onChange={(e) => setMarkPaid(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                      />
+                      <span>L’adhérent a déjà réglé sur place (débloquer immédiatement)</span>
+                    </label>
+                  )}
+                </>
+              ) : (
+                <p className="rounded-lg border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-800/60 dark:bg-slate-900/60 dark:text-emerald-200">
+                  Programme offert : aucun paiement demandé à l’adhérent. La Semaine 1 et le test VMA du Jour 1 seront disponibles immédiatement, puis chaque semaine suivante sera envoyée automatiquement.
+                </p>
               )}
             </div>
 
@@ -886,8 +935,9 @@ export function RunningProgramBuilderModal({
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/60">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              L’adhérent verra les {durationWeeks} semaines dans <strong>Mon suivi</strong> dès
-              attribution.
+              {isPaid
+                ? `Après paiement, l’adhérent reçoit la Semaine 1, puis chaque semaine suivante à la fin de la précédente (${durationWeeks} sem.).`
+                : `Programme offert : l’adhérent reçoit la Semaine 1 dès attribution, puis chaque semaine suivante à la fin de la précédente (${durationWeeks} sem.).`}
             </p>
             <div className="flex items-center gap-2">
               <button

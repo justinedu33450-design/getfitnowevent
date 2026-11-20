@@ -1587,6 +1587,7 @@ export default function App() {
                         memberCandidates={programMemberCandidates}
                         trainingPrograms={trainingPrograms}
                         memberSchedules={memberSchedules}
+                        nowMs={nowMs}
                       />
                     </section>
                   )}

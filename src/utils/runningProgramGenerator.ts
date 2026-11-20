@@ -105,7 +105,7 @@ export const RUNNING_DISTANCE_TEMPLATES: Record<
     regularWeeks: 8,
     defaultTargetTimeSeconds: 25 * 60, // 25 min (5:00/km)
     defaultSessionsPerWeek: VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK,
-    defaultPriceCents: 4900,
+    defaultPriceCents: 3900,
     tagline: 'Vitesse, VMA courte et soutien à l’allure 5 km (8 à 10 semaines).',
     phaseTitles: [
       'Test VMA, socle aérobie & foulée',
@@ -123,7 +123,7 @@ export const RUNNING_DISTANCE_TEMPLATES: Record<
     regularWeeks: 10,
     defaultTargetTimeSeconds: 50 * 60, // 50 min (5:00/km)
     defaultSessionsPerWeek: VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK,
-    defaultPriceCents: 5900,
+    defaultPriceCents: 4900,
     tagline: 'Équilibre VMA, seuil et résistance spécifique 10 km (10 à 12 semaines).',
     phaseTitles: [
       'Test VMA, endurance & renforcement runner',
@@ -141,7 +141,7 @@ export const RUNNING_DISTANCE_TEMPLATES: Record<
     regularWeeks: 12,
     defaultTargetTimeSeconds: 115 * 60, // 1h55
     defaultSessionsPerWeek: VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK,
-    defaultPriceCents: 7900,
+    defaultPriceCents: 6900,
     tagline: 'Endurance fondamentale, seuil prolongé et allure semi AS21 (12 à 14 semaines).',
     phaseTitles: [
       'Test VMA, volume progressif & gainage',
@@ -159,7 +159,7 @@ export const RUNNING_DISTANCE_TEMPLATES: Record<
     regularWeeks: 14,
     defaultTargetTimeSeconds: 4 * 3600, // 4h00
     defaultSessionsPerWeek: VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK,
-    defaultPriceCents: 9900,
+    defaultPriceCents: 8900,
     tagline: 'Volume aérobie, robustesse musculaire et maîtrise de l’allure AS42 (14 à 16 semaines).',
     phaseTitles: [
       'Test VMA, endurance & PPG protectrice',
@@ -1241,3 +1241,155 @@ export function generateRunningProgramSessions(
 
   return sessions;
 }
+
+export interface ProgramWeekWindow {
+  weekNumber: number; // 1..durationWeeks
+  startAtMs: number;
+  endAtMs: number;
+  unlockAtMs: number;
+  unlocked: boolean;
+  firstSessionDate: Date;
+  lastSessionDate: Date;
+}
+
+export interface ProgramDeliveryProgress {
+  isPaid: boolean;
+  isFree: boolean;
+  hasAccess: boolean;
+  totalWeeks: number;
+  unlockedWeeks: number;
+  currentWeekNumber: number;
+  nextWeekNumber: number | null;
+  nextUnlockAtMs: number | null;
+  allWeeksReleased: boolean;
+  weeks: ProgramWeekWindow[];
+}
+
+export function getProgramDeliveryProgress(
+  program: TrainingProgram,
+  nowMs: number = Date.now()
+): ProgramDeliveryProgress {
+  const startDate = program.startAt?.toDate ? program.startAt.toDate() : new Date();
+  const totalWeeks = Math.min(
+    VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MAX,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MIN,
+      Math.round(
+        program.durationWeeks ||
+          getProgramDurationWeeks(program.distance, program.level ?? 'regular')
+      )
+    )
+  );
+  const sessionsPerWeek = Math.min(
+    VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MAX,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MIN,
+      program.sessionsPerWeek || VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK
+    )
+  );
+  const weekDates = computeWeekDates(
+    startDate,
+    sessionsPerWeek,
+    program.preferredDays || getDefaultPreferredDays(sessionsPerWeek),
+    totalWeeks
+  );
+
+  const startIsoDay = toIsoWeekday(startDate);
+  const mondayW1 = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate() - (startIsoDay - 1),
+    0,
+    0,
+    0,
+    0
+  );
+
+  const isFree = !program.isPaid || program.paymentStatus === 'free';
+  const isPaid = Boolean(program.isPaid) && program.paymentStatus === 'paid';
+  const hasAccess = isFree || isPaid;
+  const paidMs = isFree
+    ? startDate.getTime()
+    : (program.paidAt?.toMillis?.() ?? startDate.getTime());
+  const weeks: ProgramWeekWindow[] = [];
+
+  for (let w = 1; w <= totalWeeks; w += 1) {
+    const idx = w - 1;
+    const dates = weekDates[idx];
+    const firstSessionDate = dates[0];
+    const lastSessionDate = dates[dates.length - 1];
+
+    const startAtMs =
+      w === 1
+        ? new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+            0,
+            0,
+            0,
+            0
+          ).getTime()
+        : new Date(
+            mondayW1.getFullYear(),
+            mondayW1.getMonth(),
+            mondayW1.getDate() + (w - 1) * 7,
+            0,
+            0,
+            0,
+            0
+          ).getTime();
+
+    const sundayEndMs = new Date(
+      mondayW1.getFullYear(),
+      mondayW1.getMonth(),
+      mondayW1.getDate() + w * 7 - 1,
+      23,
+      59,
+      59,
+      999
+    ).getTime();
+
+    const lastSessionDayEndMs = new Date(
+      lastSessionDate.getFullYear(),
+      lastSessionDate.getMonth(),
+      lastSessionDate.getDate(),
+      23,
+      59,
+      59,
+      999
+    ).getTime();
+
+    const endAtMs = Math.max(sundayEndMs, lastSessionDayEndMs);
+    const unlockAtMs = w === 1 ? paidMs : weeks[idx - 1].endAtMs + 1;
+    const unlocked = hasAccess && (w === 1 || nowMs >= unlockAtMs);
+
+    weeks.push({
+      weekNumber: w,
+      startAtMs,
+      endAtMs,
+      unlockAtMs,
+      unlocked,
+      firstSessionDate,
+      lastSessionDate,
+    });
+  }
+
+  const unlockedWeeks = hasAccess ? weeks.filter((wk) => wk.unlocked).length : 0;
+  const allWeeksReleased = hasAccess && unlockedWeeks >= totalWeeks;
+  const nextLocked = hasAccess ? weeks.find((wk) => !wk.unlocked) ?? null : null;
+
+  return {
+    isPaid,
+    isFree,
+    hasAccess,
+    totalWeeks,
+    unlockedWeeks,
+    currentWeekNumber: unlockedWeeks > 0 ? unlockedWeeks : 1,
+    nextWeekNumber: hasAccess ? (nextLocked ? nextLocked.weekNumber : null) : 1,
+    nextUnlockAtMs: hasAccess ? (nextLocked ? nextLocked.unlockAtMs : null) : null,
+    allWeeksReleased,
+    weeks,
+  };
+}
+

@@ -51,7 +51,7 @@ export function ProgramPaymentModal({
   const title = isProgram ? target.program.title : target.session.title;
   const priceCents = isProgram
     ? target.program.priceCents
-    : target.session.priceCents ?? 1900;
+    : target.session.priceCents ?? 900;
   const paymentMode: EventPaymentMode = isProgram
     ? target.program.paymentMode
     : target.session.paymentMode ?? 'both';
@@ -165,7 +165,9 @@ export function ProgramPaymentModal({
       }
       onPaid?.(
         selectedMethod === 'card'
-          ? `Paiement de ${formatPriceEuros(priceCents)} confirmé. Votre programme est débloqué !`
+          ? isProgram
+            ? `Paiement de ${formatPriceEuros(priceCents)} confirmé. Votre Semaine 1 vient d’être envoyée ! Les semaines suivantes seront envoyées à la fin de chaque semaine.`
+            : `Paiement de ${formatPriceEuros(priceCents)} confirmé. Votre séance personnalisée est débloquée !`
           : 'Demande de règlement sur place enregistrée. Votre coach activera le programme dès réception du paiement.'
       );
       onClose();
@@ -251,9 +253,16 @@ export function ProgramPaymentModal({
                 aria-hidden="true"
               />
               <div>
-                <p className="font-bold">Programme réglé et actif</p>
+                <p className="font-bold">
+                  {isProgram
+                    ? 'Programme réglé · Envoi semaine par semaine actif'
+                    : 'Programme réglé et actif'}
+                </p>
                 <p className="mt-0.5 text-emerald-800 dark:text-emerald-200">
                   Référence : <span className="font-mono">{paymentReference}</span>
+                  {isProgram
+                    ? ' · Semaine 1 envoyée dès le règlement, puis chaque semaine suivante à la fin de la précédente.'
+                    : ''}
                 </p>
               </div>
             </div>

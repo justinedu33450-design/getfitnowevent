@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useRef, useState } from 'react';
 import {
+  BellRing,
   BookOpen,
   CalendarCheck2,
   CalendarPlus,
@@ -28,6 +29,7 @@ import {
 import {
   CoachDirectoryEntry,
   DisciplineItem,
+  EventPaymentMode,
   ExerciseLibraryItem,
   MemberScheduleSession,
   Registration,
@@ -46,6 +48,7 @@ import {
 } from '../services/firestoreService';
 import {
   evaluateEventBooking,
+  formatFrenchDateLong,
   formatFrenchDateShort,
   formatFrenchTime,
   formatPriceEuros,
@@ -67,6 +70,8 @@ import {
 import {
   GeneratedProgramSession,
   generateRunningProgramSessions,
+  getProgramDeliveryProgress,
+  ProgramDeliveryProgress,
   RUNNING_DISTANCE_TEMPLATES,
 } from '../utils/runningProgramGenerator';
 import { DisciplineIcon } from './DisciplineIcon';
@@ -196,6 +201,10 @@ export function MemberWeeklyScheduleCard({
   const [formLocation, setFormLocation] = useState('');
   const [formCoachUid, setFormCoachUid] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  const [formIsPaid, setFormIsPaid] = useState(false);
+  const [formPriceEuros, setFormPriceEuros] = useState('9.00');
+  const [formPaymentMode, setFormPaymentMode] =
+    useState<EventPaymentMode>('both');
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -217,6 +226,7 @@ export function MemberWeeklyScheduleCard({
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+  const [ackVersion, setAckVersion] = useState(0);
 
   const memberEmailLower = memberEmail.trim().toLowerCase();
   const weekDays = useMemo(() => getWeekDays(weekAnchor), [weekAnchor]);
@@ -340,12 +350,102 @@ export function MemberWeeklyScheduleCard({
     );
   }, [trainingPrograms, memberEmailLower]);
 
+  const deliveryByProgramId = useMemo(() => {
+    const map = new Map<string, ProgramDeliveryProgress>();
+    memberPrograms.forEach((prog) => {
+      map.set(prog.id, getProgramDeliveryProgress(prog, nowMs));
+    });
+    return map;
+  }, [memberPrograms, nowMs]);
+
+  const ackStoragePrefix = `gfn_prog_week_ack_${currentUserUid || memberEmailLower || 'anon'}_`;
+
+  const getAcknowledgedWeek = (programId: string): number => {
+    try {
+      const raw = window.localStorage.getItem(`${ackStoragePrefix}${programId}`);
+      const parsed = raw ? Number(raw) : 0;
+      return Number.isFinite(parsed) ? parsed : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const acknowledgeProgramWeek = (programId: string, weekNumber: number) => {
+    try {
+      window.localStorage.setItem(
+        `${ackStoragePrefix}${programId}`,
+        String(weekNumber)
+      );
+    } catch {
+      // Ignore storage failures in restricted contexts
+    }
+    setAckVersion((v) => v + 1);
+  };
+
+  const newlySentProgramAlerts = useMemo(() => {
+    if (mode !== 'member' || memberPrograms.length === 0) return [];
+    void ackVersion;
+    return memberPrograms
+      .map((prog) => {
+        const delivery = deliveryByProgramId.get(prog.id);
+        if (!delivery || !delivery.hasAccess || delivery.unlockedWeeks < 1) {
+          return null;
+        }
+        const acked = getAcknowledgedWeek(prog.id);
+        if (delivery.unlockedWeeks <= acked) return null;
+        const unlockedWeekWindow =
+          delivery.weeks[delivery.unlockedWeeks - 1] ?? delivery.weeks[0];
+        return {
+          program: prog,
+          delivery,
+          unlockedWeekWindow,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => Boolean(x));
+  }, [mode, memberPrograms, deliveryByProgramId, ackVersion, ackStoragePrefix]);
+
+  const upcomingLockedWeeksInView = useMemo(() => {
+    if (mode !== 'member' || memberPrograms.length === 0) return [];
+    const alerts: {
+      program: TrainingProgram;
+      delivery: ProgramDeliveryProgress;
+      weekNumber: number;
+      unlockAtMs: number;
+    }[] = [];
+    memberPrograms.forEach((prog) => {
+      const delivery = deliveryByProgramId.get(prog.id);
+      if (!delivery) return;
+      const lockedMatchingWeek = delivery.weeks.find((wk) => {
+        if (wk.unlocked) return false;
+        if (!delivery.hasAccess && wk.weekNumber === 1) return false;
+        return wk.lastSessionDate.getTime() >= weekStartMs && wk.firstSessionDate.getTime() <= weekEndMs;
+      });
+      if (lockedMatchingWeek) {
+        alerts.push({
+          program: prog,
+          delivery,
+          weekNumber: lockedMatchingWeek.weekNumber,
+          unlockAtMs: lockedMatchingWeek.unlockAtMs,
+        });
+      }
+    });
+    return alerts;
+  }, [mode, memberPrograms, deliveryByProgramId, weekStartMs, weekEndMs]);
+
   const programEntries = useMemo<WeeklyScheduleEntry[]>(() => {
     if (memberPrograms.length === 0) return [];
     const list: WeeklyScheduleEntry[] = [];
     memberPrograms.forEach((prog) => {
+      const delivery = deliveryByProgramId.get(prog.id);
       const generated = generateRunningProgramSessions(prog);
       generated.forEach((gs) => {
+        if (mode === 'member' && delivery) {
+          if (!delivery.hasAccess) {
+            if (gs.weekNumber !== 1 || gs.sessionIndexInWeek !== 1) return;
+          } else if (gs.weekNumber > delivery.unlockedWeeks) {
+            return;
+          }
+        }
         const endMs =
           gs.scheduledDate.getTime() + gs.durationMinutes * 60 * 1000;
         list.push({
@@ -366,7 +466,7 @@ export function MemberWeeklyScheduleCard({
       });
     });
     return list;
-  }, [memberPrograms, nowMs]);
+  }, [memberPrograms, deliveryByProgramId, mode, nowMs]);
 
   const allEntries = useMemo(() => {
     const combined = [
@@ -450,6 +550,9 @@ export function MemberWeeklyScheduleCard({
     setFormLocation('');
     setFormCoachUid(currentUserUid);
     setFormNotes('');
+    setFormIsPaid(false);
+    setFormPriceEuros('9.00');
+    setFormPaymentMode('both');
     setIsFormOpen(true);
     setExpanded(true);
     focusInlineForm();
@@ -479,6 +582,13 @@ export function MemberWeeklyScheduleCard({
     setFormLocation(session.location || '');
     setFormCoachUid(session.coachUid || '');
     setFormNotes(session.notes || '');
+    setFormIsPaid(Boolean(session.isPaid));
+    setFormPriceEuros(
+      session.priceCents && session.priceCents >= 100
+        ? (session.priceCents / 100).toFixed(2)
+        : '9.00'
+    );
+    setFormPaymentMode(session.paymentMode ?? 'both');
     setIsFormOpen(true);
     setExpanded(true);
     focusInlineForm();
@@ -522,6 +632,21 @@ export function MemberWeeklyScheduleCard({
       return;
     }
 
+    let resolvedPriceCents = 0;
+    if (formIsPaid) {
+      const parsedPrice = Number(formPriceEuros.replace(',', '.'));
+      if (!Number.isFinite(parsedPrice) || parsedPrice < 1) {
+        setFormError(
+          'Pour une séance payante, saisissez un tarif d’au moins 1,00 € (ou choisissez « Offert / gratuit »).'
+        );
+        return;
+      }
+      resolvedPriceCents = Math.min(
+        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+        Math.round(parsedPrice * 100)
+      );
+    }
+
     const selectedCoach = formCoachUid ? coachByUid.get(formCoachUid) : null;
     const resolvedCoachUid = formCoachUid.trim();
     const resolvedCoachName =
@@ -535,6 +660,7 @@ export function MemberWeeklyScheduleCard({
     setFormSaving(true);
     try {
       if (editingSession) {
+        const switchedToPaid = !editingSession.isPaid && formIsPaid;
         await updateMemberScheduleSession(editingSession.id, {
           title: formTitle,
           discipline: formDiscipline,
@@ -544,6 +670,12 @@ export function MemberWeeklyScheduleCard({
           durationMinutes: formDuration,
           coachUid: resolvedCoachUid,
           coachName: resolvedCoachName,
+          isPaid: formIsPaid,
+          priceCents: resolvedPriceCents,
+          paymentMode: formPaymentMode,
+          ...(switchedToPaid
+            ? { paymentStatus: 'pending' as const, paymentMethod: 'onsite' as const }
+            : {}),
           completed: editingSession.completed,
         });
         setActionFeedback({
@@ -562,6 +694,9 @@ export function MemberWeeklyScheduleCard({
           durationMinutes: formDuration,
           coachUid: resolvedCoachUid,
           coachName: resolvedCoachName,
+          isPaid: formIsPaid,
+          priceCents: resolvedPriceCents,
+          paymentMode: formPaymentMode,
           createdByUid: currentUserUid,
           createdByRole: mode,
         });
@@ -574,7 +709,9 @@ export function MemberWeeklyScheduleCard({
         }
         setActionFeedback({
           type: 'success',
-          text: 'Séance ajoutée au planning hebdomadaire.',
+          text: formIsPaid
+            ? `Séance payante (${formatPriceEuros(resolvedPriceCents)}) ajoutée au planning.`
+            : 'Séance offerte ajoutée au planning hebdomadaire.',
         });
       }
       setIsFormOpen(false);
@@ -620,7 +757,8 @@ export function MemberWeeklyScheduleCard({
     sessionKey: string,
     currentlyCompleted: boolean
   ) => {
-    if (mode === 'member' && program.paymentStatus !== 'paid') {
+    const isFree = !program.isPaid || program.paymentStatus === 'free';
+    if (mode === 'member' && !isFree && program.paymentStatus !== 'paid') {
       setPaymentTarget({ kind: 'program', program });
       return;
     }
@@ -683,7 +821,7 @@ export function MemberWeeklyScheduleCard({
       });
       setActionFeedback({
         type: 'success',
-        text: `Paiement confirmé pour « ${program.title} ». Le programme et le test VMA du Jour 1 sont débloqués.`,
+        text: `Paiement confirmé pour « ${program.title} ». La Semaine 1 vient d’être envoyée à l’adhérent (les semaines suivantes seront envoyées à la fin de chaque semaine) et le test VMA du Jour 1 est débloqué.`,
       });
     } catch (err) {
       setActionFeedback({
@@ -733,9 +871,11 @@ export function MemberWeeklyScheduleCard({
 
     if (isProgram && prog && progSession) {
       const tpl = RUNNING_DISTANCE_TEMPLATES[prog.distance];
+      const isFreeProgram = !prog.isPaid || prog.paymentStatus === 'free';
       const isPaid = prog.paymentStatus === 'paid';
-      const isLockedForMember = mode === 'member' && !isPaid;
-      const canToggle = isPaid || mode === 'coach';
+      const hasAccess = isFreeProgram || isPaid;
+      const isLockedForMember = mode === 'member' && !hasAccess;
+      const canToggle = hasAccess || mode === 'coach';
 
       return (
         <div
@@ -801,10 +941,38 @@ export function MemberWeeklyScheduleCard({
             )}
           </div>
 
-          <p className="mt-1 font-mono text-[10px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
-            Plan {tpl.shortLabel} · Sem. {progSession.weekNumber}/12 ·{' '}
-            {progSession.focusLabel}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-1.5">
+            <p className="font-mono text-[10px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
+              Plan {tpl.shortLabel} · Sem. {progSession.weekNumber}/
+              {prog.durationWeeks || 12} · {progSession.focusLabel}
+            </p>
+            {mode === 'coach' && (() => {
+              const delivery = deliveryByProgramId.get(prog.id);
+              const weekWindow = delivery?.weeks[progSession.weekNumber - 1];
+              if (!hasAccess) {
+                return (
+                  <span className="font-mono text-[9px] font-semibold text-amber-700 dark:text-amber-400">
+                    Paiement requis
+                  </span>
+                );
+              }
+              if (weekWindow?.unlocked) {
+                return (
+                  <span className="font-mono text-[9px] font-semibold text-emerald-700 dark:text-emerald-400">
+                    {isFreeProgram ? 'Envoyée · Offert' : 'Envoyée'}
+                  </span>
+                );
+              }
+              if (weekWindow) {
+                return (
+                  <span className="font-mono text-[9px] font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                    Envoi le {formatFrenchDateShort(new Date(weekWindow.unlockAtMs))}
+                  </span>
+                );
+              }
+              return null;
+            })()}
+          </div>
 
           <p
             className={`mt-0.5 font-display text-xs font-bold leading-snug text-slate-900 dark:text-white ${
@@ -830,7 +998,7 @@ export function MemberWeeklyScheduleCard({
               <p className="flex items-start gap-1.5 text-[11px] font-medium text-amber-950 dark:text-amber-100">
                 <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
                 <span>
-                  Programme personnalisé payant ({formatPriceEuros(prog.priceCents)}) : réglez pour débloquer le contenu et vos allures.
+                  Programme personnalisé payant ({formatPriceEuros(prog.priceCents)}) : réglez pour recevoir votre Semaine 1 (puis chaque semaine suivante à la fin de la précédente).
                 </span>
               </p>
               <button
@@ -844,7 +1012,7 @@ export function MemberWeeklyScheduleCard({
             </div>
           ) : (
             <>
-              {!isPaid && mode === 'coach' && (
+              {!hasAccess && mode === 'coach' && (
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35">
                   <span className="font-mono text-[10px] font-semibold text-amber-900 dark:text-amber-200 tabular-nums">
                     Paiement en attente · {formatPriceEuros(prog.priceCents)}
@@ -862,7 +1030,7 @@ export function MemberWeeklyScheduleCard({
                 </div>
               )}
 
-              {isPaid && progSession.isVmaTest && prog.vmaTestStatus === 'pending' && (
+              {hasAccess && progSession.isVmaTest && prog.vmaTestStatus === 'pending' && (
                 <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50/80 p-2.5 dark:border-sky-800 dark:bg-sky-950/50">
                   <p className="text-[11px] font-semibold text-sky-950 dark:text-sky-100">
                     Test VMA Jour 1 requis pour calculer vos allures des {prog.durationWeeks || 12} semaines.
@@ -914,7 +1082,7 @@ export function MemberWeeklyScheduleCard({
                 </p>
               )}
 
-              {isPaid && mode === 'member' && (
+              {isPaid && !isFreeProgram && mode === 'member' && (
                 <div className="mt-2 flex items-center justify-end border-t border-slate-100 pt-1.5 dark:border-slate-800">
                   <button
                     type="button"
@@ -998,7 +1166,7 @@ export function MemberWeeklyScheduleCard({
           {!isEvent && session && isLockedCustomForMember && (
             <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
               <Lock className="h-3 w-3" aria-hidden="true" />
-              {formatPriceEuros(session.priceCents ?? 1900)}
+              {formatPriceEuros(session.priceCents ?? 900)}
             </span>
           )}
 
@@ -1026,10 +1194,10 @@ export function MemberWeeklyScheduleCard({
                   isCoachPaidSession
                     ? ` · ${
                         session.paymentStatus === 'paid'
-                          ? `Réglé ${formatPriceEuros(session.priceCents ?? 1900)}`
-                          : `À régler ${formatPriceEuros(session.priceCents ?? 1900)}`
+                          ? `Réglé ${formatPriceEuros(session.priceCents ?? 900)}`
+                          : `À régler ${formatPriceEuros(session.priceCents ?? 900)}`
                       }`
-                    : ''
+                    : ' · Offert'
                 }`
               : ' · Programme perso'}
         </p>
@@ -1063,7 +1231,7 @@ export function MemberWeeklyScheduleCard({
             <p className="flex items-start gap-1.5 text-[11px] font-medium text-amber-950 dark:text-amber-100">
               <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
               <span>
-                Séance personnalisée payante ({formatPriceEuros(session.priceCents ?? 1900)}) : réglez pour accéder au détail des exercices.
+                Séance personnalisée payante ({formatPriceEuros(session.priceCents ?? 900)}) : réglez pour accéder au détail des exercices.
               </span>
             </p>
             <button
@@ -1072,7 +1240,7 @@ export function MemberWeeklyScheduleCard({
               className="inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
             >
               <CreditCard className="h-3 w-3" aria-hidden="true" />
-              <span>Régler {formatPriceEuros(session.priceCents ?? 1900)}</span>
+              <span>Régler {formatPriceEuros(session.priceCents ?? 900)}</span>
             </button>
           </div>
         ) : (
@@ -1083,7 +1251,7 @@ export function MemberWeeklyScheduleCard({
               isUnpaidCoachSession && (
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35">
                   <span className="font-mono text-[10px] font-semibold text-amber-900 dark:text-amber-200 tabular-nums">
-                    À régler · {formatPriceEuros(session.priceCents ?? 1900)}
+                    À régler · {formatPriceEuros(session.priceCents ?? 900)}
                   </span>
                   <button
                     type="button"
@@ -1259,11 +1427,11 @@ export function MemberWeeklyScheduleCard({
               Semaine {weekNumber} ({weekRangeLabel}) · {weekCounts.total}{' '}
               séance{weekCounts.total > 1 ? 's' : ''} ({weekCounts.events}{' '}
               événement{weekCounts.events > 1 ? 's' : ''}, {weekCounts.custom}{' '}
-              perso, {weekCounts.programs} plan 12 sem.)
+              perso, {weekCounts.programs} plan running)
               {memberPrograms.length > 0 && (
                 <span className="ml-1.5 font-semibold text-sky-700 dark:text-sky-400">
                   · {memberPrograms.length} programme
-                  {memberPrograms.length > 1 ? 's' : ''} 12 sem. attribué
+                  {memberPrograms.length > 1 ? 's' : ''} running attribué
                   {memberPrograms.length > 1 ? 's' : ''}
                 </span>
               )}
@@ -1294,6 +1462,64 @@ export function MemberWeeklyScheduleCard({
 
       {expanded && (
         <div id={`weekly-schedule-${mode}`} className="mt-4 space-y-4">
+          {mode === 'member' && newlySentProgramAlerts.length > 0 && (
+            <div className="space-y-2">
+              {newlySentProgramAlerts.map(({ program, delivery, unlockedWeekWindow }) => (
+                <div
+                  key={`sent-alert-${program.id}-${delivery.unlockedWeeks}`}
+                  role="status"
+                  className="flex flex-col gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/90 p-3.5 text-xs text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <BellRing
+                      className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+                      aria-hidden="true"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-bold">
+                        Semaine {delivery.unlockedWeeks}/{delivery.totalWeeks} envoyée ·{' '}
+                        {program.title}
+                      </p>
+                      <p className="mt-0.5 text-emerald-800 dark:text-emerald-200">
+                        {delivery.unlockedWeeks === 1
+                          ? delivery.isFree
+                            ? 'Programme offert : la Semaine 1 est prête dans votre planning.'
+                            : 'Votre paiement est validé : la Semaine 1 est prête dans votre planning.'
+                          : `La semaine ${delivery.unlockedWeeks - 1} est terminée : vos nouvelles séances de la semaine ${delivery.unlockedWeeks} sont disponibles.`}
+                        {delivery.nextWeekNumber && delivery.nextUnlockAtMs
+                          ? ` Prochain envoi : Semaine ${delivery.nextWeekNumber} le ${formatFrenchDateLong(new Date(delivery.nextUnlockAtMs))}.`
+                          : ' Dernière semaine du programme envoyée !'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilter('all');
+                        setWeekAnchor(unlockedWeekWindow.firstSessionDate);
+                        acknowledgeProgramWeek(program.id, delivery.unlockedWeeks);
+                      }}
+                      className="inline-flex min-h-[32px] items-center rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                    >
+                      Voir la semaine {delivery.unlockedWeeks}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        acknowledgeProgramWeek(program.id, delivery.unlockedWeeks)
+                      }
+                      aria-label="Fermer la notification de semaine envoyée"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-emerald-800 hover:bg-emerald-100 dark:text-emerald-200 dark:hover:bg-emerald-900/60 cursor-pointer"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {memberPrograms.length > 0 && (
             <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 dark:border-sky-900/70 dark:bg-sky-950/30 space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1301,7 +1527,7 @@ export function MemberWeeklyScheduleCard({
                   <Footprints className="h-3.5 w-3.5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
                   <span>
                     {memberPrograms.length === 1
-                      ? 'Programme running attribué'
+                      ? 'Programme running attribué (envoi semaine par semaine)'
                       : `${memberPrograms.length} programmes running attribués`}
                   </span>
                 </p>
@@ -1309,10 +1535,17 @@ export function MemberWeeklyScheduleCard({
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {memberPrograms.map((prog) => {
                   const tpl = RUNNING_DISTANCE_TEMPLATES[prog.distance];
+                  const delivery = deliveryByProgramId.get(prog.id);
+                  const isFreeProgram = !prog.isPaid || prog.paymentStatus === 'free';
                   const isPaid = prog.paymentStatus === 'paid';
+                  const hasAccess = isFreeProgram || isPaid;
                   const totalSessions = prog.durationWeeks * prog.sessionsPerWeek;
                   const doneCount = prog.completedSessionKeys?.length ?? 0;
                   const startDate = prog.startAt.toDate();
+                  const currentWeekFirstDate =
+                    delivery && delivery.unlockedWeeks > 0
+                      ? delivery.weeks[delivery.unlockedWeeks - 1]?.firstSessionDate ?? startDate
+                      : startDate;
 
                   return (
                     <div
@@ -1330,15 +1563,28 @@ export function MemberWeeklyScheduleCard({
                           <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
                             Coach : {prog.coachName} · {doneCount}/{totalSessions} séances
                           </p>
+                          {delivery && (
+                            <p className="mt-0.5 font-mono text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                              {!delivery.hasAccess
+                                ? 'Semaine 1 envoyée dès le paiement'
+                                : delivery.allWeeksReleased
+                                  ? `Toutes les semaines envoyées (${delivery.totalWeeks}/${delivery.totalWeeks})`
+                                  : `Semaine ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée · Sem. ${delivery.nextWeekNumber} le ${formatFrenchDateShort(new Date(delivery.nextUnlockAtMs!))}`}
+                            </p>
+                          )}
                         </div>
                         <span
                           className={`shrink-0 font-mono text-[10px] font-bold tabular-nums ${
-                            isPaid
+                            hasAccess
                               ? 'text-emerald-700 dark:text-emerald-400'
                               : 'text-amber-700 dark:text-amber-400'
                           }`}
                         >
-                          {isPaid ? 'Payé' : `À régler · ${formatPriceEuros(prog.priceCents)}`}
+                          {isFreeProgram
+                            ? 'Offert · Gratuit'
+                            : isPaid
+                              ? 'Payé'
+                              : `À régler · ${formatPriceEuros(prog.priceCents)}`}
                         </span>
                       </div>
 
@@ -1354,7 +1600,20 @@ export function MemberWeeklyScheduleCard({
                           <span>Aller au Jour 1</span>
                         </button>
 
-                        {!isPaid && mode === 'member' && (
+                        {delivery && delivery.hasAccess && delivery.unlockedWeeks > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilter('all');
+                              setWeekAnchor(currentWeekFirstDate);
+                            }}
+                            className="inline-flex min-h-[28px] items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 whitespace-nowrap cursor-pointer"
+                          >
+                            <span>Semaine {delivery.unlockedWeeks} (en cours)</span>
+                          </button>
+                        )}
+
+                        {!hasAccess && mode === 'member' && (
                           <button
                             type="button"
                             onClick={() => setPaymentTarget({ kind: 'program', program: prog })}
@@ -1365,7 +1624,7 @@ export function MemberWeeklyScheduleCard({
                           </button>
                         )}
 
-                        {!isPaid && mode === 'coach' && (
+                        {!hasAccess && mode === 'coach' && (
                           <button
                             type="button"
                             disabled={payingItemId === `program-${prog.id}`}
@@ -1380,7 +1639,7 @@ export function MemberWeeklyScheduleCard({
                           </button>
                         )}
 
-                        {isPaid && prog.vmaTestStatus === 'pending' && (
+                        {hasAccess && prog.vmaTestStatus === 'pending' && (
                           <button
                             type="button"
                             onClick={() => setVmaTestProgram(prog)}
@@ -1758,6 +2017,92 @@ export function MemberWeeklyScheduleCard({
                 />
               </div>
 
+              {/* Optional pricing for quick personalized session */}
+              <div className="rounded-lg border border-emerald-200/80 bg-white/80 p-3 dark:border-emerald-900/60 dark:bg-slate-900/50 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    <CreditCard className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                    Tarification de la séance
+                  </span>
+                  <div
+                    role="group"
+                    aria-label="Séance gratuite ou payante"
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-200/80 p-0.5 dark:bg-slate-800"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setFormIsPaid(false)}
+                      className={`min-h-[26px] rounded-md px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer transition-colors ${
+                        !formIsPaid
+                          ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-white'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Offert (gratuit)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormIsPaid(true)}
+                      className={`min-h-[26px] rounded-md px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer transition-colors ${
+                        formIsPaid
+                          ? 'bg-emerald-700 text-white shadow-xs dark:bg-emerald-600'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Payant
+                    </button>
+                  </div>
+                </div>
+
+                {formIsPaid ? (
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor={`sched-price-${mode}`}
+                        className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Tarif (€) *
+                      </label>
+                      <input
+                        id={`sched-price-${mode}`}
+                        type="number"
+                        min={1}
+                        max={2000}
+                        step="0.50"
+                        required
+                        value={formPriceEuros}
+                        onChange={(e) => setFormPriceEuros(e.target.value)}
+                        className="mt-1 min-h-[36px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor={`sched-pay-mode-${mode}`}
+                        className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Mode de règlement
+                      </label>
+                      <select
+                        id={`sched-pay-mode-${mode}`}
+                        value={formPaymentMode}
+                        onChange={(e) =>
+                          setFormPaymentMode(e.target.value as EventPaymentMode)
+                        }
+                        className="mt-1 min-h-[36px] w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      >
+                        <option value="both">Carte en ligne ou sur place</option>
+                        <option value="online">Carte en ligne uniquement</option>
+                        <option value="onsite">Sur place uniquement</option>
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                    Séance offerte : accessible immédiatement dans le planning de l’adhérent sans paiement.
+                  </p>
+                )}
+              </div>
+
               {formError && (
                 <div className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
                   {formError}
@@ -1789,6 +2134,66 @@ export function MemberWeeklyScheduleCard({
                 </button>
               </div>
             </form>
+          )}
+
+          {mode === 'member' && upcomingLockedWeeksInView.length > 0 && (
+            <div className="space-y-2">
+              {upcomingLockedWeeksInView.map(({ program, delivery, weekNumber: lockedWk, unlockAtMs }) => {
+                const targetAnchorDate =
+                  delivery.unlockedWeeks > 0
+                    ? delivery.weeks[delivery.unlockedWeeks - 1]?.firstSessionDate ??
+                      program.startAt.toDate()
+                    : program.startAt.toDate();
+                return (
+                  <div
+                    key={`locked-wk-${program.id}-${lockedWk}`}
+                    className="flex flex-col gap-2.5 rounded-xl border border-amber-200 bg-amber-50/75 p-3 text-xs text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/35 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-start gap-2 min-w-0">
+                      <Lock
+                        className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400"
+                        aria-hidden="true"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold">
+                          Semaine {lockedWk}/{delivery.totalWeeks} de « {program.title} » pas encore envoyée
+                        </p>
+                        <p className="mt-0.5 text-amber-900/90 dark:text-amber-200/90">
+                          {!delivery.hasAccess
+                            ? `Réglez votre programme (${formatPriceEuros(program.priceCents)}) pour recevoir d’abord la Semaine 1, puis chaque semaine suivante automatiquement.`
+                            : `Elle vous sera envoyée automatiquement à la fin de la semaine ${lockedWk - 1} (le ${formatFrenchDateLong(new Date(unlockAtMs))}).`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      {!delivery.hasAccess ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPaymentTarget({ kind: 'program', program })
+                          }
+                          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                        >
+                          <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>Régler {formatPriceEuros(program.priceCents)}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilter('all');
+                            setWeekAnchor(targetAnchorDate);
+                          }}
+                          className="inline-flex min-h-[32px] items-center rounded-lg border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100/60 dark:border-amber-700 dark:bg-slate-900 dark:text-amber-100 whitespace-nowrap cursor-pointer"
+                        >
+                          Revenir à la semaine {delivery.unlockedWeeks}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {/* Weekly Layout */}
@@ -1990,7 +2395,7 @@ export function MemberWeeklyScheduleCard({
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-sm border border-sky-300 bg-sky-100 dark:border-sky-700 dark:bg-sky-950" />
-                Plans running 12 sem. ({programEntries.length} séances)
+                Plans running 5–42 km ({programEntries.length} séances)
               </span>
             </div>
             <span className="font-mono tabular-nums">
