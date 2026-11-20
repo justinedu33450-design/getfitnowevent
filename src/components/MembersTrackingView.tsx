@@ -19,6 +19,7 @@ import {
   CoachAdminUser,
   CoachDirectoryEntry,
   DisciplineItem,
+  ExerciseLibraryItem,
   FitnessLevel,
   FollowUpStatus,
   MemberAggregate,
@@ -61,6 +62,7 @@ interface MembersTrackingViewProps {
   memberProfiles: MemberProfile[];
   memberSchedules?: MemberScheduleSession[];
   disciplines?: DisciplineItem[];
+  exercises?: ExerciseLibraryItem[];
   nowMs: number;
   unreadMessagesByMemberKey?: Map<string, number>;
   initialSelectedMemberKey?: string | null;
@@ -86,6 +88,7 @@ export function MembersTrackingView({
   memberProfiles,
   memberSchedules = [],
   disciplines = [],
+  exercises = [],
   nowMs,
   unreadMessagesByMemberKey,
   initialSelectedMemberKey,
@@ -843,6 +846,7 @@ export function MembersTrackingView({
           coachDirectory={coachDirectory}
           events={events}
           disciplines={disciplines}
+          exercises={exercises}
           nowMs={nowMs}
           unreadMessagesCount={
             unreadMessagesByMemberKey?.get(selectedMember.emailKey) ?? 0
@@ -1207,6 +1211,7 @@ interface MemberDetailDrawerProps {
   coachDirectory: CoachDirectoryEntry[];
   events: SportEvent[];
   disciplines: DisciplineItem[];
+  exercises?: ExerciseLibraryItem[];
   nowMs: number;
   unreadMessagesCount?: number;
   onMessageMember?: () => void;
@@ -1224,6 +1229,7 @@ function MemberDetailDrawer({
   coachDirectory,
   events,
   disciplines,
+  exercises = [],
   nowMs,
   unreadMessagesCount = 0,
   onMessageMember,
@@ -1671,12 +1677,15 @@ function MemberDetailDrawer({
                 mode="coach"
                 memberEmail={member.email}
                 memberName={`${member.firstName} ${member.lastName}`.trim() || member.email}
+                memberGoal={member.profile?.goal ?? ''}
+                memberFitnessLevel={member.profile?.fitnessLevel ?? ''}
                 currentUserUid={currentCoachUid}
                 currentCoachName={currentCoachName}
                 customSessions={memberScheduleSessions}
                 registrations={allRegistrations}
                 events={events}
                 disciplines={disciplines}
+                exercises={exercises}
                 coachDirectory={coachDirectory}
                 nowMs={nowMs}
                 compact

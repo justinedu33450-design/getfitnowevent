@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react';
 import {
+  BookOpen,
   CalendarCheck2,
   CalendarPlus,
   CheckCircle2,
@@ -8,12 +9,18 @@ import {
   ChevronRight,
   Circle,
   Clock,
+  CreditCard,
   Dumbbell,
   ExternalLink,
+  Footprints,
+  Gauge,
+  Lock,
   MapPin,
   MessageSquare,
   Pencil,
   Plus,
+  Receipt,
+  Target,
   Trash2,
   UserCheck,
   X,
@@ -21,21 +28,27 @@ import {
 import {
   CoachDirectoryEntry,
   DisciplineItem,
+  ExerciseLibraryItem,
   MemberScheduleSession,
   Registration,
   SportEvent,
+  TrainingProgram,
   VALIDATION_LIMITS,
 } from '../types';
 import {
   createMemberScheduleSession,
   deleteMemberScheduleSession,
+  payMemberScheduleSession,
+  payTrainingProgram,
   toggleMemberScheduleCompleted,
+  toggleTrainingProgramSessionCompleted,
   updateMemberScheduleSession,
 } from '../services/firestoreService';
 import {
   evaluateEventBooking,
   formatFrenchDateShort,
   formatFrenchTime,
+  formatPriceEuros,
   formatTimeRange,
   getEventCoachNames,
   getWeekDays,
@@ -47,18 +60,35 @@ import {
   getDisciplineIconKey,
   getDisciplineStyle,
 } from '../utils/disciplineColors';
+import {
+  formatExerciseParamsSummary,
+  getExerciseCategoryMeta,
+} from '../utils/exerciseLibrary';
+import {
+  GeneratedProgramSession,
+  generateRunningProgramSessions,
+  RUNNING_DISTANCE_TEMPLATES,
+} from '../utils/runningProgramGenerator';
 import { DisciplineIcon } from './DisciplineIcon';
+import { ProgramBuilderModal } from './ProgramBuilderModal';
+import { PayableProgramTarget, ProgramPaymentModal } from './ProgramPaymentModal';
+import { RunningProgramBuilderModal } from './RunningProgramBuilderModal';
+import { VmaTestModal } from './VmaTestModal';
 
 interface MemberWeeklyScheduleCardProps {
   mode: 'member' | 'coach';
   memberEmail: string;
   memberName: string;
+  memberGoal?: string;
+  memberFitnessLevel?: string;
   currentUserUid: string;
   currentCoachName?: string;
   customSessions: MemberScheduleSession[];
+  trainingPrograms?: TrainingProgram[];
   registrations: Registration[];
   events: SportEvent[];
   disciplines: DisciplineItem[];
+  exercises?: ExerciseLibraryItem[];
   coachDirectory?: CoachDirectoryEntry[];
   nowMs: number;
   compact?: boolean;
@@ -67,11 +97,11 @@ interface MemberWeeklyScheduleCardProps {
   onRequestCoachProgram?: (coach?: CoachDirectoryEntry) => void;
 }
 
-type ScheduleFilter = 'all' | 'custom' | 'events';
+type ScheduleFilter = 'all' | 'custom' | 'events' | 'programs';
 
 interface WeeklyScheduleEntry {
   id: string;
-  kind: 'event' | 'custom';
+  kind: 'event' | 'custom' | 'program';
   startDate: Date;
   durationMinutes: number;
   title: string;
@@ -84,6 +114,8 @@ interface WeeklyScheduleEntry {
   matchedEvent?: SportEvent | null;
   registration?: Registration;
   customSession?: MemberScheduleSession;
+  program?: TrainingProgram;
+  programSession?: GeneratedProgramSession;
 }
 
 const DURATION_PRESETS = [30, 45, 60, 75, 90, 120];
@@ -102,12 +134,16 @@ export function MemberWeeklyScheduleCard({
   mode,
   memberEmail,
   memberName,
+  memberGoal = '',
+  memberFitnessLevel = '',
   currentUserUid,
   currentCoachName = '',
   customSessions,
+  trainingPrograms = [],
   registrations,
   events,
   disciplines,
+  exercises = [],
   coachDirectory = [],
   nowMs,
   compact = false,
@@ -144,6 +180,17 @@ export function MemberWeeklyScheduleCard({
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [programBuilderState, setProgramBuilderState] = useState<{
+    open: boolean;
+    editingSession: MemberScheduleSession | null;
+  }>({ open: false, editingSession: null });
+  const [runningProgramModalOpen, setRunningProgramModalOpen] = useState(false);
+  const [paymentTarget, setPaymentTarget] =
+    useState<PayableProgramTarget | null>(null);
+  const [vmaTestProgram, setVmaTestProgram] = useState<TrainingProgram | null>(
+    null
+  );
+  const [payingItemId, setPayingItemId] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -262,11 +309,49 @@ export function MemberWeeklyScheduleCard({
     });
   }, [customSessions, nowMs]);
 
+  const programEntries = useMemo<WeeklyScheduleEntry[]>(() => {
+    if (!memberEmailLower || trainingPrograms.length === 0) return [];
+    const list: WeeklyScheduleEntry[] = [];
+    trainingPrograms.forEach((prog) => {
+      if (
+        prog.memberEmail.trim().toLowerCase() !== memberEmailLower &&
+        prog.memberEmailKey !== memberEmailLower
+      ) {
+        return;
+      }
+      const generated = generateRunningProgramSessions(prog);
+      generated.forEach((gs) => {
+        const endMs =
+          gs.scheduledDate.getTime() + gs.durationMinutes * 60 * 1000;
+        list.push({
+          id: `program-${prog.id}-${gs.key}`,
+          kind: 'program',
+          startDate: gs.scheduledDate,
+          durationMinutes: gs.durationMinutes,
+          title: gs.title,
+          discipline: gs.discipline,
+          location: gs.targetPaceLabel,
+          coachName: prog.coachName,
+          notes: gs.coachNotes,
+          attendedOrCompleted: gs.completed,
+          isPast: nowMs >= endMs,
+          program: prog,
+          programSession: gs,
+        });
+      });
+    });
+    return list;
+  }, [trainingPrograms, memberEmailLower, nowMs]);
+
   const allEntries = useMemo(() => {
-    const combined = [...selfRegisteredEntries, ...customEntries];
+    const combined = [
+      ...selfRegisteredEntries,
+      ...customEntries,
+      ...programEntries,
+    ];
     combined.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
     return combined;
-  }, [selfRegisteredEntries, customEntries]);
+  }, [selfRegisteredEntries, customEntries, programEntries]);
 
   const weekEntries = useMemo(() => {
     return allEntries.filter((item) => {
@@ -274,6 +359,7 @@ export function MemberWeeklyScheduleCard({
       if (ms < weekStartMs || ms > weekEndMs) return false;
       if (filter === 'custom' && item.kind !== 'custom') return false;
       if (filter === 'events' && item.kind !== 'event') return false;
+      if (filter === 'programs' && item.kind !== 'program') return false;
       return true;
     });
   }, [allEntries, weekStartMs, weekEndMs, filter]);
@@ -287,6 +373,7 @@ export function MemberWeeklyScheduleCard({
       total: inWeekAll.length,
       events: inWeekAll.filter((i) => i.kind === 'event').length,
       custom: inWeekAll.filter((i) => i.kind === 'custom').length,
+      programs: inWeekAll.filter((i) => i.kind === 'program').length,
     };
   }, [allEntries, weekStartMs, weekEndMs]);
 
@@ -334,6 +421,17 @@ export function MemberWeeklyScheduleCard({
   const openEditForm = (session: MemberScheduleSession) => {
     setActionFeedback(null);
     setFormError(null);
+    if (
+      mode === 'coach' &&
+      ((session.exercises && session.exercises.length > 0) ||
+        Boolean(session.objective))
+    ) {
+      setIsFormOpen(false);
+      setEditingSession(null);
+      setProgramBuilderState({ open: true, editingSession: session });
+      setExpanded(true);
+      return;
+    }
     setEditingSession(session);
     const d = session.startAt.toDate();
     setFormTitle(session.title);
@@ -438,6 +536,15 @@ export function MemberWeeklyScheduleCard({
   };
 
   const handleToggleCompleted = async (session: MemberScheduleSession) => {
+    if (
+      mode === 'member' &&
+      session.createdByRole === 'coach' &&
+      session.isPaid &&
+      session.paymentStatus !== 'paid'
+    ) {
+      setPaymentTarget({ kind: 'session', session });
+      return;
+    }
     setActionFeedback(null);
     setTogglingId(session.id);
     try {
@@ -452,6 +559,89 @@ export function MemberWeeklyScheduleCard({
       });
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleToggleProgramSessionCompleted = async (
+    program: TrainingProgram,
+    sessionKey: string,
+    currentlyCompleted: boolean
+  ) => {
+    if (mode === 'member' && program.paymentStatus !== 'paid') {
+      setPaymentTarget({ kind: 'program', program });
+      return;
+    }
+    const idKey = `program-${program.id}-${sessionKey}`;
+    setActionFeedback(null);
+    setTogglingId(idKey);
+    try {
+      await toggleTrainingProgramSessionCompleted(
+        program,
+        sessionKey,
+        !currentlyCompleted
+      );
+    } catch (err) {
+      setActionFeedback({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Impossible de mettre à jour cette séance du programme.',
+      });
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleCoachMarkSessionPaid = async (session: MemberScheduleSession) => {
+    setActionFeedback(null);
+    setPayingItemId(`custom-${session.id}`);
+    try {
+      await payMemberScheduleSession({
+        session,
+        method: 'onsite',
+        isCoach: true,
+      });
+      setActionFeedback({
+        type: 'success',
+        text: `Paiement confirmé pour « ${session.title} ».`,
+      });
+    } catch (err) {
+      setActionFeedback({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Impossible de confirmer le paiement.',
+      });
+    } finally {
+      setPayingItemId(null);
+    }
+  };
+
+  const handleCoachMarkProgramPaid = async (program: TrainingProgram) => {
+    setActionFeedback(null);
+    setPayingItemId(`program-${program.id}`);
+    try {
+      await payTrainingProgram({
+        program,
+        method: 'onsite',
+        isCoach: true,
+      });
+      setActionFeedback({
+        type: 'success',
+        text: `Paiement confirmé pour « ${program.title} ». Le programme et le test VMA du Jour 1 sont débloqués.`,
+      });
+    } catch (err) {
+      setActionFeedback({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Impossible de confirmer le paiement du programme.',
+      });
+    } finally {
+      setPayingItemId(null);
     }
   };
 
@@ -482,7 +672,220 @@ export function MemberWeeklyScheduleCard({
     const style = getDisciplineStyle(entry.discipline, disciplines);
     const iconKey = getDisciplineIconKey(entry.discipline, disciplines);
     const isEvent = entry.kind === 'event';
+    const isProgram = entry.kind === 'program';
     const session = entry.customSession;
+    const prog = entry.program;
+    const progSession = entry.programSession;
+
+    if (isProgram && prog && progSession) {
+      const tpl = RUNNING_DISTANCE_TEMPLATES[prog.distance];
+      const isPaid = prog.paymentStatus === 'paid';
+      const isLockedForMember = mode === 'member' && !isPaid;
+      const canToggle = isPaid || mode === 'coach';
+
+      return (
+        <div
+          key={entry.id}
+          className={`rounded-lg border p-2.5 text-xs transition-colors ${
+            progSession.isVmaTest
+              ? 'border-sky-300 bg-sky-50/60 dark:border-sky-800 dark:bg-sky-950/30'
+              : 'border-sky-200/90 bg-white dark:border-sky-900/60 dark:bg-slate-900/90'
+          } ${entry.attendedOrCompleted ? 'opacity-85' : ''}`}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Footprints
+                className="h-3.5 w-3.5 shrink-0 text-sky-700 dark:text-sky-400"
+                aria-hidden="true"
+              />
+              <span className="truncate font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+                {formatTimeRange(entry.startDate, entry.durationMinutes)}
+              </span>
+            </div>
+
+            {canToggle ? (
+              <button
+                type="button"
+                disabled={togglingId === entry.id}
+                onClick={() =>
+                  void handleToggleProgramSessionCompleted(
+                    prog,
+                    progSession.key,
+                    progSession.completed
+                  )
+                }
+                title={
+                  progSession.completed
+                    ? 'Marquer comme à faire'
+                    : 'Marquer comme effectuée'
+                }
+                aria-label={
+                  progSession.completed
+                    ? `Marquer ${progSession.title} comme à faire`
+                    : `Marquer ${progSession.title} comme terminée`
+                }
+                className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap cursor-pointer ${
+                  progSession.completed
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
+                }`}
+              >
+                {progSession.completed ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <Circle className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {inDrawerCompact && (
+                  <span>{progSession.completed ? 'Terminée' : 'À faire'}</span>
+                )}
+              </button>
+            ) : (
+              <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
+                <Lock className="h-3 w-3" aria-hidden="true" />
+                {formatPriceEuros(prog.priceCents)}
+              </span>
+            )}
+          </div>
+
+          <p className="mt-1 font-mono text-[10px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
+            Plan {tpl.shortLabel} · Sem. {progSession.weekNumber}/12 ·{' '}
+            {progSession.focusLabel}
+          </p>
+
+          <p
+            className={`mt-0.5 font-display text-xs font-bold leading-snug text-slate-900 dark:text-white ${
+              entry.attendedOrCompleted ? 'line-through decoration-slate-400' : ''
+            }`}
+          >
+            {progSession.title}
+          </p>
+
+          <p className="mt-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+            {progSession.targetPaceLabel}
+          </p>
+
+          {prog.coachName && (
+            <p className="mt-1 flex items-center gap-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
+              <UserCheck className="h-3 w-3 shrink-0" aria-hidden="true" />
+              <span className="truncate">Coach : {prog.coachName}</span>
+            </p>
+          )}
+
+          {isLockedForMember ? (
+            <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 dark:border-amber-800/70 dark:bg-amber-950/35">
+              <p className="flex items-start gap-1.5 text-[11px] font-medium text-amber-950 dark:text-amber-100">
+                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
+                <span>
+                  Programme personnalisé payant ({formatPriceEuros(prog.priceCents)}) : réglez pour débloquer le contenu et vos allures.
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={() => setPaymentTarget({ kind: 'program', program: prog })}
+                className="inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+              >
+                <CreditCard className="h-3 w-3" aria-hidden="true" />
+                <span>Régler {formatPriceEuros(prog.priceCents)}</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              {!isPaid && mode === 'coach' && (
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35">
+                  <span className="font-mono text-[10px] font-semibold text-amber-900 dark:text-amber-200 tabular-nums">
+                    Paiement en attente · {formatPriceEuros(prog.priceCents)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={payingItemId === `program-${prog.id}`}
+                    onClick={() => void handleCoachMarkProgramPaid(prog)}
+                    className="rounded bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                  >
+                    {payingItemId === `program-${prog.id}`
+                      ? 'Validation...'
+                      : 'Valider paiement'}
+                  </button>
+                </div>
+              )}
+
+              {isPaid && progSession.isVmaTest && prog.vmaTestStatus === 'pending' && (
+                <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50/80 p-2.5 dark:border-sky-800 dark:bg-sky-950/50">
+                  <p className="text-[11px] font-semibold text-sky-950 dark:text-sky-100">
+                    Test VMA Jour 1 requis pour calculer vos allures des 12 semaines.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setVmaTestProgram(prog)}
+                    className="mt-1.5 inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-sky-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-sky-800 dark:bg-sky-600 dark:hover:bg-sky-500 whitespace-nowrap cursor-pointer"
+                  >
+                    <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>
+                      {mode === 'coach'
+                        ? 'Saisir le test VMA'
+                        : 'Passer / saisir mon test VMA'}
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {progSession.exercises.length > 0 && (
+                <div className="mt-2 space-y-1.5 rounded-lg border border-slate-100 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-800/40">
+                  {progSession.exercises.map((ex, idx) => (
+                    <div
+                      key={`${ex.exerciseId}-${idx}`}
+                      className="rounded-md border border-slate-200/80 bg-white px-2 py-1.5 dark:border-slate-700/70 dark:bg-slate-900/90"
+                    >
+                      <p className="font-semibold text-[11px] leading-snug text-slate-900 dark:text-white">
+                        <span className="mr-1 font-mono text-[10px] text-slate-400">
+                          {idx + 1}.
+                        </span>
+                        {ex.name}
+                      </p>
+                      <p className="mt-0.5 font-mono text-[10px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+                        {formatExerciseParamsSummary(ex)}
+                      </p>
+                      {ex.notes && (
+                        <p className="mt-0.5 text-[10px] italic text-slate-500 dark:text-slate-400">
+                          {ex.notes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {progSession.coachNotes && (
+                <p className="mt-1.5 rounded-md bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
+                  {progSession.coachNotes}
+                </p>
+              )}
+
+              {isPaid && mode === 'member' && (
+                <div className="mt-2 flex items-center justify-end border-t border-slate-100 pt-1.5 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentTarget({ kind: 'program', program: prog })}
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white whitespace-nowrap cursor-pointer"
+                  >
+                    <Receipt className="h-3 w-3" aria-hidden="true" />
+                    <span>Reçu ({formatPriceEuros(prog.priceCents)})</span>
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    const isCoachPaidSession =
+      !isEvent &&
+      Boolean(session) &&
+      session!.createdByRole === 'coach' &&
+      Boolean(session!.isPaid);
+    const isUnpaidCoachSession =
+      isCoachPaidSession && session!.paymentStatus !== 'paid';
+    const isLockedCustomForMember = mode === 'member' && isUnpaidCoachSession;
 
     return (
       <div
@@ -506,7 +909,7 @@ export function MemberWeeklyScheduleCard({
             </span>
           </div>
 
-          {!isEvent && session && (
+          {!isEvent && session && !isLockedCustomForMember && (
             <button
               type="button"
               disabled={togglingId === session.id}
@@ -538,6 +941,13 @@ export function MemberWeeklyScheduleCard({
             </button>
           )}
 
+          {!isEvent && session && isLockedCustomForMember && (
+            <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
+              <Lock className="h-3 w-3" aria-hidden="true" />
+              {formatPriceEuros(session.priceCents ?? 1900)}
+            </span>
+          )}
+
           {isEvent && (
             <span className="shrink-0 font-mono text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
               {entry.attendedOrCompleted ? 'Validée' : 'Inscrit'}
@@ -558,7 +968,15 @@ export function MemberWeeklyScheduleCard({
           {isEvent
             ? ' · Événement inscrit'
             : session?.createdByRole === 'coach'
-              ? ' · Programme coach'
+              ? ` · Programme coach${
+                  isCoachPaidSession
+                    ? ` · ${
+                        session.paymentStatus === 'paid'
+                          ? `Réglé ${formatPriceEuros(session.priceCents ?? 1900)}`
+                          : `À régler ${formatPriceEuros(session.priceCents ?? 1900)}`
+                      }`
+                    : ''
+                }`
               : ' · Programme perso'}
         </p>
 
@@ -579,10 +997,101 @@ export function MemberWeeklyScheduleCard({
           </div>
         )}
 
-        {!isEvent && entry.notes && (
-          <p className="mt-1.5 line-clamp-3 whitespace-pre-line rounded-md bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
-            {entry.notes}
+        {!isEvent && session?.objective && (
+          <p className="mt-1 inline-flex max-w-full items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+            <Target className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <span className="truncate">{session.objective}</span>
           </p>
+        )}
+
+        {isLockedCustomForMember && session ? (
+          <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 dark:border-amber-800/70 dark:bg-amber-950/35">
+            <p className="flex items-start gap-1.5 text-[11px] font-medium text-amber-950 dark:text-amber-100">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
+              <span>
+                Séance personnalisée payante ({formatPriceEuros(session.priceCents ?? 1900)}) : réglez pour accéder au détail des exercices.
+              </span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setPaymentTarget({ kind: 'session', session })}
+              className="inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+            >
+              <CreditCard className="h-3 w-3" aria-hidden="true" />
+              <span>Régler {formatPriceEuros(session.priceCents ?? 1900)}</span>
+            </button>
+          </div>
+        ) : (
+          <>
+            {!isEvent &&
+              session &&
+              mode === 'coach' &&
+              isUnpaidCoachSession && (
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35">
+                  <span className="font-mono text-[10px] font-semibold text-amber-900 dark:text-amber-200 tabular-nums">
+                    À régler · {formatPriceEuros(session.priceCents ?? 1900)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={payingItemId === `custom-${session.id}`}
+                    onClick={() => void handleCoachMarkSessionPaid(session)}
+                    className="rounded bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                  >
+                    {payingItemId === `custom-${session.id}`
+                      ? 'Confirmation...'
+                      : 'Confirmer paiement'}
+                  </button>
+                </div>
+              )}
+
+            {!isEvent && session?.exercises && session.exercises.length > 0 && (
+              <div className="mt-2 space-y-1.5 rounded-lg border border-slate-100 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-800/40">
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 tabular-nums">
+                  {session.exercises.length} exercice
+                  {session.exercises.length > 1 ? 's' : ''}
+                </p>
+                <div className="space-y-1.5">
+                  {session.exercises.map((ex, idx) => {
+                    const catMeta = getExerciseCategoryMeta(ex.category);
+                    return (
+                      <div
+                        key={`${ex.exerciseId || ex.name}-${idx}`}
+                        className="rounded-md border border-slate-200/80 bg-white px-2 py-1.5 dark:border-slate-700/70 dark:bg-slate-900/90"
+                      >
+                        <div className="flex items-start justify-between gap-1.5">
+                          <p className="min-w-0 font-semibold text-[11px] leading-snug text-slate-900 dark:text-white">
+                            <span className="mr-1 font-mono text-[10px] text-slate-400">
+                              {idx + 1}.
+                            </span>
+                            {ex.name}
+                          </p>
+                          <span
+                            className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold ${catMeta.badgeClass}`}
+                          >
+                            {catMeta.shortLabel}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 font-mono text-[10px] leading-relaxed text-emerald-700 dark:text-emerald-400 tabular-nums">
+                          {formatExerciseParamsSummary(ex)}
+                        </p>
+                        {ex.notes && (
+                          <p className="mt-0.5 text-[10px] italic text-slate-500 dark:text-slate-400">
+                            {ex.notes}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {!isEvent && entry.notes && (
+              <p className="mt-1.5 line-clamp-3 whitespace-pre-line rounded-md bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
+                {entry.notes}
+              </p>
+            )}
+          </>
         )}
 
         {/* Footer actions */}
@@ -599,50 +1108,66 @@ export function MemberWeeklyScheduleCard({
           </div>
         )}
 
-        {!isEvent && session && (
-          <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5 border-t border-slate-100 pt-1.5 dark:border-slate-800">
-            {confirmDeleteId === session.id ? (
-              <>
+        {!isEvent &&
+          session &&
+          (mode === 'coach' ||
+            session.createdByRole === 'member' ||
+            (isCoachPaidSession && session.paymentStatus === 'paid')) && (
+            <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5 border-t border-slate-100 pt-1.5 dark:border-slate-800">
+              {isCoachPaidSession && session.paymentStatus === 'paid' && (
                 <button
                   type="button"
-                  disabled={deletingId === session.id}
-                  onClick={() => void handleDeleteSession(session.id)}
-                  className="rounded-md bg-rose-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                  onClick={() => setPaymentTarget({ kind: 'session', session })}
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40 whitespace-nowrap cursor-pointer"
                 >
-                  {deletingId === session.id ? 'Suppr...' : 'Confirmer'}
+                  <Receipt className="h-3 w-3" aria-hidden="true" />
+                  <span>Reçu</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteId(null)}
-                  className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap cursor-pointer"
-                >
-                  Annuler
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => openEditForm(session)}
-                  aria-label={`Modifier ${session.title}`}
-                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white whitespace-nowrap cursor-pointer"
-                >
-                  <Pencil className="h-3 w-3" aria-hidden="true" />
-                  <span>Modifier</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteId(session.id)}
-                  aria-label={`Supprimer ${session.title}`}
-                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 whitespace-nowrap cursor-pointer"
-                >
-                  <Trash2 className="h-3 w-3" aria-hidden="true" />
-                  <span>Suppr.</span>
-                </button>
-              </>
-            )}
-          </div>
-        )}
+              )}
+
+              {(mode === 'coach' || session.createdByRole === 'member') &&
+                (confirmDeleteId === session.id ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={deletingId === session.id}
+                      onClick={() => void handleDeleteSession(session.id)}
+                      className="rounded-md bg-rose-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                    >
+                      {deletingId === session.id ? 'Suppr...' : 'Confirmer'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => openEditForm(session)}
+                      aria-label={`Modifier ${session.title}`}
+                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white whitespace-nowrap cursor-pointer"
+                    >
+                      <Pencil className="h-3 w-3" aria-hidden="true" />
+                      <span>Modifier</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(session.id)}
+                      aria-label={`Supprimer ${session.title}`}
+                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 whitespace-nowrap cursor-pointer"
+                    >
+                      <Trash2 className="h-3 w-3" aria-hidden="true" />
+                      <span>Suppr.</span>
+                    </button>
+                  </>
+                ))}
+            </div>
+          )}
       </div>
     );
   };
@@ -681,7 +1206,7 @@ export function MemberWeeklyScheduleCard({
               Semaine {weekNumber} ({weekRangeLabel}) · {weekCounts.total}{' '}
               séance{weekCounts.total > 1 ? 's' : ''} ({weekCounts.events}{' '}
               événement{weekCounts.events > 1 ? 's' : ''}, {weekCounts.custom}{' '}
-              perso)
+              perso, {weekCounts.programs} plan 12 sem.)
             </p>
           </div>
         </div>
@@ -768,7 +1293,11 @@ export function MemberWeeklyScheduleCard({
                     },
                     {
                       id: 'custom',
-                      label: `Programme perso (${weekCounts.custom})`,
+                      label: `Séances perso (${weekCounts.custom})`,
+                    },
+                    {
+                      id: 'programs',
+                      label: `Programmes 5–42 km (${weekCounts.programs})`,
                     },
                   ] as const
                 ).map((tab) => (
@@ -789,6 +1318,34 @@ export function MemberWeeklyScheduleCard({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {mode === 'coach' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActionFeedback(null);
+                      setIsFormOpen(false);
+                      setRunningProgramModalOpen(true);
+                    }}
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <Footprints className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Programme 5–42 km</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActionFeedback(null);
+                      setIsFormOpen(false);
+                      setProgramBuilderState({ open: true, editingSession: null });
+                    }}
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Programme (bibliothèque)</span>
+                  </button>
+                </>
+              )}
               {mode === 'member' && onRequestCoachProgram && (
                 <button
                   type="button"
@@ -1253,12 +1810,104 @@ export function MemberWeeklyScheduleCard({
                 <span className="h-2.5 w-2.5 rounded-sm border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800" />
                 Séances personnalisées ({customEntries.length} au total)
               </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm border border-sky-300 bg-sky-100 dark:border-sky-700 dark:bg-sky-950" />
+                Plans running 12 sem. ({programEntries.length} séances)
+              </span>
             </div>
             <span className="font-mono tabular-nums">
               {formatFrenchTime(today)} · Mis à jour en temps réel
             </span>
           </div>
         </div>
+      )}
+
+      {mode === 'coach' && programBuilderState.open && (
+        <ProgramBuilderModal
+          coachUid={currentUserUid}
+          coachName={currentCoachName || 'Coach'}
+          coachDirectory={coachDirectory}
+          disciplines={disciplines}
+          exercises={exercises}
+          memberCandidates={[
+            {
+              email: memberEmail,
+              emailKey: memberEmailLower,
+              name: memberName,
+              goal: memberGoal,
+              fitnessLevel: memberFitnessLevel,
+            },
+          ]}
+          initialMember={{
+            email: memberEmail,
+            emailKey: memberEmailLower,
+            name: memberName,
+            goal: memberGoal,
+            fitnessLevel: memberFitnessLevel,
+          }}
+          editingSession={programBuilderState.editingSession}
+          onClose={() =>
+            setProgramBuilderState({ open: false, editingSession: null })
+          }
+          onSaved={(msg) => {
+            if (!programBuilderState.editingSession) {
+              setWeekAnchor(new Date());
+            }
+            setActionFeedback({ type: 'success', text: msg });
+          }}
+        />
+      )}
+
+      {mode === 'coach' && runningProgramModalOpen && (
+        <RunningProgramBuilderModal
+          coachUid={currentUserUid}
+          coachName={currentCoachName || 'Coach'}
+          coachDirectory={coachDirectory}
+          memberCandidates={[
+            {
+              email: memberEmail,
+              emailKey: memberEmailLower,
+              name: memberName,
+              goal: memberGoal,
+              fitnessLevel: memberFitnessLevel,
+            },
+          ]}
+          initialMember={{
+            email: memberEmail,
+            emailKey: memberEmailLower,
+            name: memberName,
+            goal: memberGoal,
+            fitnessLevel: memberFitnessLevel,
+          }}
+          onClose={() => setRunningProgramModalOpen(false)}
+          onSaved={(msg) => {
+            setWeekAnchor(new Date());
+            setActionFeedback({ type: 'success', text: msg });
+          }}
+        />
+      )}
+
+      {paymentTarget && (
+        <ProgramPaymentModal
+          target={paymentTarget}
+          onClose={() => setPaymentTarget(null)}
+          onPaid={(msg) => setActionFeedback({ type: 'success', text: msg })}
+        />
+      )}
+
+      {vmaTestProgram && (
+        <VmaTestModal
+          program={vmaTestProgram}
+          isCoach={mode === 'coach'}
+          nowMs={nowMs}
+          onClose={() => setVmaTestProgram(null)}
+          onSubmitted={(vma) =>
+            setActionFeedback({
+              type: 'success',
+              text: `Test VMA validé (${vma.toFixed(1)} km/h) ! Toutes les allures des 12 semaines sont désormais calculées.`,
+            })
+          }
+        />
       )}
     </div>
   );

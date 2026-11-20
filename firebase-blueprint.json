@@ -1411,6 +1411,55 @@
           "type": "string",
           "maxLength": 80
         },
+        "objective": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Objectif sportif ciblé par ce programme personnalisé."
+        },
+        "exercises": {
+          "type": "array",
+          "description": "Liste structurée et paramétrable (max 25) d'exercices issus de la bibliothèque (répétitions, durée, tours, pause, repos)."
+        },
+        "isPaid": {
+          "type": "boolean",
+          "description": "Indique si ce programme personnalisé coach est payant pour l'adhérent."
+        },
+        "priceCents": {
+          "type": "integer",
+          "description": "Tarif du programme personnalisé en centimes d'euro (100 à 200000)."
+        },
+        "currency": {
+          "type": "string",
+          "enum": ["EUR"]
+        },
+        "paymentMode": {
+          "type": "string",
+          "enum": ["online", "onsite", "both"]
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["free", "paid", "pending"]
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["free", "card", "onsite"]
+        },
+        "paymentReference": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "cardBrand": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "cardLast4": {
+          "type": "string",
+          "maxLength": 4
+        },
+        "paidAt": {
+          "type": "string",
+          "format": "date-time"
+        },
         "createdByUid": {
           "type": "string",
           "minLength": 1,
@@ -1448,6 +1497,248 @@
         "createdByUid",
         "createdByRole",
         "completed",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Exercise": {
+      "title": "Exercise",
+      "description": "Exercice paramétrable de la bibliothèque du coach (renforcement musculaire, running spécifique, mobilité) utilisé pour préparer les programmes personnalisés.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "category": {
+          "type": "string",
+          "enum": ["strength", "running", "mobility"]
+        },
+        "targetObjectives": {
+          "type": "array",
+          "description": "Objectifs sportifs associés (max 8)."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "defaultParams": {
+          "type": "object",
+          "description": "Paramètres par défaut : repetitions, durationSeconds, setsOrRounds, intraSetPauseSeconds, restBetweenRoundsSeconds."
+        },
+        "intensityHint": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "isPreset": {
+          "type": "boolean"
+        },
+        "createdBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "name",
+        "category",
+        "targetObjectives",
+        "description",
+        "defaultParams",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TrainingProgram": {
+      "title": "TrainingProgram",
+      "description": "Programme running personnalisé payant sur 12 semaines (5km, 10km, 21km ou 42km) avec objectif de temps, nombre de séances hebdomadaires paramétrable et test VMA le premier jour.",
+      "type": "object",
+      "properties": {
+        "memberEmail": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 120,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "memberEmailKey": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 48,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "memberName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 125
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "distance": {
+          "type": "string",
+          "enum": ["5km", "10km", "21km", "42km"]
+        },
+        "durationWeeks": {
+          "type": "integer",
+          "description": "Durée fixe du programme en semaines (12)."
+        },
+        "sessionsPerWeek": {
+          "type": "integer",
+          "description": "Nombre paramétrable de séances par semaine (2 à 6)."
+        },
+        "preferredDays": {
+          "type": "array",
+          "description": "Jours de la semaine retenus (1=Lun à 7=Dim)."
+        },
+        "targetTimeSeconds": {
+          "type": "integer",
+          "description": "Objectif de temps final de l'adhérent en secondes."
+        },
+        "startAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date de début du programme (Jour 1 = Test VMA)."
+        },
+        "vmaTestStatus": {
+          "type": "string",
+          "enum": ["pending", "completed"]
+        },
+        "vmaKmh": {
+          "type": "number",
+          "description": "VMA évaluée lors du test du premier jour (en km/h, 0 si en attente)."
+        },
+        "vmaTestDistanceMeters": {
+          "type": "integer",
+          "description": "Distance parcourue lors du test VMA (en mètres)."
+        },
+        "vmaTestDurationSeconds": {
+          "type": "integer",
+          "description": "Durée du test VMA (ex. 360 s pour Demi-Cooper)."
+        },
+        "vmaTestedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedSessionKeys": {
+          "type": "array",
+          "description": "Identifiants des séances cochées comme réalisées (max 100)."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "coachUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "coachName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "isPaid": {
+          "type": "boolean"
+        },
+        "priceCents": {
+          "type": "integer",
+          "description": "Tarif obligatoire du programme personnalisé en centimes d'euro (100 à 200000)."
+        },
+        "currency": {
+          "type": "string",
+          "enum": ["EUR"]
+        },
+        "paymentMode": {
+          "type": "string",
+          "enum": ["online", "onsite", "both"]
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["pending", "paid"]
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["", "card", "onsite"]
+        },
+        "paymentReference": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "cardBrand": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "cardLast4": {
+          "type": "string",
+          "maxLength": 4
+        },
+        "paidAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["awaiting_payment", "awaiting_vma", "active", "completed"]
+        },
+        "createdByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "memberEmail",
+        "memberEmailKey",
+        "memberName",
+        "title",
+        "distance",
+        "durationWeeks",
+        "sessionsPerWeek",
+        "preferredDays",
+        "targetTimeSeconds",
+        "startAt",
+        "vmaTestStatus",
+        "vmaKmh",
+        "vmaTestDistanceMeters",
+        "vmaTestDurationSeconds",
+        "completedSessionKeys",
+        "notes",
+        "coachUid",
+        "coachName",
+        "isPaid",
+        "priceCents",
+        "currency",
+        "paymentMode",
+        "paymentStatus",
+        "paymentMethod",
+        "paymentReference",
+        "cardBrand",
+        "cardLast4",
+        "status",
+        "createdByUid",
         "createdAt",
         "updatedAt"
       ]
@@ -1517,6 +1808,14 @@
     "/memberSchedules/{sessionId}": {
       "schema": { "$ref": "#/entities/MemberScheduleSession" },
       "description": "Séances hebdomadaires personnalisées du programme individuel d'un adhérent (privées pour l'adhérent et les coachs)."
+    },
+    "/exercises/{exerciseId}": {
+      "schema": { "$ref": "#/entities/Exercise" },
+      "description": "Bibliothèque d'exercices du coach (renforcement musculaire, running spécifique, mobilité) réservée aux coachs actifs."
+    },
+    "/trainingPrograms/{programId}": {
+      "schema": { "$ref": "#/entities/TrainingProgram" },
+      "description": "Programmes running personnalisés payants sur 12 semaines (5km, 10km, 21km, 42km) avec test VMA initial et allures calculées."
     }
   }
 }

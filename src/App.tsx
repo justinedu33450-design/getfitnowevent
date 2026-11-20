@@ -6,7 +6,7 @@ import {
 } from 'firebase/auth';
 import { collection, getDocsFromServer, query, where } from 'firebase/firestore';
 import { APIProvider } from '@vis.gl/react-google-maps';
-import { AlertTriangle, Heart, Sparkles, X } from 'lucide-react';
+import { AlertTriangle, BookOpen, Calendar, Heart, Sparkles, X } from 'lucide-react';
 import { auth, BOOTSTRAPPED_COACH_EMAIL, db } from './firebase';
 import {
   cancelMyRegistration,
@@ -29,6 +29,7 @@ import {
   subscribeCoachInvites,
   subscribeDisciplines,
   subscribeEvents,
+  subscribeExercises,
   subscribeMemberConversations,
   subscribeMembers,
   subscribeMyAdminStatus,
@@ -58,6 +59,7 @@ import {
   CustomDiscipline,
   EventRatingSummary,
   EventReview,
+  ExerciseLibraryItem,
   MemberAggregate,
   MemberNotification,
   MemberProfile,
@@ -88,6 +90,8 @@ import { BookingModal } from './components/BookingModal';
 import { EventFormModal } from './components/EventFormModal';
 import { EventRosterDrawer } from './components/EventRosterDrawer';
 import { CoachEventsView } from './components/CoachEventsView';
+import { ExerciseLibraryView } from './components/ExerciseLibraryView';
+import { ProgramMemberCandidate } from './components/ProgramBuilderModal';
 import { MembersTrackingView } from './components/MembersTrackingView';
 import { CoachesAdminView } from './components/CoachesAdminView';
 import { CoachAuthGate } from './components/CoachAuthGate';
@@ -173,6 +177,8 @@ export default function App() {
   const [memberSchedules, setMemberSchedules] = useState<
     MemberScheduleSession[]
   >([]);
+  const [exercises, setExercises] = useState<ExerciseLibraryItem[]>([]);
+  const [manageTab, setManageTab] = useState<'events' | 'exercises'>('events');
   const [pendingMessageTarget, setPendingMessageTarget] =
     useState<PendingMessageTarget | null>(null);
   const [pendingMemberTrackingKey, setPendingMemberTrackingKey] = useState<
@@ -624,6 +630,16 @@ export default function App() {
     return () => unsub();
   }, [authLoading, isVerifiedUser, isCoach, user?.email]);
 
+  // Real-time coach exercise library (renforcement, running, mobilité)
+  useEffect(() => {
+    if (authLoading || !isVerifiedUser || !isCoach) {
+      setExercises([]);
+      return;
+    }
+    const unsub = subscribeExercises(setExercises, () => setExercises([]));
+    return () => unsub();
+  }, [authLoading, isVerifiedUser, isCoach]);
+
   const activeEvents = useMemo(
     () =>
       events.filter((ev) => {
@@ -915,6 +931,8 @@ export default function App() {
     setCoachDirectory([]);
     setConversations([]);
     setMemberSchedules([]);
+    setExercises([]);
+    setManageTab('events');
     setPendingMessageTarget(null);
     setPendingMemberTrackingKey(null);
     setAuthError(null);
@@ -1005,6 +1023,38 @@ export default function App() {
 
   const coachDisplayName =
     myAdminProfile?.displayName || user?.displayName || 'David Frosio';
+
+  const programMemberCandidates = useMemo<ProgramMemberCandidate[]>(() => {
+    const byKey = new Map<string, ProgramMemberCandidate>();
+    memberProfiles.forEach((profile) => {
+      const email = (profile.email || '').trim();
+      const key = (profile.id || email.toLowerCase()).trim().toLowerCase();
+      if (!email || !key) return;
+      const fullName = `${profile.firstName} ${profile.lastName}`.trim() || email;
+      byKey.set(key, {
+        email,
+        emailKey: key,
+        name: fullName,
+        goal: profile.goal || '',
+        fitnessLevel: profile.fitnessLevel || '',
+      });
+    });
+    registrations.forEach((reg) => {
+      if (reg.status !== 'confirmed' || reg.isGuest) return;
+      const email = (reg.email || '').trim();
+      const key = email.toLowerCase();
+      if (!email || !key || byKey.has(key)) return;
+      const fullName = `${reg.firstName} ${reg.lastName}`.trim() || email;
+      byKey.set(key, {
+        email,
+        emailKey: key,
+        name: fullName,
+      });
+    });
+    return Array.from(byKey.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, 'fr')
+    );
+  }, [memberProfiles, registrations]);
 
   const memberDisplayName = myMemberProfile
     ? `${myMemberProfile.firstName} ${myMemberProfile.lastName}`.trim()
@@ -1392,49 +1442,101 @@ export default function App() {
             {activeSection === 'manage' &&
               user &&
               (isCoach ? (
-                <CoachEventsView
-                  coachUid={user.uid}
-                  coachEmail={user.email || ''}
-                  coachName={coachDisplayName}
-                  events={activeEvents}
-                  registrations={registrations}
-                  disciplines={disciplineCatalog}
-                  nowMs={nowMs}
-                  ratingSummaryByEventId={ratingSummaryByEventId}
-                  isCoachAdmin={isCoachAdmin}
-                  pendingCoachRequestsCount={pendingCoachRequestsCount}
-                  onOpenCoachesAdmin={() => setActiveSection('coaches')}
-                  onSignOut={() => void handleSignOut()}
-                  onCreateEvent={() =>
-                    setEventFormState({
-                      open: true,
-                      initialDate: null,
-                      editingEvent: null,
-                      duplicatingEvent: null,
-                    })
-                  }
-                  onEditEvent={(ev) =>
-                    setEventFormState({
-                      open: true,
-                      initialDate: null,
-                      editingEvent: ev,
-                      duplicatingEvent: null,
-                    })
-                  }
-                  onDuplicateEvent={(ev) =>
-                    setEventFormState({
-                      open: true,
-                      initialDate: null,
-                      editingEvent: null,
-                      duplicatingEvent: ev,
-                    })
-                  }
-                  onOpenRoster={(ev, tab) => {
-                    setRosterInitialTab(tab ?? 'roster');
-                    setRosterEventId(ev.id);
-                  }}
-                  onShareEvent={(ev) => setSharingEvent(ev)}
-                />
+                <>
+                  <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+                    <div
+                      role="tablist"
+                      aria-label="Sous-sections de gestion coach"
+                      className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-100/90 p-1 dark:border-slate-800 dark:bg-slate-900"
+                    >
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={manageTab === 'events'}
+                        onClick={() => setManageTab('events')}
+                        className={`inline-flex min-h-[38px] items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                          manageTab === 'events'
+                            ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
+                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                        }`}
+                      >
+                        <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Événements &amp; Disciplines</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={manageTab === 'exercises'}
+                        onClick={() => setManageTab('exercises')}
+                        className={`inline-flex min-h-[38px] items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                          manageTab === 'exercises'
+                            ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
+                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                        }`}
+                      >
+                        <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Bibliothèque d’exercices &amp; Programmes</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {manageTab === 'events' ? (
+                    <CoachEventsView
+                      coachUid={user.uid}
+                      coachEmail={user.email || ''}
+                      coachName={coachDisplayName}
+                      events={activeEvents}
+                      registrations={registrations}
+                      disciplines={disciplineCatalog}
+                      nowMs={nowMs}
+                      ratingSummaryByEventId={ratingSummaryByEventId}
+                      isCoachAdmin={isCoachAdmin}
+                      pendingCoachRequestsCount={pendingCoachRequestsCount}
+                      onOpenCoachesAdmin={() => setActiveSection('coaches')}
+                      onSignOut={() => void handleSignOut()}
+                      onCreateEvent={() =>
+                        setEventFormState({
+                          open: true,
+                          initialDate: null,
+                          editingEvent: null,
+                          duplicatingEvent: null,
+                        })
+                      }
+                      onEditEvent={(ev) =>
+                        setEventFormState({
+                          open: true,
+                          initialDate: null,
+                          editingEvent: ev,
+                          duplicatingEvent: null,
+                        })
+                      }
+                      onDuplicateEvent={(ev) =>
+                        setEventFormState({
+                          open: true,
+                          initialDate: null,
+                          editingEvent: null,
+                          duplicatingEvent: ev,
+                        })
+                      }
+                      onOpenRoster={(ev, tab) => {
+                        setRosterInitialTab(tab ?? 'roster');
+                        setRosterEventId(ev.id);
+                      }}
+                      onShareEvent={(ev) => setSharingEvent(ev)}
+                    />
+                  ) : (
+                    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+                      <ExerciseLibraryView
+                        coachUid={user.uid}
+                        coachName={coachDisplayName}
+                        coachDirectory={coachDirectory}
+                        disciplines={disciplineCatalog}
+                        exercises={exercises}
+                        memberCandidates={programMemberCandidates}
+                      />
+                    </section>
+                  )}
+                </>
               ) : coachGateIntent ? (
                 <CoachAuthGate
                   key={`coach-gate-${signOutNonce}`}
@@ -1467,6 +1569,7 @@ export default function App() {
                   memberProfiles={memberProfiles}
                   memberSchedules={memberSchedules}
                   disciplines={disciplineCatalog}
+                  exercises={exercises}
                   nowMs={nowMs}
                   unreadMessagesByMemberKey={unreadMessagesByMemberKey}
                   initialSelectedMemberKey={pendingMemberTrackingKey}

@@ -49,6 +49,9 @@ import {
   EventPaymentMode,
   EventReview,
   EventStatus,
+  ExerciseCategory,
+  ExerciseLibraryItem,
+  ExerciseParams,
   FitnessLevel,
   FollowUpStatus,
   GuestInput,
@@ -59,9 +62,23 @@ import {
   PaymentRecord,
   PaymentStatus,
   Registration,
+  RunningDistanceKey,
+  ScheduledExerciseItem,
   SportEvent,
+  TrainingProgram,
+  TrainingProgramStatus,
   VALIDATION_LIMITS,
 } from '../types';
+import {
+  clampExerciseParams,
+  STARTER_EXERCISES,
+} from '../utils/exerciseLibrary';
+import {
+  computeVmaFromTest,
+  getDefaultPreferredDays,
+  normalizePreferredDays,
+  RUNNING_DISTANCE_TEMPLATES,
+} from '../utils/runningProgramGenerator';
 import {
   evaluateEventBooking,
   formatPublicAuthorName,
@@ -4820,6 +4837,58 @@ export function subscribeMyMemberSchedule(
   );
 }
 
+function sanitizeObjectiveList(list: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of list) {
+    const clean = raw.trim().slice(0, VALIDATION_LIMITS.EXERCISE_OBJECTIVE_MAX);
+    if (!clean) continue;
+    const key = clean.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(clean);
+    if (out.length >= VALIDATION_LIMITS.EXERCISE_OBJECTIVES_MAX_COUNT) break;
+  }
+  return out;
+}
+
+function sanitizeScheduledExercises(
+  items?: ScheduledExerciseItem[]
+): ScheduledExerciseItem[] {
+  if (!Array.isArray(items)) return [];
+  const out: ScheduledExerciseItem[] = [];
+  for (const item of items) {
+    const name = (item.name ?? '')
+      .trim()
+      .slice(0, VALIDATION_LIMITS.EXERCISE_NAME_MAX);
+    if (name.length < VALIDATION_LIMITS.EXERCISE_NAME_MIN) continue;
+    const rawId = (item.exerciseId ?? 'custom').trim().slice(0, 128);
+    const exerciseId = /^[a-zA-Z0-9_\-]+$/.test(rawId) ? rawId : 'custom';
+    const category: ExerciseCategory =
+      item.category === 'running' || item.category === 'mobility'
+        ? item.category
+        : 'strength';
+    const clamped = clampExerciseParams({
+      repetitions: item.repetitions,
+      durationSeconds: item.durationSeconds,
+      setsOrRounds: item.setsOrRounds,
+      intraSetPauseSeconds: item.intraSetPauseSeconds,
+      restBetweenRoundsSeconds: item.restBetweenRoundsSeconds,
+    });
+    out.push({
+      exerciseId,
+      name,
+      category,
+      ...clamped,
+      notes: (item.notes ?? '')
+        .trim()
+        .slice(0, VALIDATION_LIMITS.SESSION_EXERCISE_NOTES_MAX),
+    });
+    if (out.length >= VALIDATION_LIMITS.SESSION_EXERCISES_MAX) break;
+  }
+  return out;
+}
+
 export async function createMemberScheduleSession(params: {
   memberEmail: string;
   memberName: string;
@@ -4831,6 +4900,11 @@ export async function createMemberScheduleSession(params: {
   durationMinutes: number;
   coachUid?: string;
   coachName?: string;
+  objective?: string;
+  exercises?: ScheduledExerciseItem[];
+  priceCents?: number;
+  paymentMode?: EventPaymentMode;
+  markPaid?: boolean;
   createdByUid: string;
   createdByRole: 'coach' | 'member';
 }): Promise<string> {
@@ -4883,10 +4957,31 @@ export async function createMemberScheduleSession(params: {
   const coachName = (params.coachName ?? '')
     .trim()
     .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
+  const objective = (params.objective ?? '')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.SESSION_OBJECTIVE_MAX);
+  const exercises = sanitizeScheduledExercises(params.exercises);
+
+  const isCoachCreated = params.createdByRole === 'coach';
+  const resolvedPriceCents = isCoachCreated
+    ? Math.min(
+        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+        Math.max(
+          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+          Math.round(Number(params.priceCents) || 1900)
+        )
+      )
+    : 0;
+  const resolvedPaymentMode: EventPaymentMode =
+    params.paymentMode === 'online' ||
+    params.paymentMode === 'onsite' ||
+    params.paymentMode === 'both'
+      ? params.paymentMode
+      : 'both';
 
   const sessionRef = doc(collection(db, 'memberSchedules'));
   try {
-    await setDoc(sessionRef, {
+    const payload: Record<string, unknown> = {
       memberEmail: cleanEmail,
       memberEmailKey,
       memberName,
@@ -4898,12 +4993,36 @@ export async function createMemberScheduleSession(params: {
       durationMinutes,
       coachUid,
       coachName,
+      isPaid: isCoachCreated,
+      priceCents: resolvedPriceCents,
+      currency: 'EUR',
+      paymentMode: resolvedPaymentMode,
+      paymentStatus: isCoachCreated
+        ? params.markPaid
+          ? 'paid'
+          : 'pending'
+        : 'free',
+      paymentMethod: isCoachCreated ? 'onsite' : 'free',
+      paymentReference:
+        isCoachCreated && params.markPaid
+          ? generatePaymentReference('PGM')
+          : '',
+      cardBrand: '',
+      cardLast4: '',
+      paidAt: isCoachCreated && params.markPaid ? serverTimestamp() : null,
       createdByUid: params.createdByUid,
       createdByRole: params.createdByRole,
       completed: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+    if (objective) {
+      payload.objective = objective;
+    }
+    if (exercises.length > 0) {
+      payload.exercises = exercises;
+    }
+    await setDoc(sessionRef, payload);
     return sessionRef.id;
   } catch (error) {
     handleFirestoreError(
@@ -4925,6 +5044,10 @@ export async function updateMemberScheduleSession(
     durationMinutes: number;
     coachUid?: string;
     coachName?: string;
+    objective?: string;
+    exercises?: ScheduledExerciseItem[];
+    priceCents?: number;
+    paymentMode?: EventPaymentMode;
     completed?: boolean;
   }
 ): Promise<void> {
@@ -4965,7 +5088,7 @@ export async function updateMemberScheduleSession(
     .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
 
   try {
-    await updateDoc(doc(db, 'memberSchedules', sessionId), {
+    const payload: Record<string, unknown> = {
       title,
       discipline,
       notes,
@@ -4976,12 +5099,99 @@ export async function updateMemberScheduleSession(
       coachName,
       completed: Boolean(params.completed),
       updatedAt: serverTimestamp(),
-    });
+    };
+    if (params.objective !== undefined) {
+      payload.objective = params.objective
+        .trim()
+        .slice(0, VALIDATION_LIMITS.SESSION_OBJECTIVE_MAX);
+    }
+    if (params.exercises !== undefined) {
+      payload.exercises = sanitizeScheduledExercises(params.exercises);
+    }
+    if (params.priceCents !== undefined) {
+      payload.isPaid = true;
+      payload.priceCents = Math.min(
+        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+        Math.max(
+          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+          Math.round(Number(params.priceCents) || 1900)
+        )
+      );
+      payload.currency = 'EUR';
+    }
+    if (params.paymentMode !== undefined) {
+      payload.paymentMode = params.paymentMode;
+    }
+    await updateDoc(doc(db, 'memberSchedules', sessionId), payload);
   } catch (error) {
     handleFirestoreError(
       error,
       OperationType.UPDATE,
       `memberSchedules/${sessionId}`
+    );
+  }
+}
+
+export async function payMemberScheduleSession(params: {
+  session: MemberScheduleSession;
+  method: 'card' | 'onsite';
+  cardBrand?: string;
+  cardLast4?: string;
+  isCoach?: boolean;
+}): Promise<string> {
+  const reference =
+    params.session.paymentReference?.trim() || generatePaymentReference('PGM');
+  try {
+    if (params.isCoach) {
+      await updateDoc(doc(db, 'memberSchedules', params.session.id), {
+        isPaid: true,
+        priceCents: Math.max(
+          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+          params.session.priceCents ?? 1900
+        ),
+        currency: 'EUR',
+        paymentMode: params.session.paymentMode ?? 'both',
+        paymentStatus: 'paid',
+        paymentMethod:
+          params.session.paymentMethod === 'card' ? 'card' : 'onsite',
+        paymentReference: reference,
+        paidAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return reference;
+    }
+
+    if (params.method === 'card') {
+      const cleanLast4 = (params.cardLast4 ?? '').replace(/\D/g, '').slice(-4);
+      if (cleanLast4.length !== 4) {
+        throw new Error('Numéro de carte bancaire invalide.');
+      }
+      await updateDoc(doc(db, 'memberSchedules', params.session.id), {
+        paymentStatus: 'paid',
+        paymentMethod: 'card',
+        paymentReference: reference,
+        cardBrand: (params.cardBrand ?? 'CB').slice(0, 24),
+        cardLast4: cleanLast4,
+        paidAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(doc(db, 'memberSchedules', params.session.id), {
+        paymentStatus: 'pending',
+        paymentMethod: 'onsite',
+        paymentReference: reference,
+        cardBrand: '',
+        cardLast4: '',
+        paidAt: null,
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return reference;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `memberSchedules/${params.session.id}`
     );
   }
 }
@@ -5017,3 +5227,659 @@ export async function deleteMemberScheduleSession(
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Bibliothèque d'exercices du coach (/exercises)
+// ---------------------------------------------------------------------------
+
+export function subscribeExercises(
+  onData: (exercises: ExerciseLibraryItem[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    collection(db, 'exercises'),
+    (snapshot) => {
+      const list: ExerciseLibraryItem[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<ExerciseLibraryItem, 'id'>),
+      }));
+      list.sort((a, b) => {
+        if (a.category !== b.category) {
+          return a.category.localeCompare(b.category);
+        }
+        return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+      });
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'exercises');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export async function createExercise(params: {
+  name: string;
+  category: ExerciseCategory;
+  targetObjectives: string[];
+  description: string;
+  defaultParams: ExerciseParams;
+  intensityHint?: string;
+  isPreset?: boolean;
+  coachUid: string;
+  customId?: string;
+}): Promise<string> {
+  const name = params.name
+    .trim()
+    .slice(0, VALIDATION_LIMITS.EXERCISE_NAME_MAX);
+  if (name.length < VALIDATION_LIMITS.EXERCISE_NAME_MIN) {
+    throw new Error(
+      `Le nom de l’exercice doit contenir au moins ${VALIDATION_LIMITS.EXERCISE_NAME_MIN} caractères.`
+    );
+  }
+  const category: ExerciseCategory =
+    params.category === 'running' || params.category === 'mobility'
+      ? params.category
+      : 'strength';
+  const targetObjectives = sanitizeObjectiveList(params.targetObjectives);
+  const description = params.description
+    .trim()
+    .slice(0, VALIDATION_LIMITS.EXERCISE_DESCRIPTION_MAX);
+  const defaultParams = clampExerciseParams(params.defaultParams);
+  const intensityHint = (params.intensityHint ?? '')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.EXERCISE_INTENSITY_MAX);
+
+  const ref =
+    params.customId && /^[a-zA-Z0-9_\-]{4,128}$/.test(params.customId)
+      ? doc(db, 'exercises', params.customId)
+      : doc(collection(db, 'exercises'));
+
+  try {
+    const payload: Record<string, unknown> = {
+      name,
+      category,
+      targetObjectives,
+      description,
+      defaultParams,
+      intensityHint,
+      isPreset: Boolean(params.isPreset),
+      createdBy: params.coachUid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    await setDoc(ref, payload);
+    return ref.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, `exercises/${ref.id}`);
+  }
+}
+
+export async function updateExercise(
+  exerciseId: string,
+  params: {
+    name: string;
+    category: ExerciseCategory;
+    targetObjectives: string[];
+    description: string;
+    defaultParams: ExerciseParams;
+    intensityHint?: string;
+    isPreset?: boolean;
+  }
+): Promise<void> {
+  const name = params.name
+    .trim()
+    .slice(0, VALIDATION_LIMITS.EXERCISE_NAME_MAX);
+  if (name.length < VALIDATION_LIMITS.EXERCISE_NAME_MIN) {
+    throw new Error(
+      `Le nom de l’exercice doit contenir au moins ${VALIDATION_LIMITS.EXERCISE_NAME_MIN} caractères.`
+    );
+  }
+  const category: ExerciseCategory =
+    params.category === 'running' || params.category === 'mobility'
+      ? params.category
+      : 'strength';
+  const targetObjectives = sanitizeObjectiveList(params.targetObjectives);
+  const description = params.description
+    .trim()
+    .slice(0, VALIDATION_LIMITS.EXERCISE_DESCRIPTION_MAX);
+  const defaultParams = clampExerciseParams(params.defaultParams);
+  const intensityHint = (params.intensityHint ?? '')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.EXERCISE_INTENSITY_MAX);
+
+  try {
+    await updateDoc(doc(db, 'exercises', exerciseId), {
+      name,
+      category,
+      targetObjectives,
+      description,
+      defaultParams,
+      intensityHint,
+      isPreset: Boolean(params.isPreset),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `exercises/${exerciseId}`);
+  }
+}
+
+export async function deleteExercise(exerciseId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'exercises', exerciseId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `exercises/${exerciseId}`);
+  }
+}
+
+export async function seedStarterExercises(
+  coachUid: string,
+  existingExercises: ExerciseLibraryItem[]
+): Promise<number> {
+  const existingIds = new Set(existingExercises.map((e) => e.id));
+  const existingNames = new Set(
+    existingExercises.map((e) => e.name.trim().toLowerCase())
+  );
+  const missing = STARTER_EXERCISES.filter(
+    (tpl) =>
+      !existingIds.has(tpl.presetId) &&
+      !existingNames.has(tpl.name.trim().toLowerCase())
+  );
+  if (missing.length === 0) return 0;
+
+  const batch = writeBatch(db);
+  for (const tpl of missing) {
+    const ref = doc(db, 'exercises', tpl.presetId);
+    batch.set(ref, {
+      name: tpl.name.slice(0, VALIDATION_LIMITS.EXERCISE_NAME_MAX),
+      category: tpl.category,
+      targetObjectives: sanitizeObjectiveList(tpl.targetObjectives),
+      description: tpl.description.slice(
+        0,
+        VALIDATION_LIMITS.EXERCISE_DESCRIPTION_MAX
+      ),
+      defaultParams: clampExerciseParams(tpl.defaultParams),
+      intensityHint: (tpl.intensityHint ?? '').slice(
+        0,
+        VALIDATION_LIMITS.EXERCISE_INTENSITY_MAX
+      ),
+      isPreset: true,
+      createdBy: coachUid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  try {
+    await batch.commit();
+    return missing.length;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, 'exercises');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Programmes running personnalisés sur 12 semaines (/trainingPrograms)
+// 5 km, 10 km, 21 km, 42 km · Test VMA Jour 1 + Allures + Paiement obligatoire
+// ---------------------------------------------------------------------------
+
+export function subscribeAllTrainingPrograms(
+  onData: (programs: TrainingProgram[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    collection(db, 'trainingPrograms'),
+    (snapshot) => {
+      const list: TrainingProgram[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<TrainingProgram, 'id'>),
+      }));
+      list.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'trainingPrograms');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export function subscribeMyTrainingPrograms(
+  memberEmail: string,
+  onData: (programs: TrainingProgram[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const cleanEmail = memberEmail.trim().toLowerCase();
+  const q = query(
+    collection(db, 'trainingPrograms'),
+    where('memberEmail', '==', cleanEmail)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const list: TrainingProgram[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<TrainingProgram, 'id'>),
+      }));
+      list.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
+      onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'trainingPrograms');
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) {
+          onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export async function createTrainingProgram(params: {
+  memberEmail: string;
+  memberName: string;
+  title?: string;
+  distance: RunningDistanceKey;
+  sessionsPerWeek: number;
+  preferredDays?: number[];
+  targetTimeSeconds: number;
+  startDate: Date;
+  notes?: string;
+  coachUid: string;
+  coachName: string;
+  priceCents: number;
+  paymentMode: EventPaymentMode;
+  markPaid?: boolean;
+  createdByUid: string;
+}): Promise<string> {
+  const cleanEmail = params.memberEmail
+    .trim()
+    .toLowerCase()
+    .slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+  if (!VALIDATION_LIMITS.EMAIL_REGEX.test(cleanEmail)) {
+    throw new Error('Adresse email adhérent invalide.');
+  }
+
+  const tpl = RUNNING_DISTANCE_TEMPLATES[params.distance];
+  const title = (params.title?.trim() || `${tpl.label} · 12 semaines`).slice(
+    0,
+    VALIDATION_LIMITS.TITLE_MAX
+  );
+  if (title.length < VALIDATION_LIMITS.TITLE_MIN) {
+    throw new Error('Titre du programme trop court.');
+  }
+
+  if (Number.isNaN(params.startDate.getTime())) {
+    throw new Error('Date de début (Jour 1 / Test VMA) invalide.');
+  }
+
+  const sessionsPerWeek = Math.min(
+    VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MAX,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MIN,
+      Math.round(Number(params.sessionsPerWeek) || tpl.defaultSessionsPerWeek)
+    )
+  );
+  const preferredDays = normalizePreferredDays(
+    params.preferredDays ?? getDefaultPreferredDays(sessionsPerWeek),
+    sessionsPerWeek
+  );
+  const targetTimeSeconds = Math.min(
+    VALIDATION_LIMITS.PROGRAM_TARGET_TIME_MAX_SEC,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_TARGET_TIME_MIN_SEC,
+      Math.round(Number(params.targetTimeSeconds) || tpl.defaultTargetTimeSeconds)
+    )
+  );
+  const priceCents = Math.min(
+    VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+      Math.round(Number(params.priceCents) || tpl.defaultPriceCents)
+    )
+  );
+
+  const memberEmailKey = await hashEmailKey(cleanEmail);
+  const memberName = (
+    params.memberName.trim() ||
+    cleanEmail.split('@')[0] ||
+    'Adhérent'
+  ).slice(0, 125);
+  const coachName = (params.coachName.trim() || 'Coach').slice(
+    0,
+    VALIDATION_LIMITS.DISPLAY_NAME_MAX
+  );
+  const notes = (params.notes ?? '')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX);
+
+  const isPaidAlready = Boolean(params.markPaid);
+  const paymentRef = isPaidAlready ? generatePaymentReference('RUN') : '';
+  const status: TrainingProgramStatus = isPaidAlready
+    ? 'awaiting_vma'
+    : 'awaiting_payment';
+
+  const programRef = doc(collection(db, 'trainingPrograms'));
+  try {
+    await setDoc(programRef, {
+      memberEmail: cleanEmail,
+      memberEmailKey,
+      memberName,
+      title,
+      distance: params.distance,
+      durationWeeks: VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS,
+      sessionsPerWeek,
+      preferredDays,
+      targetTimeSeconds,
+      startAt: Timestamp.fromDate(params.startDate),
+      vmaTestStatus: 'pending',
+      vmaKmh: 0,
+      vmaTestDistanceMeters: 0,
+      vmaTestDurationSeconds: 0,
+      vmaTestedAt: null,
+      completedSessionKeys: [],
+      notes,
+      coachUid: params.coachUid,
+      coachName,
+      isPaid: true,
+      priceCents,
+      currency: 'EUR',
+      paymentMode: params.paymentMode,
+      paymentStatus: isPaidAlready ? 'paid' : 'pending',
+      paymentMethod: isPaidAlready ? 'onsite' : '',
+      paymentReference: paymentRef,
+      cardBrand: '',
+      cardLast4: '',
+      paidAt: isPaidAlready ? serverTimestamp() : null,
+      status,
+      createdByUid: params.createdByUid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return programRef.id;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.CREATE,
+      `trainingPrograms/${programRef.id}`
+    );
+  }
+}
+
+export async function updateTrainingProgramConfig(
+  programId: string,
+  params: {
+    title: string;
+    sessionsPerWeek: number;
+    preferredDays: number[];
+    targetTimeSeconds: number;
+    startDate: Date;
+    notes: string;
+    coachUid: string;
+    coachName: string;
+    priceCents: number;
+    paymentMode: EventPaymentMode;
+  }
+): Promise<void> {
+  const title = params.title.trim().slice(0, VALIDATION_LIMITS.TITLE_MAX);
+  if (title.length < VALIDATION_LIMITS.TITLE_MIN) {
+    throw new Error('Titre du programme invalide.');
+  }
+  if (Number.isNaN(params.startDate.getTime())) {
+    throw new Error('Date de début invalide.');
+  }
+  const sessionsPerWeek = Math.min(
+    VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MAX,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MIN,
+      Math.round(Number(params.sessionsPerWeek) || 3)
+    )
+  );
+  const preferredDays = normalizePreferredDays(
+    params.preferredDays,
+    sessionsPerWeek
+  );
+  const targetTimeSeconds = Math.min(
+    VALIDATION_LIMITS.PROGRAM_TARGET_TIME_MAX_SEC,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_TARGET_TIME_MIN_SEC,
+      Math.round(Number(params.targetTimeSeconds) || 3000)
+    )
+  );
+  const priceCents = Math.min(
+    VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+      Math.round(Number(params.priceCents) || 5900)
+    )
+  );
+  const coachName = (params.coachName.trim() || 'Coach').slice(
+    0,
+    VALIDATION_LIMITS.DISPLAY_NAME_MAX
+  );
+
+  try {
+    await updateDoc(doc(db, 'trainingPrograms', programId), {
+      title,
+      sessionsPerWeek,
+      preferredDays,
+      targetTimeSeconds,
+      startAt: Timestamp.fromDate(params.startDate),
+      notes: params.notes.trim().slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX),
+      coachUid: params.coachUid,
+      coachName,
+      priceCents,
+      paymentMode: params.paymentMode,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `trainingPrograms/${programId}`
+    );
+  }
+}
+
+export async function payTrainingProgram(params: {
+  program: TrainingProgram;
+  method: 'card' | 'onsite';
+  cardBrand?: string;
+  cardLast4?: string;
+  isCoach?: boolean;
+}): Promise<string> {
+  const reference =
+    params.program.paymentReference?.trim() || generatePaymentReference('RUN');
+  const nextStatusAfterPaid: TrainingProgramStatus =
+    params.program.vmaTestStatus === 'completed' ? 'active' : 'awaiting_vma';
+
+  try {
+    if (params.isCoach) {
+      await updateDoc(doc(db, 'trainingPrograms', params.program.id), {
+        paymentStatus: 'paid',
+        paymentMethod:
+          params.program.paymentMethod === 'card' ? 'card' : 'onsite',
+        paymentReference: reference,
+        paidAt: serverTimestamp(),
+        status: nextStatusAfterPaid,
+        updatedAt: serverTimestamp(),
+      });
+      return reference;
+    }
+
+    if (params.method === 'card') {
+      const cleanLast4 = (params.cardLast4 ?? '').replace(/\D/g, '').slice(-4);
+      if (cleanLast4.length !== 4) {
+        throw new Error('Numéro de carte bancaire invalide.');
+      }
+      await updateDoc(doc(db, 'trainingPrograms', params.program.id), {
+        paymentStatus: 'paid',
+        paymentMethod: 'card',
+        paymentReference: reference,
+        cardBrand: (params.cardBrand ?? 'CB').slice(0, 24),
+        cardLast4: cleanLast4,
+        paidAt: serverTimestamp(),
+        status: nextStatusAfterPaid,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(doc(db, 'trainingPrograms', params.program.id), {
+        paymentStatus: 'pending',
+        paymentMethod: 'onsite',
+        paymentReference: reference,
+        cardBrand: '',
+        cardLast4: '',
+        paidAt: null,
+        status: 'awaiting_payment',
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return reference;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `trainingPrograms/${params.program.id}`
+    );
+  }
+}
+
+export async function submitTrainingProgramVmaTest(params: {
+  program: TrainingProgram;
+  distanceMeters?: number;
+  durationSeconds?: number;
+  directVmaKmh?: number;
+}): Promise<number> {
+  let vmaKmh = 0;
+  let distanceMeters = Math.max(
+    0,
+    Math.min(10000, Math.round(Number(params.distanceMeters) || 0))
+  );
+  let durationSeconds = Math.max(
+    0,
+    Math.min(3600, Math.round(Number(params.durationSeconds) || 0))
+  );
+
+  if (
+    params.directVmaKmh !== undefined &&
+    Number.isFinite(params.directVmaKmh) &&
+    params.directVmaKmh > 0
+  ) {
+    vmaKmh = Math.round(params.directVmaKmh * 10) / 10;
+    if (distanceMeters === 0 && durationSeconds === 0) {
+      durationSeconds = 360;
+      distanceMeters = Math.round(vmaKmh * 100);
+    }
+  } else {
+    vmaKmh = computeVmaFromTest(distanceMeters, durationSeconds);
+  }
+
+  if (
+    vmaKmh < VALIDATION_LIMITS.PROGRAM_VMA_MIN_KMH ||
+    vmaKmh > VALIDATION_LIMITS.PROGRAM_VMA_MAX_KMH
+  ) {
+    throw new Error(
+      `La VMA évaluée doit être comprise entre ${VALIDATION_LIMITS.PROGRAM_VMA_MIN_KMH} et ${VALIDATION_LIMITS.PROGRAM_VMA_MAX_KMH} km/h.`
+    );
+  }
+
+  try {
+    await updateDoc(doc(db, 'trainingPrograms', params.program.id), {
+      vmaTestStatus: 'completed' as VmaTestStatus,
+      vmaKmh,
+      vmaTestDistanceMeters: distanceMeters,
+      vmaTestDurationSeconds: durationSeconds,
+      vmaTestedAt: serverTimestamp(),
+      status: 'active' as TrainingProgramStatus,
+      updatedAt: serverTimestamp(),
+    });
+    // Mark Day 1 VMA test session completed cleanly in follow-up update if not already checked
+    if (!params.program.completedSessionKeys?.includes('w1-s1')) {
+      const nextKeys = Array.from(
+        new Set([...(params.program.completedSessionKeys ?? []), 'w1-s1'])
+      ).slice(0, VALIDATION_LIMITS.PROGRAM_COMPLETED_KEYS_MAX);
+      await updateDoc(doc(db, 'trainingPrograms', params.program.id), {
+        completedSessionKeys: nextKeys,
+        status: 'active' as TrainingProgramStatus,
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return vmaKmh;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `trainingPrograms/${params.program.id}`
+    );
+  }
+}
+
+export async function toggleTrainingProgramSessionCompleted(
+  program: TrainingProgram,
+  sessionKey: string,
+  completed: boolean
+): Promise<void> {
+  const cleanKey = sessionKey.trim().slice(0, 32);
+  if (cleanKey.length < 3) return;
+  const set = new Set(program.completedSessionKeys ?? []);
+  if (completed) {
+    set.add(cleanKey);
+  } else {
+    set.delete(cleanKey);
+  }
+  const nextKeys = Array.from(set).slice(
+    0,
+    VALIDATION_LIMITS.PROGRAM_COMPLETED_KEYS_MAX
+  );
+  const totalSessions =
+    (program.durationWeeks || VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS) *
+    (program.sessionsPerWeek || 3);
+  const nextStatus: TrainingProgramStatus =
+    program.vmaTestStatus === 'pending'
+      ? 'awaiting_vma'
+      : nextKeys.length >= totalSessions
+        ? 'completed'
+        : 'active';
+
+  try {
+    await updateDoc(doc(db, 'trainingPrograms', program.id), {
+      completedSessionKeys: nextKeys,
+      status: nextStatus,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `trainingPrograms/${programIdFallback(program)}`
+    );
+  }
+}
+
+function programIdFallback(program: TrainingProgram): string {
+  return program.id;
+}
+
+export async function deleteTrainingProgram(programId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'trainingPrograms', programId));
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.DELETE,
+      `trainingPrograms/${programId}`
+    );
+  }
+}
+

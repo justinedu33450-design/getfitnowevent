@@ -1868,6 +1868,46 @@ service cloud.firestore {
     // /memberSchedules/{sessionId}
     // Private personalized weekly coaching/training schedule per member
     // -------------------------------------------------------------------------
+    function isValidExerciseParams(params) {
+      return params is map &&
+        params.keys().hasAll([
+          'repetitions', 'durationSeconds', 'setsOrRounds',
+          'intraSetPauseSeconds', 'restBetweenRoundsSeconds'
+        ]) &&
+        params.keys().hasOnly([
+          'repetitions', 'durationSeconds', 'setsOrRounds',
+          'intraSetPauseSeconds', 'restBetweenRoundsSeconds'
+        ]) &&
+        params.repetitions is int && params.repetitions >= 0 && params.repetitions <= 500 &&
+        params.durationSeconds is int && params.durationSeconds >= 0 && params.durationSeconds <= 7200 &&
+        params.setsOrRounds is int && params.setsOrRounds >= 1 && params.setsOrRounds <= 50 &&
+        params.intraSetPauseSeconds is int && params.intraSetPauseSeconds >= 0 && params.intraSetPauseSeconds <= 600 &&
+        params.restBetweenRoundsSeconds is int && params.restBetweenRoundsSeconds >= 0 && params.restBetweenRoundsSeconds <= 1800;
+    }
+
+    function isValidScheduledExercise(item) {
+      return item is map &&
+        item.keys().hasAll([
+          'exerciseId', 'name', 'category',
+          'repetitions', 'durationSeconds', 'setsOrRounds',
+          'intraSetPauseSeconds', 'restBetweenRoundsSeconds', 'notes'
+        ]) &&
+        item.keys().hasOnly([
+          'exerciseId', 'name', 'category',
+          'repetitions', 'durationSeconds', 'setsOrRounds',
+          'intraSetPauseSeconds', 'restBetweenRoundsSeconds', 'notes'
+        ]) &&
+        isValidId(item.exerciseId) &&
+        item.name is string && item.name.size() >= 2 && item.name.size() <= 100 &&
+        item.category in ['strength', 'running', 'mobility'] &&
+        item.repetitions is int && item.repetitions >= 0 && item.repetitions <= 500 &&
+        item.durationSeconds is int && item.durationSeconds >= 0 && item.durationSeconds <= 7200 &&
+        item.setsOrRounds is int && item.setsOrRounds >= 1 && item.setsOrRounds <= 50 &&
+        item.intraSetPauseSeconds is int && item.intraSetPauseSeconds >= 0 && item.intraSetPauseSeconds <= 600 &&
+        item.restBetweenRoundsSeconds is int && item.restBetweenRoundsSeconds >= 0 && item.restBetweenRoundsSeconds <= 1800 &&
+        item.notes is string && item.notes.size() <= 240;
+    }
+
     function isValidMemberScheduleSession(data) {
       return data.keys().hasAll([
         'memberEmail', 'memberEmailKey', 'memberName',
@@ -1880,6 +1920,10 @@ service cloud.firestore {
         'memberEmail', 'memberEmailKey', 'memberName',
         'title', 'discipline', 'notes', 'location',
         'startAt', 'durationMinutes', 'coachUid', 'coachName',
+        'objective', 'exercises',
+        'isPaid', 'priceCents', 'currency', 'paymentMode',
+        'paymentStatus', 'paymentMethod', 'paymentReference',
+        'cardBrand', 'cardLast4', 'paidAt',
         'createdByUid', 'createdByRole', 'completed',
         'createdAt', 'updatedAt'
       ]) &&
@@ -1895,6 +1939,33 @@ service cloud.firestore {
       data.coachUid is string && data.coachUid.size() <= 128 &&
       (data.coachUid == '' || isValidId(data.coachUid)) &&
       data.coachName is string && data.coachName.size() <= 80 &&
+      (!('objective' in data) || (data.objective is string && data.objective.size() <= 120)) &&
+      (!('exercises' in data) || (
+        data.exercises is list &&
+        data.exercises.size() <= 25 &&
+        (data.exercises.size() == 0 || isValidScheduledExercise(data.exercises[0]))
+      )) &&
+      (!('isPaid' in data) || data.isPaid is bool) &&
+      (!('priceCents' in data) || (data.priceCents is int && data.priceCents >= 0 && data.priceCents <= 200000)) &&
+      (!('currency' in data) || data.currency == 'EUR') &&
+      (!('paymentMode' in data) || data.paymentMode in ['online', 'onsite', 'both']) &&
+      (!('paymentStatus' in data) || data.paymentStatus in ['free', 'paid', 'pending']) &&
+      (!('paymentMethod' in data) || data.paymentMethod in ['free', 'card', 'onsite']) &&
+      (!('paymentReference' in data) || (data.paymentReference is string && data.paymentReference.size() <= 64)) &&
+      (!('cardBrand' in data) || (data.cardBrand is string && data.cardBrand.size() <= 24)) &&
+      (!('cardLast4' in data) || (data.cardLast4 is string && (data.cardLast4.size() == 0 || (data.cardLast4.size() == 4 && data.cardLast4.matches('^[0-9]{4}$'))))) &&
+      (!('paidAt' in data) || data.paidAt == null || data.paidAt is timestamp) &&
+      (
+        data.get('isPaid', false) == false
+          ? data.get('priceCents', 0) == 0
+          : (
+              data.get('priceCents', 0) >= 100 &&
+              data.get('priceCents', 0) <= 200000 &&
+              data.get('currency', 'EUR') == 'EUR' &&
+              data.get('paymentMode', 'online') in ['online', 'onsite', 'both'] &&
+              data.get('paymentStatus', 'pending') in ['pending', 'paid']
+            )
+      ) &&
       isValidId(data.createdByUid) &&
       data.createdByRole in ['coach', 'member'] &&
       data.completed is bool &&
@@ -1920,8 +1991,17 @@ service cloud.firestore {
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time &&
         (
-          (isAdmin() && incoming().createdByRole == 'coach') ||
-          (incoming().memberEmail == request.auth.token.email.lower() && incoming().createdByRole == 'member')
+          (
+            isAdmin() &&
+            incoming().createdByRole == 'coach' &&
+            incoming().get('isPaid', false) == true &&
+            incoming().get('priceCents', 0) >= 100
+          ) ||
+          (
+            incoming().memberEmail == request.auth.token.email.lower() &&
+            incoming().createdByRole == 'member' &&
+            incoming().get('isPaid', false) == false
+          )
         );
 
       allow update: if isValidId(sessionId) &&
@@ -1934,24 +2014,297 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
         (
-          isAdmin() ||
+          (
+            isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'memberName', 'title', 'discipline', 'notes', 'location',
+              'startAt', 'durationMinutes', 'coachUid', 'coachName',
+              'objective', 'exercises', 'completed',
+              'isPaid', 'priceCents', 'currency', 'paymentMode',
+              'paymentStatus', 'paymentMethod', 'paymentReference',
+              'cardBrand', 'cardLast4', 'paidAt', 'updatedAt'
+            ])
+          ) ||
           (
             existing().memberEmail == request.auth.token.email.lower() &&
             (
-              incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
-              incoming().diff(existing()).affectedKeys().hasOnly([
-                'title', 'discipline', 'notes', 'location',
-                'startAt', 'durationMinutes', 'coachUid', 'coachName',
-                'completed', 'updatedAt'
-              ])
+              (
+                (existing().get('isPaid', false) == false || existing().get('paymentStatus', 'free') == 'paid') &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt'])
+              ) ||
+              (
+                existing().createdByRole == 'member' &&
+                incoming().diff(existing()).affectedKeys().hasOnly([
+                  'title', 'discipline', 'notes', 'location',
+                  'startAt', 'durationMinutes', 'coachUid', 'coachName',
+                  'objective', 'exercises', 'completed', 'updatedAt'
+                ])
+              ) ||
+              (
+                existing().createdByRole == 'coach' &&
+                existing().get('isPaid', false) == true &&
+                existing().get('paymentStatus', 'pending') == 'pending' &&
+                incoming().diff(existing()).affectedKeys().hasOnly([
+                  'paymentStatus', 'paymentMethod', 'paymentReference',
+                  'cardBrand', 'cardLast4', 'paidAt', 'updatedAt'
+                ]) &&
+                (
+                  (
+                    incoming().get('paymentMethod', '') == 'card' &&
+                    existing().get('paymentMode', 'online') in ['online', 'both'] &&
+                    incoming().get('paymentStatus', '') == 'paid' &&
+                    incoming().get('cardLast4', '').size() == 4 &&
+                    incoming().get('paymentReference', '').size() >= 6 &&
+                    incoming().get('paidAt', null) == request.time
+                  ) ||
+                  (
+                    incoming().get('paymentMethod', '') == 'onsite' &&
+                    existing().get('paymentMode', 'online') in ['onsite', 'both'] &&
+                    incoming().get('paymentStatus', '') == 'pending' &&
+                    incoming().get('paymentReference', '').size() >= 6 &&
+                    incoming().get('paidAt', null) == null
+                  )
+                )
+              )
             )
           )
         );
 
       allow delete: if isValidId(sessionId) && (
         isAdmin() ||
+        (
+          hasAuthenticatedEmail() &&
+          resource != null &&
+          existing().memberEmail == request.auth.token.email.lower() &&
+          existing().createdByRole == 'member'
+        )
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // /exercises/{exerciseId}
+    // Coach-only exercise library (strength, running, mobility)
+    // -------------------------------------------------------------------------
+    function isValidExercise(data) {
+      return data.keys().hasAll([
+        'name', 'category', 'targetObjectives', 'description',
+        'defaultParams', 'createdBy', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'name', 'category', 'targetObjectives', 'description',
+        'defaultParams', 'intensityHint', 'isPreset',
+        'createdBy', 'createdAt', 'updatedAt'
+      ]) &&
+      data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+      data.category in ['strength', 'running', 'mobility'] &&
+      data.targetObjectives is list &&
+      data.targetObjectives.size() <= 8 &&
+      (
+        data.targetObjectives.size() == 0 ||
+        (data.targetObjectives[0] is string && data.targetObjectives[0].size() >= 1 && data.targetObjectives[0].size() <= 60)
+      ) &&
+      data.description is string && data.description.size() <= 500 &&
+      isValidExerciseParams(data.defaultParams) &&
+      (!('intensityHint' in data) || (data.intensityHint is string && data.intensityHint.size() <= 80)) &&
+      (!('isPreset' in data) || data.isPreset is bool) &&
+      isValidId(data.createdBy) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    match /exercises/{exerciseId} {
+      allow get: if isValidId(exerciseId) && isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isAdmin() &&
+        isValidId(exerciseId) &&
+        isValidExercise(incoming()) &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isAdmin() &&
+        isValidId(exerciseId) &&
+        isValidExercise(incoming()) &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'category', 'targetObjectives', 'description',
+          'defaultParams', 'intensityHint', 'isPreset', 'updatedAt'
+        ]);
+
+      allow delete: if isAdmin() && isValidId(exerciseId);
+    }
+
+    // -------------------------------------------------------------------------
+    // /trainingPrograms/{programId}
+    // Paid 12-week personalized running programs (5km, 10km, 21km, 42km)
+    // with Day 1 VMA test & calibrated training paces
+    // -------------------------------------------------------------------------
+    function isValidTrainingProgram(data) {
+      return data.keys().hasAll([
+        'memberEmail', 'memberEmailKey', 'memberName',
+        'title', 'distance', 'durationWeeks', 'sessionsPerWeek', 'preferredDays',
+        'targetTimeSeconds', 'startAt',
+        'vmaTestStatus', 'vmaKmh', 'vmaTestDistanceMeters', 'vmaTestDurationSeconds',
+        'completedSessionKeys', 'notes', 'coachUid', 'coachName',
+        'isPaid', 'priceCents', 'currency', 'paymentMode',
+        'paymentStatus', 'paymentMethod', 'paymentReference',
+        'cardBrand', 'cardLast4', 'status', 'createdByUid',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'memberEmail', 'memberEmailKey', 'memberName',
+        'title', 'distance', 'durationWeeks', 'sessionsPerWeek', 'preferredDays',
+        'targetTimeSeconds', 'startAt',
+        'vmaTestStatus', 'vmaKmh', 'vmaTestDistanceMeters', 'vmaTestDurationSeconds', 'vmaTestedAt',
+        'completedSessionKeys', 'notes', 'coachUid', 'coachName',
+        'isPaid', 'priceCents', 'currency', 'paymentMode',
+        'paymentStatus', 'paymentMethod', 'paymentReference',
+        'cardBrand', 'cardLast4', 'paidAt', 'status', 'createdByUid',
+        'createdAt', 'updatedAt'
+      ]) &&
+      isValidEmail(data.memberEmail) &&
+      isValidEmailKey(data.memberEmailKey) &&
+      data.memberName is string && data.memberName.size() >= 1 && data.memberName.size() <= 125 &&
+      data.title is string && data.title.size() >= 2 && data.title.size() <= 100 &&
+      data.distance in ['5km', '10km', '21km', '42km'] &&
+      data.durationWeeks is int && data.durationWeeks == 12 &&
+      data.sessionsPerWeek is int && data.sessionsPerWeek >= 2 && data.sessionsPerWeek <= 6 &&
+      data.preferredDays is list &&
+      data.preferredDays.size() >= 1 && data.preferredDays.size() <= 7 &&
+      data.preferredDays[0] is int && data.preferredDays[0] >= 1 && data.preferredDays[0] <= 7 &&
+      data.targetTimeSeconds is int && data.targetTimeSeconds >= 600 && data.targetTimeSeconds <= 36000 &&
+      data.startAt is timestamp &&
+      data.vmaTestStatus in ['pending', 'completed'] &&
+      (data.vmaKmh is int || data.vmaKmh is float) &&
+      (
+        (data.vmaTestStatus == 'pending' && data.vmaKmh == 0) ||
+        (data.vmaTestStatus == 'completed' && data.vmaKmh >= 6 && data.vmaKmh <= 26)
+      ) &&
+      data.vmaTestDistanceMeters is int && data.vmaTestDistanceMeters >= 0 && data.vmaTestDistanceMeters <= 10000 &&
+      data.vmaTestDurationSeconds is int && data.vmaTestDurationSeconds >= 0 && data.vmaTestDurationSeconds <= 3600 &&
+      (!('vmaTestedAt' in data) || data.vmaTestedAt == null || data.vmaTestedAt is timestamp) &&
+      data.completedSessionKeys is list &&
+      data.completedSessionKeys.size() <= 100 &&
+      (
+        data.completedSessionKeys.size() == 0 ||
+        (data.completedSessionKeys[0] is string && data.completedSessionKeys[0].size() >= 3 && data.completedSessionKeys[0].size() <= 32)
+      ) &&
+      data.notes is string && data.notes.size() <= 600 &&
+      isValidId(data.coachUid) &&
+      data.coachName is string && data.coachName.size() >= 1 && data.coachName.size() <= 80 &&
+      data.isPaid == true &&
+      data.priceCents is int && data.priceCents >= 100 && data.priceCents <= 200000 &&
+      data.currency == 'EUR' &&
+      data.paymentMode in ['online', 'onsite', 'both'] &&
+      data.paymentStatus in ['pending', 'paid'] &&
+      data.paymentMethod in ['', 'card', 'onsite'] &&
+      data.paymentReference is string && data.paymentReference.size() <= 64 &&
+      data.cardBrand is string && data.cardBrand.size() <= 24 &&
+      data.cardLast4 is string && (data.cardLast4.size() == 0 || (data.cardLast4.size() == 4 && data.cardLast4.matches('^[0-9]{4}$'))) &&
+      (!('paidAt' in data) || data.paidAt == null || data.paidAt is timestamp) &&
+      data.status in ['awaiting_payment', 'awaiting_vma', 'active', 'completed'] &&
+      isValidId(data.createdByUid) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    match /trainingPrograms/{programId} {
+      allow get: if isValidId(programId) && (
+        isAdmin() ||
         (hasAuthenticatedEmail() && resource != null && existing().memberEmail == request.auth.token.email.lower())
       );
+
+      allow list: if isAdmin() || (
+        hasAuthenticatedEmail() &&
+        resource.data.memberEmail == request.auth.token.email.lower()
+      );
+
+      allow create: if isAdmin() &&
+        isValidId(programId) &&
+        isValidTrainingProgram(incoming()) &&
+        incoming().createdByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(programId) &&
+        hasAuthenticatedEmail() &&
+        isValidTrainingProgram(incoming()) &&
+        incoming().memberEmail == existing().memberEmail &&
+        incoming().memberEmailKey == existing().memberEmailKey &&
+        incoming().distance == existing().distance &&
+        incoming().durationWeeks == existing().durationWeeks &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'memberName', 'title', 'sessionsPerWeek', 'preferredDays',
+              'targetTimeSeconds', 'startAt', 'notes', 'coachUid', 'coachName',
+              'priceCents', 'paymentMode', 'paymentStatus', 'paymentMethod',
+              'paymentReference', 'cardBrand', 'cardLast4', 'paidAt',
+              'vmaTestStatus', 'vmaKmh', 'vmaTestDistanceMeters', 'vmaTestDurationSeconds', 'vmaTestedAt',
+              'completedSessionKeys', 'status', 'updatedAt'
+            ])
+          ) ||
+          (
+            existing().memberEmail == request.auth.token.email.lower() &&
+            (
+              (
+                existing().paymentStatus == 'pending' &&
+                incoming().diff(existing()).affectedKeys().hasOnly([
+                  'paymentStatus', 'paymentMethod', 'paymentReference',
+                  'cardBrand', 'cardLast4', 'paidAt', 'status', 'updatedAt'
+                ]) &&
+                (
+                  (
+                    incoming().paymentMethod == 'card' &&
+                    existing().paymentMode in ['online', 'both'] &&
+                    incoming().paymentStatus == 'paid' &&
+                    incoming().cardLast4.size() == 4 &&
+                    incoming().paymentReference.size() >= 6 &&
+                    incoming().get('paidAt', null) == request.time &&
+                    incoming().status == (existing().vmaTestStatus == 'completed' ? 'active' : 'awaiting_vma')
+                  ) ||
+                  (
+                    incoming().paymentMethod == 'onsite' &&
+                    existing().paymentMode in ['onsite', 'both'] &&
+                    incoming().paymentStatus == 'pending' &&
+                    incoming().paymentReference.size() >= 6 &&
+                    incoming().get('paidAt', null) == null &&
+                    incoming().status == 'awaiting_payment'
+                  )
+                )
+              ) ||
+              (
+                existing().paymentStatus == 'paid' &&
+                request.time >= existing().startAt &&
+                incoming().diff(existing()).affectedKeys().hasOnly([
+                  'vmaTestStatus', 'vmaKmh', 'vmaTestDistanceMeters',
+                  'vmaTestDurationSeconds', 'vmaTestedAt', 'status', 'updatedAt'
+                ]) &&
+                incoming().vmaTestStatus == 'completed' &&
+                incoming().vmaKmh >= 6 &&
+                incoming().vmaKmh <= 26 &&
+                incoming().get('vmaTestedAt', null) == request.time &&
+                incoming().status == 'active'
+              ) ||
+              (
+                existing().paymentStatus == 'paid' &&
+                incoming().diff(existing()).affectedKeys().hasOnly([
+                  'completedSessionKeys', 'status', 'updatedAt'
+                ]) &&
+                incoming().status in ['awaiting_vma', 'active', 'completed']
+              )
+            )
+          )
+        );
+
+      allow delete: if isAdmin() && isValidId(programId);
     }
   }
 }

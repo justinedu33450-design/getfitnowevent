@@ -120,6 +120,35 @@ export const VALIDATION_LIMITS = {
   MESSAGE_TEXT_MAX: 1500,
   MESSAGE_PREVIEW_MAX: 240,
   SCHEDULE_NOTES_MAX: 600,
+  EXERCISE_NAME_MIN: 2,
+  EXERCISE_NAME_MAX: 100,
+  EXERCISE_DESCRIPTION_MAX: 500,
+  EXERCISE_INTENSITY_MAX: 80,
+  EXERCISE_OBJECTIVE_MAX: 60,
+  EXERCISE_OBJECTIVES_MAX_COUNT: 8,
+  EXERCISE_REPS_MIN: 0,
+  EXERCISE_REPS_MAX: 500,
+  EXERCISE_DURATION_MIN: 0,
+  EXERCISE_DURATION_MAX: 7200,
+  EXERCISE_ROUNDS_MIN: 1,
+  EXERCISE_ROUNDS_MAX: 50,
+  EXERCISE_PAUSE_MIN: 0,
+  EXERCISE_PAUSE_MAX: 600,
+  EXERCISE_REST_MIN: 0,
+  EXERCISE_REST_MAX: 1800,
+  SESSION_EXERCISES_MAX: 25,
+  SESSION_EXERCISE_NOTES_MAX: 240,
+  SESSION_OBJECTIVE_MAX: 120,
+  PROGRAM_DURATION_WEEKS: 12,
+  PROGRAM_SESSIONS_PER_WEEK_MIN: 2,
+  PROGRAM_SESSIONS_PER_WEEK_MAX: 6,
+  PROGRAM_PRICE_MIN_CENTS: 100,
+  PROGRAM_PRICE_MAX_CENTS: 200000,
+  PROGRAM_VMA_MIN_KMH: 6,
+  PROGRAM_VMA_MAX_KMH: 26,
+  PROGRAM_TARGET_TIME_MIN_SEC: 600,
+  PROGRAM_TARGET_TIME_MAX_SEC: 36000,
+  PROGRAM_COMPLETED_KEYS_MAX: 100,
 } as const;
 
 export interface SportEvent {
@@ -451,6 +480,42 @@ export interface PendingMessageTarget {
   contextEventTitle?: string;
 }
 
+export type ExerciseCategory = 'strength' | 'running' | 'mobility';
+
+export interface ExerciseParams {
+  repetitions: number;
+  durationSeconds: number;
+  setsOrRounds: number;
+  intraSetPauseSeconds: number;
+  restBetweenRoundsSeconds: number;
+}
+
+export interface ExerciseLibraryItem {
+  id: string;
+  name: string;
+  category: ExerciseCategory;
+  targetObjectives: string[];
+  description: string;
+  defaultParams: ExerciseParams;
+  intensityHint?: string;
+  isPreset?: boolean;
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface ScheduledExerciseItem {
+  exerciseId: string;
+  name: string;
+  category: ExerciseCategory;
+  repetitions: number;
+  durationSeconds: number;
+  setsOrRounds: number;
+  intraSetPauseSeconds: number;
+  restBetweenRoundsSeconds: number;
+  notes: string;
+}
+
 export interface MemberScheduleSession {
   id: string;
   memberEmail: string;
@@ -464,9 +529,81 @@ export interface MemberScheduleSession {
   durationMinutes: number;
   coachUid: string;
   coachName: string;
+  objective?: string;
+  exercises?: ScheduledExerciseItem[];
+  isPaid?: boolean;
+  priceCents?: number;
+  currency?: 'EUR';
+  paymentMode?: EventPaymentMode;
+  paymentStatus?: 'free' | 'paid' | 'pending';
+  paymentMethod?: PaymentMethod;
+  paymentReference?: string;
+  cardBrand?: string;
+  cardLast4?: string;
+  paidAt?: Timestamp | null;
   createdByUid: string;
   createdByRole: 'coach' | 'member';
   completed: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
+
+export type RunningDistanceKey = '5km' | '10km' | '21km' | '42km';
+export type TrainingProgramStatus =
+  | 'awaiting_payment'
+  | 'awaiting_vma'
+  | 'active'
+  | 'completed';
+export type VmaTestStatus = 'pending' | 'completed';
+
+export interface RunningPaceZones {
+  vmaKmh: number;
+  efMinSecPerKm: number;
+  efMaxSecPerKm: number;
+  as42SecPerKm: number;
+  as21SecPerKm: number;
+  seuilSecPerKm: number;
+  as10SecPerKm: number;
+  as5SecPerKm: number;
+  vma100SecPerKm: number;
+  vma105SecPerKm: number;
+  targetRacePaceSecPerKm: number;
+}
+
+export interface TrainingProgram {
+  id: string;
+  memberEmail: string;
+  memberEmailKey: string;
+  memberName: string;
+  title: string;
+  distance: RunningDistanceKey;
+  durationWeeks: number;
+  sessionsPerWeek: number;
+  preferredDays: number[];
+  targetTimeSeconds: number;
+  startAt: Timestamp;
+  vmaTestStatus: VmaTestStatus;
+  vmaKmh: number;
+  vmaTestDistanceMeters: number;
+  vmaTestDurationSeconds: number;
+  vmaTestedAt?: Timestamp | null;
+  completedSessionKeys: string[];
+  notes: string;
+  coachUid: string;
+  coachName: string;
+  isPaid: boolean;
+  priceCents: number;
+  currency: 'EUR';
+  paymentMode: EventPaymentMode;
+  paymentStatus: 'pending' | 'paid';
+  paymentMethod: '' | 'card' | 'onsite';
+  paymentReference: string;
+  cardBrand: string;
+  cardLast4: string;
+  paidAt?: Timestamp | null;
+  status: TrainingProgramStatus;
+  createdByUid: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
