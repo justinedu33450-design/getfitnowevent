@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   CalendarPlus,
   CreditCard,
@@ -11,6 +11,7 @@ import {
 import {
   CoachDirectoryEntry,
   EventPaymentMode,
+  ProgramRunnerLevel,
   RunningDistanceKey,
   TrainingProgram,
   VALIDATION_LIMITS,
@@ -28,7 +29,13 @@ import {
   formatDurationHMS,
   formatPaceMinPerKm,
   getDefaultPreferredDays,
+  getProgramDurationWeeks,
+  getProgramPhases,
+  getProgramRunnerLevelLabel,
+  inferProgramLevelFromDuration,
+  mapFitnessLevelToProgramLevel,
   normalizePreferredDays,
+  PROGRAM_RUNNER_LEVEL_OPTIONS,
   RUNNING_DISTANCE_LIST,
   RUNNING_DISTANCE_TEMPLATES,
   WEEKDAY_OPTIONS,
@@ -44,7 +51,7 @@ interface RunningProgramBuilderModalProps {
   initialDistance?: RunningDistanceKey;
   editingProgram?: TrainingProgram | null;
   onClose: () => void;
-  onSaved?: (message: string) => void;
+  onSaved?: (message: string, targetDate?: Date) => void;
 }
 
 function splitSecondsToHMS(totalSeconds: number): {
@@ -58,6 +65,33 @@ function splitSecondsToHMS(totalSeconds: number): {
     m: Math.floor((safe % 3600) / 60),
     s: safe % 60,
   };
+}
+
+function formatRunningProgramError(err: unknown): string {
+  const fallback = 'Impossible d’enregistrer le programme running.';
+  if (!(err instanceof Error)) return fallback;
+  const raw = err.message.trim();
+  if (!raw) return fallback;
+
+  let extracted = raw;
+  if (raw.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(raw) as { error?: string };
+      if (parsed.error) extracted = parsed.error;
+    } catch {
+      extracted = raw;
+    }
+  }
+
+  const lower = extracted.toLowerCase();
+  if (
+    lower.includes('permission') ||
+    lower.includes('insufficient permissions')
+  ) {
+    return 'Autorisation refusée par Firestore : vérifiez que votre compte coach est actif et que les règles Firestore (firestore.rules) à jour ont bien été déployées sur le projet Firebase pour autoriser les durées de 8 à 16 semaines et le niveau du coureur.';
+  }
+
+  return extracted;
 }
 
 export function RunningProgramBuilderModal({
@@ -79,6 +113,17 @@ export function RunningProgramBuilderModal({
 
   const [selectedMemberEmail, setSelectedMemberEmail] =
     useState(defaultMemberEmail);
+
+  useEffect(() => {
+    if (
+      !editingProgram &&
+      !initialMember &&
+      !selectedMemberEmail &&
+      memberCandidates.length > 0
+    ) {
+      setSelectedMemberEmail(memberCandidates[0].email);
+    }
+  }, [editingProgram, initialMember, selectedMemberEmail, memberCandidates]);
 
   const selectedMember = useMemo(() => {
     const clean = selectedMemberEmail.trim().toLowerCase();
@@ -104,8 +149,25 @@ export function RunningProgramBuilderModal({
   );
   const tpl = RUNNING_DISTANCE_TEMPLATES[distance];
 
+  const [runnerLevel, setRunnerLevel] = useState<ProgramRunnerLevel>(() => {
+    if (editingProgram) {
+      return (
+        editingProgram.level ??
+        inferProgramLevelFromDuration(
+          editingProgram.distance,
+          editingProgram.durationWeeks
+        )
+      );
+    }
+    return mapFitnessLevelToProgramLevel(initialMember?.fitnessLevel);
+  });
+  const [levelTouched, setLevelTouched] = useState(Boolean(editingProgram));
+  const [titleTouched, setTitleTouched] = useState(Boolean(editingProgram));
+
+  const durationWeeks = getProgramDurationWeeks(distance, runnerLevel);
+
   const [title, setTitle] = useState(
-    editingProgram?.title || `${tpl.label} · 12 semaines`
+    editingProgram?.title || `${tpl.label} · ${durationWeeks} semaines`
   );
   const [sessionsPerWeek, setSessionsPerWeek] = useState<number>(
     editingProgram?.sessionsPerWeek ?? tpl.defaultSessionsPerWeek
@@ -114,6 +176,17 @@ export function RunningProgramBuilderModal({
     editingProgram?.preferredDays ??
       getDefaultPreferredDays(tpl.defaultSessionsPerWeek)
   );
+
+  // Sync suggested level from selected member's fitness profile when creating (if not overridden)
+  useEffect(() => {
+    if (editingProgram || levelTouched || !selectedMember?.fitnessLevel) return;
+    const mapped = mapFitnessLevelToProgramLevel(selectedMember.fitnessLevel);
+    setRunnerLevel(mapped);
+    if (!titleTouched) {
+      const nextWeeks = getProgramDurationWeeks(distance, mapped);
+      setTitle(`${RUNNING_DISTANCE_TEMPLATES[distance].label} · ${nextWeeks} semaines`);
+    }
+  }, [editingProgram, levelTouched, titleTouched, selectedMember, distance]);
 
   const initialHMS = splitSecondsToHMS(
     editingProgram?.targetTimeSeconds ?? tpl.defaultTargetTimeSeconds
@@ -161,11 +234,19 @@ export function RunningProgramBuilderModal({
     [distance, targetTotalSeconds]
   );
 
+  const phasesPreview = useMemo(
+    () => getProgramPhases(distance, durationWeeks),
+    [distance, durationWeeks]
+  );
+
   const handleDistanceChange = (nextDist: RunningDistanceKey) => {
     if (editingProgram) return;
     setDistance(nextDist);
     const nextTpl = RUNNING_DISTANCE_TEMPLATES[nextDist];
-    setTitle(`${nextTpl.label} · 12 semaines`);
+    const nextWeeks = getProgramDurationWeeks(nextDist, runnerLevel);
+    if (!titleTouched) {
+      setTitle(`${nextTpl.label} · ${nextWeeks} semaines`);
+    }
     setSessionsPerWeek(nextTpl.defaultSessionsPerWeek);
     setPreferredDays(getDefaultPreferredDays(nextTpl.defaultSessionsPerWeek));
     const hms = splitSecondsToHMS(nextTpl.defaultTargetTimeSeconds);
@@ -173,6 +254,15 @@ export function RunningProgramBuilderModal({
     setTargetMinutes(hms.m);
     setTargetSeconds(hms.s);
     setPriceEuros((nextTpl.defaultPriceCents / 100).toFixed(2));
+  };
+
+  const handleLevelChange = (nextLevel: ProgramRunnerLevel) => {
+    setRunnerLevel(nextLevel);
+    setLevelTouched(true);
+    if (!titleTouched) {
+      const nextWeeks = getProgramDurationWeeks(distance, nextLevel);
+      setTitle(`${tpl.label} · ${nextWeeks} semaines`);
+    }
   };
 
   const handleSessionsPerWeekChange = (count: number) => {
@@ -266,6 +356,8 @@ export function RunningProgramBuilderModal({
       if (editingProgram) {
         await updateTrainingProgramConfig(editingProgram.id, {
           title,
+          distance,
+          level: runnerLevel,
           sessionsPerWeek,
           preferredDays: normalizedDays,
           targetTimeSeconds: targetTotalSeconds,
@@ -277,7 +369,8 @@ export function RunningProgramBuilderModal({
           paymentMode,
         });
         onSaved?.(
-          `Programme « ${title} » mis à jour pour ${targetName}.`
+          `Programme « ${title} » (${durationWeeks} semaines) mis à jour pour ${targetName}.`,
+          startDate
         );
       } else {
         await createTrainingProgram({
@@ -285,6 +378,7 @@ export function RunningProgramBuilderModal({
           memberName: targetName,
           title,
           distance,
+          level: runnerLevel,
           sessionsPerWeek,
           preferredDays: normalizedDays,
           targetTimeSeconds: targetTotalSeconds,
@@ -298,16 +392,13 @@ export function RunningProgramBuilderModal({
           createdByUid: coachUid,
         });
         onSaved?.(
-          `Programme ${tpl.shortLabel} sur 12 semaines (${formatPriceEuros(priceCents)}) attribué à ${targetName}.`
+          `Programme ${tpl.shortLabel} sur ${durationWeeks} semaines (${getProgramRunnerLevelLabel(runnerLevel)} · ${formatPriceEuros(priceCents)}) attribué à ${targetName}.`,
+          startDate
         );
       }
       onClose();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Impossible d’enregistrer le programme running.'
-      );
+      setError(formatRunningProgramError(err));
     } finally {
       setSaving(false);
     }
@@ -337,12 +428,11 @@ export function RunningProgramBuilderModal({
                 className="font-display text-lg font-bold text-slate-900 dark:text-white"
               >
                 {editingProgram
-                  ? `Modifier le programme ${tpl.shortLabel}`
-                  : 'Créer un programme running 12 semaines'}
+                  ? `Modifier le programme ${tpl.shortLabel} (${durationWeeks} sem.)`
+                  : `Créer un programme running (${durationWeeks} semaines)`}
               </h2>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Plan spécifique 5 km, 10 km, 21 km ou 42 km · Test VMA au Jour 1 +
-                allures calibrées · Programme payant
+                Plan spécifique 5 km, 10 km, 21 km ou 42 km · Durée adaptée au niveau · Test VMA au Jour 1
               </p>
             </div>
           </div>
@@ -364,11 +454,12 @@ export function RunningProgramBuilderModal({
             {/* Distance selector (5km, 10km, 21km, 42km) */}
             <div>
               <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Distance cible (programme 12 semaines) *
+                Distance cible *
               </span>
               <div className="mt-2 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 {RUNNING_DISTANCE_LIST.map((item) => {
                   const active = distance === item.key;
+                  const itemWeeks = getProgramDurationWeeks(item.key, runnerLevel);
                   return (
                     <button
                       key={item.key}
@@ -387,7 +478,47 @@ export function RunningProgramBuilderModal({
                         {item.shortLabel}
                       </p>
                       <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                        12 sem. · {formatPriceEuros(item.defaultPriceCents)}
+                        {itemWeeks} sem. · {formatPriceEuros(item.defaultPriceCents)}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Runner level selector (Débutant / Régulier / Expérimenté) */}
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Niveau du coureur (adapte la durée du cycle) *
+                </span>
+                <span className="font-mono text-xs font-bold text-sky-700 dark:text-sky-400 tabular-nums">
+                  Durée retenue : {durationWeeks} semaines
+                </span>
+              </div>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {PROGRAM_RUNNER_LEVEL_OPTIONS.map((opt) => {
+                  const active = runnerLevel === opt.value;
+                  const optWeeks = getProgramDurationWeeks(distance, opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleLevelChange(opt.value)}
+                      className={`rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer ${
+                        active
+                          ? 'border-emerald-600 bg-emerald-50/80 text-emerald-950 dark:border-emerald-500 dark:bg-emerald-950/55 dark:text-emerald-100'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold">{opt.label}</span>
+                        <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                          {optWeeks} sem.
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                        {opt.description}
                       </p>
                     </button>
                   );
@@ -414,7 +545,7 @@ export function RunningProgramBuilderModal({
                       {selectedMember?.name || selectedMemberEmail}
                     </span>
                   </div>
-                ) : (
+                ) : memberCandidates.length > 0 ? (
                   <select
                     id="rp-member"
                     required
@@ -429,6 +560,21 @@ export function RunningProgramBuilderModal({
                       </option>
                     ))}
                   </select>
+                ) : (
+                  <div className="mt-1 space-y-1">
+                    <input
+                      id="rp-member"
+                      type="email"
+                      required
+                      value={selectedMemberEmail}
+                      onChange={(e) => setSelectedMemberEmail(e.target.value)}
+                      placeholder="email.adherent@exemple.fr"
+                      className="min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    />
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                      Aucun adhérent répertorié pour l’instant : saisissez directement son email ou ajoutez-le dans Adhérents.
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -446,7 +592,10 @@ export function RunningProgramBuilderModal({
                   minLength={VALIDATION_LIMITS.TITLE_MIN}
                   maxLength={VALIDATION_LIMITS.TITLE_MAX}
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setTitleTouched(true);
+                  }}
                   className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 />
               </div>
@@ -542,19 +691,19 @@ export function RunningProgramBuilderModal({
                 />
                 <p className="mt-2 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
                   Le Jour 1 déclenche le test VMA Demi-Cooper (6 min) qui calcule
-                  les allures des {12 * sessionsPerWeek - 1} séances suivantes.
+                  les allures des {durationWeeks * sessionsPerWeek - 1} séances suivantes.
                 </p>
               </div>
             </div>
 
-            {/* Configurable Frequency (2..6 sessions/week) + Days */}
+            {/* Configurable Frequency (2..6 sessions/week, default 3) + Days */}
             <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/30 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  Fréquence hebdomadaire sur 12 semaines *
+                  Fréquence hebdomadaire sur {durationWeeks} semaines *
                 </span>
                 <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                  {12 * sessionsPerWeek} séances au total
+                  {durationWeeks * sessionsPerWeek} séances au total
                 </span>
               </div>
 
@@ -710,13 +859,14 @@ export function RunningProgramBuilderModal({
               </div>
             </div>
 
-            {/* 4-Phase 12-week structure preview */}
+            {/* 4-Phase dynamic structure preview */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-950/50">
               <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                Structure générée sur 12 semaines ({tpl.shortLabel})
+                Structure générée sur {durationWeeks} semaines ({tpl.shortLabel} ·{' '}
+                {getProgramRunnerLevelLabel(runnerLevel)})
               </p>
               <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                {tpl.phases.map((p) => (
+                {phasesPreview.map((p) => (
                   <p
                     key={p}
                     className="rounded-md border border-slate-200/80 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
@@ -736,7 +886,7 @@ export function RunningProgramBuilderModal({
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/60">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              L’adhérent verra les 12 semaines dans <strong>Mon suivi</strong> dès
+              L’adhérent verra les {durationWeeks} semaines dans <strong>Mon suivi</strong> dès
               attribution.
             </p>
             <div className="flex items-center gap-2">
@@ -757,7 +907,7 @@ export function RunningProgramBuilderModal({
                   ? 'Enregistrement...'
                   : editingProgram
                     ? 'Mettre à jour le programme'
-                    : 'Créer le programme 12 semaines'}
+                    : `Créer le programme (${durationWeeks} sem.)`}
               </button>
             </div>
           </div>

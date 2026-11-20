@@ -27,6 +27,7 @@ import {
   MemberScheduleSession,
   Registration,
   SportEvent,
+  TrainingProgram,
   VALIDATION_LIMITS,
 } from '../types';
 import {
@@ -61,6 +62,7 @@ interface MembersTrackingViewProps {
   registrations: Registration[];
   memberProfiles: MemberProfile[];
   memberSchedules?: MemberScheduleSession[];
+  trainingPrograms?: TrainingProgram[];
   disciplines?: DisciplineItem[];
   exercises?: ExerciseLibraryItem[];
   nowMs: number;
@@ -87,6 +89,7 @@ export function MembersTrackingView({
   registrations,
   memberProfiles,
   memberSchedules = [],
+  trainingPrograms = [],
   disciplines = [],
   exercises = [],
   nowMs,
@@ -260,6 +263,16 @@ export function MembersTrackingView({
         (emailLower && s.memberEmail.trim().toLowerCase() === emailLower)
     );
   }, [memberSchedules, selectedMember]);
+
+  const selectedMemberTrainingPrograms = useMemo(() => {
+    if (!selectedMember) return [];
+    const emailLower = selectedMember.email.trim().toLowerCase();
+    return trainingPrograms.filter(
+      (p) =>
+        p.memberEmailKey === selectedMember.emailKey ||
+        (emailLower && p.memberEmail.trim().toLowerCase() === emailLower)
+    );
+  }, [trainingPrograms, selectedMember]);
 
   const stats = useMemo(() => {
     const total = members.length;
@@ -841,6 +854,7 @@ export function MembersTrackingView({
           member={selectedMember}
           allRegistrations={selectedMemberAllRegistrations}
           memberScheduleSessions={selectedMemberScheduleSessions}
+          memberTrainingPrograms={selectedMemberTrainingPrograms}
           currentCoachUid={currentCoachUid}
           currentCoachName={currentCoachName}
           coachDirectory={coachDirectory}
@@ -1206,6 +1220,7 @@ interface MemberDetailDrawerProps {
   member: MemberAggregate;
   allRegistrations: Registration[];
   memberScheduleSessions: MemberScheduleSession[];
+  memberTrainingPrograms: TrainingProgram[];
   currentCoachUid: string;
   currentCoachName: string;
   coachDirectory: CoachDirectoryEntry[];
@@ -1224,6 +1239,7 @@ function MemberDetailDrawer({
   member,
   allRegistrations,
   memberScheduleSessions,
+  memberTrainingPrograms,
   currentCoachUid,
   currentCoachName,
   coachDirectory,
@@ -1682,6 +1698,7 @@ function MemberDetailDrawer({
                 currentUserUid={currentCoachUid}
                 currentCoachName={currentCoachName}
                 customSessions={memberScheduleSessions}
+                trainingPrograms={memberTrainingPrograms}
                 registrations={allRegistrations}
                 events={events}
                 disciplines={disciplines}

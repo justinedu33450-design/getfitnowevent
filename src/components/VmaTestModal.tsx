@@ -171,7 +171,7 @@ export function VmaTestModal({
             <p className="mt-1 leading-relaxed">
               Après 15 min d’échauffement souple, courez la plus grande distance possible pendant
               6 minutes à allure régulière. Votre VMA calibre automatiquement toutes vos séances
-              des 12 semaines.
+              des {program.durationWeeks || 12} semaines.
             </p>
           </div>
 
@@ -281,7 +281,7 @@ export function VmaTestModal({
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
                 <span className="font-display text-sm font-bold text-slate-900 dark:text-white">
-                  Allures calculées pour les 12 semaines
+                  Allures calculées pour les {program.durationWeeks || 12} semaines
                 </span>
               </div>
               <span className="font-mono text-base font-bold text-sky-700 dark:text-sky-400 tabular-nums">

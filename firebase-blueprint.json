@@ -1358,7 +1358,7 @@
     },
     "MemberScheduleSession": {
       "title": "MemberScheduleSession",
-      "description": "Séance personnalisée du planning hebdomadaire d'un adhérent (programme sur mesure coach ou entraînement personnel en dehors des événements publics).",
+      "description": "Séance personnalisée du planning hebdomadaire d'un adhérent, créée et gérée exclusivement par un coach.",
       "type": "object",
       "properties": {
         "memberEmail": {
@@ -1468,7 +1468,7 @@
         },
         "createdByRole": {
           "type": "string",
-          "enum": ["coach", "member"]
+          "enum": ["coach"]
         },
         "completed": {
           "type": "boolean"
@@ -1562,7 +1562,7 @@
     },
     "TrainingProgram": {
       "title": "TrainingProgram",
-      "description": "Programme running personnalisé payant sur 12 semaines (5km, 10km, 21km ou 42km) avec objectif de temps, nombre de séances hebdomadaires paramétrable et test VMA le premier jour.",
+      "description": "Programme running personnalisé payant (5km: 10/8 sem., 10km: 12/10 sem., 21km: 14/12 sem., 42km: 16/14 sem. selon le niveau) avec objectif de temps, 3 séances/sem. par défaut (2 à 6 paramétrables) et test VMA le premier jour.",
       "type": "object",
       "properties": {
         "memberEmail": {
@@ -1591,13 +1591,18 @@
           "type": "string",
           "enum": ["5km", "10km", "21km", "42km"]
         },
+        "level": {
+          "type": "string",
+          "enum": ["beginner", "regular", "experienced"],
+          "description": "Niveau du coureur (Débutant, Régulier, Expérimenté) déterminant la durée du cycle."
+        },
         "durationWeeks": {
           "type": "integer",
-          "description": "Durée fixe du programme en semaines (12)."
+          "description": "Durée du programme en semaines (8 à 16 selon distance et niveau)."
         },
         "sessionsPerWeek": {
           "type": "integer",
-          "description": "Nombre paramétrable de séances par semaine (2 à 6)."
+          "description": "Nombre paramétrable de séances par semaine (3 par défaut, 2 à 6)."
         },
         "preferredDays": {
           "type": "array",
@@ -1807,7 +1812,7 @@
     },
     "/memberSchedules/{sessionId}": {
       "schema": { "$ref": "#/entities/MemberScheduleSession" },
-      "description": "Séances hebdomadaires personnalisées du programme individuel d'un adhérent (privées pour l'adhérent et les coachs)."
+      "description": "Séances hebdomadaires personnalisées du programme individuel d'un adhérent (créées et modifiées uniquement par les coachs ; l'adhérent peut les consulter, régler les séances payantes et cocher sa réalisation)."
     },
     "/exercises/{exerciseId}": {
       "schema": { "$ref": "#/entities/Exercise" },
@@ -1815,7 +1820,7 @@
     },
     "/trainingPrograms/{programId}": {
       "schema": { "$ref": "#/entities/TrainingProgram" },
-      "description": "Programmes running personnalisés payants sur 12 semaines (5km, 10km, 21km, 42km) avec test VMA initial et allures calculées."
+      "description": "Programmes running personnalisés payants (5km, 10km, 21km, 42km) avec durée adaptée au niveau (8 à 16 semaines), 3 séances/sem. par défaut, test VMA initial et allures calculées."
     }
   }
 }

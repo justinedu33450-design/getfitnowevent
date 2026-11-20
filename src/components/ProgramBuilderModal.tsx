@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -81,7 +81,7 @@ interface ProgramBuilderModalProps {
   editingSession?: MemberScheduleSession | null;
   initialExercises?: ScheduledExerciseItem[];
   onClose: () => void;
-  onSaved?: (message: string) => void;
+  onSaved?: (message: string, targetDate?: Date) => void;
 }
 
 const DURATION_PRESETS = [20, 30, 45, 60, 75, 90, 120];
@@ -114,6 +114,17 @@ export function ProgramBuilderModal({
 
   const [selectedMemberEmail, setSelectedMemberEmail] =
     useState(defaultMemberEmail);
+
+  useEffect(() => {
+    if (
+      !editingSession &&
+      !initialMember &&
+      !selectedMemberEmail &&
+      memberCandidates.length > 0
+    ) {
+      setSelectedMemberEmail(memberCandidates[0].email);
+    }
+  }, [editingSession, initialMember, selectedMemberEmail, memberCandidates]);
 
   const selectedMember = useMemo(() => {
     const clean = selectedMemberEmail.trim().toLowerCase();
@@ -411,7 +422,10 @@ export function ProgramBuilderModal({
           paymentMode,
           completed: editingSession.completed,
         });
-        onSaved?.(`Programme « ${title} » mis à jour pour ${targetName}.`);
+        onSaved?.(
+          `Programme « ${title} » mis à jour pour ${targetName}.`,
+          startDate
+        );
       } else {
         await createMemberScheduleSession({
           memberEmail: targetEmail,
@@ -433,7 +447,8 @@ export function ProgramBuilderModal({
           createdByRole: 'coach',
         });
         onSaved?.(
-          `Programme personnalisé payant ajouté au planning de ${targetName}.`
+          `Programme personnalisé payant ajouté au planning de ${targetName}.`,
+          startDate
         );
       }
       onClose();
@@ -693,7 +708,7 @@ export function ProgramBuilderModal({
                             selectedMemberEmail}
                         </span>
                       </div>
-                    ) : (
+                    ) : memberCandidates.length > 0 ? (
                       <select
                         id="pb-member"
                         value={selectedMemberEmail}
@@ -709,6 +724,21 @@ export function ProgramBuilderModal({
                           </option>
                         ))}
                       </select>
+                    ) : (
+                      <div className="mt-1 space-y-1">
+                        <input
+                          id="pb-member"
+                          type="email"
+                          required
+                          value={selectedMemberEmail}
+                          onChange={(e) => setSelectedMemberEmail(e.target.value)}
+                          placeholder="email.adherent@exemple.fr"
+                          className="min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                        />
+                        <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                          Aucun adhérent répertorié pour l’instant : saisissez directement l’adresse email de l’adhérent ou créez sa fiche dans l’onglet Adhérents.
+                        </p>
+                      </div>
                     )}
                     {selectedMember && (selectedMember.goal || selectedMember.fitnessLevel) && (
                       <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-400">

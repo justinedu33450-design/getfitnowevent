@@ -1,5 +1,6 @@
 import {
   ExerciseCategory,
+  ProgramRunnerLevel,
   RunningDistanceKey,
   RunningPaceZones,
   ScheduledExerciseItem,
@@ -7,16 +8,88 @@ import {
   VALIDATION_LIMITS,
 } from '../types';
 
+export const PROGRAM_RUNNER_LEVEL_OPTIONS: {
+  value: ProgramRunnerLevel;
+  label: string;
+  shortLabel: string;
+  description: string;
+}[] = [
+  {
+    value: 'beginner',
+    label: 'Débutant',
+    shortLabel: 'Débutant',
+    description: 'Progression progressive sur une durée étendue',
+  },
+  {
+    value: 'regular',
+    label: 'Régulier',
+    shortLabel: 'Régulier',
+    description: 'Pratique régulière (2 à 4 séances/sem.)',
+  },
+  {
+    value: 'experienced',
+    label: 'Expérimenté',
+    shortLabel: 'Expérimenté',
+    description: 'Coureur confirmé, cycle dynamique',
+  },
+];
+
+export const PROGRAM_DURATION_BY_DISTANCE_AND_LEVEL: Record<
+  RunningDistanceKey,
+  Record<ProgramRunnerLevel, number>
+> = {
+  '5km': { beginner: 10, regular: 8, experienced: 8 },
+  '10km': { beginner: 12, regular: 10, experienced: 10 },
+  '21km': { beginner: 14, regular: 12, experienced: 12 },
+  '42km': { beginner: 16, regular: 14, experienced: 14 },
+};
+
+export function getProgramDurationWeeks(
+  distance: RunningDistanceKey,
+  level: ProgramRunnerLevel = 'regular'
+): number {
+  const byDist = PROGRAM_DURATION_BY_DISTANCE_AND_LEVEL[distance];
+  return byDist[level] ?? byDist.regular;
+}
+
+export function inferProgramLevelFromDuration(
+  distance: RunningDistanceKey,
+  durationWeeks?: number | null
+): ProgramRunnerLevel {
+  if (!durationWeeks) return 'regular';
+  const beginnerWeeks = PROGRAM_DURATION_BY_DISTANCE_AND_LEVEL[distance].beginner;
+  return durationWeeks >= beginnerWeeks ? 'beginner' : 'regular';
+}
+
+export function mapFitnessLevelToProgramLevel(
+  fitnessLevel?: string | null
+): ProgramRunnerLevel {
+  if (fitnessLevel === 'beginner') return 'beginner';
+  if (fitnessLevel === 'advanced') return 'experienced';
+  return 'regular';
+}
+
+export function getProgramRunnerLevelLabel(
+  level?: ProgramRunnerLevel | null
+): string {
+  if (level === 'beginner') return 'Débutant';
+  if (level === 'regular') return 'Régulier';
+  if (level === 'experienced') return 'Expérimenté';
+  return '';
+}
+
 export interface RunningDistanceTemplate {
   key: RunningDistanceKey;
   label: string;
   shortLabel: string;
   distanceKm: number;
+  beginnerWeeks: number;
+  regularWeeks: number;
   defaultTargetTimeSeconds: number;
   defaultSessionsPerWeek: number;
   defaultPriceCents: number;
   tagline: string;
-  phases: [string, string, string, string];
+  phaseTitles: [string, string, string, string];
 }
 
 export const RUNNING_DISTANCE_TEMPLATES: Record<
@@ -28,15 +101,17 @@ export const RUNNING_DISTANCE_TEMPLATES: Record<
     label: 'Programme 5 km',
     shortLabel: '5 km',
     distanceKm: 5,
+    beginnerWeeks: 10,
+    regularWeeks: 8,
     defaultTargetTimeSeconds: 25 * 60, // 25 min (5:00/km)
-    defaultSessionsPerWeek: 3,
+    defaultSessionsPerWeek: VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK,
     defaultPriceCents: 4900,
-    tagline: 'Vitesse, VMA courte et soutien à l’allure 5 km sur 12 semaines.',
-    phases: [
-      'Sem. 1–4 · Test VMA, socle aérobie & foulée',
-      'Sem. 5–8 · Développement VMA & tolérance lactique',
-      'Sem. 9–11 · Blocs à allure spécifique AS5',
-      'Sem. 12 · Affûtage & Course 5 km',
+    tagline: 'Vitesse, VMA courte et soutien à l’allure 5 km (8 à 10 semaines).',
+    phaseTitles: [
+      'Test VMA, socle aérobie & foulée',
+      'Développement VMA & tolérance lactique',
+      'Blocs à allure spécifique AS5',
+      'Affûtage & Course 5 km',
     ],
   },
   '10km': {
@@ -44,15 +119,17 @@ export const RUNNING_DISTANCE_TEMPLATES: Record<
     label: 'Programme 10 km',
     shortLabel: '10 km',
     distanceKm: 10,
+    beginnerWeeks: 12,
+    regularWeeks: 10,
     defaultTargetTimeSeconds: 50 * 60, // 50 min (5:00/km)
-    defaultSessionsPerWeek: 3,
+    defaultSessionsPerWeek: VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK,
     defaultPriceCents: 5900,
-    tagline: 'Équilibre VMA, seuil et résistance spécifique 10 km sur 12 semaines.',
-    phases: [
-      'Sem. 1–4 · Test VMA, endurance & renforcement runner',
-      'Sem. 5–8 · VMA longue & travail au seuil',
-      'Sem. 9–11 · Allure spécifique AS10 & rappels VMA',
-      'Sem. 12 · Affûtage & Course 10 km',
+    tagline: 'Équilibre VMA, seuil et résistance spécifique 10 km (10 à 12 semaines).',
+    phaseTitles: [
+      'Test VMA, endurance & renforcement runner',
+      'VMA longue & travail au seuil',
+      'Allure spécifique AS10 & rappels VMA',
+      'Affûtage & Course 10 km',
     ],
   },
   '21km': {
@@ -60,15 +137,17 @@ export const RUNNING_DISTANCE_TEMPLATES: Record<
     label: 'Programme 21 km (Semi-marathon)',
     shortLabel: '21 km',
     distanceKm: 21.1,
+    beginnerWeeks: 14,
+    regularWeeks: 12,
     defaultTargetTimeSeconds: 115 * 60, // 1h55
-    defaultSessionsPerWeek: 4,
+    defaultSessionsPerWeek: VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK,
     defaultPriceCents: 7900,
-    tagline: 'Endurance fondamentale, seuil prolongé et allure semi AS21.',
-    phases: [
-      'Sem. 1–4 · Test VMA, volume progressif & gainage',
-      'Sem. 5–8 · Seuil tempo & sorties longues',
-      'Sem. 9–11 · Allure spécifique AS21 sous fatigue',
-      'Sem. 12 · Affûtage & Semi-marathon',
+    tagline: 'Endurance fondamentale, seuil prolongé et allure semi AS21 (12 à 14 semaines).',
+    phaseTitles: [
+      'Test VMA, volume progressif & gainage',
+      'Seuil tempo & sorties longues',
+      'Allure spécifique AS21 sous fatigue',
+      'Affûtage & Semi-marathon',
     ],
   },
   '42km': {
@@ -76,18 +155,53 @@ export const RUNNING_DISTANCE_TEMPLATES: Record<
     label: 'Programme 42 km (Marathon)',
     shortLabel: '42 km',
     distanceKm: 42.195,
+    beginnerWeeks: 16,
+    regularWeeks: 14,
     defaultTargetTimeSeconds: 4 * 3600, // 4h00
-    defaultSessionsPerWeek: 4,
+    defaultSessionsPerWeek: VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK,
     defaultPriceCents: 9900,
-    tagline: 'Volume aérobie, robustesse musculaire et maîtrise de l’allure AS42.',
-    phases: [
-      'Sem. 1–4 · Test VMA, endurance & PPG protectrice',
-      'Sem. 5–8 · Montée en volume & blocs AS42',
-      'Sem. 9–11 · Pic de charge spécifique Marathon',
-      'Sem. 12 · Affûtage & Marathon',
+    tagline: 'Volume aérobie, robustesse musculaire et maîtrise de l’allure AS42 (14 à 16 semaines).',
+    phaseTitles: [
+      'Test VMA, endurance & PPG protectrice',
+      'Montée en volume & blocs AS42',
+      'Pic de charge spécifique Marathon',
+      'Affûtage & Marathon',
     ],
   },
 };
+
+export function getProgramPhaseBounds(durationWeeks: number): {
+  p1End: number;
+  p2End: number;
+  p3End: number;
+  totalWeeks: number;
+} {
+  const totalWeeks = Math.min(
+    VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MAX,
+    Math.max(VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MIN, Math.round(durationWeeks) || 10)
+  );
+  const preRace = totalWeeks - 1;
+  const p1End = Math.max(2, Math.round(preRace / 3));
+  const p2End = Math.max(p1End + 2, p1End + Math.ceil((preRace - p1End) / 2));
+  const p3End = preRace;
+  return { p1End, p2End, p3End, totalWeeks };
+}
+
+export function getProgramPhases(
+  distance: RunningDistanceKey,
+  durationWeeks: number
+): [string, string, string, string] {
+  const titles = RUNNING_DISTANCE_TEMPLATES[distance].phaseTitles;
+  const { p1End, p2End, p3End, totalWeeks } = getProgramPhaseBounds(durationWeeks);
+  return [
+    `Sem. 1–${p1End} · ${titles[0]}`,
+    `Sem. ${p1End + 1}–${p2End} · ${titles[1]}`,
+    p2End + 1 === p3End
+      ? `Sem. ${p3End} · ${titles[2]}`
+      : `Sem. ${p2End + 1}–${p3End} · ${titles[2]}`,
+    `Sem. ${totalWeeks} · ${titles[3]}`,
+  ];
+}
 
 export const RUNNING_DISTANCE_LIST: RunningDistanceTemplate[] = [
   RUNNING_DISTANCE_TEMPLATES['5km'],
@@ -256,7 +370,7 @@ export type ProgramFocusZone =
 export interface GeneratedProgramSession {
   key: string; // e.g. 'w1-s1'
   programId: string;
-  weekNumber: number; // 1..12
+  weekNumber: number; // 1..durationWeeks
   sessionIndexInWeek: number; // 1..sessionsPerWeek
   phaseLabel: string;
   scheduledDate: Date;
@@ -318,7 +432,8 @@ function addDaysAtHour(base: Date, daysOffset: number, hour = 18, minute = 0): D
 function computeWeekDates(
   startDate: Date,
   sessionsPerWeek: number,
-  preferredDays: number[]
+  preferredDays: number[],
+  durationWeeks: number
 ): Date[][] {
   const normalizedDays = normalizePreferredDays(preferredDays, sessionsPerWeek);
   const startIsoDay = toIsoWeekday(startDate);
@@ -334,7 +449,7 @@ function computeWeekDates(
   );
 
   const weeks: Date[][] = [];
-  for (let w = 0; w < VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS; w += 1) {
+  for (let w = 0; w < durationWeeks; w += 1) {
     if (w === 0) {
       // Week 1 ALWAYS begins on Day 1 (startDate) for the VMA test!
       const w1Dates: Date[] = [
@@ -382,24 +497,27 @@ function computeWeekDates(
 
 function getPhaseForWeek(
   distance: RunningDistanceKey,
-  weekNumber: number
+  weekNumber: number,
+  durationWeeks: number
 ): string {
-  const phases = RUNNING_DISTANCE_TEMPLATES[distance].phases;
-  if (weekNumber <= 4) return phases[0];
-  if (weekNumber <= 8) return phases[1];
-  if (weekNumber <= 11) return phases[2];
+  const phases = getProgramPhases(distance, durationWeeks);
+  const { p1End, p2End, p3End } = getProgramPhaseBounds(durationWeeks);
+  if (weekNumber <= p1End) return phases[0];
+  if (weekNumber <= p2End) return phases[1];
+  if (weekNumber <= p3End) return phases[2];
   return phases[3];
 }
 
 function paceInfoForZone(
   zone: ProgramFocusZone,
   distance: RunningDistanceKey,
-  zones: RunningPaceZones | null
+  zones: RunningPaceZones | null,
+  durationWeeks: number
 ): { label: string; range: string } {
   if (zone === 'vma_test') {
     return {
       label: 'Allure maximale soutenue sur 6 min (Test VMA)',
-      range: 'Donne toutes vos allures des 12 semaines',
+      range: `Donne toutes vos allures des ${durationWeeks} semaines`,
     };
   }
   if (!zones) {
@@ -474,6 +592,7 @@ function paceInfoForZone(
 function buildWorkoutForSlot(params: {
   distance: RunningDistanceKey;
   weekNumber: number;
+  durationWeeks: number;
   slotIndex: number; // 0-based within week
   sessionsPerWeek: number;
   zones: RunningPaceZones | null;
@@ -487,7 +606,7 @@ function buildWorkoutForSlot(params: {
   coachNotes: string;
   exercises: ScheduledExerciseItem[];
 } {
-  const { distance, weekNumber, slotIndex, sessionsPerWeek, zones } = params;
+  const { distance, weekNumber, durationWeeks, slotIndex, sessionsPerWeek, zones } = params;
 
   // DAY 1 (Week 1, Session 1) = TEST VMA OBLIGATOIRE
   if (weekNumber === 1 && slotIndex === 0) {
@@ -538,8 +657,8 @@ function buildWorkoutForSlot(params: {
     };
   }
 
-  // RACE WEEK (Week 12, Last Session) = JOUR DE COURSE
-  if (weekNumber === 12 && slotIndex === sessionsPerWeek - 1) {
+  // RACE WEEK (Final Week, Last Session) = JOUR DE COURSE
+  if (weekNumber === durationWeeks && slotIndex === sessionsPerWeek - 1) {
     const raceLabel = RUNNING_DISTANCE_TEMPLATES[distance].shortLabel;
     const paceStr = zones
       ? formatPaceMinPerKm(zones.targetRacePaceSecPerKm)
@@ -592,8 +711,8 @@ function buildWorkoutForSlot(params: {
     };
   }
 
-  // Week 12 taper sessions (before race day)
-  if (weekNumber === 12) {
+  // Final race week taper sessions (before race day)
+  if (weekNumber === durationWeeks) {
     if (slotIndex === 0) {
       const pace = zones ? formatPaceMinPerKm(zones.efMinSecPerKm) : 'EF Z2';
       return {
@@ -670,8 +789,9 @@ function buildWorkoutForSlot(params: {
     };
   }
 
-  // Assign session roles within a normal week (Weeks 1..11)
+  // Assign session roles within a normal week (Weeks 1..durationWeeks-1)
   // Slot mapping depending on sessionsPerWeek (2..6)
+  const { p1End, p2End } = getProgramPhaseBounds(durationWeeks);
   type Role = 'quality_vma' | 'race_or_threshold' | 'long_run' | 'ef_strength' | 'ef_recovery';
   let role: Role = 'ef_recovery';
 
@@ -679,7 +799,7 @@ function buildWorkoutForSlot(params: {
     role = slotIndex === 0 ? (weekNumber % 2 === 1 ? 'quality_vma' : 'race_or_threshold') : 'long_run';
   } else if (sessionsPerWeek === 3) {
     if (slotIndex === 0) role = 'quality_vma';
-    else if (slotIndex === 1) role = weekNumber >= 5 ? 'race_or_threshold' : 'ef_strength';
+    else if (slotIndex === 1) role = weekNumber > p1End ? 'race_or_threshold' : 'ef_strength';
     else role = 'long_run';
   } else if (sessionsPerWeek === 4) {
     if (slotIndex === 0) role = 'quality_vma';
@@ -702,11 +822,13 @@ function buildWorkoutForSlot(params: {
     else role = 'long_run';
   }
 
-  const progressionIndex = Math.min(10, weekNumber - 1); // 0..10
-  const isRecoveryWeek = weekNumber === 4 || weekNumber === 8;
+  const progressionIndex = Math.round(
+    ((weekNumber - 1) / Math.max(1, durationWeeks - 2)) * 10
+  ); // 0..10 scaled to program duration
+  const isRecoveryWeek = weekNumber % 4 === 0 && weekNumber < durationWeeks - 1;
 
   if (role === 'quality_vma') {
-    const isShortVma = distance === '5km' || weekNumber <= 5;
+    const isShortVma = distance === '5km' || weekNumber <= p1End + 1;
     const reps = isShortVma
       ? isRecoveryWeek
         ? 6
@@ -778,7 +900,7 @@ function buildWorkoutForSlot(params: {
   }
 
   if (role === 'race_or_threshold') {
-    const isSpecificPhase = weekNumber >= 7;
+    const isSpecificPhase = weekNumber >= p2End - 1;
     const specificPace = zones
       ? formatPaceMinPerKm(
           distance === '5km'
@@ -930,14 +1052,18 @@ function buildWorkoutForSlot(params: {
           : distance === '21km'
             ? 75
             : 95;
+    const maxAdded = distance === '42km' ? 75 : distance === '21km' ? 35 : 20;
     const addedMinutes = isRecoveryWeek
       ? 0
       : Math.min(
-          distance === '42km' ? 75 : distance === '21km' ? 35 : 20,
-          weekNumber * (distance === '42km' ? 7 : 3)
+          maxAdded,
+          Math.round((weekNumber / Math.max(1, durationWeeks - 1)) * maxAdded)
         );
     const totalMin = baseMinutes + addedMinutes;
-    const finishSpecificMin = weekNumber >= 6 ? Math.min(25, 10 + weekNumber) : 0;
+    const finishSpecificMin =
+      weekNumber >= Math.ceil(durationWeeks / 2)
+        ? Math.min(25, 10 + Math.round((weekNumber / durationWeeks) * 12))
+        : 0;
     const efMin = totalMin - finishSpecificMin;
 
     return {
@@ -1032,17 +1158,28 @@ export function generateRunningProgramSessions(
   program: TrainingProgram
 ): GeneratedProgramSession[] {
   const startDate = program.startAt?.toDate ? program.startAt.toDate() : new Date();
+  const durationWeeks = Math.min(
+    VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MAX,
+    Math.max(
+      VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MIN,
+      Math.round(
+        program.durationWeeks ||
+          getProgramDurationWeeks(program.distance, program.level ?? 'regular')
+      )
+    )
+  );
   const sessionsPerWeek = Math.min(
     VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MAX,
     Math.max(
       VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MIN,
-      program.sessionsPerWeek || 3
+      program.sessionsPerWeek || VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK
     )
   );
   const weekDates = computeWeekDates(
     startDate,
     sessionsPerWeek,
-    program.preferredDays || getDefaultPreferredDays(sessionsPerWeek)
+    program.preferredDays || getDefaultPreferredDays(sessionsPerWeek),
+    durationWeeks
   );
 
   const zones =
@@ -1057,16 +1194,17 @@ export function generateRunningProgramSessions(
   const completedSet = new Set(program.completedSessionKeys || []);
   const sessions: GeneratedProgramSession[] = [];
 
-  for (let w = 0; w < VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS; w += 1) {
+  for (let w = 0; w < durationWeeks; w += 1) {
     const weekNumber = w + 1;
     const dates = weekDates[w];
-    const phaseLabel = getPhaseForWeek(program.distance, weekNumber);
+    const phaseLabel = getPhaseForWeek(program.distance, weekNumber, durationWeeks);
 
     for (let s = 0; s < dates.length; s += 1) {
       const key = `w${weekNumber}-s${s + 1}`;
       const workout = buildWorkoutForSlot({
         distance: program.distance,
         weekNumber,
+        durationWeeks,
         slotIndex: s,
         sessionsPerWeek: dates.length,
         zones,
@@ -1074,7 +1212,8 @@ export function generateRunningProgramSessions(
       const paceInfo = paceInfoForZone(
         workout.focusZone,
         program.distance,
-        zones
+        zones,
+        durationWeeks
       );
 
       sessions.push({

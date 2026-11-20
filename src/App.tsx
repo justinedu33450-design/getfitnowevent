@@ -22,6 +22,7 @@ import {
   notifyMembersOfEndedEvent,
   resolveCoachSession,
   subscribeAllMemberSchedules,
+  subscribeAllTrainingPrograms,
   subscribeCoachAccessRequests,
   subscribeCoachAdmins,
   subscribeCoachConversations,
@@ -40,6 +41,7 @@ import {
   subscribeMyMemberProfile,
   subscribeMyMemberSchedule,
   subscribeMyRegistrations,
+  subscribeMyTrainingPrograms,
   subscribePublishedEventReviews,
   subscribeRegistrations,
   syncCoachDirectoryFromAdmins,
@@ -67,6 +69,7 @@ import {
   PendingMessageTarget,
   Registration,
   SportEvent,
+  TrainingProgram,
   VALIDATION_LIMITS,
 } from './types';
 import { buildDisciplineCatalog } from './utils/disciplineColors';
@@ -177,6 +180,9 @@ export default function App() {
   const [memberSchedules, setMemberSchedules] = useState<
     MemberScheduleSession[]
   >([]);
+  const [trainingPrograms, setTrainingPrograms] = useState<TrainingProgram[]>(
+    []
+  );
   const [exercises, setExercises] = useState<ExerciseLibraryItem[]>([]);
   const [manageTab, setManageTab] = useState<'events' | 'exercises'>('events');
   const [pendingMessageTarget, setPendingMessageTarget] =
@@ -630,6 +636,22 @@ export default function App() {
     return () => unsub();
   }, [authLoading, isVerifiedUser, isCoach, user?.email]);
 
+  // Real-time 12-week running programs (coach sees all, member sees own)
+  useEffect(() => {
+    if (authLoading || !isVerifiedUser || !user?.email) {
+      setTrainingPrograms([]);
+      return;
+    }
+    const unsub = isCoach
+      ? subscribeAllTrainingPrograms(setTrainingPrograms, () =>
+          setTrainingPrograms([])
+        )
+      : subscribeMyTrainingPrograms(user.email, setTrainingPrograms, () =>
+          setTrainingPrograms([])
+        );
+    return () => unsub();
+  }, [authLoading, isVerifiedUser, isCoach, user?.email]);
+
   // Real-time coach exercise library (renforcement, running, mobilité)
   useEffect(() => {
     if (authLoading || !isVerifiedUser || !isCoach) {
@@ -1025,15 +1047,35 @@ export default function App() {
     myAdminProfile?.displayName || user?.displayName || 'David Frosio';
 
   const programMemberCandidates = useMemo<ProgramMemberCandidate[]>(() => {
-    const byKey = new Map<string, ProgramMemberCandidate>();
+    const coachEmails = new Set<string>([
+      BOOTSTRAPPED_COACH_EMAIL.trim().toLowerCase(),
+    ]);
+    const coachEmailKeys = new Set<string>();
+    if (isCoach && user?.email?.trim()) {
+      coachEmails.add(user.email.trim().toLowerCase());
+    }
+    coachAdmins.forEach((a) => {
+      if (a.email?.trim()) coachEmails.add(a.email.trim().toLowerCase());
+      if (a.emailKey?.trim()) coachEmailKeys.add(a.emailKey.trim());
+    });
+
+    const byEmail = new Map<string, ProgramMemberCandidate>();
     memberProfiles.forEach((profile) => {
       const email = (profile.email || '').trim();
-      const key = (profile.id || email.toLowerCase()).trim().toLowerCase();
-      if (!email || !key) return;
+      const emailLower = email.toLowerCase();
+      const emailKey = (profile.emailKey || profile.id || emailLower).trim();
+      if (
+        !email ||
+        !emailLower ||
+        coachEmails.has(emailLower) ||
+        (emailKey && coachEmailKeys.has(emailKey))
+      ) {
+        return;
+      }
       const fullName = `${profile.firstName} ${profile.lastName}`.trim() || email;
-      byKey.set(key, {
+      byEmail.set(emailLower, {
         email,
-        emailKey: key,
+        emailKey: emailKey || emailLower,
         name: fullName,
         goal: profile.goal || '',
         fitnessLevel: profile.fitnessLevel || '',
@@ -1042,19 +1084,28 @@ export default function App() {
     registrations.forEach((reg) => {
       if (reg.status !== 'confirmed' || reg.isGuest) return;
       const email = (reg.email || '').trim();
-      const key = email.toLowerCase();
-      if (!email || !key || byKey.has(key)) return;
+      const emailLower = email.toLowerCase();
+      const emailKey = (reg.emailKey || emailLower).trim();
+      if (
+        !email ||
+        !emailLower ||
+        byEmail.has(emailLower) ||
+        coachEmails.has(emailLower) ||
+        (emailKey && coachEmailKeys.has(emailKey))
+      ) {
+        return;
+      }
       const fullName = `${reg.firstName} ${reg.lastName}`.trim() || email;
-      byKey.set(key, {
+      byEmail.set(emailLower, {
         email,
-        emailKey: key,
+        emailKey: emailKey || emailLower,
         name: fullName,
       });
     });
-    return Array.from(byKey.values()).sort((a, b) =>
+    return Array.from(byEmail.values()).sort((a, b) =>
       a.name.localeCompare(b.name, 'fr')
     );
-  }, [memberProfiles, registrations]);
+  }, [memberProfiles, registrations, coachAdmins, isCoach, user?.email]);
 
   const memberDisplayName = myMemberProfile
     ? `${myMemberProfile.firstName} ${myMemberProfile.lastName}`.trim()
@@ -1377,6 +1428,7 @@ export default function App() {
                 unreadMessagesCount={unreadMessagesCount}
                 recentConversations={conversations}
                 customScheduleSessions={memberSchedules}
+                trainingPrograms={trainingPrograms}
                 coachDirectory={coachDirectory}
                 onRequestCoachProgram={(coach) => {
                   if (coach && user.email) {
@@ -1533,6 +1585,8 @@ export default function App() {
                         disciplines={disciplineCatalog}
                         exercises={exercises}
                         memberCandidates={programMemberCandidates}
+                        trainingPrograms={trainingPrograms}
+                        memberSchedules={memberSchedules}
                       />
                     </section>
                   )}
@@ -1568,6 +1622,7 @@ export default function App() {
                   registrations={registrations}
                   memberProfiles={memberProfiles}
                   memberSchedules={memberSchedules}
+                  trainingPrograms={trainingPrograms}
                   disciplines={disciplineCatalog}
                   exercises={exercises}
                   nowMs={nowMs}

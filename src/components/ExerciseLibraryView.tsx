@@ -22,6 +22,7 @@ import {
   ExerciseCategory,
   ExerciseLibraryItem,
   ExerciseParams,
+  MemberScheduleSession,
   RunningDistanceKey,
   ScheduledExerciseItem,
   TrainingProgram,
@@ -48,6 +49,8 @@ import {
   computeVmaPaceZones,
   formatDurationHMS,
   formatPaceMinPerKm,
+  getProgramPhases,
+  getProgramRunnerLevelLabel,
   RUNNING_DISTANCE_LIST,
   RUNNING_DISTANCE_TEMPLATES,
 } from '../utils/runningProgramGenerator';
@@ -66,6 +69,7 @@ interface ExerciseLibraryViewProps {
   exercises: ExerciseLibraryItem[];
   memberCandidates: ProgramMemberCandidate[];
   trainingPrograms?: TrainingProgram[];
+  memberSchedules?: MemberScheduleSession[];
 }
 
 interface DisplayExerciseRow {
@@ -97,6 +101,7 @@ export function ExerciseLibraryView({
   exercises,
   memberCandidates,
   trainingPrograms = [],
+  memberSchedules = [],
 }: ExerciseLibraryViewProps) {
   const [libraryTab, setLibraryTab] = useState<'exercises' | 'programs'>(
     'exercises'
@@ -498,6 +503,11 @@ export function ExerciseLibraryView({
     }
   };
 
+  const coachCustomSessions = useMemo(
+    () => memberSchedules.filter((s) => s.createdByRole === 'coach'),
+    [memberSchedules]
+  );
+
   const filteredTrainingPrograms = useMemo(() => {
     const q = programSearch.trim().toLowerCase();
     return trainingPrograms.filter((prog) => {
@@ -615,7 +625,7 @@ export function ExerciseLibraryView({
             >
               <Footprints className="h-3.5 w-3.5" aria-hidden="true" />
               <span>
-                Programmes 5 / 10 / 21 / 42 km ({trainingPrograms.length})
+                Programmes attribués ({trainingPrograms.length + coachCustomSessions.length})
               </span>
             </button>
           </div>
@@ -685,61 +695,67 @@ export function ExerciseLibraryView({
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
               <div>
                 <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                  Modèles spécifiques sur 12 semaines (5 km, 10 km, 21 km, 42 km)
+                  Modèles spécifiques (5 km, 10 km, 21 km, 42 km)
                 </h3>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  Nombre de séances par semaine paramétrable (2 à 6) · Objectif chrono · Test VMA Jour 1 + allures personnalisées · Programmes payants.
+                  Durée adaptée au niveau (Débutant / Régulier &amp; Expérimenté) · 3 séances/sem. par défaut (paramétrable de 2 à 6) · Test VMA Jour 1.
                 </p>
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {RUNNING_DISTANCE_LIST.map((tpl) => (
-                <div
-                  key={tpl.key}
-                  className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-lg font-bold text-slate-900 dark:text-white tabular-nums">
-                        {tpl.shortLabel}
-                      </span>
-                      <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                        {formatPriceEuros(tpl.defaultPriceCents)}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 font-mono text-[11px] font-medium text-slate-500 dark:text-slate-400 tabular-nums">
-                      12 semaines · {tpl.defaultSessionsPerWeek} séances/sem. par défaut
-                    </p>
-                    <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                      {tpl.tagline}
-                    </p>
-                    <div className="mt-3 space-y-1 border-t border-slate-200/80 pt-2.5 dark:border-slate-800">
-                      {tpl.phases.map((phase) => (
-                        <p
-                          key={phase}
-                          className="text-[11px] text-slate-600 dark:text-slate-400"
-                        >
-                          {phase}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => openRunningBuilder(tpl.key, null)}
-                    className="mt-4 inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+              {RUNNING_DISTANCE_LIST.map((tpl) => {
+                const defaultPhases = getProgramPhases(tpl.key, tpl.regularWeeks);
+                return (
+                  <div
+                    key={tpl.key}
+                    className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
                   >
-                    <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span>Configurer pour un adhérent</span>
-                  </button>
-                </div>
-              ))}
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+                          {tpl.shortLabel}
+                        </span>
+                        <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                          {formatPriceEuros(tpl.defaultPriceCents)}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 font-mono text-[11px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
+                        {tpl.beginnerWeeks} sem. (débutant) · {tpl.regularWeeks} sem. (régulier / exp.)
+                      </p>
+                      <p className="mt-0.5 font-mono text-[11px] font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                        {tpl.defaultSessionsPerWeek} séances/sem. par défaut
+                      </p>
+                      <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                        {tpl.tagline}
+                      </p>
+                      <div className="mt-3 space-y-1 border-t border-slate-200/80 pt-2.5 dark:border-slate-800">
+                        {defaultPhases.map((phase) => (
+                          <p
+                            key={phase}
+                            className="text-[11px] text-slate-600 dark:text-slate-400"
+                          >
+                            {phase}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => openRunningBuilder(tpl.key, null)}
+                      className="mt-4 inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                    >
+                      <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Configurer pour un adhérent</span>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Assigned 12-Week Programs List */}
+          {/* Assigned Programs List */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -747,7 +763,7 @@ export function ExerciseLibraryView({
                   Programmes attribués aux adhérents ({trainingPrograms.length})
                 </h3>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  Suivez le règlement, le test VMA du Jour 1 et la progression sur 12 semaines.
+                  Suivez le règlement, le test VMA du Jour 1 et la progression du cycle.
                 </p>
               </div>
 
@@ -797,7 +813,7 @@ export function ExerciseLibraryView({
                     : 'Aucun programme ne correspond à votre recherche'}
                 </p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Sélectionnez une distance ci-dessus pour préparer un plan de 12 semaines personnalisé.
+                  Sélectionnez une distance ci-dessus pour préparer un plan personnalisé adapté au niveau.
                 </p>
               </div>
             ) : (
@@ -832,8 +848,9 @@ export function ExerciseLibraryView({
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400">
-                              {tpl.shortLabel} · {prog.durationWeeks} sem. ·{' '}
-                              {prog.sessionsPerWeek} séances/sem.
+                              {tpl.shortLabel}
+                              {prog.level ? ` (${getProgramRunnerLevelLabel(prog.level)})` : ''} ·{' '}
+                              {prog.durationWeeks} sem. · {prog.sessionsPerWeek} séances/sem.
                             </p>
                             <h4 className="mt-0.5 font-display text-base font-bold text-slate-900 dark:text-white truncate">
                               {prog.memberName}
@@ -988,6 +1005,79 @@ export function ExerciseLibraryView({
                           )}
                         </div>
                       </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Assigned Custom Sessions ("Séance sur mesure") */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 space-y-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                  Séances sur mesure attribuées ({coachCustomSessions.length})
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Séances personnalisées créées depuis la bibliothèque et visibles dans le planning de chaque adhérent.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenProgramWithExercise()}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 whitespace-nowrap cursor-pointer"
+              >
+                <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Nouvelle séance sur mesure</span>
+              </button>
+            </div>
+
+            {coachCustomSessions.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                Aucune séance sur mesure attribuée pour le moment.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {coachCustomSessions.map((sess) => {
+                  const isPaid = !sess.isPaid || sess.paymentStatus === 'paid';
+                  return (
+                    <div
+                      key={sess.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                            {sess.discipline} · {formatFrenchDateShort(sess.startAt.toDate())}
+                          </p>
+                          <h4 className="mt-0.5 truncate font-display text-sm font-bold text-slate-900 dark:text-white">
+                            {sess.title}
+                          </h4>
+                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                            {sess.memberName} ({sess.memberEmail})
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 font-mono text-[11px] font-bold tabular-nums ${
+                            isPaid
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-amber-700 dark:text-amber-400'
+                          }`}
+                        >
+                          {sess.isPaid
+                            ? isPaid
+                              ? `Payé · ${formatPriceEuros(sess.priceCents ?? 1900)}`
+                              : `À régler · ${formatPriceEuros(sess.priceCents ?? 1900)}`
+                            : 'Inclus'}
+                        </span>
+                      </div>
+                      <p className="mt-2 font-mono text-[11px] text-slate-600 dark:text-slate-300 tabular-nums">
+                        {sess.exercises?.length ?? 0} exercice
+                        {(sess.exercises?.length ?? 0) > 1 ? 's' : ''} ·{' '}
+                        {sess.durationMinutes} min
+                        {sess.objective ? ` · ${sess.objective}` : ''}
+                      </p>
                     </div>
                   );
                 })}
@@ -1624,12 +1714,13 @@ export function ExerciseLibraryView({
           memberCandidates={memberCandidates}
           initialExercises={programInitialExercises}
           onClose={() => setProgramModalOpen(false)}
-          onSaved={(msg) =>
+          onSaved={(msg) => {
+            setLibraryTab('programs');
             setFeedback({
               type: 'success',
               text: msg,
-            })
-          }
+            });
+          }}
         />
       )}
 
@@ -1666,7 +1757,7 @@ export function ExerciseLibraryView({
           onSubmitted={(vma) =>
             setFeedback({
               type: 'success',
-              text: `VMA de ${vma.toFixed(1)} km/h enregistrée pour ${vmaTestProgram.memberName}. Les allures des 12 semaines sont calibrées.`,
+              text: `VMA de ${vma.toFixed(1)} km/h enregistrée pour ${vmaTestProgram.memberName}. Les allures des ${vmaTestProgram.durationWeeks || 12} semaines sont calibrées.`,
             })
           }
         />

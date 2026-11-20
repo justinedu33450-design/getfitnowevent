@@ -1990,19 +1990,10 @@ service cloud.firestore {
         incoming().createdByUid == request.auth.uid &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time &&
-        (
-          (
-            isAdmin() &&
-            incoming().createdByRole == 'coach' &&
-            incoming().get('isPaid', false) == true &&
-            incoming().get('priceCents', 0) >= 100
-          ) ||
-          (
-            incoming().memberEmail == request.auth.token.email.lower() &&
-            incoming().createdByRole == 'member' &&
-            incoming().get('isPaid', false) == false
-          )
-        );
+        isAdmin() &&
+        incoming().createdByRole == 'coach' &&
+        incoming().get('isPaid', false) == true &&
+        incoming().get('priceCents', 0) >= 100;
 
       allow update: if isValidId(sessionId) &&
         hasAuthenticatedEmail() &&
@@ -2031,14 +2022,6 @@ service cloud.firestore {
               (
                 (existing().get('isPaid', false) == false || existing().get('paymentStatus', 'free') == 'paid') &&
                 incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt'])
-              ) ||
-              (
-                existing().createdByRole == 'member' &&
-                incoming().diff(existing()).affectedKeys().hasOnly([
-                  'title', 'discipline', 'notes', 'location',
-                  'startAt', 'durationMinutes', 'coachUid', 'coachName',
-                  'objective', 'exercises', 'completed', 'updatedAt'
-                ])
               ) ||
               (
                 existing().createdByRole == 'coach' &&
@@ -2070,15 +2053,7 @@ service cloud.firestore {
           )
         );
 
-      allow delete: if isValidId(sessionId) && (
-        isAdmin() ||
-        (
-          hasAuthenticatedEmail() &&
-          resource != null &&
-          existing().memberEmail == request.auth.token.email.lower() &&
-          existing().createdByRole == 'member'
-        )
-      );
+      allow delete: if isValidId(sessionId) && isAdmin();
     }
 
     // -------------------------------------------------------------------------
@@ -2139,9 +2114,32 @@ service cloud.firestore {
 
     // -------------------------------------------------------------------------
     // /trainingPrograms/{programId}
-    // Paid 12-week personalized running programs (5km, 10km, 21km, 42km)
+    // Paid personalized running programs (5km: 10/8w, 10km: 12/10w, 21km: 14/12w, 42km: 16/14w)
     // with Day 1 VMA test & calibrated training paces
     // -------------------------------------------------------------------------
+    function isValidProgramDurationForDistanceAndLevel(data) {
+      return (
+        (data.distance == '5km' && data.durationWeeks in [8, 10]) ||
+        (data.distance == '10km' && data.durationWeeks in [10, 12]) ||
+        (data.distance == '21km' && data.durationWeeks in [12, 14]) ||
+        (data.distance == '42km' && data.durationWeeks in [14, 16])
+      ) && (
+        !('level' in data) ||
+        (data.level == 'beginner' && (
+          (data.distance == '5km' && data.durationWeeks == 10) ||
+          (data.distance == '10km' && data.durationWeeks == 12) ||
+          (data.distance == '21km' && data.durationWeeks == 14) ||
+          (data.distance == '42km' && data.durationWeeks == 16)
+        )) ||
+        (data.level in ['regular', 'experienced'] && (
+          (data.distance == '5km' && data.durationWeeks == 8) ||
+          (data.distance == '10km' && data.durationWeeks == 10) ||
+          (data.distance == '21km' && data.durationWeeks == 12) ||
+          (data.distance == '42km' && data.durationWeeks == 14)
+        ))
+      );
+    }
+
     function isValidTrainingProgram(data) {
       return data.keys().hasAll([
         'memberEmail', 'memberEmailKey', 'memberName',
@@ -2156,7 +2154,7 @@ service cloud.firestore {
       ]) &&
       data.keys().hasOnly([
         'memberEmail', 'memberEmailKey', 'memberName',
-        'title', 'distance', 'durationWeeks', 'sessionsPerWeek', 'preferredDays',
+        'title', 'distance', 'level', 'durationWeeks', 'sessionsPerWeek', 'preferredDays',
         'targetTimeSeconds', 'startAt',
         'vmaTestStatus', 'vmaKmh', 'vmaTestDistanceMeters', 'vmaTestDurationSeconds', 'vmaTestedAt',
         'completedSessionKeys', 'notes', 'coachUid', 'coachName',
@@ -2170,7 +2168,8 @@ service cloud.firestore {
       data.memberName is string && data.memberName.size() >= 1 && data.memberName.size() <= 125 &&
       data.title is string && data.title.size() >= 2 && data.title.size() <= 100 &&
       data.distance in ['5km', '10km', '21km', '42km'] &&
-      data.durationWeeks is int && data.durationWeeks == 12 &&
+      (!('level' in data) || data.level in ['beginner', 'regular', 'experienced']) &&
+      data.durationWeeks is int && data.durationWeeks in [8, 10, 12, 14, 16] &&
       data.sessionsPerWeek is int && data.sessionsPerWeek >= 2 && data.sessionsPerWeek <= 6 &&
       data.preferredDays is list &&
       data.preferredDays.size() >= 1 && data.preferredDays.size() <= 7 &&
@@ -2225,6 +2224,7 @@ service cloud.firestore {
       allow create: if isAdmin() &&
         isValidId(programId) &&
         isValidTrainingProgram(incoming()) &&
+        isValidProgramDurationForDistanceAndLevel(incoming()) &&
         incoming().createdByUid == request.auth.uid &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time;
@@ -2235,7 +2235,6 @@ service cloud.firestore {
         incoming().memberEmail == existing().memberEmail &&
         incoming().memberEmailKey == existing().memberEmailKey &&
         incoming().distance == existing().distance &&
-        incoming().durationWeeks == existing().durationWeeks &&
         incoming().createdByUid == existing().createdByUid &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
@@ -2243,16 +2242,22 @@ service cloud.firestore {
           (
             isAdmin() &&
             incoming().diff(existing()).affectedKeys().hasOnly([
-              'memberName', 'title', 'sessionsPerWeek', 'preferredDays',
+              'memberName', 'title', 'level', 'durationWeeks', 'sessionsPerWeek', 'preferredDays',
               'targetTimeSeconds', 'startAt', 'notes', 'coachUid', 'coachName',
               'priceCents', 'paymentMode', 'paymentStatus', 'paymentMethod',
               'paymentReference', 'cardBrand', 'cardLast4', 'paidAt',
               'vmaTestStatus', 'vmaKmh', 'vmaTestDistanceMeters', 'vmaTestDurationSeconds', 'vmaTestedAt',
               'completedSessionKeys', 'status', 'updatedAt'
-            ])
+            ]) &&
+            (
+              (incoming().durationWeeks == existing().durationWeeks && incoming().get('level', '') == existing().get('level', '')) ||
+              isValidProgramDurationForDistanceAndLevel(incoming())
+            )
           ) ||
           (
             existing().memberEmail == request.auth.token.email.lower() &&
+            incoming().durationWeeks == existing().durationWeeks &&
+            incoming().get('level', '') == existing().get('level', '') &&
             (
               (
                 existing().paymentStatus == 'pending' &&

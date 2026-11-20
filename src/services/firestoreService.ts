@@ -61,6 +61,7 @@ import {
   PaymentMethod,
   PaymentRecord,
   PaymentStatus,
+  ProgramRunnerLevel,
   Registration,
   RunningDistanceKey,
   ScheduledExerciseItem,
@@ -68,6 +69,7 @@ import {
   TrainingProgram,
   TrainingProgramStatus,
   VALIDATION_LIMITS,
+  VmaTestStatus,
 } from '../types';
 import {
   clampExerciseParams,
@@ -76,6 +78,7 @@ import {
 import {
   computeVmaFromTest,
   getDefaultPreferredDays,
+  getProgramDurationWeeks,
   normalizePreferredDays,
   RUNNING_DISTANCE_TEMPLATES,
 } from '../utils/runningProgramGenerator';
@@ -3857,6 +3860,33 @@ export async function deleteMemberCompletely(params: {
       ops.push((batch) => batch.delete(doc(db, 'memberSchedules', id)));
     });
 
+    const programQueryPromises = [
+      getDocsFromServer(
+        query(
+          collection(db, 'trainingPrograms'),
+          where('memberEmailKey', '==', params.emailKey)
+        )
+      ),
+    ];
+    if (cleanEmail) {
+      programQueryPromises.push(
+        getDocsFromServer(
+          query(
+            collection(db, 'trainingPrograms'),
+            where('memberEmail', '==', cleanEmail)
+          )
+        )
+      );
+    }
+    const programSnaps = await Promise.all(programQueryPromises);
+    const programIds = new Set<string>();
+    programSnaps.forEach((snap) => {
+      snap.docs.forEach((d) => programIds.add(d.id));
+    });
+    programIds.forEach((id) => {
+      ops.push((batch) => batch.delete(doc(db, 'trainingPrograms', id)));
+    });
+
     const CHUNK_SIZE = 350;
     for (let i = 0; i < ops.length; i += CHUNK_SIZE) {
       const batch = writeBatch(db);
@@ -4908,6 +4938,9 @@ export async function createMemberScheduleSession(params: {
   createdByUid: string;
   createdByRole: 'coach' | 'member';
 }): Promise<string> {
+  if (params.createdByRole !== 'coach') {
+    throw new Error('Seul un coach peut ajouter une séance personnalisée.');
+  }
   const cleanEmail = params.memberEmail
     .trim()
     .toLowerCase()
@@ -4963,22 +4996,6 @@ export async function createMemberScheduleSession(params: {
   const exercises = sanitizeScheduledExercises(params.exercises);
 
   const isCoachCreated = params.createdByRole === 'coach';
-  const resolvedPriceCents = isCoachCreated
-    ? Math.min(
-        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
-        Math.max(
-          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
-          Math.round(Number(params.priceCents) || 1900)
-        )
-      )
-    : 0;
-  const resolvedPaymentMode: EventPaymentMode =
-    params.paymentMode === 'online' ||
-    params.paymentMode === 'onsite' ||
-    params.paymentMode === 'both'
-      ? params.paymentMode
-      : 'both';
-
   const sessionRef = doc(collection(db, 'memberSchedules'));
   try {
     const payload: Record<string, unknown> = {
@@ -4993,29 +5010,39 @@ export async function createMemberScheduleSession(params: {
       durationMinutes,
       coachUid,
       coachName,
-      isPaid: isCoachCreated,
-      priceCents: resolvedPriceCents,
-      currency: 'EUR',
-      paymentMode: resolvedPaymentMode,
-      paymentStatus: isCoachCreated
-        ? params.markPaid
-          ? 'paid'
-          : 'pending'
-        : 'free',
-      paymentMethod: isCoachCreated ? 'onsite' : 'free',
-      paymentReference:
-        isCoachCreated && params.markPaid
-          ? generatePaymentReference('PGM')
-          : '',
-      cardBrand: '',
-      cardLast4: '',
-      paidAt: isCoachCreated && params.markPaid ? serverTimestamp() : null,
       createdByUid: params.createdByUid,
       createdByRole: params.createdByRole,
       completed: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
+    if (isCoachCreated) {
+      const resolvedPriceCents = Math.min(
+        VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
+        Math.max(
+          VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+          Math.round(Number(params.priceCents) || 1900)
+        )
+      );
+      const resolvedPaymentMode: EventPaymentMode =
+        params.paymentMode === 'online' ||
+        params.paymentMode === 'onsite' ||
+        params.paymentMode === 'both'
+          ? params.paymentMode
+          : 'both';
+      payload.isPaid = true;
+      payload.priceCents = resolvedPriceCents;
+      payload.currency = 'EUR';
+      payload.paymentMode = resolvedPaymentMode;
+      payload.paymentStatus = params.markPaid ? 'paid' : 'pending';
+      payload.paymentMethod = 'onsite';
+      payload.paymentReference = params.markPaid
+        ? generatePaymentReference('PGM')
+        : '';
+      payload.cardBrand = '';
+      payload.cardLast4 = '';
+      payload.paidAt = params.markPaid ? serverTimestamp() : null;
+    }
     if (objective) {
       payload.objective = objective;
     }
@@ -5424,8 +5451,9 @@ export async function seedStarterExercises(
 }
 
 // ---------------------------------------------------------------------------
-// Programmes running personnalisés sur 12 semaines (/trainingPrograms)
-// 5 km, 10 km, 21 km, 42 km · Test VMA Jour 1 + Allures + Paiement obligatoire
+// Programmes running personnalisés (/trainingPrograms)
+// 5 km (10/8 sem.), 10 km (12/10 sem.), 21 km (14/12 sem.), 42 km (16/14 sem.)
+// Test VMA Jour 1 + Allures + Paiement obligatoire + 3 séances/sem. par défaut
 // ---------------------------------------------------------------------------
 
 export function subscribeAllTrainingPrograms(
@@ -5491,6 +5519,7 @@ export async function createTrainingProgram(params: {
   memberName: string;
   title?: string;
   distance: RunningDistanceKey;
+  level?: ProgramRunnerLevel;
   sessionsPerWeek: number;
   preferredDays?: number[];
   targetTimeSeconds: number;
@@ -5512,10 +5541,11 @@ export async function createTrainingProgram(params: {
   }
 
   const tpl = RUNNING_DISTANCE_TEMPLATES[params.distance];
-  const title = (params.title?.trim() || `${tpl.label} · 12 semaines`).slice(
-    0,
-    VALIDATION_LIMITS.TITLE_MAX
-  );
+  const level: ProgramRunnerLevel = params.level ?? 'regular';
+  const durationWeeks = getProgramDurationWeeks(params.distance, level);
+  const title = (
+    params.title?.trim() || `${tpl.label} · ${durationWeeks} semaines`
+  ).slice(0, VALIDATION_LIMITS.TITLE_MAX);
   if (title.length < VALIDATION_LIMITS.TITLE_MIN) {
     throw new Error('Titre du programme trop court.');
   }
@@ -5578,7 +5608,8 @@ export async function createTrainingProgram(params: {
       memberName,
       title,
       distance: params.distance,
-      durationWeeks: VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS,
+      level,
+      durationWeeks,
       sessionsPerWeek,
       preferredDays,
       targetTimeSeconds,
@@ -5621,6 +5652,8 @@ export async function updateTrainingProgramConfig(
   programId: string,
   params: {
     title: string;
+    distance?: RunningDistanceKey;
+    level?: ProgramRunnerLevel;
     sessionsPerWeek: number;
     preferredDays: number[];
     targetTimeSeconds: number;
@@ -5643,7 +5676,7 @@ export async function updateTrainingProgramConfig(
     VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MAX,
     Math.max(
       VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MIN,
-      Math.round(Number(params.sessionsPerWeek) || 3)
+      Math.round(Number(params.sessionsPerWeek) || VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK)
     )
   );
   const preferredDays = normalizePreferredDays(
@@ -5669,9 +5702,18 @@ export async function updateTrainingProgramConfig(
     VALIDATION_LIMITS.DISPLAY_NAME_MAX
   );
 
+  const levelDurationPatch =
+    params.distance && params.level
+      ? {
+          level: params.level,
+          durationWeeks: getProgramDurationWeeks(params.distance, params.level),
+        }
+      : {};
+
   try {
     await updateDoc(doc(db, 'trainingPrograms', programId), {
       title,
+      ...levelDurationPatch,
       sessionsPerWeek,
       preferredDays,
       targetTimeSeconds,
@@ -5842,9 +5884,12 @@ export async function toggleTrainingProgramSessionCompleted(
     0,
     VALIDATION_LIMITS.PROGRAM_COMPLETED_KEYS_MAX
   );
+  const effectiveWeeks =
+    program.durationWeeks ||
+    getProgramDurationWeeks(program.distance, program.level ?? 'regular');
   const totalSessions =
-    (program.durationWeeks || VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS) *
-    (program.sessionsPerWeek || 3);
+    effectiveWeeks *
+    (program.sessionsPerWeek || VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK);
   const nextStatus: TrainingProgramStatus =
     program.vmaTestStatus === 'pending'
       ? 'awaiting_vma'

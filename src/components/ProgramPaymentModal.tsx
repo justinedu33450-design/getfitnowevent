@@ -96,7 +96,9 @@ export function ProgramPaymentModal({
       event: {
         id: isProgram ? target.program.id : target.session.id,
         title,
-        discipline: isProgram ? 'Programme running 12 semaines' : target.session.discipline,
+        discipline: isProgram
+          ? `Programme running ${target.program.durationWeeks || 12} semaines`
+          : target.session.discipline,
         location: isProgram ? 'Suivi personnalisé en ligne / piste' : target.session.location || 'Suivi personnalisé',
         city: 'GetFitNow',
         startAt,

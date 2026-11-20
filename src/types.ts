@@ -140,6 +140,9 @@ export const VALIDATION_LIMITS = {
   SESSION_EXERCISE_NOTES_MAX: 240,
   SESSION_OBJECTIVE_MAX: 120,
   PROGRAM_DURATION_WEEKS: 12,
+  PROGRAM_DURATION_WEEKS_MIN: 8,
+  PROGRAM_DURATION_WEEKS_MAX: 16,
+  PROGRAM_DEFAULT_SESSIONS_PER_WEEK: 3,
   PROGRAM_SESSIONS_PER_WEEK_MIN: 2,
   PROGRAM_SESSIONS_PER_WEEK_MAX: 6,
   PROGRAM_PRICE_MIN_CENTS: 100,
@@ -549,6 +552,7 @@ export interface MemberScheduleSession {
 }
 
 export type RunningDistanceKey = '5km' | '10km' | '21km' | '42km';
+export type ProgramRunnerLevel = 'beginner' | 'regular' | 'experienced';
 export type TrainingProgramStatus =
   | 'awaiting_payment'
   | 'awaiting_vma'
@@ -577,6 +581,7 @@ export interface TrainingProgram {
   memberName: string;
   title: string;
   distance: RunningDistanceKey;
+  level?: ProgramRunnerLevel;
   durationWeeks: number;
   sessionsPerWeek: number;
   preferredDays: number[];

@@ -29,6 +29,7 @@ import {
   MemberScheduleSession,
   Registration,
   SportEvent,
+  TrainingProgram,
   VALIDATION_LIMITS,
 } from '../types';
 import {
@@ -95,6 +96,7 @@ interface MemberPortalViewProps {
   recentConversations?: Conversation[];
   onOpenMessages?: (conversation?: Conversation) => void;
   customScheduleSessions?: MemberScheduleSession[];
+  trainingPrograms?: TrainingProgram[];
   coachDirectory?: CoachDirectoryEntry[];
   onRequestCoachProgram?: (coach?: CoachDirectoryEntry) => void;
   onSignOut: () => void;
@@ -125,6 +127,7 @@ export function MemberPortalView({
   recentConversations = [],
   onOpenMessages,
   customScheduleSessions = [],
+  trainingPrograms = [],
   coachDirectory = [],
   onRequestCoachProgram,
   onSignOut,
@@ -633,6 +636,7 @@ export function MemberPortalView({
           memberName={fullName}
           currentUserUid={user.uid}
           customSessions={customScheduleSessions}
+          trainingPrograms={trainingPrograms}
           registrations={registrations}
           events={events}
           disciplines={disciplines}
@@ -657,14 +661,25 @@ export function MemberPortalView({
                 : ''
             }`}
           >
-            <div className="min-w-0">
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                Mon profil adhérent
-              </h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Ces informations pré-remplissent vos réservations et apparaissent sur votre suivi coach.
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={() => setProfileExpanded((prev) => !prev)}
+              aria-expanded={profileExpanded}
+              aria-controls="member-profile-details-form"
+              className="flex flex-1 items-start gap-3 text-left cursor-pointer"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <UserCheck className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                  Mon profil adhérent
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Ces informations pré-remplissent vos réservations et apparaissent sur votre suivi coach.
+                </p>
+              </div>
+            </button>
             <button
               type="button"
               onClick={() => setProfileExpanded((prev) => !prev)}

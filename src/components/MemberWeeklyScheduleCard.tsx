@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useRef, useState } from 'react';
 import {
   BookOpen,
   CalendarCheck2,
@@ -130,6 +130,25 @@ function getIsoWeekNumber(date: Date): number {
   return Math.ceil(((temp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
+function formatScheduleErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error) {
+    const msg = err.message.trim();
+    if (msg.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(msg) as { error?: string };
+        if (parsed.error?.toLowerCase().includes('permission')) {
+          return 'Autorisation refusée pour enregistrer cette séance. Vérifiez que vous êtes bien connecté avec votre compte adhérent et réessayez.';
+        }
+        if (parsed.error) return parsed.error;
+      } catch {
+        return msg || fallback;
+      }
+    }
+    return msg || fallback;
+  }
+  return fallback;
+}
+
 export function MemberWeeklyScheduleCard({
   mode,
   memberEmail,
@@ -157,6 +176,9 @@ export function MemberWeeklyScheduleCard({
   const [compactSelectedDayIso, setCompactSelectedDayIso] = useState<
     string | 'all'
   >('all');
+
+  const formContainerRef = useRef<HTMLFormElement | null>(null);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
 
   // Form modal/inline state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -309,16 +331,19 @@ export function MemberWeeklyScheduleCard({
     });
   }, [customSessions, nowMs]);
 
-  const programEntries = useMemo<WeeklyScheduleEntry[]>(() => {
+  const memberPrograms = useMemo(() => {
     if (!memberEmailLower || trainingPrograms.length === 0) return [];
+    return trainingPrograms.filter(
+      (prog) =>
+        prog.memberEmail.trim().toLowerCase() === memberEmailLower ||
+        prog.memberEmailKey === memberEmailLower
+    );
+  }, [trainingPrograms, memberEmailLower]);
+
+  const programEntries = useMemo<WeeklyScheduleEntry[]>(() => {
+    if (memberPrograms.length === 0) return [];
     const list: WeeklyScheduleEntry[] = [];
-    trainingPrograms.forEach((prog) => {
-      if (
-        prog.memberEmail.trim().toLowerCase() !== memberEmailLower &&
-        prog.memberEmailKey !== memberEmailLower
-      ) {
-        return;
-      }
+    memberPrograms.forEach((prog) => {
       const generated = generateRunningProgramSessions(prog);
       generated.forEach((gs) => {
         const endMs =
@@ -341,7 +366,7 @@ export function MemberWeeklyScheduleCard({
       });
     });
     return list;
-  }, [trainingPrograms, memberEmailLower, nowMs]);
+  }, [memberPrograms, nowMs]);
 
   const allEntries = useMemo(() => {
     const combined = [
@@ -402,7 +427,18 @@ export function MemberWeeklyScheduleCard({
     return `${startLabel} – ${endLabel}`;
   }, [weekDays]);
 
+  const focusInlineForm = () => {
+    window.setTimeout(() => {
+      formContainerRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+      titleInputRef.current?.focus({ preventScroll: true });
+    }, 60);
+  };
+
   const openCreateForm = (targetDate?: Date) => {
+    if (mode !== 'coach') return;
     setActionFeedback(null);
     setFormError(null);
     setEditingSession(null);
@@ -412,19 +448,20 @@ export function MemberWeeklyScheduleCard({
     setFormTime('18:00');
     setFormDuration(60);
     setFormLocation('');
-    setFormCoachUid(mode === 'coach' ? currentUserUid : '');
+    setFormCoachUid(currentUserUid);
     setFormNotes('');
     setIsFormOpen(true);
     setExpanded(true);
+    focusInlineForm();
   };
 
   const openEditForm = (session: MemberScheduleSession) => {
+    if (mode !== 'coach') return;
     setActionFeedback(null);
     setFormError(null);
     if (
-      mode === 'coach' &&
-      ((session.exercises && session.exercises.length > 0) ||
-        Boolean(session.objective))
+      (session.exercises && session.exercises.length > 0) ||
+      Boolean(session.objective)
     ) {
       setIsFormOpen(false);
       setEditingSession(null);
@@ -444,12 +481,24 @@ export function MemberWeeklyScheduleCard({
     setFormNotes(session.notes || '');
     setIsFormOpen(true);
     setExpanded(true);
+    focusInlineForm();
   };
 
   const handleSubmitForm = async (e: FormEvent) => {
     e.preventDefault();
+    if (mode !== 'coach') {
+      setFormError('Seul un coach peut ajouter ou modifier une séance.');
+      return;
+    }
     setFormError(null);
     setActionFeedback(null);
+
+    if (!memberEmailLower) {
+      setFormError(
+        'Votre adresse email de compte est introuvable pour enregistrer cette séance.'
+      );
+      return;
+    }
 
     if (!formDate || !formTime) {
       setFormError('Veuillez renseigner la date et l’heure de la séance.');
@@ -517,6 +566,12 @@ export function MemberWeeklyScheduleCard({
           createdByRole: mode,
         });
         setWeekAnchor(startDate);
+        if (filter !== 'all' && filter !== 'custom') {
+          setFilter('all');
+        }
+        if (compact && compactSelectedDayIso !== 'all') {
+          setCompactSelectedDayIso(toLocalDateInputValue(startDate));
+        }
         setActionFeedback({
           type: 'success',
           text: 'Séance ajoutée au planning hebdomadaire.',
@@ -526,9 +581,7 @@ export function MemberWeeklyScheduleCard({
       setEditingSession(null);
     } catch (err) {
       setFormError(
-        err instanceof Error
-          ? err.message
-          : 'Impossible d’enregistrer cette séance.'
+        formatScheduleErrorMessage(err, 'Impossible d’enregistrer cette séance.')
       );
     } finally {
       setFormSaving(false);
@@ -552,10 +605,10 @@ export function MemberWeeklyScheduleCard({
     } catch (err) {
       setActionFeedback({
         type: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : 'Impossible de mettre à jour le statut de la séance.',
+        text: formatScheduleErrorMessage(
+          err,
+          'Impossible de mettre à jour le statut de la séance.'
+        ),
       });
     } finally {
       setTogglingId(null);
@@ -583,10 +636,10 @@ export function MemberWeeklyScheduleCard({
     } catch (err) {
       setActionFeedback({
         type: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : 'Impossible de mettre à jour cette séance du programme.',
+        text: formatScheduleErrorMessage(
+          err,
+          'Impossible de mettre à jour cette séance du programme.'
+        ),
       });
     } finally {
       setTogglingId(null);
@@ -646,6 +699,7 @@ export function MemberWeeklyScheduleCard({
   };
 
   const handleDeleteSession = async (sessionId: string) => {
+    if (mode !== 'coach') return;
     setActionFeedback(null);
     setDeletingId(sessionId);
     try {
@@ -658,10 +712,10 @@ export function MemberWeeklyScheduleCard({
     } catch (err) {
       setActionFeedback({
         type: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : 'Impossible de supprimer cette séance.',
+        text: formatScheduleErrorMessage(
+          err,
+          'Impossible de supprimer cette séance.'
+        ),
       });
     } finally {
       setDeletingId(null);
@@ -811,7 +865,7 @@ export function MemberWeeklyScheduleCard({
               {isPaid && progSession.isVmaTest && prog.vmaTestStatus === 'pending' && (
                 <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50/80 p-2.5 dark:border-sky-800 dark:bg-sky-950/50">
                   <p className="text-[11px] font-semibold text-sky-950 dark:text-sky-100">
-                    Test VMA Jour 1 requis pour calculer vos allures des 12 semaines.
+                    Test VMA Jour 1 requis pour calculer vos allures des {prog.durationWeeks || 12} semaines.
                   </p>
                   <button
                     type="button"
@@ -1111,7 +1165,6 @@ export function MemberWeeklyScheduleCard({
         {!isEvent &&
           session &&
           (mode === 'coach' ||
-            session.createdByRole === 'member' ||
             (isCoachPaidSession && session.paymentStatus === 'paid')) && (
             <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5 border-t border-slate-100 pt-1.5 dark:border-slate-800">
               {isCoachPaidSession && session.paymentStatus === 'paid' && (
@@ -1125,7 +1178,7 @@ export function MemberWeeklyScheduleCard({
                 </button>
               )}
 
-              {(mode === 'coach' || session.createdByRole === 'member') &&
+              {mode === 'coach' &&
                 (confirmDeleteId === session.id ? (
                   <>
                     <button
@@ -1207,6 +1260,13 @@ export function MemberWeeklyScheduleCard({
               séance{weekCounts.total > 1 ? 's' : ''} ({weekCounts.events}{' '}
               événement{weekCounts.events > 1 ? 's' : ''}, {weekCounts.custom}{' '}
               perso, {weekCounts.programs} plan 12 sem.)
+              {memberPrograms.length > 0 && (
+                <span className="ml-1.5 font-semibold text-sky-700 dark:text-sky-400">
+                  · {memberPrograms.length} programme
+                  {memberPrograms.length > 1 ? 's' : ''} 12 sem. attribué
+                  {memberPrograms.length > 1 ? 's' : ''}
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -1234,6 +1294,112 @@ export function MemberWeeklyScheduleCard({
 
       {expanded && (
         <div id={`weekly-schedule-${mode}`} className="mt-4 space-y-4">
+          {memberPrograms.length > 0 && (
+            <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 dark:border-sky-900/70 dark:bg-sky-950/30 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="flex items-center gap-1.5 text-xs font-bold text-sky-950 dark:text-sky-100">
+                  <Footprints className="h-3.5 w-3.5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
+                  <span>
+                    {memberPrograms.length === 1
+                      ? 'Programme running attribué'
+                      : `${memberPrograms.length} programmes running attribués`}
+                  </span>
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {memberPrograms.map((prog) => {
+                  const tpl = RUNNING_DISTANCE_TEMPLATES[prog.distance];
+                  const isPaid = prog.paymentStatus === 'paid';
+                  const totalSessions = prog.durationWeeks * prog.sessionsPerWeek;
+                  const doneCount = prog.completedSessionKeys?.length ?? 0;
+                  const startDate = prog.startAt.toDate();
+
+                  return (
+                    <div
+                      key={prog.id}
+                      className="flex flex-col justify-between gap-2 rounded-lg border border-sky-200/80 bg-white p-2.5 text-xs dark:border-sky-800/70 dark:bg-slate-900/90"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-mono text-[10px] font-semibold uppercase text-sky-700 dark:text-sky-400 tabular-nums">
+                            {tpl.shortLabel} · {prog.durationWeeks} sem. · {prog.sessionsPerWeek} séances/sem. · Jour 1 : {formatFrenchDateShort(startDate)}
+                          </p>
+                          <p className="mt-0.5 truncate font-display text-xs font-bold text-slate-900 dark:text-white">
+                            {prog.title}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                            Coach : {prog.coachName} · {doneCount}/{totalSessions} séances
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 font-mono text-[10px] font-bold tabular-nums ${
+                            isPaid
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-amber-700 dark:text-amber-400'
+                          }`}
+                        >
+                          {isPaid ? 'Payé' : `À régler · ${formatPriceEuros(prog.priceCents)}`}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilter('all');
+                            setWeekAnchor(startDate);
+                          }}
+                          className="inline-flex min-h-[28px] items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
+                        >
+                          <span>Aller au Jour 1</span>
+                        </button>
+
+                        {!isPaid && mode === 'member' && (
+                          <button
+                            type="button"
+                            onClick={() => setPaymentTarget({ kind: 'program', program: prog })}
+                            className="inline-flex min-h-[28px] items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                          >
+                            <CreditCard className="h-3 w-3" aria-hidden="true" />
+                            <span>Régler {formatPriceEuros(prog.priceCents)}</span>
+                          </button>
+                        )}
+
+                        {!isPaid && mode === 'coach' && (
+                          <button
+                            type="button"
+                            disabled={payingItemId === `program-${prog.id}`}
+                            onClick={() => void handleCoachMarkProgramPaid(prog)}
+                            className="inline-flex min-h-[28px] items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                          >
+                            <span>
+                              {payingItemId === `program-${prog.id}`
+                                ? 'Validation...'
+                                : 'Valider paiement'}
+                            </span>
+                          </button>
+                        )}
+
+                        {isPaid && prog.vmaTestStatus === 'pending' && (
+                          <button
+                            type="button"
+                            onClick={() => setVmaTestProgram(prog)}
+                            className="inline-flex min-h-[28px] items-center gap-1 rounded-md bg-sky-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-sky-800 whitespace-nowrap cursor-pointer"
+                          >
+                            <Gauge className="h-3 w-3" aria-hidden="true" />
+                            <span>
+                              {mode === 'coach' ? 'Saisir VMA' : 'Passer test VMA'}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Toolbar: Week Navigation + Source Filter + Actions */}
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
@@ -1359,14 +1525,22 @@ export function MemberWeeklyScheduleCard({
                   <span>Demander un programme à un coach</span>
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => openCreateForm(weekDays[0])}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Ajouter une séance perso</span>
-              </button>
+              {mode === 'coach' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const defaultTarget =
+                      today.getTime() >= weekStartMs && today.getTime() <= weekEndMs
+                        ? today
+                        : weekDays[0];
+                    openCreateForm(defaultTarget);
+                  }}
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Ajouter une séance perso</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -1383,9 +1557,10 @@ export function MemberWeeklyScheduleCard({
             </div>
           )}
 
-          {/* Add / Edit Personalized Session Inline Form */}
-          {isFormOpen && (
+          {/* Add / Edit Personalized Session Inline Form (Coach-only) */}
+          {mode === 'coach' && isFormOpen && (
             <form
+              ref={formContainerRef}
               onSubmit={handleSubmitForm}
               className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 dark:border-emerald-900/70 dark:bg-emerald-950/20 space-y-3.5"
             >
@@ -1398,9 +1573,7 @@ export function MemberWeeklyScheduleCard({
                   <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white truncate">
                     {editingSession
                       ? 'Modifier la séance personnalisée'
-                      : mode === 'coach'
-                        ? `Nouvelle séance sur mesure pour ${memberName}`
-                        : 'Ajouter une séance à mon programme'}
+                      : `Nouvelle séance sur mesure pour ${memberName}`}
                   </h4>
                 </div>
                 <button
@@ -1425,6 +1598,7 @@ export function MemberWeeklyScheduleCard({
                     Titre de la séance *
                   </label>
                   <input
+                    ref={titleInputRef}
                     id={`sched-title-${mode}`}
                     type="text"
                     required
@@ -1699,14 +1873,16 @@ export function MemberWeeklyScheduleCard({
                         <span className="text-xs font-bold capitalize text-slate-800 dark:text-slate-200">
                           {formatFrenchDateShort(day)}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => openCreateForm(day)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 cursor-pointer"
-                        >
-                          <Plus className="h-3 w-3" aria-hidden="true" />
-                          <span>Ajouter</span>
-                        </button>
+                        {mode === 'coach' && (
+                          <button
+                            type="button"
+                            onClick={() => openCreateForm(day)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 cursor-pointer"
+                          >
+                            <Plus className="h-3 w-3" aria-hidden="true" />
+                            <span>Ajouter</span>
+                          </button>
+                        )}
                       </div>
                       {items.length === 0 ? (
                         <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -1767,15 +1943,17 @@ export function MemberWeeklyScheduleCard({
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => openCreateForm(day)}
-                        aria-label={`Ajouter une séance le ${formatFrenchDateShort(day)}`}
-                        title={`Ajouter le ${formatFrenchDateShort(day)}`}
-                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-emerald-700 dark:hover:text-emerald-400 cursor-pointer"
-                      >
-                        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
+                      {mode === 'coach' && (
+                        <button
+                          type="button"
+                          onClick={() => openCreateForm(day)}
+                          aria-label={`Ajouter une séance le ${formatFrenchDateShort(day)}`}
+                          title={`Ajouter le ${formatFrenchDateShort(day)}`}
+                          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-emerald-700 dark:hover:text-emerald-400 cursor-pointer"
+                        >
+                          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="mt-2.5 flex-1 space-y-2">
@@ -1849,9 +2027,9 @@ export function MemberWeeklyScheduleCard({
           onClose={() =>
             setProgramBuilderState({ open: false, editingSession: null })
           }
-          onSaved={(msg) => {
+          onSaved={(msg, targetDate) => {
             if (!programBuilderState.editingSession) {
-              setWeekAnchor(new Date());
+              setWeekAnchor(targetDate ?? new Date());
             }
             setActionFeedback({ type: 'success', text: msg });
           }}
@@ -1880,8 +2058,8 @@ export function MemberWeeklyScheduleCard({
             fitnessLevel: memberFitnessLevel,
           }}
           onClose={() => setRunningProgramModalOpen(false)}
-          onSaved={(msg) => {
-            setWeekAnchor(new Date());
+          onSaved={(msg, targetDate) => {
+            setWeekAnchor(targetDate ?? new Date());
             setActionFeedback({ type: 'success', text: msg });
           }}
         />
@@ -1904,7 +2082,7 @@ export function MemberWeeklyScheduleCard({
           onSubmitted={(vma) =>
             setActionFeedback({
               type: 'success',
-              text: `Test VMA validé (${vma.toFixed(1)} km/h) ! Toutes les allures des 12 semaines sont désormais calculées.`,
+              text: `Test VMA validé (${vma.toFixed(1)} km/h) ! Toutes les allures des ${vmaTestProgram.durationWeeks || 12} semaines sont désormais calculées.`,
             })
           }
         />
