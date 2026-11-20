@@ -28,6 +28,7 @@ import {
   computeTargetRacePaceSecPerKm,
   formatDurationHMS,
   formatPaceMinPerKm,
+  formatPreferredDaysShort,
   getDefaultPreferredDays,
   getProgramDurationWeeks,
   getProgramPhases,
@@ -88,7 +89,7 @@ function formatRunningProgramError(err: unknown): string {
     lower.includes('permission') ||
     lower.includes('insufficient permissions')
   ) {
-    return 'Autorisation refusée par Firestore : vérifiez que votre compte coach est actif et que les règles Firestore (firestore.rules) à jour ont bien été déployées sur le projet Firebase pour autoriser les durées de 8 à 16 semaines et le niveau du coureur.';
+    return 'Autorisation refusée par Firestore : vérifiez que vous êtes bien connecté avec votre compte coach vérifié (davidfrosio@hotmail.fr ou coach actif).';
   }
 
   return extracted;
@@ -197,7 +198,9 @@ export function RunningProgramBuilderModal({
 
   const [startDateStr, setStartDateStr] = useState<string>(() =>
     editingProgram
-      ? toLocalDateInputValue(editingProgram.startAt.toDate())
+      ? toLocalDateInputValue(
+          (editingProgram.desiredStartAt ?? editingProgram.startAt).toDate()
+        )
       : toLocalDateInputValue(new Date())
   );
 
@@ -338,7 +341,7 @@ export function RunningProgramBuilderModal({
     }
 
     if (!startDateStr) {
-      setError('Veuillez sélectionner la date de début (Jour 1 · Test VMA).');
+      setError('Veuillez sélectionner la date de démarrage souhaitée du programme.');
       return;
     }
 
@@ -403,7 +406,7 @@ export function RunningProgramBuilderModal({
           createdByUid: coachUid,
         });
         onSaved?.(
-          `Programme ${tpl.shortLabel} sur ${durationWeeks} semaines (${getProgramRunnerLevelLabel(runnerLevel)} · ${isPaid ? formatPriceEuros(priceCents) : 'Offert / gratuit'}) attribué à ${targetName}.`,
+          `Programme ${tpl.shortLabel} sur ${durationWeeks} semaines (${getProgramRunnerLevelLabel(runnerLevel)} · ${isPaid ? formatPriceEuros(priceCents) : 'Offert / gratuit'}) envoyé à ${targetName}. Une notification a été transmise à l’adhérent.`,
           startDate
         );
       }
@@ -443,7 +446,7 @@ export function RunningProgramBuilderModal({
                   : `Créer un programme running (${durationWeeks} semaines)`}
               </h2>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Plan spécifique 5 km, 10 km, 21 km ou 42 km · Durée adaptée au niveau · Test VMA au Jour 1
+                Plan spécifique 5 km, 10 km, 21 km ou 42 km · Durée adaptée au niveau · Test VMA effectuable n’importe quel jour
               </p>
             </div>
           </div>
@@ -690,7 +693,7 @@ export function RunningProgramBuilderModal({
                   className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200"
                 >
                   <Gauge className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-                  Date de début · Jour 1 (Test VMA) *
+                  Démarrage souhaité du programme *
                 </label>
                 <input
                   id="rp-start-date"
@@ -701,8 +704,8 @@ export function RunningProgramBuilderModal({
                   className="mt-2 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
                 <p className="mt-2 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
-                  Le Jour 1 déclenche le test VMA Demi-Cooper (6 min) qui calcule
-                  les allures des {durationWeeks * sessionsPerWeek - 1} séances suivantes.
+                  Seule la séance Test VMA peut être effectuée n’importe quel jour.
+                  Les {durationWeeks * sessionsPerWeek} séances du programme démarrent ensuite selon les jours choisis ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}).
                 </p>
               </div>
             </div>
@@ -859,7 +862,7 @@ export function RunningProgramBuilderModal({
                 </>
               ) : (
                 <p className="rounded-lg border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-800/60 dark:bg-slate-900/60 dark:text-emerald-200">
-                  Programme offert : aucun paiement demandé à l’adhérent. La Semaine 1 et le test VMA du Jour 1 seront disponibles immédiatement, puis chaque semaine suivante sera envoyée automatiquement.
+                  Programme offert : aucun paiement demandé. La séance Test VMA est disponible dès maintenant (effectuable n’importe quel jour), puis le programme démarre selon les jours choisis ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}).
                 </p>
               )}
             </div>
@@ -936,8 +939,8 @@ export function RunningProgramBuilderModal({
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/60">
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {isPaid
-                ? `Après paiement, l’adhérent reçoit la Semaine 1, puis chaque semaine suivante à la fin de la précédente (${durationWeeks} sem.).`
-                : `Programme offert : l’adhérent reçoit la Semaine 1 dès attribution, puis chaque semaine suivante à la fin de la précédente (${durationWeeks} sem.).`}
+                ? `Après paiement, l’adhérent passe le Test VMA n’importe quel jour, puis démarre sur ${formatPreferredDaysShort(preferredDays, sessionsPerWeek)} (${durationWeeks} sem.).`
+                : `Programme offert : Test VMA disponible dès maintenant (n’importe quel jour), puis démarrage sur ${formatPreferredDaysShort(preferredDays, sessionsPerWeek)} (${durationWeeks} sem.).`}
             </p>
             <div className="flex items-center gap-2">
               <button

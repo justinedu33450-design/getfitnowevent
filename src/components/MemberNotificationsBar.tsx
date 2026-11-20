@@ -6,11 +6,17 @@ import {
   Check,
   CheckCheck,
   CheckCircle2,
+  Dumbbell,
+  Footprints,
   MessageSquare,
+  Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
-import { MemberNotification } from '../types';
+import {
+  MemberNotification,
+  MemberProgramNotification,
+} from '../types';
 import {
   formatFrenchDateShort,
   formatFrenchTime,
@@ -18,6 +24,7 @@ import {
 
 interface MemberNotificationsBarProps {
   notifications: MemberNotification[];
+  programNotifications?: MemberProgramNotification[];
   reviewedRegIds?: Set<string>;
   nowMs?: number;
   panelOpen: boolean;
@@ -26,12 +33,16 @@ interface MemberNotificationsBarProps {
   onMarkRead: (notificationId: string) => void;
   onMarkAllRead: () => void;
   onDelete: (notificationId: string) => void;
+  onMarkProgramRead?: (notificationId: string) => void;
+  onDeleteProgramNotification?: (notificationId: string) => void;
+  onOpenProgramNotification?: (notification: MemberProgramNotification) => void;
   onOpenMyTracking: () => void;
   onOpenReview?: (registrationId: string) => void;
 }
 
 export function MemberNotificationsBar({
   notifications,
+  programNotifications = [],
   reviewedRegIds,
   nowMs = Date.now(),
   panelOpen,
@@ -40,6 +51,9 @@ export function MemberNotificationsBar({
   onMarkRead,
   onMarkAllRead,
   onDelete,
+  onMarkProgramRead,
+  onDeleteProgramNotification,
+  onOpenProgramNotification,
   onOpenMyTracking,
   onOpenReview,
 }: MemberNotificationsBarProps) {
@@ -55,13 +69,24 @@ export function MemberNotificationsBar({
   const unvalidated = notifications.filter(
     (n) => n.type !== 'event_cancelled' && !n.validated
   );
-  const itemsToShow = panelOpen ? notifications : unread;
+  const unreadPrograms = programNotifications.filter((n) => !n.read);
 
-  if (itemsToShow.length === 0 && !panelOpen) {
+  const itemsToShow = panelOpen ? notifications : unread;
+  const programItemsToShow = panelOpen ? programNotifications : unreadPrograms;
+
+  if (itemsToShow.length === 0 && programItemsToShow.length === 0 && !panelOpen) {
     return null;
   }
 
-  const isCancellationAlert = unreadCancelled.length > 0 && unvalidated.length === 0;
+  const isCancellationAlert =
+    unreadCancelled.length > 0 &&
+    unvalidated.length === 0 &&
+    unreadPrograms.length === 0;
+  const isProgramFocused =
+    unreadPrograms.length > 0 &&
+    unreadCancelled.length === 0 &&
+    unvalidated.length === 0;
+  const hasAnyUnread = unread.length > 0 || unreadPrograms.length > 0;
 
   const handleValidate = async (notif: MemberNotification) => {
     setErrorMsg(null);
@@ -81,9 +106,42 @@ export function MemberNotificationsBar({
 
   let headerTitle = 'Notifications adhérent';
   let headerSubtitle =
-    'Retrouvez les annulations de séances et vos rappels de validation.';
+    'Retrouvez les programmes envoyés par votre coach, les annulations et vos rappels de validation.';
 
-  if (unreadCancelled.length > 0 && unvalidated.length > 0) {
+  if (
+    unreadPrograms.length > 0 &&
+    unreadCancelled.length === 0 &&
+    unvalidated.length === 0
+  ) {
+    headerTitle =
+      unreadPrograms.length === 1
+        ? unreadPrograms[0].kind === 'program_week'
+          ? 'Nouvelle semaine de programme envoyée par votre coach'
+          : 'Nouveau programme envoyé par votre coach'
+        : `${unreadPrograms.length} nouveaux programmes envoyés par votre coach`;
+    headerSubtitle =
+      'Consultez votre planning personnalisé dans « Mon suivi » pour découvrir vos séances.';
+  } else if (
+    unreadPrograms.length > 0 &&
+    (unreadCancelled.length > 0 || unvalidated.length > 0)
+  ) {
+    const parts: string[] = [
+      `${unreadPrograms.length} programme${unreadPrograms.length > 1 ? 's' : ''} reçu${unreadPrograms.length > 1 ? 's' : ''}`,
+    ];
+    if (unreadCancelled.length > 0) {
+      parts.push(
+        `${unreadCancelled.length} annulation${unreadCancelled.length > 1 ? 's' : ''}`
+      );
+    }
+    if (unvalidated.length > 0) {
+      parts.push(
+        `${unvalidated.length} séance${unvalidated.length > 1 ? 's' : ''} à valider`
+      );
+    }
+    headerTitle = parts.join(' · ');
+    headerSubtitle =
+      'Votre coach vous a transmis un programme et d’autres notifications demandent votre attention.';
+  } else if (unreadCancelled.length > 0 && unvalidated.length > 0) {
     headerTitle = `${unreadCancelled.length} annulation${unreadCancelled.length > 1 ? 's' : ''} et ${unvalidated.length} séance${unvalidated.length > 1 ? 's' : ''} à valider`;
     headerSubtitle =
       'Un événement auquel vous étiez inscrit a été annulé et des séances terminées attendent votre validation.';
@@ -110,7 +168,9 @@ export function MemberNotificationsBar({
       className={`border-b ${
         isCancellationAlert
           ? 'border-rose-200 bg-rose-50/90 dark:border-rose-900/70 dark:bg-rose-950/40'
-          : 'border-amber-200 bg-amber-50/90 dark:border-amber-900/70 dark:bg-amber-950/40'
+          : isProgramFocused
+            ? 'border-sky-200 bg-sky-50/90 dark:border-sky-900/70 dark:bg-sky-950/35'
+            : 'border-amber-200 bg-amber-50/90 dark:border-amber-900/70 dark:bg-amber-950/40'
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
@@ -120,11 +180,15 @@ export function MemberNotificationsBar({
               className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                 isCancellationAlert
                   ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/70 dark:text-rose-300'
-                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/70 dark:text-amber-300'
+                  : isProgramFocused
+                    ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/70 dark:text-sky-300'
+                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/70 dark:text-amber-300'
               }`}
             >
               {isCancellationAlert ? (
                 <Ban className="h-4 w-4" aria-hidden="true" />
+              ) : isProgramFocused ? (
+                <Footprints className="h-4 w-4" aria-hidden="true" />
               ) : (
                 <BellRing className="h-4 w-4" aria-hidden="true" />
               )}
@@ -134,7 +198,9 @@ export function MemberNotificationsBar({
                 className={`font-display text-sm font-bold ${
                   isCancellationAlert
                     ? 'text-rose-950 dark:text-rose-100'
-                    : 'text-amber-950 dark:text-amber-100'
+                    : isProgramFocused
+                      ? 'text-sky-950 dark:text-sky-100'
+                      : 'text-amber-950 dark:text-amber-100'
                 }`}
               >
                 {headerTitle}
@@ -143,7 +209,9 @@ export function MemberNotificationsBar({
                 className={`mt-0.5 text-xs ${
                   isCancellationAlert
                     ? 'text-rose-900/85 dark:text-rose-200/85'
-                    : 'text-amber-900/80 dark:text-amber-200/85'
+                    : isProgramFocused
+                      ? 'text-sky-900/85 dark:text-sky-200/85'
+                      : 'text-amber-900/80 dark:text-amber-200/85'
                 }`}
               >
                 {headerSubtitle}
@@ -158,19 +226,23 @@ export function MemberNotificationsBar({
               className={`inline-flex min-h-[36px] items-center rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold dark:bg-slate-900 whitespace-nowrap cursor-pointer ${
                 isCancellationAlert
                   ? 'border-rose-200 text-rose-950 hover:bg-rose-100/60 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900/40'
-                  : 'border-amber-200 text-amber-950 hover:bg-amber-100/60 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40'
+                  : isProgramFocused
+                    ? 'border-sky-200 text-sky-950 hover:bg-sky-100/60 dark:border-sky-800 dark:text-sky-200 dark:hover:bg-sky-900/40'
+                    : 'border-amber-200 text-amber-950 hover:bg-amber-100/60 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40'
               }`}
             >
               Voir mon suivi
             </button>
-            {unread.length > 0 && (
+            {hasAnyUnread && (
               <button
                 type="button"
                 onClick={onMarkAllRead}
                 className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold dark:bg-slate-900 whitespace-nowrap cursor-pointer ${
                   isCancellationAlert
                     ? 'border-rose-200 text-rose-950 hover:bg-rose-100/60 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900/40'
-                    : 'border-amber-200 text-amber-950 hover:bg-amber-100/60 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40'
+                    : isProgramFocused
+                      ? 'border-sky-200 text-sky-950 hover:bg-sky-100/60 dark:border-sky-800 dark:text-sky-200 dark:hover:bg-sky-900/40'
+                      : 'border-amber-200 text-amber-950 hover:bg-amber-100/60 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40'
                 }`}
               >
                 <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -196,12 +268,113 @@ export function MemberNotificationsBar({
           </div>
         )}
 
-        {itemsToShow.length === 0 ? (
+        {itemsToShow.length === 0 && programItemsToShow.length === 0 ? (
           <div className="mt-3 rounded-lg border border-slate-200/80 bg-white px-4 py-4 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
             Aucune notification pour le moment.
           </div>
         ) : (
-          <div className="mt-3 space-y-2 max-h-[320px] overflow-y-auto pr-0.5">
+          <div className="mt-3 space-y-2 max-h-[360px] overflow-y-auto pr-0.5">
+            {programItemsToShow.map((pNotif) => {
+              const badgeLabel =
+                pNotif.kind === 'program_week'
+                  ? `Semaine ${pNotif.weekNumber ?? 2} envoyée`
+                  : pNotif.kind === 'custom_program'
+                    ? 'Séance personnalisée'
+                    : 'Nouveau programme';
+
+              return (
+                <div
+                  key={pNotif.id}
+                  className={`flex flex-col gap-2.5 rounded-lg border px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between ${
+                    pNotif.read
+                      ? 'border-slate-200 bg-white/85 dark:border-slate-800 dark:bg-slate-900/80'
+                      : 'border-sky-300 bg-white shadow-2xs dark:border-sky-700/80 dark:bg-slate-900'
+                  }`}
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-semibold ${
+                          pNotif.read
+                            ? 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            : 'border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200'
+                        }`}
+                      >
+                        {pNotif.kind === 'program_week' ? (
+                          <Sparkles className="h-3 w-3" aria-hidden="true" />
+                        ) : pNotif.kind === 'custom_program' ? (
+                          <Dumbbell className="h-3 w-3" aria-hidden="true" />
+                        ) : (
+                          <Footprints className="h-3 w-3" aria-hidden="true" />
+                        )}
+                        {badgeLabel}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        {pNotif.title}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
+                      <span className="inline-flex items-center gap-1 font-mono tabular-nums capitalize">
+                        <CalendarClock
+                          className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500"
+                          aria-hidden="true"
+                        />
+                        Début {formatFrenchDateShort(pNotif.startDate)}
+                      </span>
+                      <span>Envoyé par {pNotif.coachName}</span>
+                      <span className="text-sky-900 dark:text-sky-300 font-medium">
+                        {pNotif.summary}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onOpenProgramNotification) {
+                          onOpenProgramNotification(pNotif);
+                        } else {
+                          onOpenMyTracking();
+                        }
+                      }}
+                      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-800 dark:bg-sky-600 dark:hover:bg-sky-500 whitespace-nowrap cursor-pointer"
+                    >
+                      <Footprints className="h-3.5 w-3.5" aria-hidden="true" />
+                      {pNotif.requiresPayment
+                        ? 'Voir et régler'
+                        : 'Voir mon programme'}
+                    </button>
+
+                    {!pNotif.read && onMarkProgramRead && (
+                      <button
+                        type="button"
+                        onClick={() => onMarkProgramRead(pNotif.id)}
+                        title="Marquer comme lu"
+                        aria-label={`Marquer comme lue la notification pour ${pNotif.title}`}
+                        className="flex h-[36px] w-[36px] items-center justify-center rounded-lg border border-slate-200 bg-white text-emerald-700 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950/50 cursor-pointer"
+                      >
+                        <Check className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    )}
+
+                    {onDeleteProgramNotification && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteProgramNotification(pNotif.id)}
+                        title="Masquer la notification"
+                        aria-label={`Masquer la notification pour ${pNotif.title}`}
+                        className="flex h-[36px] w-[36px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
             {itemsToShow.map((notif) => {
               const startDate = notif.eventStartAt.toDate();
               const endDate = notif.eventEndAt.toDate();

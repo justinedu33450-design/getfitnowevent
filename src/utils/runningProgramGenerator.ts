@@ -275,6 +275,26 @@ export function normalizePreferredDays(
   return merged.sort((a, b) => a - b);
 }
 
+export function formatPreferredDaysShort(
+  preferredDays: number[],
+  sessionsPerWeek?: number
+): string {
+  const days =
+    sessionsPerWeek !== undefined
+      ? normalizePreferredDays(preferredDays, sessionsPerWeek)
+      : Array.from(
+          new Set(
+            preferredDays
+              .map((d) => Math.round(d))
+              .filter((d) => d >= 1 && d <= 7)
+          )
+        ).sort((a, b) => a - b);
+  return days
+    .map((d) => WEEKDAY_OPTIONS.find((w) => w.day === d)?.short ?? '')
+    .filter(Boolean)
+    .join(', ');
+}
+
 export function formatDurationHMS(totalSeconds: number): string {
   const safe = Math.max(0, Math.round(totalSeconds));
   const hours = Math.floor(safe / 3600);
@@ -429,69 +449,61 @@ function addDaysAtHour(base: Date, daysOffset: number, hour = 18, minute = 0): D
   );
 }
 
+function toStartOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+}
+
+export function resolveProgramStartAnchor(
+  program: Pick<TrainingProgram, 'startAt' | 'desiredStartAt' | 'vmaTestStatus' | 'vmaTestedAt'>,
+  nowMs: number = Date.now()
+): Date {
+  const rawDesired =
+    program.desiredStartAt?.toDate?.() ??
+    program.startAt?.toDate?.() ??
+    new Date(nowMs);
+  const desiredDay = toStartOfDay(rawDesired);
+
+  if (program.vmaTestStatus === 'completed' && program.vmaTestedAt?.toDate) {
+    const vmaDoneDay = toStartOfDay(program.vmaTestedAt.toDate());
+    const dayAfterVma = addDaysAtHour(vmaDoneDay, 1, 0, 0);
+    return dayAfterVma.getTime() > desiredDay.getTime() ? dayAfterVma : desiredDay;
+  }
+
+  const todayStart = toStartOfDay(new Date(nowMs));
+  const tomorrow = addDaysAtHour(todayStart, 1, 0, 0);
+  return tomorrow.getTime() > desiredDay.getTime() ? tomorrow : desiredDay;
+}
+
 function computeWeekDates(
-  startDate: Date,
+  programAnchorDate: Date,
   sessionsPerWeek: number,
   preferredDays: number[],
   durationWeeks: number
 ): Date[][] {
   const normalizedDays = normalizePreferredDays(preferredDays, sessionsPerWeek);
-  const startIsoDay = toIsoWeekday(startDate);
-  // Start of Week 1 Monday relative to startDate
-  const mondayW1 = new Date(
-    startDate.getFullYear(),
-    startDate.getMonth(),
-    startDate.getDate() - (startIsoDay - 1),
-    0,
-    0,
-    0,
-    0
-  );
+  const preferredSet = new Set(normalizedDays);
+  const anchorDay = toStartOfDay(programAnchorDate);
 
   const weeks: Date[][] = [];
-  for (let w = 0; w < durationWeeks; w += 1) {
-    if (w === 0) {
-      // Week 1 ALWAYS begins on Day 1 (startDate) for the VMA test!
-      const w1Dates: Date[] = [
-        new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-          9,
-          0,
-          0,
-          0
-        ),
-      ];
-      // Remaining Week 1 sessions spread between Day 2 and Sunday of Week 1
-      const daysAfterStart = normalizedDays.filter((d) => d > startIsoDay);
-      const needed = sessionsPerWeek - 1;
-      const chosenIsoDays: number[] = [...daysAfterStart.slice(0, needed)];
-      for (let d = startIsoDay + 1; d <= 7 && chosenIsoDays.length < needed; d += 1) {
-        if (!chosenIsoDays.includes(d)) chosenIsoDays.push(d);
-      }
-      chosenIsoDays.sort((a, b) => a - b);
-      chosenIsoDays.forEach((isoDay) => {
-        w1Dates.push(addDaysAtHour(mondayW1, isoDay - 1, 18, 0));
-      });
-      // If startDate is Saturday/Sunday and still missing slots in W1, place next valid slots in early days after startDate
-      let extraDayOffset = 1;
-      while (w1Dates.length < sessionsPerWeek) {
-        const candidate = addDaysAtHour(startDate, extraDayOffset, 18, 0);
-        if (!w1Dates.some((x) => x.getTime() === candidate.getTime())) {
-          w1Dates.push(candidate);
-        }
-        extraDayOffset += 1;
-      }
-      w1Dates.sort((a, b) => a.getTime() - b.getTime());
-      weeks.push(w1Dates);
-    } else {
-      const weekDates = normalizedDays.map((isoDay) =>
-        addDaysAtHour(mondayW1, w * 7 + (isoDay - 1), isoDay >= 6 ? 9 : 18, 0)
+  let currentWeek: Date[] = [];
+  let daysOffset = 0;
+  const maxScanDays = durationWeeks * 14 + 30;
+
+  while (weeks.length < durationWeeks && daysOffset < maxScanDays) {
+    const candidateDay = addDaysAtHour(anchorDay, daysOffset, 0, 0);
+    const isoDay = toIsoWeekday(candidateDay);
+    if (preferredSet.has(isoDay)) {
+      currentWeek.push(
+        addDaysAtHour(anchorDay, daysOffset, isoDay >= 6 ? 9 : 18, 0)
       );
-      weeks.push(weekDates);
+      if (currentWeek.length === normalizedDays.length) {
+        weeks.push(currentWeek);
+        currentWeek = [];
+      }
     }
+    daysOffset += 1;
   }
+
   return weeks;
 }
 
@@ -516,14 +528,14 @@ function paceInfoForZone(
 ): { label: string; range: string } {
   if (zone === 'vma_test') {
     return {
-      label: 'Allure maximale soutenue sur 6 min (Test VMA)',
-      range: `Donne toutes vos allures des ${durationWeeks} semaines`,
+      label: 'Allure maximale soutenue sur 6 min · Effectuable n’importe quel jour',
+      range: `Calibre vos allures des ${durationWeeks} semaines`,
     };
   }
   if (!zones) {
     return {
-      label: 'Allure calibrée après le test VMA du Jour 1',
-      range: 'En attente du test VMA (Jour 1)',
+      label: 'Allure calibrée après le Test VMA',
+      range: 'En attente du Test VMA',
     };
   }
 
@@ -589,6 +601,63 @@ function paceInfoForZone(
   }
 }
 
+function buildVmaTestWorkout(): {
+  title: string;
+  focusZone: ProgramFocusZone;
+  focusLabel: string;
+  durationMinutes: number;
+  isVmaTest: boolean;
+  isRaceDay: boolean;
+  coachNotes: string;
+  exercises: ScheduledExerciseItem[];
+} {
+  return {
+    title: 'Test VMA · Demi-Cooper 6 min',
+    focusZone: 'vma_test',
+    focusLabel: 'Évaluation VMA · N’importe quel jour',
+    durationMinutes: 45,
+    isVmaTest: true,
+    isRaceDay: false,
+    coachNotes:
+      'Séance préalable effectuable n’importe quel jour : échauffez-vous 15 min puis parcourez la plus grande distance possible en 6 minutes à allure régulière. Enregistrez votre résultat : le programme démarrera ensuite selon les jours choisis.',
+    exercises: [
+      makeEx(
+        'run-ef-warmup',
+        'Échauffement progressif + gammes (talons-fesses, montées de genoux)',
+        'running',
+        1,
+        900,
+        1,
+        0,
+        120,
+        'Footing souple aisé + 3 accélérations progressives de 15 sec.'
+      ),
+      makeEx(
+        'run-vma-test-6min',
+        'Test VMA Demi-Cooper 6 min (effort maximal régulier)',
+        'running',
+        1,
+        360,
+        1,
+        0,
+        300,
+        'Mesurez précisément la distance (mètres) en 6 min : VMA = distance ÷ 100.'
+      ),
+      makeEx(
+        'mob-cooldown',
+        'Retour au calme + mobilité hanches & mollets',
+        'mobility',
+        1,
+        480,
+        1,
+        0,
+        0,
+        'Trot très lent 8 min puis étirements légers.'
+      ),
+    ],
+  };
+}
+
 function buildWorkoutForSlot(params: {
   distance: RunningDistanceKey;
   weekNumber: number;
@@ -607,55 +676,6 @@ function buildWorkoutForSlot(params: {
   exercises: ScheduledExerciseItem[];
 } {
   const { distance, weekNumber, durationWeeks, slotIndex, sessionsPerWeek, zones } = params;
-
-  // DAY 1 (Week 1, Session 1) = TEST VMA OBLIGATOIRE
-  if (weekNumber === 1 && slotIndex === 0) {
-    return {
-      title: 'Jour 1 · Test VMA (Demi-Cooper 6 min)',
-      focusZone: 'vma_test',
-      focusLabel: 'Évaluation VMA',
-      durationMinutes: 45,
-      isVmaTest: true,
-      isRaceDay: false,
-      coachNotes:
-        'Séance fondatrice du programme : échauffez-vous 15 min puis parcourez la plus grande distance possible en 6 minutes à allure régulière. Enregistrez votre résultat pour débloquer vos allures personnalisées.',
-      exercises: [
-        makeEx(
-          'run-ef-warmup',
-          'Échauffement progressif + gammes (talons-fesses, montées de genoux)',
-          'running',
-          1,
-          900,
-          1,
-          0,
-          120,
-          'Footing souple aisé + 3 accélérations progressives de 15 sec.'
-        ),
-        makeEx(
-          'run-vma-test-6min',
-          'Test VMA Demi-Cooper 6 min (effort maximal régulier)',
-          'running',
-          1,
-          360,
-          1,
-          0,
-          300,
-          'Mesurez précisément la distance (mètres) en 6 min : VMA = distance ÷ 100.'
-        ),
-        makeEx(
-          'mob-cooldown',
-          'Retour au calme + mobilité hanches & mollets',
-          'mobility',
-          1,
-          480,
-          1,
-          0,
-          0,
-          'Trot très lent 8 min puis étirements légers.'
-        ),
-      ],
-    };
-  }
 
   // RACE WEEK (Final Week, Last Session) = JOUR DE COURSE
   if (weekNumber === durationWeeks && slotIndex === sessionsPerWeek - 1) {
@@ -1155,9 +1175,9 @@ function buildWorkoutForSlot(params: {
 }
 
 export function generateRunningProgramSessions(
-  program: TrainingProgram
+  program: TrainingProgram,
+  nowMs: number = Date.now()
 ): GeneratedProgramSession[] {
-  const startDate = program.startAt?.toDate ? program.startAt.toDate() : new Date();
   const durationWeeks = Math.min(
     VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MAX,
     Math.max(
@@ -1175,8 +1195,9 @@ export function generateRunningProgramSessions(
       program.sessionsPerWeek || VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK
     )
   );
+  const programAnchor = resolveProgramStartAnchor(program, nowMs);
   const weekDates = computeWeekDates(
-    startDate,
+    programAnchor,
     sessionsPerWeek,
     program.preferredDays || getDefaultPreferredDays(sessionsPerWeek),
     durationWeeks
@@ -1193,6 +1214,40 @@ export function generateRunningProgramSessions(
 
   const completedSet = new Set(program.completedSessionKeys || []);
   const sessions: GeneratedProgramSession[] = [];
+
+  // Standalone preliminary VMA test session (can be done on ANY day before the program starts)
+  const vmaWorkout = buildVmaTestWorkout();
+  const vmaPaceInfo = paceInfoForZone(
+    'vma_test',
+    program.distance,
+    zones,
+    durationWeeks
+  );
+  const vmaDefaultDate =
+    program.vmaTestStatus === 'completed' && program.vmaTestedAt?.toDate
+      ? program.vmaTestedAt.toDate()
+      : addDaysAtHour(toStartOfDay(new Date(nowMs)), 0, 9, 0);
+
+  sessions.push({
+    key: 'vma-test',
+    programId: program.id,
+    weekNumber: 0,
+    sessionIndexInWeek: 0,
+    phaseLabel: 'Séance préalable · Test VMA (Effectuable n’importe quel jour)',
+    scheduledDate: vmaDefaultDate,
+    durationMinutes: vmaWorkout.durationMinutes,
+    title: vmaWorkout.title,
+    discipline: 'Course à pied',
+    focusZone: vmaWorkout.focusZone,
+    focusLabel: vmaWorkout.focusLabel,
+    isVmaTest: true,
+    isRaceDay: false,
+    targetPaceLabel: vmaPaceInfo.label,
+    targetPaceRangeLabel: vmaPaceInfo.range,
+    coachNotes: vmaWorkout.coachNotes,
+    exercises: vmaWorkout.exercises,
+    completed: program.vmaTestStatus === 'completed',
+  });
 
   for (let w = 0; w < durationWeeks; w += 1) {
     const weekNumber = w + 1;
@@ -1269,7 +1324,6 @@ export function getProgramDeliveryProgress(
   program: TrainingProgram,
   nowMs: number = Date.now()
 ): ProgramDeliveryProgress {
-  const startDate = program.startAt?.toDate ? program.startAt.toDate() : new Date();
   const totalWeeks = Math.min(
     VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MAX,
     Math.max(
@@ -1287,30 +1341,22 @@ export function getProgramDeliveryProgress(
       program.sessionsPerWeek || VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK
     )
   );
+  const programAnchor = resolveProgramStartAnchor(program, nowMs);
   const weekDates = computeWeekDates(
-    startDate,
+    programAnchor,
     sessionsPerWeek,
     program.preferredDays || getDefaultPreferredDays(sessionsPerWeek),
     totalWeeks
   );
 
-  const startIsoDay = toIsoWeekday(startDate);
-  const mondayW1 = new Date(
-    startDate.getFullYear(),
-    startDate.getMonth(),
-    startDate.getDate() - (startIsoDay - 1),
-    0,
-    0,
-    0,
-    0
-  );
-
   const isFree = !program.isPaid || program.paymentStatus === 'free';
   const isPaid = Boolean(program.isPaid) && program.paymentStatus === 'paid';
   const hasAccess = isFree || isPaid;
+  const vmaCompleted = program.vmaTestStatus === 'completed';
   const paidMs = isFree
-    ? startDate.getTime()
-    : (program.paidAt?.toMillis?.() ?? startDate.getTime());
+    ? programAnchor.getTime()
+    : (program.paidAt?.toMillis?.() ?? programAnchor.getTime());
+  const vmaDoneMs = program.vmaTestedAt?.toMillis?.() ?? paidMs;
   const weeks: ProgramWeekWindow[] = [];
 
   for (let w = 1; w <= totalWeeks; w += 1) {
@@ -1319,38 +1365,8 @@ export function getProgramDeliveryProgress(
     const firstSessionDate = dates[0];
     const lastSessionDate = dates[dates.length - 1];
 
-    const startAtMs =
-      w === 1
-        ? new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate(),
-            0,
-            0,
-            0,
-            0
-          ).getTime()
-        : new Date(
-            mondayW1.getFullYear(),
-            mondayW1.getMonth(),
-            mondayW1.getDate() + (w - 1) * 7,
-            0,
-            0,
-            0,
-            0
-          ).getTime();
-
-    const sundayEndMs = new Date(
-      mondayW1.getFullYear(),
-      mondayW1.getMonth(),
-      mondayW1.getDate() + w * 7 - 1,
-      23,
-      59,
-      59,
-      999
-    ).getTime();
-
-    const lastSessionDayEndMs = new Date(
+    const startAtMs = toStartOfDay(firstSessionDate).getTime();
+    const endAtMs = new Date(
       lastSessionDate.getFullYear(),
       lastSessionDate.getMonth(),
       lastSessionDate.getDate(),
@@ -1360,9 +1376,14 @@ export function getProgramDeliveryProgress(
       999
     ).getTime();
 
-    const endAtMs = Math.max(sundayEndMs, lastSessionDayEndMs);
-    const unlockAtMs = w === 1 ? paidMs : weeks[idx - 1].endAtMs + 1;
-    const unlocked = hasAccess && (w === 1 || nowMs >= unlockAtMs);
+    const unlockAtMs =
+      w === 1
+        ? vmaCompleted
+          ? Math.max(paidMs, vmaDoneMs)
+          : startAtMs
+        : weeks[idx - 1].endAtMs + 1;
+    const unlocked =
+      hasAccess && vmaCompleted && (w === 1 || nowMs >= unlockAtMs);
 
     weeks.push({
       weekNumber: w,

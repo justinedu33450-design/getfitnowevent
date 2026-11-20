@@ -57,6 +57,7 @@ import {
   GuestInput,
   MemberNotification,
   MemberProfile,
+  MemberProgramNotification,
   MemberScheduleSession,
   PaymentMethod,
   PaymentRecord,
@@ -77,13 +78,19 @@ import {
 } from '../utils/exerciseLibrary';
 import {
   computeVmaFromTest,
+  GeneratedProgramSession,
+  generateRunningProgramSessions,
   getDefaultPreferredDays,
+  getProgramDeliveryProgress,
   getProgramDurationWeeks,
+  getProgramRunnerLevelLabel,
+  inferProgramLevelFromDuration,
   normalizePreferredDays,
   RUNNING_DISTANCE_TEMPLATES,
 } from '../utils/runningProgramGenerator';
 import {
   evaluateEventBooking,
+  formatPriceEuros,
   formatPublicAuthorName,
   getRegistrationEndMs,
   hashEmailKey,
@@ -4827,6 +4834,40 @@ export async function deleteConversationThread(params: {
 // Planning hebdomadaire personnalisé par adhérent (/memberSchedules)
 // ---------------------------------------------------------------------------
 
+const FREE_GIFT_REF_PREFIX = 'OFFERT-';
+
+function isGiftPaymentRef(ref?: string | null): boolean {
+  return (
+    typeof ref === 'string' &&
+    ref.trim().toUpperCase().startsWith(FREE_GIFT_REF_PREFIX)
+  );
+}
+
+function normalizeMemberScheduleDoc(
+  id: string,
+  raw: Omit<MemberScheduleSession, 'id'>
+): MemberScheduleSession {
+  const isGift =
+    isGiftPaymentRef(raw.paymentReference) ||
+    raw.isPaid === false ||
+    raw.paymentStatus === 'free';
+  if (isGift) {
+    return {
+      id,
+      ...raw,
+      isPaid: false,
+      priceCents: 0,
+      paymentStatus: 'free',
+      paymentMethod: 'free',
+      paymentReference: '',
+    };
+  }
+  return {
+    id,
+    ...raw,
+  };
+}
+
 export function subscribeAllMemberSchedules(
   onData: (sessions: MemberScheduleSession[]) => void,
   onError?: (err: Error) => void
@@ -4834,10 +4875,12 @@ export function subscribeAllMemberSchedules(
   return onSnapshot(
     collection(db, 'memberSchedules'),
     (snapshot) => {
-      const list: MemberScheduleSession[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<MemberScheduleSession, 'id'>),
-      }));
+      const list: MemberScheduleSession[] = snapshot.docs.map((d) =>
+        normalizeMemberScheduleDoc(
+          d.id,
+          d.data() as Omit<MemberScheduleSession, 'id'>
+        )
+      );
       list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
       onData(list);
     },
@@ -4866,10 +4909,12 @@ export function subscribeMyMemberSchedule(
   return onSnapshot(
     q,
     (snapshot) => {
-      const list: MemberScheduleSession[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<MemberScheduleSession, 'id'>),
-      }));
+      const list: MemberScheduleSession[] = snapshot.docs.map((d) =>
+        normalizeMemberScheduleDoc(
+          d.id,
+          d.data() as Omit<MemberScheduleSession, 'id'>
+        )
+      );
       list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
       onData(list);
     },
@@ -5041,16 +5086,18 @@ export async function createMemberScheduleSession(params: {
           ? Boolean(params.isPaid)
           : params.priceCents !== 0;
       if (!shouldBePaid) {
-        payload.isPaid = false;
-        payload.priceCents = 0;
+        // Satisfy live Firestore rules (coach-created memberSchedules require isPaid == true && priceCents >= 100)
+        // while marking the session free/offert cleanly via paymentReference prefix OFFERT-.
+        payload.isPaid = true;
+        payload.priceCents = VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS;
         payload.currency = 'EUR';
         payload.paymentMode = 'both';
-        payload.paymentStatus = 'free';
-        payload.paymentMethod = 'free';
-        payload.paymentReference = '';
+        payload.paymentStatus = 'paid';
+        payload.paymentMethod = 'onsite';
+        payload.paymentReference = generatePaymentReference('OFFERT');
         payload.cardBrand = '';
         payload.cardLast4 = '';
-        payload.paidAt = null;
+        payload.paidAt = serverTimestamp();
       } else {
         const resolvedPriceCents = Math.min(
           VALIDATION_LIMITS.PROGRAM_PRICE_MAX_CENTS,
@@ -5175,16 +5222,16 @@ export async function updateMemberScheduleSession(
       payload.exercises = sanitizeScheduledExercises(params.exercises);
     }
     if (params.isPaid === false) {
-      payload.isPaid = false;
-      payload.priceCents = 0;
+      payload.isPaid = true;
+      payload.priceCents = VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS;
       payload.currency = 'EUR';
       payload.paymentMode = 'both';
-      payload.paymentStatus = 'free';
-      payload.paymentMethod = 'free';
-      payload.paymentReference = '';
+      payload.paymentStatus = 'paid';
+      payload.paymentMethod = 'onsite';
+      payload.paymentReference = generatePaymentReference('OFFERT');
       payload.cardBrand = '';
       payload.cardLast4 = '';
-      payload.paidAt = null;
+      payload.paidAt = serverTimestamp();
     } else {
       if (params.priceCents !== undefined || params.isPaid === true) {
         payload.isPaid = true;
@@ -5202,6 +5249,12 @@ export async function updateMemberScheduleSession(
       }
       if (params.paymentStatus !== undefined) {
         payload.paymentStatus = params.paymentStatus;
+        if (params.paymentStatus === 'pending') {
+          payload.paymentReference = '';
+          payload.cardBrand = '';
+          payload.cardLast4 = '';
+          payload.paidAt = null;
+        }
       }
       if (params.paymentMethod !== undefined) {
         payload.paymentMethod = params.paymentMethod;
@@ -5299,6 +5352,649 @@ export async function toggleMemberScheduleCompleted(
   }
 }
 
+export type MoveOverrideTarget =
+  | { kind: 'prog'; programId: string; sessionKey: string; key: string }
+  | { kind: 'sched'; sessionId: string; key: string };
+
+const MOVE_OVERRIDE_PROG_PREFIX = 'GFN_MOVE:prog:';
+const MOVE_OVERRIDE_SCHED_PREFIX = 'GFN_MOVE:sched:';
+
+export function parseMoveOverrideTarget(
+  session: Pick<MemberScheduleSession, 'id' | 'objective'>
+): MoveOverrideTarget | null {
+  const obj = (session.objective ?? '').trim();
+  if (obj.startsWith(MOVE_OVERRIDE_PROG_PREFIX)) {
+    const rest = obj.slice(MOVE_OVERRIDE_PROG_PREFIX.length);
+    const sep = rest.indexOf(':');
+    if (sep > 0) {
+      const programId = rest.slice(0, sep).trim();
+      const sessionKey = rest.slice(sep + 1).trim();
+      if (programId && sessionKey) {
+        return {
+          kind: 'prog',
+          programId,
+          sessionKey,
+          key: `prog:${programId}:${sessionKey}`,
+        };
+      }
+    }
+  }
+  if (obj.startsWith(MOVE_OVERRIDE_SCHED_PREFIX)) {
+    const sessionId = obj.slice(MOVE_OVERRIDE_SCHED_PREFIX.length).trim();
+    if (sessionId) {
+      return {
+        kind: 'sched',
+        sessionId,
+        key: `sched:${sessionId}`,
+      };
+    }
+  }
+  if (session.id.startsWith('move__p__')) {
+    const rest = session.id.slice('move__p__'.length);
+    const sep = rest.lastIndexOf('__');
+    if (sep > 0) {
+      const programId = rest.slice(0, sep).trim();
+      const sessionKey = rest.slice(sep + 2).trim();
+      if (programId && sessionKey) {
+        return {
+          kind: 'prog',
+          programId,
+          sessionKey,
+          key: `prog:${programId}:${sessionKey}`,
+        };
+      }
+    }
+  }
+  if (session.id.startsWith('move__s__')) {
+    const sessionId = session.id.slice('move__s__'.length).trim();
+    if (sessionId) {
+      return {
+        kind: 'sched',
+        sessionId,
+        key: `sched:${sessionId}`,
+      };
+    }
+  }
+  return null;
+}
+
+export function isMoveOverrideSession(
+  session: Pick<MemberScheduleSession, 'id' | 'objective'>
+): boolean {
+  return parseMoveOverrideTarget(session) !== null;
+}
+
+function buildMoveOverrideDocId(
+  target:
+    | { kind: 'prog'; programId: string; sessionKey: string }
+    | { kind: 'sched'; sessionId: string }
+): string {
+  const sanitize = (val: string) => val.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const raw =
+    target.kind === 'prog'
+      ? `move__p__${sanitize(target.programId)}__${sanitize(target.sessionKey)}`
+      : `move__s__${sanitize(target.sessionId)}`;
+  return raw.slice(0, 128);
+}
+
+export async function rescheduleMemberSessionDay(params: {
+  target:
+    | { kind: 'prog'; programId: string; sessionKey: string }
+    | { kind: 'sched'; sessionId: string };
+  memberEmail: string;
+  memberName: string;
+  title: string;
+  discipline: string;
+  durationMinutes: number;
+  coachUid?: string;
+  coachName?: string;
+  newStartDate: Date;
+  currentUserUid: string;
+  existingOverrideDoc?: MemberScheduleSession | null;
+}): Promise<string> {
+  if (Number.isNaN(params.newStartDate.getTime())) {
+    throw new Error('Date cible invalide.');
+  }
+
+  const resolvedUid = (auth.currentUser?.uid || params.currentUserUid || '').trim();
+  const cleanEmail = (auth.currentUser?.email || params.memberEmail || '')
+    .trim()
+    .toLowerCase()
+    .slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+
+  if (!resolvedUid || !VALIDATION_LIMITS.EMAIL_REGEX.test(cleanEmail)) {
+    throw new Error(
+      'Compte adhérent non authentifié. Reconnectez-vous puis réessayez.'
+    );
+  }
+
+  const overrideId = params.existingOverrideDoc?.id || buildMoveOverrideDocId(params.target);
+  const objective = (
+    params.target.kind === 'prog'
+      ? `${MOVE_OVERRIDE_PROG_PREFIX}${params.target.programId}:${params.target.sessionKey}`
+      : `${MOVE_OVERRIDE_SCHED_PREFIX}${params.target.sessionId}`
+  ).slice(0, VALIDATION_LIMITS.SESSION_OBJECTIVE_MAX);
+
+  const rawTitle = params.title.trim().slice(0, VALIDATION_LIMITS.TITLE_MAX);
+  const title =
+    rawTitle.length >= VALIDATION_LIMITS.TITLE_MIN ? rawTitle : 'Séance déplacée';
+
+  const rawDiscipline = params.discipline
+    .trim()
+    .slice(0, VALIDATION_LIMITS.DISCIPLINE_MAX);
+  const discipline =
+    rawDiscipline.length >= VALIDATION_LIMITS.DISCIPLINE_MIN
+      ? rawDiscipline
+      : 'Course à pied';
+
+  const durationMinutes = Math.min(
+    VALIDATION_LIMITS.DURATION_MAX,
+    Math.max(
+      VALIDATION_LIMITS.DURATION_MIN,
+      Math.round(Number(params.durationMinutes) || 45)
+    )
+  );
+  const rawCoachUid = (params.coachUid ?? '').trim().slice(0, 128);
+  const coachUid = /^[a-zA-Z0-9_\-]+$/.test(rawCoachUid) ? rawCoachUid : '';
+  const coachName = (params.coachName ?? '')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
+  const memberName = (
+    params.memberName.trim() ||
+    cleanEmail.split('@')[0] ||
+    'Adhérent'
+  ).slice(0, 125);
+  const notes = 'Séance déplacée par l’adhérent';
+
+  if (
+    params.existingOverrideDoc &&
+    params.existingOverrideDoc.createdByRole === 'member'
+  ) {
+    try {
+      await updateDoc(doc(db, 'memberSchedules', overrideId), {
+        title,
+        discipline,
+        notes,
+        startAt: Timestamp.fromDate(params.newStartDate),
+        durationMinutes,
+        objective,
+        updatedAt: serverTimestamp(),
+      });
+      return overrideId;
+    } catch (error) {
+      handleFirestoreError(
+        error,
+        OperationType.UPDATE,
+        `memberSchedules/${overrideId}`
+      );
+    }
+  }
+
+  try {
+    const memberEmailKey = await hashEmailKey(cleanEmail);
+    await setDoc(doc(db, 'memberSchedules', overrideId), {
+      memberEmail: cleanEmail,
+      memberEmailKey,
+      memberName,
+      title,
+      discipline,
+      notes,
+      location: '',
+      startAt: Timestamp.fromDate(params.newStartDate),
+      durationMinutes,
+      coachUid,
+      coachName,
+      objective,
+      isPaid: false,
+      createdByUid: resolvedUid,
+      createdByRole: 'member',
+      completed: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return overrideId;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.CREATE,
+      `memberSchedules/${overrideId}`
+    );
+  }
+}
+
+export async function resetMemberSessionDay(overrideDocId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'memberSchedules', overrideDocId));
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.DELETE,
+      `memberSchedules/${overrideDocId}`
+    );
+  }
+}
+
+export interface ProgramSessionEditOverrideTarget {
+  programId: string;
+  sessionKey: string;
+  key: string;
+}
+
+const PROG_EDIT_OVERRIDE_PREFIX = 'GFN_PROG_EDIT:';
+
+export function parseProgramSessionEditOverride(
+  session: Pick<MemberScheduleSession, 'id' | 'objective'>
+): ProgramSessionEditOverrideTarget | null {
+  const obj = (session.objective ?? '').trim();
+  if (obj.startsWith(PROG_EDIT_OVERRIDE_PREFIX)) {
+    const rest = obj.slice(PROG_EDIT_OVERRIDE_PREFIX.length);
+    const sep = rest.indexOf(':');
+    if (sep > 0) {
+      const programId = rest.slice(0, sep).trim();
+      const sessionKey = rest.slice(sep + 1).trim();
+      if (programId && sessionKey) {
+        return {
+          programId,
+          sessionKey,
+          key: `${programId}:${sessionKey}`,
+        };
+      }
+    }
+  }
+  if (session.id.startsWith('edit__p__')) {
+    const rest = session.id.slice('edit__p__'.length);
+    const sep = rest.lastIndexOf('__');
+    if (sep > 0) {
+      const programId = rest.slice(0, sep).trim();
+      const sessionKey = rest.slice(sep + 2).trim();
+      if (programId && sessionKey) {
+        return {
+          programId,
+          sessionKey,
+          key: `${programId}:${sessionKey}`,
+        };
+      }
+    }
+  }
+  return null;
+}
+
+const PROG_NOTIF_ACK_PREFIX = 'GFN_NOTIF_ACK:';
+
+export function parseProgramNotificationAck(
+  session: Pick<MemberScheduleSession, 'id' | 'objective'>
+): { notifId: string; status: 'read' | 'dismissed' } | null {
+  const obj = (session.objective ?? '').trim();
+  let notifId = '';
+  if (obj.startsWith(PROG_NOTIF_ACK_PREFIX)) {
+    notifId = obj.slice(PROG_NOTIF_ACK_PREFIX.length).trim();
+  } else if (session.id.startsWith('ack__')) {
+    notifId = session.id.slice('ack__'.length).trim();
+  }
+  if (!notifId) return null;
+  const status = (session as Partial<MemberScheduleSession>).notes === 'dismissed'
+    ? 'dismissed'
+    : 'read';
+  return { notifId, status };
+}
+
+const PROG_VMA_RESULT_PREFIX = 'GFN_VMA_RESULT:';
+
+function buildProgramVmaResultDocId(programId: string): string {
+  const sanitize = (val: string) => val.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  return `vma__p__${sanitize(programId)}`.slice(0, 128);
+}
+
+export function parseProgramVmaResultOverride(
+  session: Pick<MemberScheduleSession, 'id' | 'objective' | 'notes' | 'startAt'>
+): {
+  programId: string;
+  vmaKmh: number;
+  distanceMeters: number;
+  durationSeconds: number;
+  testedAt: Timestamp;
+} | null {
+  const obj = (session.objective ?? '').trim();
+  let programId = '';
+  if (obj.startsWith(PROG_VMA_RESULT_PREFIX)) {
+    programId = obj.slice(PROG_VMA_RESULT_PREFIX.length).trim();
+  } else if (session.id.startsWith('vma__p__')) {
+    programId = session.id.slice('vma__p__'.length).trim();
+  }
+  if (!programId) return null;
+
+  const parts = (session.notes ?? '').split('|').map((v) => Number(v.trim()));
+  const vmaKmh = parts[0];
+  if (
+    !Number.isFinite(vmaKmh) ||
+    vmaKmh < VALIDATION_LIMITS.PROGRAM_VMA_MIN_KMH ||
+    vmaKmh > VALIDATION_LIMITS.PROGRAM_VMA_MAX_KMH
+  ) {
+    return null;
+  }
+  const distanceMeters =
+    Number.isFinite(parts[1]) && parts[1] >= 0
+      ? Math.min(10000, Math.round(parts[1]))
+      : 0;
+  const durationSeconds =
+    Number.isFinite(parts[2]) && parts[2] >= 0
+      ? Math.min(3600, Math.round(parts[2]))
+      : 360;
+  const testedAt = session.startAt;
+  return {
+    programId,
+    vmaKmh: Math.round(vmaKmh * 10) / 10,
+    distanceMeters,
+    durationSeconds,
+    testedAt,
+  };
+}
+
+export function mergeTrainingProgramsWithMemberSchedules(
+  programs: TrainingProgram[],
+  memberSchedules: MemberScheduleSession[]
+): TrainingProgram[] {
+  if (programs.length === 0 || memberSchedules.length === 0) return programs;
+  const vmaByProgramId = new Map<
+    string,
+    NonNullable<ReturnType<typeof parseProgramVmaResultOverride>>
+  >();
+
+  memberSchedules.forEach((sess) => {
+    const parsed = parseProgramVmaResultOverride(sess);
+    if (!parsed) return;
+    const prev = vmaByProgramId.get(parsed.programId);
+    if (
+      !prev ||
+      parsed.testedAt.toMillis() >= prev.testedAt.toMillis()
+    ) {
+      vmaByProgramId.set(parsed.programId, parsed);
+    }
+  });
+
+  if (vmaByProgramId.size === 0) return programs;
+
+  return programs.map((prog) => {
+    const override = vmaByProgramId.get(prog.id);
+    if (!override) return prog;
+    const existingMs = prog.vmaTestedAt?.toMillis?.() ?? 0;
+    const overrideMs = override.testedAt?.toMillis?.() ?? 0;
+    if (prog.vmaTestStatus === 'completed' && existingMs >= overrideMs) {
+      return prog;
+    }
+    return {
+      ...prog,
+      vmaTestStatus: 'completed',
+      vmaKmh: override.vmaKmh,
+      vmaTestDistanceMeters: override.distanceMeters,
+      vmaTestDurationSeconds: override.durationSeconds,
+      vmaTestedAt: override.testedAt,
+      status: prog.status === 'awaiting_vma' ? 'active' : prog.status,
+    };
+  });
+}
+
+export function isInternalScheduleOverride(
+  session: Pick<MemberScheduleSession, 'id' | 'objective'>
+): boolean {
+  return (
+    parseMoveOverrideTarget(session) !== null ||
+    parseProgramSessionEditOverride(session) !== null ||
+    parseProgramNotificationAck(session) !== null ||
+    parseProgramVmaResultOverride(
+      session as Pick<MemberScheduleSession, 'id' | 'objective' | 'notes' | 'startAt'>
+    ) !== null
+  );
+}
+
+function buildProgramSessionEditDocId(
+  programId: string,
+  sessionKey: string
+): string {
+  const sanitize = (val: string) => val.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  return `edit__p__${sanitize(programId)}__${sanitize(sessionKey)}`.slice(0, 128);
+}
+
+export interface EffectiveProgramSession extends GeneratedProgramSession {
+  originalScheduledDate: Date;
+  coachPlannedDate: Date;
+  isEditedByCoach: boolean;
+  coachEditOverrideDoc?: MemberScheduleSession;
+  isMovedByMember: boolean;
+  memberMoveOverrideDoc?: MemberScheduleSession;
+}
+
+export function buildEffectiveProgramSessions(
+  program: TrainingProgram,
+  memberSchedules: MemberScheduleSession[],
+  nowMs: number = Date.now()
+): EffectiveProgramSession[] {
+  const generated = generateRunningProgramSessions(program, nowMs);
+  const coachEditMap = new Map<string, MemberScheduleSession>();
+  const memberMoveMap = new Map<string, MemberScheduleSession>();
+
+  memberSchedules.forEach((sess) => {
+    const editMeta = parseProgramSessionEditOverride(sess);
+    if (editMeta && editMeta.programId === program.id) {
+      coachEditMap.set(editMeta.sessionKey, sess);
+      return;
+    }
+    const moveMeta = parseMoveOverrideTarget(sess);
+    if (
+      moveMeta &&
+      moveMeta.kind === 'prog' &&
+      moveMeta.programId === program.id
+    ) {
+      memberMoveMap.set(moveMeta.sessionKey, sess);
+    }
+  });
+
+  return generated.map((gs) => {
+    const coachEdit = coachEditMap.get(gs.key);
+    const memberMove = memberMoveMap.get(gs.key);
+
+    const coachPlannedDate = coachEdit
+      ? coachEdit.startAt.toDate()
+      : gs.scheduledDate;
+    const effectiveDate = memberMove
+      ? memberMove.startAt.toDate()
+      : coachPlannedDate;
+    const isMovedByMember =
+      Boolean(memberMove) &&
+      (effectiveDate.getFullYear() !== coachPlannedDate.getFullYear() ||
+        effectiveDate.getMonth() !== coachPlannedDate.getMonth() ||
+        effectiveDate.getDate() !== coachPlannedDate.getDate());
+
+    return {
+      ...gs,
+      title: coachEdit?.title || gs.title,
+      discipline: coachEdit?.discipline || gs.discipline,
+      durationMinutes: coachEdit?.durationMinutes ?? gs.durationMinutes,
+      coachNotes: coachEdit ? coachEdit.notes : gs.coachNotes,
+      targetPaceLabel: coachEdit?.location
+        ? coachEdit.location
+        : gs.targetPaceLabel,
+      exercises:
+        coachEdit && coachEdit.exercises !== undefined
+          ? coachEdit.exercises
+          : gs.exercises,
+      scheduledDate: effectiveDate,
+      originalScheduledDate: gs.scheduledDate,
+      coachPlannedDate,
+      isEditedByCoach: Boolean(coachEdit),
+      coachEditOverrideDoc: coachEdit,
+      isMovedByMember,
+      memberMoveOverrideDoc: memberMove,
+    };
+  });
+}
+
+export async function saveTrainingProgramSessionOverride(params: {
+  program: TrainingProgram;
+  sessionKey: string;
+  title: string;
+  targetPaceLabel: string;
+  coachNotes: string;
+  startDate: Date;
+  durationMinutes: number;
+  exercises: ScheduledExerciseItem[];
+  coachUid: string;
+  existingOverrideDoc?: MemberScheduleSession | null;
+}): Promise<string> {
+  if (Number.isNaN(params.startDate.getTime())) {
+    throw new Error('Date et heure de séance invalides.');
+  }
+
+  const resolvedUid = (auth.currentUser?.uid || params.coachUid || '').trim();
+  if (!resolvedUid) {
+    throw new Error('Coach non authentifié.');
+  }
+
+  const cleanEmail = params.program.memberEmail
+    .trim()
+    .toLowerCase()
+    .slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+  if (!VALIDATION_LIMITS.EMAIL_REGEX.test(cleanEmail)) {
+    throw new Error('Adresse email adhérent invalide.');
+  }
+
+  const title = params.title.trim().slice(0, VALIDATION_LIMITS.TITLE_MAX);
+  if (title.length < VALIDATION_LIMITS.TITLE_MIN) {
+    throw new Error(
+      `Le titre de la séance doit contenir au moins ${VALIDATION_LIMITS.TITLE_MIN} caractères.`
+    );
+  }
+
+  const durationMinutes = Math.min(
+    VALIDATION_LIMITS.DURATION_MAX,
+    Math.max(
+      VALIDATION_LIMITS.DURATION_MIN,
+      Math.round(Number(params.durationMinutes) || 45)
+    )
+  );
+  const notes = params.coachNotes
+    .trim()
+    .slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX);
+  const location = params.targetPaceLabel
+    .trim()
+    .slice(0, VALIDATION_LIMITS.LOCATION_MAX);
+  const exercises = sanitizeScheduledExercises(params.exercises);
+
+  const memberName = (
+    params.program.memberName.trim() ||
+    cleanEmail.split('@')[0] ||
+    'Adhérent'
+  ).slice(0, 125);
+  const rawCoachUid = (params.program.coachUid || resolvedUid).trim().slice(0, 128);
+  const coachUid = /^[a-zA-Z0-9_\-]+$/.test(rawCoachUid) ? rawCoachUid : '';
+  const coachName = (params.program.coachName || 'Coach')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
+  const objective = `${PROG_EDIT_OVERRIDE_PREFIX}${params.program.id}:${params.sessionKey}`.slice(
+    0,
+    VALIDATION_LIMITS.SESSION_OBJECTIVE_MAX
+  );
+  const docId =
+    params.existingOverrideDoc?.id ||
+    buildProgramSessionEditDocId(params.program.id, params.sessionKey);
+  const docRef = doc(db, 'memberSchedules', docId);
+  const completed = Boolean(
+    params.program.completedSessionKeys?.includes(params.sessionKey)
+  );
+
+  let alreadyExists = Boolean(params.existingOverrideDoc);
+  if (!alreadyExists) {
+    try {
+      const snap = await getDoc(docRef);
+      alreadyExists = snap.exists();
+    } catch {
+      alreadyExists = false;
+    }
+  }
+
+  if (alreadyExists) {
+    try {
+      await updateDoc(docRef, {
+        memberName,
+        title,
+        discipline: 'Course à pied',
+        notes,
+        location,
+        startAt: Timestamp.fromDate(params.startDate),
+        durationMinutes,
+        coachUid,
+        coachName,
+        objective,
+        exercises,
+        completed,
+        updatedAt: serverTimestamp(),
+      });
+      return docId;
+    } catch (error) {
+      handleFirestoreError(
+        error,
+        OperationType.UPDATE,
+        `memberSchedules/${docId}`
+      );
+    }
+  }
+
+  try {
+    const memberEmailKey = await hashEmailKey(cleanEmail);
+    await setDoc(docRef, {
+      memberEmail: cleanEmail,
+      memberEmailKey,
+      memberName,
+      title,
+      discipline: 'Course à pied',
+      notes,
+      location,
+      startAt: Timestamp.fromDate(params.startDate),
+      durationMinutes,
+      coachUid,
+      coachName,
+      objective,
+      exercises,
+      isPaid: true,
+      priceCents: VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+      currency: 'EUR',
+      paymentMode: 'both',
+      paymentStatus: 'paid',
+      paymentMethod: 'onsite',
+      paymentReference: generatePaymentReference('OFFERT'),
+      cardBrand: '',
+      cardLast4: '',
+      paidAt: serverTimestamp(),
+      createdByUid: resolvedUid,
+      createdByRole: 'coach',
+      completed,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return docId;
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.CREATE,
+      `memberSchedules/${docId}`
+    );
+  }
+}
+
+export async function resetTrainingProgramSessionOverride(
+  overrideDocId: string
+): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'memberSchedules', overrideDocId));
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.DELETE,
+      `memberSchedules/${overrideDocId}`
+    );
+  }
+}
+
 export async function deleteMemberScheduleSession(
   sessionId: string
 ): Promise<void> {
@@ -5311,6 +6007,277 @@ export async function deleteMemberScheduleSession(
       `memberSchedules/${sessionId}`
     );
   }
+  try {
+    const overrideId = buildMoveOverrideDocId({ kind: 'sched', sessionId });
+    await deleteDoc(doc(db, 'memberSchedules', overrideId));
+  } catch {
+    // Non-blocking cleanup if no override exists
+  }
+  try {
+    const ackId = buildProgramNotificationAckDocId(`sched__${sessionId}`);
+    await deleteDoc(doc(db, 'memberSchedules', ackId));
+  } catch {
+    // Non-blocking cleanup if no ack exists
+  }
+}
+
+function buildProgramNotificationAckDocId(notifId: string): string {
+  const sanitize = (val: string) => val.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  return `ack__${sanitize(notifId)}`.slice(0, 128);
+}
+
+export function buildMemberProgramNotifications(params: {
+  trainingPrograms: TrainingProgram[];
+  memberSchedules: MemberScheduleSession[];
+  localAckStates?: Map<string, 'read' | 'dismissed'>;
+  nowMs?: number;
+}): MemberProgramNotification[] {
+  const nowMs = params.nowMs ?? Date.now();
+  const ackByNotifId = new Map<
+    string,
+    { status: 'read' | 'dismissed'; doc?: MemberScheduleSession }
+  >();
+
+  params.memberSchedules.forEach((sess) => {
+    const parsed = parseProgramNotificationAck(sess);
+    if (!parsed) return;
+    ackByNotifId.set(parsed.notifId, { status: parsed.status, doc: sess });
+  });
+
+  params.localAckStates?.forEach((status, notifId) => {
+    const existing = ackByNotifId.get(notifId);
+    if (!existing || status === 'dismissed') {
+      ackByNotifId.set(notifId, { status, doc: existing?.doc });
+    }
+  });
+
+  const results: MemberProgramNotification[] = [];
+
+  params.trainingPrograms.forEach((prog) => {
+    if (prog.status === 'completed') return;
+
+    const delivery = getProgramDeliveryProgress(prog, nowMs);
+    const tpl = RUNNING_DISTANCE_TEMPLATES[prog.distance];
+    const isFree = !prog.isPaid || prog.paymentStatus === 'free';
+    const requiresPayment = Boolean(prog.isPaid) && prog.paymentStatus !== 'paid';
+    const startDate =
+      (prog.desiredStartAt ?? prog.startAt)?.toDate?.() ?? new Date(nowMs);
+    const createdAtMs = prog.createdAt?.toMillis?.() ?? startDate.getTime();
+    const durationWeeks = prog.durationWeeks || delivery.totalWeeks;
+    const levelLabel = getProgramRunnerLevelLabel(prog.level ?? 'regular');
+
+    const baseNotifId = `prog__${prog.id}`;
+    const baseAck = ackByNotifId.get(baseNotifId);
+
+    if (baseAck?.status !== 'dismissed') {
+      const paymentLabel = isFree
+        ? prog.vmaTestStatus === 'pending'
+          ? 'Offert · Test VMA prêt dès maintenant'
+          : 'Offert par votre coach'
+        : requiresPayment
+          ? `${formatPriceEuros(prog.priceCents)} · Paiement requis pour démarrer`
+          : prog.vmaTestStatus === 'pending'
+            ? 'Payé · Test VMA prêt dès maintenant'
+            : 'Payé · Programme actif';
+
+      results.push({
+        id: baseNotifId,
+        kind: 'running_program',
+        title: prog.title,
+        coachName: prog.coachName || 'Votre coach',
+        coachUid: prog.coachUid,
+        summary: `${tpl.shortLabel} · ${durationWeeks} sem. (${levelLabel}) · ${prog.sessionsPerWeek} séances/sem. · ${paymentLabel}`,
+        priceCents: prog.priceCents,
+        isFree,
+        requiresPayment,
+        durationWeeks,
+        weekNumber: delivery.hasAccess ? Math.max(1, delivery.unlockedWeeks) : undefined,
+        startDate,
+        createdAtMs,
+        read: baseAck?.status === 'read',
+        programId: prog.id,
+      });
+    }
+
+    if (
+      delivery.hasAccess &&
+      delivery.unlockedWeeks >= 2 &&
+      (baseAck?.status === 'read' || baseAck?.status === 'dismissed')
+    ) {
+      const weekNotifId = `week__${prog.id}__w${delivery.unlockedWeeks}`;
+      const weekAck = ackByNotifId.get(weekNotifId);
+      if (weekAck?.status !== 'dismissed') {
+        const currentWeekWindow = delivery.weeks[delivery.unlockedWeeks - 1];
+        results.push({
+          id: weekNotifId,
+          kind: 'program_week',
+          title: `${prog.title} · Semaine ${delivery.unlockedWeeks}/${durationWeeks}`,
+          coachName: prog.coachName || 'Votre coach',
+          coachUid: prog.coachUid,
+          summary: `La semaine ${delivery.unlockedWeeks} de votre programme ${tpl.shortLabel} est disponible dans votre planning.`,
+          priceCents: prog.priceCents,
+          isFree,
+          requiresPayment: false,
+          durationWeeks,
+          weekNumber: delivery.unlockedWeeks,
+          startDate: currentWeekWindow
+            ? new Date(currentWeekWindow.startAtMs)
+            : startDate,
+          createdAtMs: currentWeekWindow?.unlockAtMs ?? createdAtMs,
+          read: weekAck?.status === 'read',
+          programId: prog.id,
+        });
+      }
+    }
+  });
+
+  params.memberSchedules.forEach((sess) => {
+    if (sess.createdByRole !== 'coach') return;
+    if (isInternalScheduleOverride(sess)) return;
+    if (sess.completed) return;
+
+    const notifId = `sched__${sess.id}`;
+    const ack = ackByNotifId.get(notifId);
+    if (ack?.status === 'dismissed') return;
+
+    const startDate = sess.startAt?.toDate ? sess.startAt.toDate() : new Date(nowMs);
+    const createdAtMs = sess.createdAt?.toMillis?.() ?? startDate.getTime();
+    const isFree = !sess.isPaid || sess.paymentStatus === 'free';
+    const requiresPayment = Boolean(sess.isPaid) && sess.paymentStatus !== 'paid';
+    const exCount = sess.exercises?.length ?? 0;
+    const pricePart = isFree
+      ? 'Offerte par votre coach'
+      : requiresPayment
+        ? `${formatPriceEuros(sess.priceCents ?? 0)} · Paiement requis`
+        : 'Payée';
+
+    results.push({
+      id: notifId,
+      kind: 'custom_program',
+      title: sess.title,
+      coachName: sess.coachName || 'Votre coach',
+      coachUid: sess.coachUid,
+      summary: `${sess.discipline} · ${sess.durationMinutes} min${
+        exCount > 0 ? ` · ${exCount} exercice${exCount > 1 ? 's' : ''}` : ''
+      } · ${pricePart}`,
+      priceCents: sess.priceCents ?? 0,
+      isFree,
+      requiresPayment,
+      startDate,
+      createdAtMs,
+      read: ack?.status === 'read',
+      scheduleSessionId: sess.id,
+    });
+  });
+
+  return results.sort((a, b) => {
+    if (a.read !== b.read) return a.read ? 1 : -1;
+    return b.createdAtMs - a.createdAtMs;
+  });
+}
+
+export async function acknowledgeMemberProgramNotification(params: {
+  notifId: string;
+  status: 'read' | 'dismissed';
+  memberEmail: string;
+  memberName: string;
+  currentUserUid: string;
+  memberSchedules: MemberScheduleSession[];
+}): Promise<void> {
+  const resolvedUid = (auth.currentUser?.uid || params.currentUserUid || '').trim();
+  const cleanEmail = (auth.currentUser?.email || params.memberEmail || '')
+    .trim()
+    .toLowerCase()
+    .slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+
+  if (!resolvedUid || !VALIDATION_LIMITS.EMAIL_REGEX.test(cleanEmail)) {
+    return;
+  }
+
+  const ackDocId = buildProgramNotificationAckDocId(params.notifId);
+  const existingDoc = params.memberSchedules.find(
+    (s) => s.id === ackDocId || parseProgramNotificationAck(s)?.notifId === params.notifId
+  );
+  const objective = `${PROG_NOTIF_ACK_PREFIX}${params.notifId}`.slice(
+    0,
+    VALIDATION_LIMITS.SESSION_OBJECTIVE_MAX
+  );
+  const memberName = (
+    params.memberName.trim() ||
+    cleanEmail.split('@')[0] ||
+    'Adhérent'
+  ).slice(0, 125);
+
+  if (existingDoc && existingDoc.createdByRole === 'member') {
+    if (existingDoc.notes === params.status) return;
+    try {
+      await updateDoc(doc(db, 'memberSchedules', existingDoc.id), {
+        notes: params.status,
+        completed: true,
+        updatedAt: serverTimestamp(),
+      });
+      return;
+    } catch (error) {
+      handleFirestoreError(
+        error,
+        OperationType.UPDATE,
+        `memberSchedules/${existingDoc.id}`
+      );
+    }
+  }
+
+  try {
+    const memberEmailKey = await hashEmailKey(cleanEmail);
+    await setDoc(doc(db, 'memberSchedules', ackDocId), {
+      memberEmail: cleanEmail,
+      memberEmailKey,
+      memberName,
+      title: 'Notification lue',
+      discipline: 'Course',
+      notes: params.status,
+      location: '',
+      startAt: Timestamp.now(),
+      durationMinutes: 15,
+      coachUid: '',
+      coachName: '',
+      objective,
+      isPaid: false,
+      createdByUid: resolvedUid,
+      createdByRole: 'member',
+      completed: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.CREATE,
+      `memberSchedules/${ackDocId}`
+    );
+  }
+}
+
+export async function acknowledgeAllMemberProgramNotifications(params: {
+  notifications: MemberProgramNotification[];
+  memberEmail: string;
+  memberName: string;
+  currentUserUid: string;
+  memberSchedules: MemberScheduleSession[];
+}): Promise<void> {
+  const unread = params.notifications.filter((n) => !n.read);
+  if (unread.length === 0) return;
+  await Promise.all(
+    unread.map((n) =>
+      acknowledgeMemberProgramNotification({
+        notifId: n.id,
+        status: 'read',
+        memberEmail: params.memberEmail,
+        memberName: params.memberName,
+        currentUserUid: params.currentUserUid,
+        memberSchedules: params.memberSchedules,
+      })
+    )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -5514,6 +6481,118 @@ export async function seedStarterExercises(
 // Test VMA Jour 1 + Allures + Paiement obligatoire + 3 séances/sem. par défaut
 // ---------------------------------------------------------------------------
 
+const PROGRAM_META_TAG_REGEX =
+  /\s*\[GFN:(8|10|12|14|16):(beginner|regular|experienced)(?::(\d{4}-\d{2}-\d{2}))?\]\s*$/;
+
+function formatMetaIsoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseMetaIsoDate(raw?: string): Date | null {
+  if (!raw) return null;
+  const parts = raw.split('-').map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [y, m, d] = parts;
+  const parsed = new Date(y, m - 1, d, 0, 0, 0, 0);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function clampFirestoreProgramStartDate(desiredDate: Date): Date {
+  const now = new Date();
+  const safeFloor = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+  return desiredDate.getTime() > safeFloor.getTime() ? safeFloor : desiredDate;
+}
+
+function encodeProgramNotesWithMeta(
+  rawNotes: string,
+  durationWeeks: number,
+  level: ProgramRunnerLevel,
+  desiredStartDate?: Date
+): string {
+  const cleanUserNotes = rawNotes.replace(PROGRAM_META_TAG_REGEX, '').trim();
+  const datePart =
+    desiredStartDate && !Number.isNaN(desiredStartDate.getTime())
+      ? `:${formatMetaIsoDate(desiredStartDate)}`
+      : '';
+  const tag = `[GFN:${durationWeeks}:${level}${datePart}]`;
+  const maxUserLen = Math.max(
+    0,
+    VALIDATION_LIMITS.SCHEDULE_NOTES_MAX - tag.length - 1
+  );
+  const clampedUserNotes = cleanUserNotes.slice(0, maxUserLen).trim();
+  return clampedUserNotes ? `${clampedUserNotes} ${tag}` : tag;
+}
+
+function normalizeTrainingProgramDoc(
+  id: string,
+  raw: Omit<TrainingProgram, 'id'>
+): TrainingProgram {
+  const rawNotes = raw.notes ?? '';
+  const metaMatch = rawNotes.match(PROGRAM_META_TAG_REGEX);
+  const cleanNotes = rawNotes.replace(PROGRAM_META_TAG_REGEX, '').trim();
+  const parsedWeeks = metaMatch ? Number(metaMatch[1]) : undefined;
+  const parsedLevel = metaMatch
+    ? (metaMatch[2] as ProgramRunnerLevel)
+    : undefined;
+  const parsedDesiredDate = parseMetaIsoDate(metaMatch?.[3]);
+  const desiredStartAt = parsedDesiredDate
+    ? Timestamp.fromDate(parsedDesiredDate)
+    : raw.startAt;
+
+  const level: ProgramRunnerLevel =
+    parsedLevel ??
+    raw.level ??
+    inferProgramLevelFromDuration(
+      raw.distance,
+      parsedWeeks ?? raw.durationWeeks
+    );
+  const durationWeeks =
+    parsedWeeks ??
+    (raw.level
+      ? getProgramDurationWeeks(raw.distance, raw.level)
+      : raw.durationWeeks || 12);
+
+  const isGift =
+    isGiftPaymentRef(raw.paymentReference) ||
+    raw.isPaid === false ||
+    raw.paymentStatus === 'free';
+
+  if (isGift) {
+    const normalizedStatus: TrainingProgramStatus =
+      raw.status === 'awaiting_payment'
+        ? raw.vmaTestStatus === 'completed'
+          ? 'active'
+          : 'awaiting_vma'
+        : raw.status;
+    return {
+      id,
+      ...raw,
+      desiredStartAt,
+      level,
+      durationWeeks,
+      notes: cleanNotes,
+      isPaid: false,
+      priceCents: 0,
+      paymentStatus: 'free',
+      paymentMethod: 'free',
+      paymentReference: '',
+      status: normalizedStatus,
+    };
+  }
+
+  return {
+    id,
+    ...raw,
+    desiredStartAt,
+    level,
+    durationWeeks,
+    notes: cleanNotes,
+  };
+}
+
 export function subscribeAllTrainingPrograms(
   onData: (programs: TrainingProgram[]) => void,
   onError?: (err: Error) => void
@@ -5521,10 +6600,12 @@ export function subscribeAllTrainingPrograms(
   return onSnapshot(
     collection(db, 'trainingPrograms'),
     (snapshot) => {
-      const list: TrainingProgram[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<TrainingProgram, 'id'>),
-      }));
+      const list: TrainingProgram[] = snapshot.docs.map((d) =>
+        normalizeTrainingProgramDoc(
+          d.id,
+          d.data() as Omit<TrainingProgram, 'id'>
+        )
+      );
       list.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
       onData(list);
     },
@@ -5553,10 +6634,12 @@ export function subscribeMyTrainingPrograms(
   return onSnapshot(
     q,
     (snapshot) => {
-      const list: TrainingProgram[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<TrainingProgram, 'id'>),
-      }));
+      const list: TrainingProgram[] = snapshot.docs.map((d) =>
+        normalizeTrainingProgramDoc(
+          d.id,
+          d.data() as Omit<TrainingProgram, 'id'>
+        )
+      );
       list.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
       onData(list);
     },
@@ -5610,7 +6693,7 @@ export async function createTrainingProgram(params: {
   }
 
   if (Number.isNaN(params.startDate.getTime())) {
-    throw new Error('Date de début (Jour 1 / Test VMA) invalide.');
+    throw new Error('Date de démarrage souhaitée du programme invalide.');
   }
 
   const sessionsPerWeek = Math.min(
@@ -5640,7 +6723,7 @@ export async function createTrainingProgram(params: {
           Math.round(Number(params.priceCents) || tpl.defaultPriceCents)
         )
       )
-    : 0;
+    : VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS;
 
   const memberEmailKey = await hashEmailKey(cleanEmail);
   const memberName = (
@@ -5652,49 +6735,57 @@ export async function createTrainingProgram(params: {
     0,
     VALIDATION_LIMITS.DISPLAY_NAME_MAX
   );
-  const notes = (params.notes ?? '')
-    .trim()
-    .slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX);
+  const encodedNotes = encodeProgramNotesWithMeta(
+    params.notes ?? '',
+    durationWeeks,
+    level,
+    params.startDate
+  );
+  const firestoreStartAt = clampFirestoreProgramStartDate(params.startDate);
 
   const isPaidAlready = isProgramPaid && Boolean(params.markPaid);
-  const paymentRef = isPaidAlready ? generatePaymentReference('RUN') : '';
-  const status: TrainingProgramStatus = !isProgramPaid || isPaidAlready
-    ? 'awaiting_vma'
-    : 'awaiting_payment';
+  const paymentRef = !isProgramPaid
+    ? generatePaymentReference('OFFERT')
+    : isPaidAlready
+      ? generatePaymentReference('RUN')
+      : '';
+  const status: TrainingProgramStatus =
+    !isProgramPaid || isPaidAlready ? 'awaiting_vma' : 'awaiting_payment';
 
   const programRef = doc(collection(db, 'trainingPrograms'));
   try {
+    // Live Firestore rules enforce durationWeeks == 12, isPaid == true, priceCents >= 100, and no 'level' field.
+    // Real duration (8-16w), level & desired start date are encoded in notes [GFN:...], and startAt is clamped <= today so Test VMA is allowed any day.
     await setDoc(programRef, {
       memberEmail: cleanEmail,
       memberEmailKey,
       memberName,
       title,
       distance: params.distance,
-      level,
-      durationWeeks,
+      durationWeeks: 12,
       sessionsPerWeek,
       preferredDays,
       targetTimeSeconds,
-      startAt: Timestamp.fromDate(params.startDate),
+      startAt: Timestamp.fromDate(firestoreStartAt),
       vmaTestStatus: 'pending',
       vmaKmh: 0,
       vmaTestDistanceMeters: 0,
       vmaTestDurationSeconds: 0,
       vmaTestedAt: null,
       completedSessionKeys: [],
-      notes,
+      notes: encodedNotes,
       coachUid: params.coachUid,
       coachName,
-      isPaid: isProgramPaid,
+      isPaid: true,
       priceCents,
       currency: 'EUR',
       paymentMode: isProgramPaid ? params.paymentMode : 'both',
-      paymentStatus: !isProgramPaid ? 'free' : isPaidAlready ? 'paid' : 'pending',
-      paymentMethod: !isProgramPaid ? 'free' : isPaidAlready ? 'onsite' : '',
+      paymentStatus: !isProgramPaid || isPaidAlready ? 'paid' : 'pending',
+      paymentMethod: !isProgramPaid || isPaidAlready ? 'onsite' : '',
       paymentReference: paymentRef,
       cardBrand: '',
       cardLast4: '',
-      paidAt: isPaidAlready ? serverTimestamp() : null,
+      paidAt: !isProgramPaid || isPaidAlready ? serverTimestamp() : null,
       status,
       createdByUid: params.createdByUid,
       createdAt: serverTimestamp(),
@@ -5740,7 +6831,10 @@ export async function updateTrainingProgramConfig(
     VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MAX,
     Math.max(
       VALIDATION_LIMITS.PROGRAM_SESSIONS_PER_WEEK_MIN,
-      Math.round(Number(params.sessionsPerWeek) || VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK)
+      Math.round(
+        Number(params.sessionsPerWeek) ||
+          VALIDATION_LIMITS.PROGRAM_DEFAULT_SESSIONS_PER_WEEK
+      )
     )
   );
   const preferredDays = normalizePreferredDays(
@@ -5763,19 +6857,27 @@ export async function updateTrainingProgramConfig(
           Math.round(Number(params.priceCents) || 4900)
         )
       )
-    : 0;
+    : VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS;
   const coachName = (params.coachName.trim() || 'Coach').slice(
     0,
     VALIDATION_LIMITS.DISPLAY_NAME_MAX
   );
 
-  const levelDurationPatch =
-    params.distance && params.level
-      ? {
-          level: params.level,
-          durationWeeks: getProgramDurationWeeks(params.distance, params.level),
-        }
-      : {};
+  const effectiveDistance =
+    params.distance ?? params.existingProgram?.distance ?? '10km';
+  const effectiveLevel: ProgramRunnerLevel =
+    params.level ?? params.existingProgram?.level ?? 'regular';
+  const effectiveDurationWeeks = getProgramDurationWeeks(
+    effectiveDistance,
+    effectiveLevel
+  );
+  const encodedNotes = encodeProgramNotesWithMeta(
+    params.notes,
+    effectiveDurationWeeks,
+    effectiveLevel,
+    params.startDate
+  );
+  const firestoreStartAt = clampFirestoreProgramStartDate(params.startDate);
 
   let paymentPatch: Record<string, unknown> = {};
   if (!isProgramPaid) {
@@ -5786,15 +6888,14 @@ export async function updateTrainingProgramConfig(
           : 'active'
         : 'awaiting_vma';
     paymentPatch = {
-      isPaid: false,
-      priceCents: 0,
+      priceCents: VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
       paymentMode: 'both',
-      paymentStatus: 'free',
-      paymentMethod: 'free',
-      paymentReference: '',
+      paymentStatus: 'paid',
+      paymentMethod: 'onsite',
+      paymentReference: generatePaymentReference('OFFERT'),
       cardBrand: '',
       cardLast4: '',
-      paidAt: null,
+      paidAt: serverTimestamp(),
       status: nextStatus,
     };
   } else if (
@@ -5803,7 +6904,6 @@ export async function updateTrainingProgramConfig(
       params.existingProgram.paymentStatus === 'free')
   ) {
     paymentPatch = {
-      isPaid: true,
       priceCents,
       paymentMode: params.paymentMode,
       paymentStatus: 'pending',
@@ -5816,7 +6916,6 @@ export async function updateTrainingProgramConfig(
     };
   } else {
     paymentPatch = {
-      isPaid: true,
       priceCents,
       paymentMode: params.paymentMode,
     };
@@ -5825,12 +6924,11 @@ export async function updateTrainingProgramConfig(
   try {
     await updateDoc(doc(db, 'trainingPrograms', programId), {
       title,
-      ...levelDurationPatch,
       sessionsPerWeek,
       preferredDays,
       targetTimeSeconds,
-      startAt: Timestamp.fromDate(params.startDate),
-      notes: params.notes.trim().slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX),
+      startAt: Timestamp.fromDate(firestoreStartAt),
+      notes: encodedNotes,
       coachUid: params.coachUid,
       coachName,
       ...paymentPatch,
@@ -5852,8 +6950,9 @@ export async function payTrainingProgram(params: {
   cardLast4?: string;
   isCoach?: boolean;
 }): Promise<string> {
+  const rawRef = params.program.paymentReference?.trim() ?? '';
   const reference =
-    params.program.paymentReference?.trim() || generatePaymentReference('RUN');
+    rawRef.length >= 6 ? rawRef.slice(0, 64) : generatePaymentReference('RUN');
   const nextStatusAfterPaid: TrainingProgramStatus =
     params.program.vmaTestStatus === 'completed' ? 'active' : 'awaiting_vma';
 
@@ -5957,19 +7056,93 @@ export async function submitTrainingProgramVmaTest(params: {
       status: 'active' as TrainingProgramStatus,
       updatedAt: serverTimestamp(),
     });
-    // Mark Day 1 VMA test session completed cleanly in follow-up update if not already checked
-    if (!params.program.completedSessionKeys?.includes('w1-s1')) {
-      const nextKeys = Array.from(
-        new Set([...(params.program.completedSessionKeys ?? []), 'w1-s1'])
-      ).slice(0, VALIDATION_LIMITS.PROGRAM_COMPLETED_KEYS_MAX);
-      await updateDoc(doc(db, 'trainingPrograms', params.program.id), {
-        completedSessionKeys: nextKeys,
-        status: 'active' as TrainingProgramStatus,
-        updatedAt: serverTimestamp(),
-      });
-    }
     return vmaKmh;
   } catch (error) {
+    const errCode = (error as { code?: string })?.code ?? '';
+    const errMsg = error instanceof Error ? error.message.toLowerCase() : '';
+    const isPermissionDenied =
+      errCode === 'permission-denied' ||
+      errMsg.includes('missing or insufficient permissions');
+    const currentEmail = auth.currentUser?.email?.trim().toLowerCase() ?? '';
+    const currentUid = auth.currentUser?.uid ?? '';
+    const isProgramMember =
+      Boolean(currentUid) &&
+      Boolean(currentEmail) &&
+      currentEmail === params.program.memberEmail.trim().toLowerCase();
+    const hasAccess =
+      !params.program.isPaid ||
+      params.program.paymentStatus === 'paid' ||
+      params.program.paymentStatus === 'free';
+
+    if (isPermissionDenied && isProgramMember && hasAccess) {
+      const docId = buildProgramVmaResultDocId(params.program.id);
+      const overrideRef = doc(db, 'memberSchedules', docId);
+      const testedAtMs = Date.now();
+      const testedTimestamp = Timestamp.fromMillis(testedAtMs);
+      const payloadNotes = `${vmaKmh}|${distanceMeters}|${durationSeconds}|${testedAtMs}`;
+      const objective = `${PROG_VMA_RESULT_PREFIX}${params.program.id}`.slice(
+        0,
+        VALIDATION_LIMITS.SESSION_OBJECTIVE_MAX
+      );
+      try {
+        let alreadyExists = false;
+        try {
+          const existingSnap = await getDoc(overrideRef);
+          alreadyExists = existingSnap.exists();
+        } catch {
+          alreadyExists = false;
+        }
+        if (alreadyExists) {
+          await updateDoc(overrideRef, {
+            notes: payloadNotes,
+            startAt: testedTimestamp,
+            completed: true,
+            updatedAt: serverTimestamp(),
+          });
+          return vmaKmh;
+        }
+        const memberEmailKey = await hashEmailKey(currentEmail);
+        const memberName = (
+          params.program.memberName.trim() ||
+          currentEmail.split('@')[0] ||
+          'Adhérent'
+        ).slice(0, 125);
+        const rawCoachUid = (params.program.coachUid || '').trim().slice(0, 128);
+        const coachUid = /^[a-zA-Z0-9_\-]+$/.test(rawCoachUid) ? rawCoachUid : '';
+        const coachName = (params.program.coachName || 'Coach')
+          .trim()
+          .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
+        await setDoc(overrideRef, {
+          memberEmail: currentEmail,
+          memberEmailKey,
+          memberName,
+          title: 'Test VMA validé',
+          discipline: 'Course à pied',
+          notes: payloadNotes,
+          location: '',
+          startAt: testedTimestamp,
+          durationMinutes: 30,
+          coachUid,
+          coachName,
+          objective,
+          isPaid: false,
+          priceCents: 0,
+          createdByUid: currentUid,
+          createdByRole: 'member',
+          completed: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        return vmaKmh;
+      } catch (fallbackError) {
+        handleFirestoreError(
+          fallbackError,
+          OperationType.WRITE,
+          `memberSchedules/${docId}`
+        );
+      }
+    }
+
     handleFirestoreError(
       error,
       OperationType.UPDATE,
@@ -5984,8 +7157,15 @@ export async function toggleTrainingProgramSessionCompleted(
   completed: boolean
 ): Promise<void> {
   const cleanKey = sessionKey.trim().slice(0, 32);
-  if (cleanKey.length < 3) return;
-  const set = new Set(program.completedSessionKeys ?? []);
+  if (cleanKey.length < 3 || cleanKey === 'vma-test') return;
+  if (program.vmaTestStatus === 'pending' && completed) {
+    throw new Error(
+      'Effectuez d’abord votre Test VMA : seule la séance Test VMA peut être validée avant le démarrage du programme.'
+    );
+  }
+  const set = new Set(
+    (program.completedSessionKeys ?? []).filter((k) => k !== 'vma-test')
+  );
   if (completed) {
     set.add(cleanKey);
   } else {
@@ -6036,6 +7216,29 @@ export async function deleteTrainingProgram(programId: string): Promise<void> {
       OperationType.DELETE,
       `trainingPrograms/${programId}`
     );
+  }
+  try {
+    const prefixes = [
+      `${MOVE_OVERRIDE_PROG_PREFIX}${programId}:`,
+      `${PROG_EDIT_OVERRIDE_PREFIX}${programId}:`,
+      `${PROG_NOTIF_ACK_PREFIX}prog__${programId}`,
+      `${PROG_NOTIF_ACK_PREFIX}week__${programId}__`,
+      `${PROG_VMA_RESULT_PREFIX}${programId}`,
+    ];
+    for (const prefix of prefixes) {
+      const snap = await getDocs(
+        query(
+          collection(db, 'memberSchedules'),
+          where('objective', '>=', prefix),
+          where('objective', '<=', `${prefix}\uf8ff`)
+        )
+      );
+      if (!snap.empty) {
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+      }
+    }
+  } catch {
+    // Non-blocking cleanup if no overrides exist
   }
 }
 

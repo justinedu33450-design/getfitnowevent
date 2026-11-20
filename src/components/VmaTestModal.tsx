@@ -1,13 +1,13 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { Activity, AlertCircle, CheckCircle2, Gauge, X } from 'lucide-react';
+import { Activity, CheckCircle2, Gauge, Info, X } from 'lucide-react';
 import { TrainingProgram, VALIDATION_LIMITS } from '../types';
 import { submitTrainingProgramVmaTest } from '../services/firestoreService';
-import { formatFrenchDateLong } from '../utils/dateAndValidation';
 import {
   computeVmaFromTest,
   computeVmaPaceZones,
   formatDurationHMS,
   formatPaceMinPerKm,
+  formatPreferredDaysShort,
   paceSecToKmh,
   RUNNING_DISTANCE_TEMPLATES,
 } from '../utils/runningProgramGenerator';
@@ -15,15 +15,13 @@ import {
 interface VmaTestModalProps {
   program: TrainingProgram;
   isCoach?: boolean;
-  nowMs: number;
+  nowMs?: number;
   onClose: () => void;
   onSubmitted?: (vmaKmh: number) => void;
 }
 
 export function VmaTestModal({
   program,
-  isCoach = false,
-  nowMs,
   onClose,
   onSubmitted,
 }: VmaTestModalProps) {
@@ -44,8 +42,10 @@ export function VmaTestModal({
   const [error, setError] = useState<string | null>(null);
 
   const tpl = RUNNING_DISTANCE_TEMPLATES[program.distance];
-  const startMs = program.startAt.toMillis();
-  const isBeforeDay1 = !isCoach && nowMs < startMs;
+  const chosenDaysLabel = formatPreferredDaysShort(
+    program.preferredDays,
+    program.sessionsPerWeek
+  );
 
   const computedVma = useMemo(() => {
     if (inputMode === 'direct') {
@@ -72,13 +72,6 @@ export function VmaTestModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (isBeforeDay1) {
-      setError(
-        `Le test VMA s’effectue à partir du Jour 1 du programme (${formatFrenchDateLong(program.startAt.toDate())}).`
-      );
-      return;
-    }
 
     if (!isVmaValid) {
       setError(
@@ -131,7 +124,7 @@ export function VmaTestModal({
                 id="vma-test-title"
                 className="font-display text-lg font-bold text-slate-900 dark:text-white"
               >
-                Test VMA · Jour 1 du programme
+                Test VMA · Effectuable n’importe quel jour
               </h2>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 {program.title} · Objectif {tpl.shortLabel} en{' '}
@@ -150,18 +143,14 @@ export function VmaTestModal({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          {isBeforeDay1 && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/45 dark:text-amber-100">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
-              <p>
-                Le test VMA sera ouvert le premier jour du programme (
-                <strong className="capitalize">
-                  {formatFrenchDateLong(program.startAt.toDate())}
-                </strong>
-                ). Revenez ce jour-là pour saisir votre performance et calibrer vos allures.
-              </p>
-            </div>
-          )}
+          <div className="flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50/80 p-3.5 text-xs text-sky-950 dark:border-sky-800 dark:bg-sky-950/45 dark:text-sky-100">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-700 dark:text-sky-400" aria-hidden="true" />
+            <p>
+              Seule la séance <strong>Test VMA</strong> peut être effectuée n’importe quel jour.
+              Votre programme démarrera ensuite selon les jours choisis (
+              <strong>{chosenDaysLabel}</strong>).
+            </p>
+          </div>
 
           {/* Protocol explainer */}
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-300">
@@ -360,7 +349,7 @@ export function VmaTestModal({
             </button>
             <button
               type="submit"
-              disabled={saving || !isVmaValid || isBeforeDay1}
+              disabled={saving || !isVmaValid}
               className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" />

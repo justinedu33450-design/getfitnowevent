@@ -629,7 +629,7 @@ export function MemberPortalView({
       )}
 
       {/* Personal Weekly Schedule (Custom Program + Self-Registered Events) */}
-      <div className="mt-6">
+      <div id="member-program-schedule-section" className="mt-6">
         <MemberWeeklyScheduleCard
           mode="member"
           memberEmail={user.email ?? ''}

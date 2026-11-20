@@ -462,8 +462,8 @@ export function ProgramBuilderModal({
         });
         onSaved?.(
           isPaid
-            ? `Programme personnalisé payant ajouté au planning de ${targetName}.`
-            : `Programme personnalisé offert ajouté au planning de ${targetName}.`,
+            ? `Programme personnalisé payant envoyé à ${targetName}. Une notification lui a été transmise.`
+            : `Programme personnalisé offert envoyé à ${targetName}. Une notification lui a été transmise.`,
           startDate
         );
       }

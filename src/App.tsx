@@ -9,6 +9,9 @@ import { APIProvider } from '@vis.gl/react-google-maps';
 import { AlertTriangle, BookOpen, Calendar, Heart, Sparkles, X } from 'lucide-react';
 import { auth, BOOTSTRAPPED_COACH_EMAIL, db } from './firebase';
 import {
+  acknowledgeAllMemberProgramNotifications,
+  acknowledgeMemberProgramNotification,
+  buildMemberProgramNotifications,
   cancelMyRegistration,
   deleteCoachNotification,
   deleteEndedEventAfterRetention,
@@ -19,6 +22,7 @@ import {
   markAllMemberNotificationsRead,
   markCoachNotificationRead,
   markMemberNotificationRead,
+  mergeTrainingProgramsWithMemberSchedules,
   notifyMembersOfEndedEvent,
   resolveCoachSession,
   subscribeAllMemberSchedules,
@@ -65,6 +69,7 @@ import {
   MemberAggregate,
   MemberNotification,
   MemberProfile,
+  MemberProgramNotification,
   MemberScheduleSession,
   PendingMessageTarget,
   Registration,
@@ -172,6 +177,9 @@ export default function App() {
     useState(false);
   const [memberNotificationsPanelOpen, setMemberNotificationsPanelOpen] =
     useState(false);
+  const [localProgramNotifAcks, setLocalProgramNotifAcks] = useState<
+    Map<string, 'read' | 'dismissed'>
+  >(() => new Map());
 
   const [coachDirectory, setCoachDirectory] = useState<CoachDirectoryEntry[]>(
     []
@@ -652,6 +660,30 @@ export default function App() {
     return () => unsub();
   }, [authLoading, isVerifiedUser, isCoach, user?.email]);
 
+  useEffect(() => {
+    if (!user?.uid || isCoach) {
+      setLocalProgramNotifAcks(new Map());
+      return;
+    }
+    try {
+      const raw = window.localStorage.getItem(
+        `gfn_program_notif_acks_${user.uid}`
+      );
+      if (!raw) {
+        setLocalProgramNotifAcks(new Map());
+        return;
+      }
+      const parsed = JSON.parse(raw) as Record<string, 'read' | 'dismissed'>;
+      const next = new Map<string, 'read' | 'dismissed'>();
+      Object.entries(parsed).forEach(([k, v]) => {
+        if (v === 'read' || v === 'dismissed') next.set(k, v);
+      });
+      setLocalProgramNotifAcks(next);
+    } catch {
+      setLocalProgramNotifAcks(new Map());
+    }
+  }, [user?.uid, isCoach]);
+
   // Real-time coach exercise library (renforcement, running, mobilité)
   useEffect(() => {
     if (authLoading || !isVerifiedUser || !isCoach) {
@@ -690,12 +722,44 @@ export default function App() {
     [coachNotifications]
   );
 
+  const effectiveTrainingPrograms = useMemo(
+    () =>
+      mergeTrainingProgramsWithMemberSchedules(
+        trainingPrograms,
+        memberSchedules
+      ),
+    [trainingPrograms, memberSchedules]
+  );
+
+  const programNotifications = useMemo<MemberProgramNotification[]>(() => {
+    if (!isVerifiedUser || isCoach || !user?.email) return [];
+    return buildMemberProgramNotifications({
+      trainingPrograms: effectiveTrainingPrograms,
+      memberSchedules,
+      localAckStates: localProgramNotifAcks,
+      nowMs,
+    });
+  }, [
+    isVerifiedUser,
+    isCoach,
+    user?.email,
+    effectiveTrainingPrograms,
+    memberSchedules,
+    localProgramNotifAcks,
+    nowMs,
+  ]);
+
+  const unreadProgramNotificationsCount = useMemo(
+    () => programNotifications.filter((n) => !n.read).length,
+    [programNotifications]
+  );
+
   const unreadMemberNotificationsCount = useMemo(
     () =>
       memberNotifications.filter((n) =>
         n.type === 'event_cancelled' ? !n.read : !n.validated
-      ).length,
-    [memberNotifications]
+      ).length + unreadProgramNotificationsCount,
+    [memberNotifications, unreadProgramNotificationsCount]
   );
 
   const unreadMessagesCount = useMemo(
@@ -940,6 +1004,7 @@ export default function App() {
     setMemberNotifications([]);
     setMemberNotificationsLoaded(false);
     setMemberNotificationsPanelOpen(false);
+    setLocalProgramNotifAcks(new Map());
     setSelectedEventForBooking(null);
     setEventFormState({ open: false });
     setRosterEventId(null);
@@ -1191,7 +1256,9 @@ export default function App() {
         unreadCoachNotificationsCount={unreadCoachNotificationsCount}
         unreadMemberNotificationsCount={unreadMemberNotificationsCount}
         unreadMessagesCount={unreadMessagesCount}
-        memberTrackingBadgeCount={endedUnvalidatedRegistrationsCount}
+        memberTrackingBadgeCount={
+          endedUnvalidatedRegistrationsCount + unreadProgramNotificationsCount
+        }
         notificationsOpen={
           isCoach ? notificationsPanelOpen : memberNotificationsPanelOpen
         }
@@ -1286,6 +1353,7 @@ export default function App() {
             {isVerifiedUser && !isCoach && !coachGateIntent && (
               <MemberNotificationsBar
                 notifications={memberNotifications}
+                programNotifications={programNotifications}
                 reviewedRegIds={reviewedRegIds}
                 nowMs={nowMs}
                 panelOpen={memberNotificationsPanelOpen}
@@ -1305,10 +1373,117 @@ export default function App() {
                   );
                 }}
                 onMarkRead={(id) => void markMemberNotificationRead(id)}
-                onMarkAllRead={() =>
-                  void markAllMemberNotificationsRead(memberNotifications)
-                }
+                onMarkAllRead={() => {
+                  void markAllMemberNotificationsRead(memberNotifications);
+                  if (user?.uid && user?.email && programNotifications.length > 0) {
+                    const unreadIds = programNotifications
+                      .filter((p) => !p.read)
+                      .map((p) => p.id);
+                    if (unreadIds.length > 0) {
+                      setLocalProgramNotifAcks((prev) => {
+                        const next = new Map(prev);
+                        unreadIds.forEach((id) => next.set(id, 'read'));
+                        try {
+                          window.localStorage.setItem(
+                            `gfn_program_notif_acks_${user.uid}`,
+                            JSON.stringify(Object.fromEntries(next.entries()))
+                          );
+                        } catch {
+                          // ignore storage quota errors
+                        }
+                        return next;
+                      });
+                      void acknowledgeAllMemberProgramNotifications({
+                        notifications: programNotifications,
+                        memberEmail: user.email,
+                        memberName: memberDisplayName,
+                        currentUserUid: user.uid,
+                        memberSchedules,
+                      }).catch(() => undefined);
+                    }
+                  }
+                }}
                 onDelete={(id) => void deleteMemberNotification(id)}
+                onMarkProgramRead={(notifId) => {
+                  if (!user?.uid || !user?.email) return;
+                  setLocalProgramNotifAcks((prev) => {
+                    const next = new Map(prev);
+                    next.set(notifId, 'read');
+                    try {
+                      window.localStorage.setItem(
+                        `gfn_program_notif_acks_${user.uid}`,
+                        JSON.stringify(Object.fromEntries(next.entries()))
+                      );
+                    } catch {
+                      // ignore storage quota errors
+                    }
+                    return next;
+                  });
+                  void acknowledgeMemberProgramNotification({
+                    notifId,
+                    status: 'read',
+                    memberEmail: user.email,
+                    memberName: memberDisplayName,
+                    currentUserUid: user.uid,
+                    memberSchedules,
+                  }).catch(() => undefined);
+                }}
+                onDeleteProgramNotification={(notifId) => {
+                  if (!user?.uid || !user?.email) return;
+                  setLocalProgramNotifAcks((prev) => {
+                    const next = new Map(prev);
+                    next.set(notifId, 'dismissed');
+                    try {
+                      window.localStorage.setItem(
+                        `gfn_program_notif_acks_${user.uid}`,
+                        JSON.stringify(Object.fromEntries(next.entries()))
+                      );
+                    } catch {
+                      // ignore storage quota errors
+                    }
+                    return next;
+                  });
+                  void acknowledgeMemberProgramNotification({
+                    notifId,
+                    status: 'dismissed',
+                    memberEmail: user.email,
+                    memberName: memberDisplayName,
+                    currentUserUid: user.uid,
+                    memberSchedules,
+                  }).catch(() => undefined);
+                }}
+                onOpenProgramNotification={(pNotif) => {
+                  setMemberNotificationsPanelOpen(false);
+                  if (user?.uid && user?.email && !pNotif.read) {
+                    setLocalProgramNotifAcks((prev) => {
+                      const next = new Map(prev);
+                      next.set(pNotif.id, 'read');
+                      try {
+                        window.localStorage.setItem(
+                          `gfn_program_notif_acks_${user.uid}`,
+                          JSON.stringify(Object.fromEntries(next.entries()))
+                        );
+                      } catch {
+                        // ignore storage quota errors
+                      }
+                      return next;
+                    });
+                    void acknowledgeMemberProgramNotification({
+                      notifId: pNotif.id,
+                      status: 'read',
+                      memberEmail: user.email,
+                      memberName: memberDisplayName,
+                      currentUserUid: user.uid,
+                      memberSchedules,
+                    }).catch(() => undefined);
+                  }
+                  setActiveSection('member-profile');
+                  window.setTimeout(() => {
+                    document
+                      .getElementById('member-program-schedule-section')
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 80);
+                }}
                 onOpenMyTracking={() => {
                   setMemberNotificationsPanelOpen(false);
                   setActiveSection('member-profile');
@@ -1428,7 +1603,7 @@ export default function App() {
                 unreadMessagesCount={unreadMessagesCount}
                 recentConversations={conversations}
                 customScheduleSessions={memberSchedules}
-                trainingPrograms={trainingPrograms}
+                trainingPrograms={effectiveTrainingPrograms}
                 coachDirectory={coachDirectory}
                 onRequestCoachProgram={(coach) => {
                   if (coach && user.email) {
@@ -1585,7 +1760,7 @@ export default function App() {
                         disciplines={disciplineCatalog}
                         exercises={exercises}
                         memberCandidates={programMemberCandidates}
-                        trainingPrograms={trainingPrograms}
+                        trainingPrograms={effectiveTrainingPrograms}
                         memberSchedules={memberSchedules}
                         nowMs={nowMs}
                       />
@@ -1623,7 +1798,7 @@ export default function App() {
                   registrations={registrations}
                   memberProfiles={memberProfiles}
                   memberSchedules={memberSchedules}
-                  trainingPrograms={trainingPrograms}
+                  trainingPrograms={effectiveTrainingPrograms}
                   disciplines={disciplineCatalog}
                   exercises={exercises}
                   nowMs={nowMs}

@@ -389,6 +389,30 @@ export interface MemberNotification {
   updatedAt: Timestamp;
 }
 
+export type MemberProgramNotificationKind =
+  | 'running_program'
+  | 'custom_program'
+  | 'program_week';
+
+export interface MemberProgramNotification {
+  id: string;
+  kind: MemberProgramNotificationKind;
+  title: string;
+  coachName: string;
+  coachUid: string;
+  summary: string;
+  priceCents: number;
+  isFree: boolean;
+  requiresPayment: boolean;
+  weekNumber?: number;
+  durationWeeks?: number;
+  startDate: Date;
+  createdAtMs: number;
+  read: boolean;
+  programId?: string;
+  scheduleSessionId?: string;
+}
+
 export interface EventLike {
   id: string;
   eventId: string;
@@ -587,6 +611,7 @@ export interface TrainingProgram {
   preferredDays: number[];
   targetTimeSeconds: number;
   startAt: Timestamp;
+  desiredStartAt?: Timestamp;
   vmaTestStatus: VmaTestStatus;
   vmaKmh: number;
   vmaTestDistanceMeters: number;
