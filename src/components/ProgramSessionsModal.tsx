@@ -34,6 +34,7 @@ import {
 import {
   formatFrenchDateLong,
   formatFrenchDateShort,
+  formatFrenchTime,
   formatTimeRange,
   toLocalDateInputValue,
   toLocalTimeInputValue,
@@ -1026,10 +1027,10 @@ export function ProgramSessionsModal({
                                 : delivery.awaitingVma
                                   ? weekNum === 1
                                     ? 'En attente · envoyée dès validation du Test VMA'
-                                    : 'En attente du Test VMA (puis dimanche 18h00)'
+                                    : `En attente du Test VMA (puis ${delivery.autoSendLabel})`
                                   : weekWindow.unlocked
                                     ? 'Envoyée à l’adhérent'
-                                    : `Envoi prévu le ${formatFrenchDateShort(new Date(weekWindow.unlockAtMs))} à 18h00`}
+                                    : `Envoi prévu le ${formatFrenchDateShort(new Date(weekWindow.unlockAtMs))} à ${formatFrenchTime(new Date(weekWindow.unlockAtMs))}`}
                             </span>
                           )
                         )}

@@ -1,10 +1,12 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import {
   CalendarPlus,
   Check,
+  ChevronDown,
   Copy,
   Download,
   Edit3,
+  History,
   LogOut,
   MapPin,
   MessageSquare,
@@ -103,6 +105,7 @@ export function CoachEventsView({
     text: string;
   } | null>(null);
   const [seeding, setSeeding] = useState(false);
+  const [pastEventsExpanded, setPastEventsExpanded] = useState(false);
 
   // Discipline management drawer/panel
   const [showDisciplinesPanel, setShowDisciplinesPanel] = useState(false);
@@ -248,6 +251,442 @@ export function CoachEventsView({
         ev.isUnlimitedCapacity ? 'Illimité' : String(ev.maxCapacity),
         evaluateEventBooking(ev, nowMs).statusLabel,
       ])
+    );
+  };
+
+  const { upcomingEvents, pastEvents } = useMemo(() => {
+    const upcoming: SportEvent[] = [];
+    const past: SportEvent[] = [];
+    events.forEach((ev) => {
+      const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
+      if (endMs <= nowMs) {
+        past.push(ev);
+      } else {
+        upcoming.push(ev);
+      }
+    });
+    upcoming.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+    past.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
+    return { upcomingEvents: upcoming, pastEvents: past };
+  }, [events, nowMs]);
+
+  const renderMobileEventCard = (ev: SportEvent) => {
+    const evalInfo = evaluateEventBooking(ev, nowMs);
+    const discStyle = getDisciplineStyle(ev.discipline, disciplines);
+    const regCount = registrations.filter(
+      (r) => r.eventId === ev.id && r.status === 'confirmed'
+    ).length;
+    const presentCount = registrations.filter(
+      (r) =>
+        r.eventId === ev.id &&
+        r.status === 'confirmed' &&
+        r.attended
+    ).length;
+
+    return (
+      <div
+        key={ev.id}
+        className={`rounded-xl border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white p-4 dark:border-slate-800 dark:bg-slate-900`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold capitalize text-slate-500 dark:text-slate-400">
+              {formatFrenchDateShort(ev.startAt.toDate())} ·{' '}
+              <span className="font-mono tabular-nums">
+                {formatTimeRange(ev.startAt.toDate(), ev.durationMinutes)}
+              </span>
+            </p>
+            <h3 className="mt-1 font-display text-base font-bold text-slate-900 dark:text-white">
+              {ev.title}
+            </h3>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+              >
+                <DisciplineIcon
+                  disciplineName={ev.discipline}
+                  catalog={disciplines}
+                  className="h-3 w-3 shrink-0"
+                />
+                {ev.discipline}
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {ev.durationMinutes} min
+              </span>
+              <span
+                className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
+                  ev.isPaid
+                    ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                }`}
+              >
+                {formatEventPrice(ev)}
+              </span>
+            </div>
+            {ev.isPaid && (
+              <p className="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                {formatPaymentModeLabel(ev.paymentMode)} · Encaissé :{' '}
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  {formatPriceEuros(getCollectedCents(ev.id))}
+                </span>
+              </p>
+            )}
+            <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+              <UserCheck
+                className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+                aria-hidden="true"
+              />
+              <span>{formatEventCoachesLabel(ev)}</span>
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <span
+              className={`text-xs font-semibold ${
+                evalInfo.state === 'open'
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : evalInfo.state === 'closed'
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : evalInfo.state === 'full' || evalInfo.state === 'cancelled'
+                      ? 'text-rose-700 dark:text-rose-400'
+                      : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {evalInfo.statusLabel}
+            </span>
+            {evalInfo.isAutoCancelledNoRegistrants ? (
+              <p className="mt-0.5 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                Pas d’inscrit à cette séance
+              </p>
+            ) : evalInfo.cutoffMinutes > 0 && evalInfo.state !== 'cancelled' ? (
+              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                Clôture {formatBookingCutoffLabel(evalInfo.cutoffMinutes)} avant
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300">
+          <span className="inline-flex min-w-0 items-center gap-1 truncate">
+            <MapPin
+              className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+              aria-hidden="true"
+            />
+            <span className="truncate">
+              {ev.city ? `${ev.city}${ev.region ? ` (${ev.region})` : ''} — ` : ''}
+              {ev.location}
+            </span>
+          </span>
+          <div className="flex items-center gap-3 shrink-0">
+            <EventRatingInline summary={ratingSummaryByEventId?.get(ev.id)} />
+            <span className="font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
+              {formatCapacityCompact(ev)}
+              {regCount > 0 && ` (${presentCount} prés.)`}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onOpenRoster(ev, 'roster')}
+            className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+          >
+            <Users className="h-4 w-4" aria-hidden="true" />
+            Inscrits ({ev.registeredCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => onOpenRoster(ev, 'reviews')}
+            title="Consulter les avis"
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+          >
+            <MessageSquare className="h-4 w-4" aria-hidden="true" />
+            Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
+          </button>
+
+          {evalInfo.state !== 'cancelled' && onShareEvent && (
+            <EventShareButton
+              compact
+              eventTitle={ev.title}
+              onClick={() => onShareEvent(ev)}
+            />
+          )}
+
+          <button
+            type="button"
+            onClick={() => onDuplicateEvent(ev)}
+            title="Dupliquer sur une autre date"
+            aria-label={`Dupliquer ${ev.title}`}
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+          >
+            <Copy className="h-4 w-4" aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onEditEvent(ev)}
+            aria-label={`Modifier ${ev.title}`}
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+          >
+            <Edit3 className="h-4 w-4" aria-hidden="true" />
+          </button>
+
+          {confirmDeleteId === ev.id ? (
+            <div className="flex w-full flex-col gap-2 rounded-lg border border-rose-200 bg-rose-50/70 p-2.5 dark:border-rose-900/70 dark:bg-rose-950/40">
+              <p className="text-xs text-rose-950 dark:text-rose-100">
+                Supprimer cette séance ?{' '}
+                {regCount > 0
+                  ? `${regCount} adhérent${regCount > 1 ? 's inscrits recevront' : ' inscrit recevra'} une notification.`
+                  : 'Aucun inscrit à notifier.'}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={actionBusyId === ev.id}
+                  onClick={() => void handleConfirmDelete(ev)}
+                  className="min-h-[38px] flex-1 rounded-lg bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                >
+                  {actionBusyId === ev.id
+                    ? 'Suppression...'
+                    : regCount > 0
+                      ? 'Supprimer & notifier'
+                      : 'Confirmer la suppression'}
+                </button>
+                <button
+                  type="button"
+                  disabled={actionBusyId === ev.id}
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="min-h-[38px] rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 cursor-pointer"
+                >
+                  Non
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDeleteId(ev.id)}
+              title="Supprimer la séance et notifier les inscrits"
+              aria-label={`Supprimer ${ev.title} et notifier les inscrits`}
+              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDesktopEventRow = (ev: SportEvent) => {
+    const evalInfo = evaluateEventBooking(ev, nowMs);
+    const discStyle = getDisciplineStyle(ev.discipline, disciplines);
+    const regCount = registrations.filter(
+      (r) => r.eventId === ev.id && r.status === 'confirmed'
+    ).length;
+    const presentCount = registrations.filter(
+      (r) =>
+        r.eventId === ev.id &&
+        r.status === 'confirmed' &&
+        r.attended
+    ).length;
+
+    return (
+      <tr key={ev.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top whitespace-nowrap">
+          <p className="font-medium capitalize text-slate-900 dark:text-white">
+            {formatFrenchDateShort(ev.startAt.toDate())}
+          </p>
+          <p className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+            {formatTimeRange(ev.startAt.toDate(), ev.durationMinutes)}
+          </p>
+        </td>
+
+        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top min-w-[200px]">
+          <p className="font-semibold text-slate-900 dark:text-white">
+            {ev.title}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+            >
+              <DisciplineIcon
+                disciplineName={ev.discipline}
+                catalog={disciplines}
+                className="h-3 w-3 shrink-0"
+              />
+              {ev.discipline}
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+              {ev.durationMinutes} min
+            </span>
+            <span
+              className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums whitespace-nowrap ${
+                ev.isPaid
+                  ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+              }`}
+            >
+              {formatEventPrice(ev)}
+            </span>
+          </div>
+          {ev.isPaid && (
+            <p className="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+              {formatPaymentModeLabel(ev.paymentMode)} · Encaissé :{' '}
+              <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                {formatPriceEuros(getCollectedCents(ev.id))}
+              </span>
+            </p>
+          )}
+          <p className="mt-1 flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+            <UserCheck
+              className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+              aria-hidden="true"
+            />
+            <span>{formatEventCoachesLabel(ev)}</span>
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
+            <EventRatingInline summary={ratingSummaryByEventId?.get(ev.id)} />
+          </div>
+        </td>
+
+        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-xs text-slate-600 dark:text-slate-300 max-w-[160px] lg:max-w-[210px]">
+          {ev.city && (
+            <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+              {ev.city}
+              {ev.region ? ` · ${ev.region}` : ''}
+            </p>
+          )}
+          <p className="truncate">{ev.location}</p>
+        </td>
+
+        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-right font-mono tabular-nums whitespace-nowrap">
+          <p className="font-semibold text-slate-900 dark:text-white">
+            {formatCapacityCompact(ev)}
+          </p>
+          {regCount > 0 && (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              {presentCount} présent{presentCount > 1 ? 's' : ''}
+            </p>
+          )}
+        </td>
+
+        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top">
+          <span
+            className={`block whitespace-nowrap text-xs font-semibold ${
+              evalInfo.state === 'open'
+                ? 'text-emerald-700 dark:text-emerald-400'
+                : evalInfo.state === 'closed'
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : evalInfo.state === 'full' || evalInfo.state === 'cancelled'
+                    ? 'text-rose-700 dark:text-rose-400'
+                    : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            {evalInfo.statusLabel}
+          </span>
+          {evalInfo.isAutoCancelledNoRegistrants ? (
+            <span className="mt-0.5 block text-[11px] font-medium text-rose-600 dark:text-rose-400">
+              Pas d’inscrit à cette séance
+            </span>
+          ) : evalInfo.cutoffMinutes > 0 && evalInfo.state !== 'cancelled' ? (
+            <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+              Clôture {formatBookingCutoffLabel(evalInfo.cutoffMinutes)} avant
+            </span>
+          ) : null}
+        </td>
+
+        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top">
+          <div className="flex flex-wrap items-center justify-end gap-1.5 xl:flex-nowrap">
+            <button
+              type="button"
+              onClick={() => onOpenRoster(ev, 'roster')}
+              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
+            >
+              <Users className="h-3.5 w-3.5" aria-hidden="true" />
+              Inscrits
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onOpenRoster(ev, 'reviews')}
+              title="Consulter les avis"
+              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
+            >
+              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+              Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
+            </button>
+
+            {evalInfo.state !== 'cancelled' && onShareEvent && (
+              <EventShareButton
+                compact
+                eventTitle={ev.title}
+                onClick={() => onShareEvent(ev)}
+              />
+            )}
+
+            <button
+              type="button"
+              onClick={() => onDuplicateEvent(ev)}
+              title="Dupliquer sur une autre date"
+              aria-label={`Dupliquer ${ev.title}`}
+              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+            >
+              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onEditEvent(ev)}
+              title="Modifier"
+              aria-label={`Modifier ${ev.title}`}
+              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+            >
+              <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+
+            {confirmDeleteId === ev.id ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  disabled={actionBusyId === ev.id}
+                  onClick={() => void handleConfirmDelete(ev)}
+                  title={
+                    regCount > 0
+                      ? `Supprimer la séance et notifier les ${regCount} inscrit(s)`
+                      : 'Supprimer la séance'
+                  }
+                  className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                >
+                  {actionBusyId === ev.id
+                    ? 'Envoi...'
+                    : regCount > 0
+                      ? `Suppr. (${regCount} notif.)`
+                      : 'Suppr.'}
+                </button>
+                <button
+                  type="button"
+                  disabled={actionBusyId === ev.id}
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="min-h-[34px] rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300 whitespace-nowrap cursor-pointer"
+                >
+                  Non
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(ev.id)}
+                title="Supprimer la séance et notifier les inscrits"
+                aria-label={`Supprimer ${ev.title} et notifier les inscrits`}
+                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </td>
+      </tr>
     );
   };
 
@@ -700,449 +1139,126 @@ export function CoachEventsView({
         </div>
       ) : (
         <>
-          {/* Mobile Card List (< md) */}
-          <div className="mt-5 space-y-3 md:hidden">
-            {events.map((ev) => {
-              const evalInfo = evaluateEventBooking(ev, nowMs);
-              const discStyle = getDisciplineStyle(ev.discipline, disciplines);
-              const regCount = registrations.filter(
-                (r) => r.eventId === ev.id && r.status === 'confirmed'
-              ).length;
-              const presentCount = registrations.filter(
-                (r) =>
-                  r.eventId === ev.id &&
-                  r.status === 'confirmed' &&
-                  r.attended
-              ).length;
+          {upcomingEvents.length === 0 ? (
+            <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
+              <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                Aucun événement sportif à venir
+              </p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Planifiez une nouvelle séance ou dépliez vos événements passés ci-dessous.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile Card List (< md) */}
+              <div className="mt-5 space-y-3 md:hidden">
+                {upcomingEvents.map(renderMobileEventCard)}
+              </div>
 
-              return (
-                <div
-                  key={ev.id}
-                  className={`rounded-xl border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white p-4 dark:border-slate-800 dark:bg-slate-900`}
+              {/* Desktop Table (>= md) */}
+              <div className="mt-6 hidden overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:block">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300">
+                      <tr>
+                        <th className="px-3 py-3 lg:px-4 lg:py-3.5 whitespace-nowrap">Date & Horaire</th>
+                        <th className="px-3 py-3 lg:px-4 lg:py-3.5">Séance & Discipline</th>
+                        <th className="px-3 py-3 lg:px-4 lg:py-3.5">Ville & Lieu</th>
+                        <th className="px-3 py-3 lg:px-4 lg:py-3.5 text-right whitespace-nowrap">Inscrits</th>
+                        <th className="px-3 py-3 lg:px-4 lg:py-3.5 whitespace-nowrap">Statut</th>
+                        <th className="px-3 py-3 lg:px-4 lg:py-3.5 text-right whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                      {upcomingEvents.map(renderDesktopEventRow)}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Collapsible Past Events Section */}
+          {pastEvents.length > 0 && (
+            <div className="mt-6 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+                <button
+                  type="button"
+                  onClick={() => setPastEventsExpanded((prev) => !prev)}
+                  aria-expanded={pastEventsExpanded}
+                  aria-controls="coach-past-events-body"
+                  className="flex flex-1 items-center gap-3 text-left min-w-0 cursor-pointer"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold capitalize text-slate-500 dark:text-slate-400">
-                        {formatFrenchDateShort(ev.startAt.toDate())} ·{' '}
-                        <span className="font-mono tabular-nums">
-                          {formatTimeRange(
-                            ev.startAt.toDate(),
-                            ev.durationMinutes
-                          )}
-                        </span>
-                      </p>
-                      <h3 className="mt-1 font-display text-base font-bold text-slate-900 dark:text-white">
-                        {ev.title}
-                      </h3>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
-                        >
-                          <DisciplineIcon
-                            disciplineName={ev.discipline}
-                            catalog={disciplines}
-                            className="h-3 w-3 shrink-0"
-                          />
-                          {ev.discipline}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {ev.durationMinutes} min
-                        </span>
-                        <span
-                          className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
-                            ev.isPaid
-                              ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                              : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                          }`}
-                        >
-                          {formatEventPrice(ev)}
-                        </span>
-                      </div>
-                      {ev.isPaid && (
-                        <p className="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                          {formatPaymentModeLabel(ev.paymentMode)} · Encaissé :{' '}
-                          <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                            {formatPriceEuros(getCollectedCents(ev.id))}
-                          </span>
-                        </p>
-                      )}
-                      <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
-                        <UserCheck className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-                        <span>{formatEventCoachesLabel(ev)}</span>
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <span
-                        className={`text-xs font-semibold ${
-                          evalInfo.state === 'open'
-                            ? 'text-emerald-700 dark:text-emerald-400'
-                            : evalInfo.state === 'closed'
-                              ? 'text-amber-700 dark:text-amber-400'
-                              : evalInfo.state === 'full' ||
-                                  evalInfo.state === 'cancelled'
-                                ? 'text-rose-700 dark:text-rose-400'
-                                : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      >
-                        {evalInfo.statusLabel}
-                      </span>
-                      {evalInfo.isAutoCancelledNoRegistrants ? (
-                        <p className="mt-0.5 text-[11px] font-medium text-rose-600 dark:text-rose-400">
-                          Pas d’inscrit à cette séance
-                        </p>
-                      ) : evalInfo.cutoffMinutes > 0 && evalInfo.state !== 'cancelled' ? (
-                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                          Clôture {formatBookingCutoffLabel(evalInfo.cutoffMinutes)} avant
-                        </p>
-                      ) : null}
-                    </div>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <History className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                      Événements passés ({pastEvents.length})
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {pastEventsExpanded
+                        ? 'Séances dont la date est passée — cliquez pour replier'
+                        : 'Séances dont la date est passée — cliquez pour déplier'}
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPastEventsExpanded((prev) => !prev)}
+                  aria-expanded={pastEventsExpanded}
+                  aria-controls="coach-past-events-body"
+                  aria-label={
+                    pastEventsExpanded
+                      ? 'Replier les événements passés'
+                      : 'Déplier les événements passés'
+                  }
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                >
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      pastEventsExpanded ? 'rotate-180' : ''
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+
+              {pastEventsExpanded && (
+                <div
+                  id="coach-past-events-body"
+                  className="border-t border-slate-100 p-3 dark:border-slate-800 sm:p-4"
+                >
+                  {/* Mobile Past Events (< md) */}
+                  <div className="space-y-3 md:hidden">
+                    {pastEvents.map(renderMobileEventCard)}
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300">
-                    <span className="inline-flex min-w-0 items-center gap-1 truncate">
-                      <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-                      <span className="truncate">
-                        {ev.city ? `${ev.city}${ev.region ? ` (${ev.region})` : ''} — ` : ''}
-                        {ev.location}
-                      </span>
-                    </span>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <EventRatingInline
-                        summary={ratingSummaryByEventId?.get(ev.id)}
-                      />
-                      <span className="font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
-                        {formatCapacityCompact(ev)}
-                        {regCount > 0 && ` (${presentCount} prés.)`}
-                      </span>
+                  {/* Desktop Past Events Table (>= md) */}
+                  <div className="hidden overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-left text-sm">
+                        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300">
+                          <tr>
+                            <th className="px-3 py-3 lg:px-4 lg:py-3.5 whitespace-nowrap">Date & Horaire</th>
+                            <th className="px-3 py-3 lg:px-4 lg:py-3.5">Séance & Discipline</th>
+                            <th className="px-3 py-3 lg:px-4 lg:py-3.5">Ville & Lieu</th>
+                            <th className="px-3 py-3 lg:px-4 lg:py-3.5 text-right whitespace-nowrap">Inscrits</th>
+                            <th className="px-3 py-3 lg:px-4 lg:py-3.5 whitespace-nowrap">Statut</th>
+                            <th className="px-3 py-3 lg:px-4 lg:py-3.5 text-right whitespace-nowrap">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                          {pastEvents.map(renderDesktopEventRow)}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onOpenRoster(ev, 'roster')}
-                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
-                    >
-                      <Users className="h-4 w-4" aria-hidden="true" />
-                      Inscrits ({ev.registeredCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onOpenRoster(ev, 'reviews')}
-                      title="Consulter les avis"
-                      className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
-                    >
-                      <MessageSquare className="h-4 w-4" aria-hidden="true" />
-                      Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
-                    </button>
-
-                    {evalInfo.state !== 'cancelled' && onShareEvent && (
-                      <EventShareButton
-                        compact
-                        eventTitle={ev.title}
-                        onClick={() => onShareEvent(ev)}
-                      />
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => onDuplicateEvent(ev)}
-                      title="Dupliquer sur une autre date"
-                      aria-label={`Dupliquer ${ev.title}`}
-                      className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
-                    >
-                      <Copy className="h-4 w-4" aria-hidden="true" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => onEditEvent(ev)}
-                      aria-label={`Modifier ${ev.title}`}
-                      className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
-                    >
-                      <Edit3 className="h-4 w-4" aria-hidden="true" />
-                    </button>
-
-                    {confirmDeleteId === ev.id ? (
-                      <div className="flex w-full flex-col gap-2 rounded-lg border border-rose-200 bg-rose-50/70 p-2.5 dark:border-rose-900/70 dark:bg-rose-950/40">
-                        <p className="text-xs text-rose-950 dark:text-rose-100">
-                          Supprimer cette séance ?{' '}
-                          {regCount > 0
-                            ? `${regCount} adhérent${regCount > 1 ? 's inscrits recevront' : ' inscrit recevra'} une notification.`
-                            : 'Aucun inscrit à notifier.'}
-                        </p>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            disabled={actionBusyId === ev.id}
-                            onClick={() => void handleConfirmDelete(ev)}
-                            className="min-h-[38px] flex-1 rounded-lg bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
-                          >
-                            {actionBusyId === ev.id
-                              ? 'Suppression...'
-                              : regCount > 0
-                                ? 'Supprimer & notifier'
-                                : 'Confirmer la suppression'}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={actionBusyId === ev.id}
-                            onClick={() => setConfirmDeleteId(null)}
-                            className="min-h-[38px] rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 cursor-pointer"
-                          >
-                            Non
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDeleteId(ev.id)}
-                        title="Supprimer la séance et notifier les inscrits"
-                        aria-label={`Supprimer ${ev.title} et notifier les inscrits`}
-                        className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Desktop Table (>= md) */}
-          <div className="mt-6 hidden overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:block">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300">
-                  <tr>
-                    <th className="px-3 py-3 lg:px-4 lg:py-3.5 whitespace-nowrap">Date & Horaire</th>
-                    <th className="px-3 py-3 lg:px-4 lg:py-3.5">Séance & Discipline</th>
-                    <th className="px-3 py-3 lg:px-4 lg:py-3.5">Ville & Lieu</th>
-                    <th className="px-3 py-3 lg:px-4 lg:py-3.5 text-right whitespace-nowrap">Inscrits</th>
-                    <th className="px-3 py-3 lg:px-4 lg:py-3.5 whitespace-nowrap">Statut</th>
-                    <th className="px-3 py-3 lg:px-4 lg:py-3.5 text-right whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {events.map((ev) => {
-                    const evalInfo = evaluateEventBooking(ev, nowMs);
-                    const discStyle = getDisciplineStyle(ev.discipline, disciplines);
-                    const regCount = registrations.filter(
-                      (r) => r.eventId === ev.id && r.status === 'confirmed'
-                    ).length;
-                    const presentCount = registrations.filter(
-                      (r) =>
-                        r.eventId === ev.id &&
-                        r.status === 'confirmed' &&
-                        r.attended
-                    ).length;
-
-                    return (
-                      <tr key={ev.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
-                        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top whitespace-nowrap">
-                          <p className="font-medium capitalize text-slate-900 dark:text-white">
-                            {formatFrenchDateShort(ev.startAt.toDate())}
-                          </p>
-                          <p className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                            {formatTimeRange(
-                              ev.startAt.toDate(),
-                              ev.durationMinutes
-                            )}
-                          </p>
-                        </td>
-
-                        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top min-w-[200px]">
-                          <p className="font-semibold text-slate-900 dark:text-white">
-                            {ev.title}
-                          </p>
-                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                            <span
-                              className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
-                            >
-                              <DisciplineIcon
-                                disciplineName={ev.discipline}
-                                catalog={disciplines}
-                                className="h-3 w-3 shrink-0"
-                              />
-                              {ev.discipline}
-                            </span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                              {ev.durationMinutes} min
-                            </span>
-                            <span
-                              className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums whitespace-nowrap ${
-                                ev.isPaid
-                                  ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                                  : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                              }`}
-                            >
-                              {formatEventPrice(ev)}
-                            </span>
-                          </div>
-                          {ev.isPaid && (
-                            <p className="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                              {formatPaymentModeLabel(ev.paymentMode)} · Encaissé :{' '}
-                              <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                                {formatPriceEuros(getCollectedCents(ev.id))}
-                              </span>
-                            </p>
-                          )}
-                          <p className="mt-1 flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
-                            <UserCheck className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-                            <span>{formatEventCoachesLabel(ev)}</span>
-                          </p>
-                          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
-                            <EventRatingInline
-                              summary={ratingSummaryByEventId?.get(ev.id)}
-                            />
-                          </div>
-                        </td>
-
-                        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-xs text-slate-600 dark:text-slate-300 max-w-[160px] lg:max-w-[210px]">
-                          {ev.city && (
-                            <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">
-                              {ev.city}{ev.region ? ` · ${ev.region}` : ''}
-                            </p>
-                          )}
-                          <p className="truncate">{ev.location}</p>
-                        </td>
-
-                        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-right font-mono tabular-nums whitespace-nowrap">
-                          <p className="font-semibold text-slate-900 dark:text-white">
-                            {formatCapacityCompact(ev)}
-                          </p>
-                          {regCount > 0 && (
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                              {presentCount} présent{presentCount > 1 ? 's' : ''}
-                            </p>
-                          )}
-                        </td>
-
-                        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top">
-                          <span
-                            className={`block whitespace-nowrap text-xs font-semibold ${
-                              evalInfo.state === 'open'
-                                ? 'text-emerald-700 dark:text-emerald-400'
-                                : evalInfo.state === 'closed'
-                                  ? 'text-amber-700 dark:text-amber-400'
-                                  : evalInfo.state === 'full' ||
-                                      evalInfo.state === 'cancelled'
-                                    ? 'text-rose-700 dark:text-rose-400'
-                                    : 'text-slate-500 dark:text-slate-400'
-                            }`}
-                          >
-                            {evalInfo.statusLabel}
-                          </span>
-                          {evalInfo.isAutoCancelledNoRegistrants ? (
-                            <span className="mt-0.5 block text-[11px] font-medium text-rose-600 dark:text-rose-400">
-                              Pas d’inscrit à cette séance
-                            </span>
-                          ) : evalInfo.cutoffMinutes > 0 && evalInfo.state !== 'cancelled' ? (
-                            <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
-                              Clôture {formatBookingCutoffLabel(evalInfo.cutoffMinutes)} avant
-                            </span>
-                          ) : null}
-                        </td>
-
-                        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top">
-                          <div className="flex flex-wrap items-center justify-end gap-1.5 xl:flex-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => onOpenRoster(ev, 'roster')}
-                              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
-                            >
-                              <Users className="h-3.5 w-3.5" aria-hidden="true" />
-                              Inscrits
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => onOpenRoster(ev, 'reviews')}
-                              title="Consulter les avis"
-                              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
-                            >
-                              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                              Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
-                            </button>
-
-                            {evalInfo.state !== 'cancelled' && onShareEvent && (
-                              <EventShareButton
-                                compact
-                                eventTitle={ev.title}
-                                onClick={() => onShareEvent(ev)}
-                              />
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => onDuplicateEvent(ev)}
-                              title="Dupliquer sur une autre date"
-                              aria-label={`Dupliquer ${ev.title}`}
-                              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
-                            >
-                              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => onEditEvent(ev)}
-                              title="Modifier"
-                              aria-label={`Modifier ${ev.title}`}
-                              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
-                            >
-                              <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
-
-                            {confirmDeleteId === ev.id ? (
-                              <div className="flex shrink-0 items-center gap-1">
-                                <button
-                                  type="button"
-                                  disabled={actionBusyId === ev.id}
-                                  onClick={() => void handleConfirmDelete(ev)}
-                                  title={
-                                    regCount > 0
-                                      ? `Supprimer la séance et notifier les ${regCount} inscrit(s)`
-                                      : 'Supprimer la séance'
-                                  }
-                                  className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 whitespace-nowrap cursor-pointer"
-                                >
-                                  {actionBusyId === ev.id
-                                    ? 'Envoi...'
-                                    : regCount > 0
-                                      ? `Suppr. (${regCount} notif.)`
-                                      : 'Suppr.'}
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={actionBusyId === ev.id}
-                                  onClick={() => setConfirmDeleteId(null)}
-                                  className="min-h-[34px] rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300 whitespace-nowrap cursor-pointer"
-                                >
-                                  Non
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setConfirmDeleteId(ev.id)}
-                                title="Supprimer la séance et notifier les inscrits"
-                                aria-label={`Supprimer ${ev.title} et notifier les inscrits`}
-                                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              )}
             </div>
-          </div>
+          )}
         </>
       )}
     </section>

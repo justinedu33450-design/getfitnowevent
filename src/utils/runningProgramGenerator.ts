@@ -1347,19 +1347,149 @@ export function generateRunningProgramSessions(
   return sessions;
 }
 
-function getSunday18hBeforeDate(date: Date): Date {
-  const startOfDay = toStartOfDay(date);
-  const isoDay = toIsoWeekday(startOfDay); // 1=Mon..7=Sun
-  return addDaysAtHour(startOfDay, -isoDay, 18, 0);
+export const DEFAULT_AUTO_SEND_DAY = 7; // Dimanche (1=Lun..7=Dim)
+export const DEFAULT_AUTO_SEND_TIME = '18:00';
+
+const AUTO_SEND_DAY_FULL_NAMES: Record<number, string> = {
+  1: 'lundi',
+  2: 'mardi',
+  3: 'mercredi',
+  4: 'jeudi',
+  5: 'vendredi',
+  6: 'samedi',
+  7: 'dimanche',
+};
+
+const AUTO_SEND_DAY_SHORT_NAMES: Record<number, string> = {
+  1: 'lun.',
+  2: 'mar.',
+  3: 'mer.',
+  4: 'jeu.',
+  5: 'ven.',
+  6: 'sam.',
+  7: 'dim.',
+};
+
+export const AUTO_SEND_WEEKDAY_OPTIONS: { day: number; label: string }[] = [
+  { day: 7, label: 'Dimanche (par défaut)' },
+  { day: 1, label: 'Lundi' },
+  { day: 2, label: 'Mardi' },
+  { day: 3, label: 'Mercredi' },
+  { day: 4, label: 'Jeudi' },
+  { day: 5, label: 'Vendredi' },
+  { day: 6, label: 'Samedi' },
+];
+
+export function normalizeAutoSendDay(day?: number | null): number {
+  if (typeof day === 'number' && Number.isFinite(day)) {
+    const rounded = Math.round(day);
+    if (rounded >= 1 && rounded <= 7) return rounded;
+  }
+  return DEFAULT_AUTO_SEND_DAY;
 }
 
-function getNextSunday18hAfter(ms: number): Date {
+export function parseAutoSendTime(timeStr?: string | null): {
+  hour: number;
+  minute: number;
+  normalized: string;
+  frenchLabel: string;
+} {
+  const match = (timeStr ?? '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (match) {
+    const h = Number(match[1]);
+    const m = Number(match[2]);
+    if (
+      Number.isInteger(h) &&
+      Number.isInteger(m) &&
+      h >= 0 &&
+      h <= 23 &&
+      m >= 0 &&
+      m <= 59
+    ) {
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      return {
+        hour: h,
+        minute: m,
+        normalized: `${hh}:${mm}`,
+        frenchLabel: `${hh}h${mm}`,
+      };
+    }
+  }
+  return {
+    hour: 18,
+    minute: 0,
+    normalized: DEFAULT_AUTO_SEND_TIME,
+    frenchLabel: '18h00',
+  };
+}
+
+export function formatAutoSendLabel(
+  day?: number | null,
+  timeStr?: string | null,
+  short = false
+): string {
+  const safeDay = normalizeAutoSendDay(day);
+  const parsedTime = parseAutoSendTime(timeStr);
+  if (short) {
+    return `${AUTO_SEND_DAY_SHORT_NAMES[safeDay] ?? 'dim.'} ${parsedTime.frenchLabel}`;
+  }
+  return `${AUTO_SEND_DAY_FULL_NAMES[safeDay] ?? 'dimanche'} à ${parsedTime.frenchLabel}`;
+}
+
+export function getProgramAutoSendConfig(
+  program?: Pick<TrainingProgram, 'autoSendDay' | 'autoSendTime'> | null
+): {
+  day: number;
+  time: string;
+  hour: number;
+  minute: number;
+  frenchTime: string;
+  label: string;
+  shortLabel: string;
+} {
+  const day = normalizeAutoSendDay(program?.autoSendDay);
+  const parsed = parseAutoSendTime(program?.autoSendTime);
+  return {
+    day,
+    time: parsed.normalized,
+    hour: parsed.hour,
+    minute: parsed.minute,
+    frenchTime: parsed.frenchLabel,
+    label: formatAutoSendLabel(day, parsed.normalized, false),
+    shortLabel: formatAutoSendLabel(day, parsed.normalized, true),
+  };
+}
+
+function getSendDateBeforeDate(
+  date: Date,
+  targetIsoDay: number,
+  hour: number,
+  minute: number
+): Date {
+  const startOfDay = toStartOfDay(date);
+  const isoDay = toIsoWeekday(startOfDay); // 1=Mon..7=Sun
+  const delta = (isoDay - targetIsoDay + 7) % 7;
+  const candidate = addDaysAtHour(startOfDay, -delta, hour, minute);
+  if (candidate.getTime() > date.getTime()) {
+    return addDaysAtHour(startOfDay, -(delta || 7), hour, minute);
+  }
+  return candidate;
+}
+
+function getNextSendDateAfter(
+  ms: number,
+  targetIsoDay: number,
+  hour: number,
+  minute: number
+): Date {
   const ref = new Date(ms);
   const refDayStart = toStartOfDay(ref);
-  const daysUntilSunday = (7 - ref.getDay()) % 7;
-  const candidate = addDaysAtHour(refDayStart, daysUntilSunday, 18, 0);
+  const targetJsDay = targetIsoDay % 7; // 0=Sun..6=Sat
+  const daysUntil = (targetJsDay - ref.getDay() + 7) % 7;
+  const candidate = addDaysAtHour(refDayStart, daysUntil, hour, minute);
   if (candidate.getTime() <= ms) {
-    return addDaysAtHour(refDayStart, daysUntilSunday + 7, 18, 0);
+    return addDaysAtHour(refDayStart, daysUntil + 7, hour, minute);
   }
   return candidate;
 }
@@ -1379,6 +1509,10 @@ export interface ProgramDeliveryProgress {
   isFree: boolean;
   hasAccess: boolean;
   awaitingVma: boolean;
+  autoSendDay: number;
+  autoSendTime: string;
+  autoSendLabel: string;
+  autoSendShortLabel: string;
   totalWeeks: number;
   unlockedWeeks: number;
   currentWeekNumber: number;
@@ -1392,6 +1526,7 @@ export function getProgramDeliveryProgress(
   program: TrainingProgram,
   nowMs: number = Date.now()
 ): ProgramDeliveryProgress {
+  const autoSend = getProgramAutoSendConfig(program);
   const totalWeeks = Math.min(
     VALIDATION_LIMITS.PROGRAM_DURATION_WEEKS_MAX,
     Math.max(
@@ -1431,14 +1566,24 @@ export function getProgramDeliveryProgress(
     paidMs;
   const week1ReleaseMs = Math.max(paidMs, vmaDoneMs);
 
-  let week2SundayDate: Date | null = null;
+  let week2SendDate: Date | null = null;
   if (vmaCompleted && totalWeeks >= 2 && weekDates[1]?.[0]) {
-    const firstSundayAfterVma = getNextSunday18hAfter(week1ReleaseMs);
-    const sundayBeforeWeek2 = getSunday18hBeforeDate(weekDates[1][0]);
-    week2SundayDate =
-      sundayBeforeWeek2.getTime() > firstSundayAfterVma.getTime()
-        ? sundayBeforeWeek2
-        : firstSundayAfterVma;
+    const firstSendAfterVma = getNextSendDateAfter(
+      week1ReleaseMs,
+      autoSend.day,
+      autoSend.hour,
+      autoSend.minute
+    );
+    const sendBeforeWeek2 = getSendDateBeforeDate(
+      weekDates[1][0],
+      autoSend.day,
+      autoSend.hour,
+      autoSend.minute
+    );
+    week2SendDate =
+      sendBeforeWeek2.getTime() > firstSendAfterVma.getTime()
+        ? sendBeforeWeek2
+        : firstSendAfterVma;
   }
 
   const weeks: ProgramWeekWindow[] = [];
@@ -1464,8 +1609,13 @@ export function getProgramDeliveryProgress(
       ? startAtMs
       : w === 1
         ? week1ReleaseMs
-        : week2SundayDate
-          ? addDaysAtHour(week2SundayDate, (w - 2) * 7, 18, 0).getTime()
+        : week2SendDate
+          ? addDaysAtHour(
+              week2SendDate,
+              (w - 2) * 7,
+              autoSend.hour,
+              autoSend.minute
+            ).getTime()
           : startAtMs;
 
     const unlocked =
@@ -1494,6 +1644,10 @@ export function getProgramDeliveryProgress(
     isFree,
     hasAccess,
     awaitingVma,
+    autoSendDay: autoSend.day,
+    autoSendTime: autoSend.time,
+    autoSendLabel: autoSend.label,
+    autoSendShortLabel: autoSend.shortLabel,
     totalWeeks,
     unlockedWeeks,
     currentWeekNumber: unlockedWeeks,

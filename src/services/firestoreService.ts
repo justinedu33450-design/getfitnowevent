@@ -80,6 +80,8 @@ import {
 } from '../utils/exerciseLibrary';
 import {
   computeVmaFromTest,
+  DEFAULT_AUTO_SEND_DAY,
+  DEFAULT_AUTO_SEND_TIME,
   GeneratedProgramSession,
   generateRunningProgramSessions,
   getDefaultPreferredDays,
@@ -87,7 +89,9 @@ import {
   getProgramDurationWeeks,
   getProgramRunnerLevelLabel,
   inferProgramLevelFromDuration,
+  normalizeAutoSendDay,
   normalizePreferredDays,
+  parseAutoSendTime,
   RUNNING_DISTANCE_TEMPLATES,
 } from '../utils/runningProgramGenerator';
 import {
@@ -6562,14 +6566,14 @@ export function buildMemberProgramNotifications(params: {
         ? delivery.awaitingVma
           ? 'Offert · Envoi en attente du Test VMA (Sem. 1 dès validation)'
           : delivery.unlockedWeeks <= 1
-            ? `Offert · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ' (Sem. 2 dimanche à 18h)' : ''}`
+            ? `Offert · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ` (Sem. 2 ${delivery.autoSendLabel})` : ''}`
             : `Offert · Semaine ${delivery.unlockedWeeks}/${durationWeeks} envoyée`
         : requiresPayment
           ? `${formatPriceEuros(prog.priceCents)} · Paiement requis · Envoi après Test VMA`
           : delivery.awaitingVma
             ? 'Payé · Envoi en attente du Test VMA (Sem. 1 dès validation)'
             : delivery.unlockedWeeks <= 1
-              ? `Payé · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ' (Sem. 2 dimanche à 18h)' : ''}`
+              ? `Payé · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ` (Sem. 2 ${delivery.autoSendLabel})` : ''}`
               : `Payé · Semaine ${delivery.unlockedWeeks}/${durationWeeks} envoyée`;
 
       results.push({
@@ -6608,7 +6612,7 @@ export function buildMemberProgramNotifications(params: {
         const currentWeekWindow = delivery.weeks[delivery.unlockedWeeks - 1];
         const nextWeekHint =
           delivery.nextWeekNumber && delivery.nextUnlockAtMs
-            ? ` Prochaine semaine (Sem. ${delivery.nextWeekNumber}) envoyée dimanche à 18h00.`
+            ? ` Prochaine semaine (Sem. ${delivery.nextWeekNumber}) envoyée ${delivery.autoSendLabel}.`
             : '';
         results.push({
           id: weekNotifId,
@@ -6987,7 +6991,7 @@ export async function seedStarterExercises(
 // ---------------------------------------------------------------------------
 
 const PROGRAM_META_TAG_REGEX =
-  /\s*\[GFN:(8|10|12|14|16):(beginner|regular|experienced)(?::(\d{4}-\d{2}-\d{2}))?\]\s*$/;
+  /\s*\[GFN:(8|10|12|14|16):(beginner|regular|experienced)(?::(\d{4}-\d{2}-\d{2}))?(?::d([1-7])-(\d{4}))?\]\s*$/;
 
 function formatMetaIsoDate(date: Date): string {
   const y = date.getFullYear();
@@ -7015,14 +7019,25 @@ function encodeProgramNotesWithMeta(
   rawNotes: string,
   durationWeeks: number,
   level: ProgramRunnerLevel,
-  desiredStartDate?: Date
+  desiredStartDate?: Date,
+  autoSendDay?: number,
+  autoSendTime?: string
 ): string {
   const cleanUserNotes = rawNotes.replace(PROGRAM_META_TAG_REGEX, '').trim();
   const datePart =
     desiredStartDate && !Number.isNaN(desiredStartDate.getTime())
       ? `:${formatMetaIsoDate(desiredStartDate)}`
       : '';
-  const tag = `[GFN:${durationWeeks}:${level}${datePart}]`;
+  const safeDay = normalizeAutoSendDay(autoSendDay);
+  const parsedTime = parseAutoSendTime(autoSendTime);
+  const hhmm = parsedTime.normalized.replace(':', '');
+  const sendPart =
+    datePart &&
+    (safeDay !== DEFAULT_AUTO_SEND_DAY ||
+      parsedTime.normalized !== DEFAULT_AUTO_SEND_TIME)
+      ? `:d${safeDay}-${hhmm}`
+      : '';
+  const tag = `[GFN:${durationWeeks}:${level}${datePart}${sendPart}]`;
   const maxUserLen = Math.max(
     0,
     VALIDATION_LIMITS.SCHEDULE_NOTES_MAX - tag.length - 1
@@ -7046,6 +7061,13 @@ function normalizeTrainingProgramDoc(
   const desiredStartAt = parsedDesiredDate
     ? Timestamp.fromDate(parsedDesiredDate)
     : raw.startAt;
+  const parsedAutoSendDay = metaMatch?.[4]
+    ? normalizeAutoSendDay(Number(metaMatch[4]))
+    : normalizeAutoSendDay(raw.autoSendDay);
+  const rawAutoSendTime = metaMatch?.[5]
+    ? `${metaMatch[5].slice(0, 2)}:${metaMatch[5].slice(2, 4)}`
+    : raw.autoSendTime;
+  const parsedAutoSendTime = parseAutoSendTime(rawAutoSendTime).normalized;
 
   const level: ProgramRunnerLevel =
     parsedLevel ??
@@ -7076,6 +7098,8 @@ function normalizeTrainingProgramDoc(
       id,
       ...raw,
       desiredStartAt,
+      autoSendDay: parsedAutoSendDay,
+      autoSendTime: parsedAutoSendTime,
       level,
       durationWeeks,
       notes: cleanNotes,
@@ -7092,6 +7116,8 @@ function normalizeTrainingProgramDoc(
     id,
     ...raw,
     desiredStartAt,
+    autoSendDay: parsedAutoSendDay,
+    autoSendTime: parsedAutoSendTime,
     level,
     durationWeeks,
     notes: cleanNotes,
@@ -7206,6 +7232,8 @@ export async function createTrainingProgram(params: {
   preferredDays?: number[];
   targetTimeSeconds: number;
   startDate: Date;
+  autoSendDay?: number;
+  autoSendTime?: string;
   notes?: string;
   coachUid: string;
   coachName: string;
@@ -7280,7 +7308,9 @@ export async function createTrainingProgram(params: {
     params.notes ?? '',
     durationWeeks,
     level,
-    params.startDate
+    params.startDate,
+    params.autoSendDay,
+    params.autoSendTime
   );
   const firestoreStartAt = clampFirestoreProgramStartDate(params.startDate);
 
@@ -7352,6 +7382,8 @@ export async function updateTrainingProgramConfig(
     preferredDays: number[];
     targetTimeSeconds: number;
     startDate: Date;
+    autoSendDay?: number;
+    autoSendTime?: string;
     notes: string;
     coachUid: string;
     coachName: string;
@@ -7416,7 +7448,9 @@ export async function updateTrainingProgramConfig(
     params.notes,
     effectiveDurationWeeks,
     effectiveLevel,
-    params.startDate
+    params.startDate,
+    params.autoSendDay ?? params.existingProgram?.autoSendDay,
+    params.autoSendTime ?? params.existingProgram?.autoSendTime
   );
   const firestoreStartAt = clampFirestoreProgramStartDate(params.startDate);
 

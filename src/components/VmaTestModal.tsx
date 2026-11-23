@@ -8,6 +8,7 @@ import {
   formatDurationHMS,
   formatPaceMinPerKm,
   formatPreferredDaysShort,
+  getProgramAutoSendConfig,
   paceSecToKmh,
   RUNNING_DISTANCE_TEMPLATES,
 } from '../utils/runningProgramGenerator';
@@ -46,6 +47,7 @@ export function VmaTestModal({
     program.preferredDays,
     program.sessionsPerWeek
   );
+  const autoSendConfig = getProgramAutoSendConfig(program);
 
   const computedVma = useMemo(() => {
     if (inputMode === 'direct') {
@@ -149,7 +151,7 @@ export function VmaTestModal({
               Seule la séance <strong>Test VMA</strong> peut être effectuée n’importe quel jour.
               Tant que ce test n’est pas validé, l’envoi du programme reste en attente.
               Dès validation, vous recevez immédiatement la <strong>Semaine 1</strong> (jours choisis :{' '}
-              <strong>{chosenDaysLabel}</strong>), puis la Semaine 2 le <strong>dimanche à 18h00</strong> et ainsi de suite chaque dimanche à 18h00.
+              <strong>{chosenDaysLabel}</strong>), puis la Semaine 2 le <strong>{autoSendConfig.label}</strong> et ainsi de suite chaque {autoSendConfig.label}.
             </p>
           </div>
 

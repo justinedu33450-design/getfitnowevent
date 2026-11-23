@@ -37,7 +37,11 @@ import {
   seedStarterExercises,
   updateExercise,
 } from '../services/firestoreService';
-import { formatFrenchDateShort, formatPriceEuros } from '../utils/dateAndValidation';
+import {
+  formatFrenchDateShort,
+  formatFrenchTime,
+  formatPriceEuros,
+} from '../utils/dateAndValidation';
 import {
   getCoachRunningProgramPriceCents,
   hasCoachCustomRunningPrice,
@@ -805,7 +809,7 @@ export function ExerciseLibraryView({
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto">
                 <div className="relative w-full sm:w-64">
                   <Search
                     className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -832,7 +836,7 @@ export function ExerciseLibraryView({
                     )
                   }
                   aria-label="Filtrer par statut de programme"
-                  className="min-h-[38px] rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
                 >
                   <option value="all">Tous les statuts</option>
                   <option value="awaiting_payment">Paiement en attente</option>
@@ -884,9 +888,9 @@ export function ExerciseLibraryView({
                       className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/40"
                     >
                       <div>
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400 break-words">
                               {tpl.shortLabel}
                               {prog.level ? ` (${getProgramRunnerLevelLabel(prog.level)})` : ''} ·{' '}
                               {prog.durationWeeks} sem. · {prog.sessionsPerWeek} séances/sem.
@@ -899,13 +903,13 @@ export function ExerciseLibraryView({
                             </p>
                           </div>
 
-                          <div className="shrink-0 text-right">
+                          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-slate-50 px-2.5 py-1.5 sm:block sm:shrink-0 sm:rounded-none sm:bg-transparent sm:p-0 sm:text-right dark:bg-slate-900/60 dark:sm:bg-transparent">
                             {(() => {
                               const isFreeProgram = !prog.isPaid || prog.paymentStatus === 'free';
                               const isPaid = prog.paymentStatus === 'paid';
                               return (
                                 <p
-                                  className={`font-mono text-xs font-bold tabular-nums ${
+                                  className={`font-mono text-xs font-bold tabular-nums leading-snug ${
                                     isFreeProgram || isPaid
                                       ? 'text-emerald-700 dark:text-emerald-400'
                                       : 'text-amber-700 dark:text-amber-400'
@@ -919,14 +923,14 @@ export function ExerciseLibraryView({
                                 </p>
                               );
                             })()}
-                            <p className="mt-0.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                              Jour 1 : {formatFrenchDateShort(prog.startAt.toDate())}
+                            <p className="sm:mt-0.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums leading-snug">
+                              Démarrage : {formatFrenchDateShort((prog.desiredStartAt ?? prog.startAt).toDate())}
                             </p>
                           </div>
                         </div>
 
                         {/* Objective + VMA metrics */}
-                        <div className="mt-3 grid grid-cols-2 gap-2.5 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900/60">
+                        <div className="mt-3 grid grid-cols-1 gap-2.5 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900/60 sm:grid-cols-2">
                           <div>
                             <p className="flex items-center gap-1 text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">
                               <Timer className="h-3 w-3" aria-hidden="true" />
@@ -988,7 +992,7 @@ export function ExerciseLibraryView({
                             </span>
                             {delivery.hasAccess && delivery.awaitingVma ? (
                               <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400">
-                                Sem. 1 dès validation · puis dim. 18h
+                                Sem. 1 dès validation · puis {delivery.autoSendShortLabel}
                               </span>
                             ) : (
                               delivery.hasAccess &&
@@ -996,7 +1000,8 @@ export function ExerciseLibraryView({
                               delivery.nextUnlockAtMs && (
                                 <span className="font-mono text-[10px] text-sky-700 dark:text-sky-400 tabular-nums">
                                   Sem. {delivery.nextWeekNumber} le{' '}
-                                  {formatFrenchDateShort(new Date(delivery.nextUnlockAtMs))} à 18h00
+                                  {formatFrenchDateShort(new Date(delivery.nextUnlockAtMs))} à{' '}
+                                  {formatFrenchTime(new Date(delivery.nextUnlockAtMs))}
                                 </span>
                               )
                             )}
@@ -1011,10 +1016,10 @@ export function ExerciseLibraryView({
                                     : delivery.awaitingVma
                                       ? wk.weekNumber === 1
                                         ? 'Semaine 1 : envoyée dès validation du Test VMA'
-                                        : `Semaine ${wk.weekNumber} : en attente (envoyée le dimanche à 18h00 après validation du Test VMA)`
+                                        : `Semaine ${wk.weekNumber} : en attente (envoyée le ${delivery.autoSendLabel} après validation du Test VMA)`
                                       : wk.unlocked
                                         ? `Semaine ${wk.weekNumber} envoyée`
-                                        : `Semaine ${wk.weekNumber} : envoi auto le ${formatFrenchDateShort(new Date(wk.unlockAtMs))} à 18h00`
+                                        : `Semaine ${wk.weekNumber} : envoi auto le ${formatFrenchDateShort(new Date(wk.unlockAtMs))} à ${formatFrenchTime(new Date(wk.unlockAtMs))}`
                                 }
                                 className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums ${
                                   wk.unlocked
@@ -1030,7 +1035,7 @@ export function ExerciseLibraryView({
                       </div>
 
                       {/* Actions */}
-                      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <div className="mt-3.5 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between dark:border-slate-800">
                         <div className="flex flex-wrap items-center gap-1.5">
                           {prog.isPaid && prog.paymentStatus !== 'paid' && prog.paymentStatus !== 'free' && (
                             <button

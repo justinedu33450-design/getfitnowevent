@@ -11,6 +11,7 @@ import {
   MapPin,
   Plus,
   Search,
+  SlidersHorizontal,
   UserCheck,
 } from 'lucide-react';
 import {
@@ -79,6 +80,7 @@ export function CalendarView({
   );
   const [cityQuery, setCityQuery] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [dayAgendaExpanded, setDayAgendaExpanded] = useState(false);
   const skipNextAutoCollapseRef = useRef(false);
   const prevSelectedDayKeyRef = useRef<string | null>(null);
@@ -364,114 +366,186 @@ export function CalendarView({
         </div>
       </div>
 
-      {/* Filters Row: City/Region search + Region select + Discipline filter */}
-      <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
-          {/* City or Region Search Input */}
-          <div className="relative w-full sm:w-56">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              value={cityQuery}
-              onChange={(e) => setCityQuery(e.target.value)}
-              placeholder="Rechercher par ville ou région..."
-              aria-label="Rechercher les événements par ville ou région"
-              list="calendar-locations-list"
-              className="min-h-[40px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-            />
-            <datalist id="calendar-locations-list">
-              {availableSearchSuggestions.map((loc) => (
-                <option key={loc} value={loc} />
-              ))}
-            </datalist>
-          </div>
-
-          {/* Region Select */}
-          <select
-            value={regionFilter}
-            onChange={(e) => setRegionFilter(e.target.value)}
-            aria-label="Filtrer par région"
-            className="min-h-[40px] w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
-          >
-            <option value="">Toutes les régions</option>
-            {availableRegions.map((reg) => (
-              <option key={reg} value={reg}>
-                {reg}
-              </option>
-            ))}
-          </select>
-
-          {/* Discipline Select List (alphabetical) */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {disciplineFilter !== 'all' && (
-              <span
-                className={`flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-lg border ${getDisciplineStyle(disciplineFilter, disciplines).softBg} ${getDisciplineStyle(disciplineFilter, disciplines).border} ${getDisciplineStyle(disciplineFilter, disciplines).text}`}
-                aria-hidden="true"
-              >
-                <DisciplineIcon
-                  disciplineName={disciplineFilter}
-                  catalog={disciplines}
-                  className="h-4 w-4"
-                />
-              </span>
-            )}
-            <select
-              value={disciplineFilter}
-              onChange={(e) => setDisciplineFilter(e.target.value)}
-              aria-label="Filtrer par discipline"
-              className="min-h-[40px] w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
-            >
-              <option value="all">Toutes les disciplines</option>
-              {disciplineFilterOptions.map((disc) => (
-                <option key={disc} value={disc}>
-                  {disc}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick city pills if multiple cities exist */}
-      {availableCities.length > 1 && (
-        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0 mr-1">
-            Villes :
-          </span>
+      {/* Grouped Filters & Quick City Pills (Collapsible) */}
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 sm:px-4">
           <button
             type="button"
-            onClick={() => setCityQuery('')}
-            className={`min-h-[32px] rounded-md border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-              cityQuery.trim() === ''
-                ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
-                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
-            }`}
+            onClick={() => setFiltersExpanded((prev) => !prev)}
+            aria-expanded={filtersExpanded}
+            aria-controls="calendar-filters-body"
+            className="flex flex-1 items-center gap-2.5 text-left min-w-0 cursor-pointer"
           >
-            Toutes
+            <SlidersHorizontal
+              className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+              aria-hidden="true"
+            />
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 sm:text-sm">
+              Filtres &amp; villes
+            </span>
+            {(cityQuery.trim() || regionFilter || disciplineFilter !== 'all') && (
+              <span className="truncate font-mono text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                {[
+                  cityQuery.trim() ? `« ${cityQuery.trim()} »` : null,
+                  regionFilter || null,
+                  disciplineFilter !== 'all' ? disciplineFilter : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+            )}
           </button>
-          {availableCities.map((city) => {
-            const active =
-              cityQuery.trim().toLowerCase() === city.toLowerCase();
-            return (
+
+          <div className="flex items-center gap-2 shrink-0">
+            {(cityQuery.trim() || regionFilter || disciplineFilter !== 'all') && (
               <button
-                key={city}
                 type="button"
-                onClick={() => setCityQuery(active ? '' : city)}
-                className={`min-h-[32px] rounded-md border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                  active
-                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
-                }`}
+                onClick={() => {
+                  setCityQuery('');
+                  setRegionFilter('');
+                  setDisciplineFilter('all');
+                }}
+                className="text-[11px] font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white cursor-pointer"
               >
-                {city}
+                Réinitialiser
               </button>
-            );
-          })}
+            )}
+            <button
+              type="button"
+              onClick={() => setFiltersExpanded((prev) => !prev)}
+              aria-expanded={filtersExpanded}
+              aria-controls="calendar-filters-body"
+              aria-label={
+                filtersExpanded
+                  ? 'Replier les filtres et villes'
+                  : 'Déplier les filtres et villes'
+              }
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            >
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${
+                  filtersExpanded ? 'rotate-180' : ''
+                }`}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
         </div>
-      )}
+
+        {filtersExpanded && (
+          <div
+            id="calendar-filters-body"
+            className="space-y-3 border-t border-slate-100 px-3.5 py-3 dark:border-slate-800 sm:px-4"
+          >
+            {/* Filters Row: City/Region search + Region select + Discipline filter */}
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
+              {/* City or Region Search Input */}
+              <div className="relative w-full sm:w-56">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  value={cityQuery}
+                  onChange={(e) => setCityQuery(e.target.value)}
+                  placeholder="Rechercher par ville ou région..."
+                  aria-label="Rechercher les événements par ville ou région"
+                  list="calendar-locations-list"
+                  className="min-h-[40px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                />
+                <datalist id="calendar-locations-list">
+                  {availableSearchSuggestions.map((loc) => (
+                    <option key={loc} value={loc} />
+                  ))}
+                </datalist>
+              </div>
+
+              {/* Region Select */}
+              <select
+                value={regionFilter}
+                onChange={(e) => setRegionFilter(e.target.value)}
+                aria-label="Filtrer par région"
+                className="min-h-[40px] w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
+              >
+                <option value="">Toutes les régions</option>
+                {availableRegions.map((reg) => (
+                  <option key={reg} value={reg}>
+                    {reg}
+                  </option>
+                ))}
+              </select>
+
+              {/* Discipline Select List (alphabetical) */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {disciplineFilter !== 'all' && (
+                  <span
+                    className={`flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-lg border ${getDisciplineStyle(disciplineFilter, disciplines).softBg} ${getDisciplineStyle(disciplineFilter, disciplines).border} ${getDisciplineStyle(disciplineFilter, disciplines).text}`}
+                    aria-hidden="true"
+                  >
+                    <DisciplineIcon
+                      disciplineName={disciplineFilter}
+                      catalog={disciplines}
+                      className="h-4 w-4"
+                    />
+                  </span>
+                )}
+                <select
+                  value={disciplineFilter}
+                  onChange={(e) => setDisciplineFilter(e.target.value)}
+                  aria-label="Filtrer par discipline"
+                  className="min-h-[40px] w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
+                >
+                  <option value="all">Toutes les disciplines</option>
+                  {disciplineFilterOptions.map((disc) => (
+                    <option key={disc} value={disc}>
+                      {disc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Quick city pills if multiple cities exist */}
+            {availableCities.length > 1 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto border-t border-slate-100 pt-3 pb-0.5 dark:border-slate-800">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0 mr-1">
+                  Villes :
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCityQuery('')}
+                  className={`min-h-[32px] rounded-md border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                    cityQuery.trim() === ''
+                      ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Toutes
+                </button>
+                {availableCities.map((city) => {
+                  const active =
+                    cityQuery.trim().toLowerCase() === city.toLowerCase();
+                  return (
+                    <button
+                      key={city}
+                      type="button"
+                      onClick={() => setCityQuery(active ? '' : city)}
+                      className={`min-h-[32px] rounded-md border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                        active
+                          ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {city}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Main Calendar + Selected Day Detail */}
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-12">

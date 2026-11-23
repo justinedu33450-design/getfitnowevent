@@ -638,6 +638,8 @@ export interface TrainingProgram {
   targetTimeSeconds: number;
   startAt: Timestamp;
   desiredStartAt?: Timestamp;
+  autoSendDay?: number;
+  autoSendTime?: string;
   vmaTestStatus: VmaTestStatus;
   vmaKmh: number;
   vmaTestDistanceMeters: number;

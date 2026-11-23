@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   CalendarPlus,
+  Clock,
   CreditCard,
   Footprints,
   Gauge,
@@ -29,7 +30,11 @@ import {
   hasCoachCustomRunningPrice,
 } from '../utils/coachPricingHelpers';
 import {
+  AUTO_SEND_WEEKDAY_OPTIONS,
   computeTargetRacePaceSecPerKm,
+  DEFAULT_AUTO_SEND_DAY,
+  DEFAULT_AUTO_SEND_TIME,
+  formatAutoSendLabel,
   formatDurationHMS,
   formatPaceMinPerKm,
   formatPreferredDaysShort,
@@ -209,6 +214,13 @@ export function RunningProgramBuilderModal({
         )
       : toLocalDateInputValue(new Date())
   );
+  const [autoSendDay, setAutoSendDay] = useState<number>(
+    () => editingProgram?.autoSendDay ?? DEFAULT_AUTO_SEND_DAY
+  );
+  const [autoSendTime, setAutoSendTime] = useState<string>(
+    () => editingProgram?.autoSendTime ?? DEFAULT_AUTO_SEND_TIME
+  );
+  const autoSendLabel = formatAutoSendLabel(autoSendDay, autoSendTime);
 
   const [coachRefUid, setCoachRefUid] = useState<string>(
     editingProgram?.coachUid || coachUid
@@ -416,6 +428,8 @@ export function RunningProgramBuilderModal({
           preferredDays: normalizedDays,
           targetTimeSeconds: targetTotalSeconds,
           startDate,
+          autoSendDay,
+          autoSendTime,
           notes,
           coachUid: resolvedCoachUid,
           coachName: resolvedCoachName,
@@ -439,6 +453,8 @@ export function RunningProgramBuilderModal({
           preferredDays: normalizedDays,
           targetTimeSeconds: targetTotalSeconds,
           startDate,
+          autoSendDay,
+          autoSendTime,
           notes,
           coachUid: resolvedCoachUid,
           coachName: resolvedCoachName,
@@ -747,8 +763,61 @@ export function RunningProgramBuilderModal({
                   className="mt-2 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
                 <p className="mt-2 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
-                  Tant que le Test VMA n’est pas validé, l’envoi du programme reste en attente. Dès validation du test, la Semaine 1 est envoyée immédiatement sur les jours choisis ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}), puis la Semaine 2 le dimanche à 18h00 et ainsi de suite chaque dimanche à 18h00.
+                  Tant que le Test VMA n’est pas validé, l’envoi du programme reste en attente. Dès validation du test, la Semaine 1 est envoyée immédiatement sur les jours choisis ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}), puis les semaines suivantes chaque {autoSendLabel}.
                 </p>
+              </div>
+            </div>
+
+            {/* Automatic Weekly Send Schedule (default: Sunday 18:00) */}
+            <div className="rounded-xl border border-sky-200/80 bg-sky-50/40 p-4 dark:border-sky-900/60 dark:bg-sky-950/20 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+                  <Clock className="h-3.5 w-3.5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
+                  Envoi automatique des semaines suivantes (Sem. 2 à {durationWeeks})
+                </span>
+                <span className="font-mono text-[11px] font-semibold text-sky-700 dark:text-sky-400">
+                  Chaque {autoSendLabel}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="rp-autosend-day"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    Jour d’envoi hebdomadaire
+                  </label>
+                  <select
+                    id="rp-autosend-day"
+                    value={autoSendDay}
+                    onChange={(e) => setAutoSendDay(Number(e.target.value))}
+                    className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  >
+                    {AUTO_SEND_WEEKDAY_OPTIONS.map((opt) => (
+                      <option key={opt.day} value={opt.day}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="rp-autosend-time"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    Heure d’envoi (18h00 par défaut)
+                  </label>
+                  <input
+                    id="rp-autosend-time"
+                    type="time"
+                    required
+                    value={autoSendTime}
+                    onChange={(e) =>
+                      setAutoSendTime(e.target.value || DEFAULT_AUTO_SEND_TIME)
+                    }
+                    className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-semibold text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
               </div>
             </div>
 
@@ -932,7 +1001,7 @@ export function RunningProgramBuilderModal({
                 </>
               ) : (
                 <p className="rounded-lg border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-800/60 dark:bg-slate-900/60 dark:text-emerald-200">
-                  Programme offert : aucun paiement demandé. Seule la séance Test VMA est disponible immédiatement ; l’envoi du programme reste en attente jusqu’à validation du test, puis la Semaine 1 est envoyée immédiatement et les suivantes chaque dimanche à 18h00 ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}).
+                  Programme offert : aucun paiement demandé. Seule la séance Test VMA est disponible immédiatement ; l’envoi du programme reste en attente jusqu’à validation du test, puis la Semaine 1 est envoyée immédiatement et les suivantes chaque {autoSendLabel} ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}).
                 </p>
               )}
             </div>
@@ -1018,8 +1087,8 @@ export function RunningProgramBuilderModal({
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/60">
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {isPaid
-                ? `Après paiement : Test VMA disponible. Tant qu’il n’est pas validé, l’envoi reste en attente ; dès validation, Semaine 1 envoyée puis chaque semaine suivante le dimanche à 18h00 (${durationWeeks} sem.).`
-                : `Programme offert : Test VMA disponible. Envoi du programme en attente jusqu’à validation du test, puis Semaine 1 immédiate et semaines suivantes chaque dimanche à 18h00 (${durationWeeks} sem.).`}
+                ? `Après paiement : Test VMA disponible. Tant qu’il n’est pas validé, l’envoi reste en attente ; dès validation, Semaine 1 envoyée puis chaque semaine suivante le ${autoSendLabel} (${durationWeeks} sem.).`
+                : `Programme offert : Test VMA disponible. Envoi du programme en attente jusqu’à validation du test, puis Semaine 1 immédiate et semaines suivantes chaque ${autoSendLabel} (${durationWeeks} sem.).`}
             </p>
             <div className="flex items-center gap-2">
               <button
