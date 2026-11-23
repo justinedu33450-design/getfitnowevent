@@ -29,7 +29,6 @@ import { getDisciplineStyle } from '../utils/disciplineColors';
 import { DisciplineIcon } from './DisciplineIcon';
 import { EventsOverviewMap } from './EventLocationMap';
 import {
-  EventLikeButton,
   EventRatingInline,
   EventShareButton,
 } from './EventEngagementWidgets';
@@ -41,9 +40,6 @@ interface SessionsListViewProps {
   isCoach: boolean;
   isCoachAdmin?: boolean;
   registeredEventIds?: Set<string>;
-  likedEventIds?: Set<string>;
-  likingEventId?: string | null;
-  onToggleLike?: (event: SportEvent) => void;
   onShareEvent?: (event: SportEvent) => void;
   ratingSummaryByEventId?: Map<string, EventRatingSummary>;
   loading: boolean;
@@ -60,9 +56,6 @@ export function SessionsListView({
   isCoach,
   isCoachAdmin = false,
   registeredEventIds,
-  likedEventIds,
-  likingEventId,
-  onToggleLike,
   onShareEvent,
   ratingSummaryByEventId,
   loading,
@@ -521,16 +514,6 @@ export function SessionsListView({
                       hasSpots && evalInfo.state === 'open';
                     return (
                       <div className="flex items-center gap-2">
-                        {evalInfo.state !== 'cancelled' && onToggleLike && (
-                          <EventLikeButton
-                            compact
-                            count={ev.likesCount ?? 0}
-                            liked={Boolean(likedEventIds?.has(ev.id))}
-                            loading={likingEventId === ev.id}
-                            eventTitle={ev.title}
-                            onClick={() => onToggleLike(ev)}
-                          />
-                        )}
                         {evalInfo.state !== 'cancelled' && onShareEvent && (
                           <EventShareButton
                             compact

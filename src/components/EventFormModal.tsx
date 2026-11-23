@@ -20,10 +20,16 @@ import {
   formatBookingCutoffLabel,
   formatFrenchDateShort,
   formatFrenchTime,
+  formatPriceEuros,
   normalizeBookingCutoffMinutes,
   toLocalDateInputValue,
   toLocalTimeInputValue,
 } from '../utils/dateAndValidation';
+import {
+  formatCentsForInput,
+  getCoachGroupSessionPriceCents,
+  hasCoachGroupSessionPrice,
+} from '../utils/coachPricingHelpers';
 import {
   DISCIPLINE_COLOR_KEYS,
   DISCIPLINE_COLOR_PRESETS,
@@ -152,8 +158,13 @@ export function EventFormModal({
       const euros = sourceEvent.priceCents / 100;
       return Number.isInteger(euros) ? String(euros) : euros.toFixed(2).replace('.', ',');
     }
+    const creatorAdmin = coachAdmins.find((a) => a.uid === coachUid);
+    if (hasCoachGroupSessionPrice(creatorAdmin?.pricing)) {
+      return formatCentsForInput(creatorAdmin?.pricing?.groupSessionPriceCents);
+    }
     return '15';
   });
+  const [priceTouched, setPriceTouched] = useState(Boolean(sourceEvent));
   const [paymentMode, setPaymentMode] = useState<EventPaymentMode>(
     sourceEvent?.paymentMode ?? 'online'
   );
@@ -330,6 +341,19 @@ export function EventFormModal({
     }
   };
 
+  const syncPriceForFirstCoach = (nextList: CoachAssignment[]) => {
+    if (sourceEvent || priceTouched) return;
+    const primaryUid = nextList[0]?.uid || coachUid;
+    const primaryAdmin =
+      coachAdmins.find((a) => a.uid === primaryUid) ??
+      coachAdmins.find((a) => a.uid === coachUid);
+    if (hasCoachGroupSessionPrice(primaryAdmin?.pricing)) {
+      setPriceEurosInput(
+        formatCentsForInput(primaryAdmin?.pricing?.groupSessionPriceCents).replace('.', ',')
+      );
+    }
+  };
+
   const toggleTeamCoach = (admin: CoachAdminUser) => {
     setCoachInputError(null);
     setSelectedCoaches((prev) => {
@@ -339,7 +363,9 @@ export function EventFormModal({
           c.name.trim().toLowerCase() === admin.displayName.trim().toLowerCase()
       );
       if (existsIdx >= 0) {
-        return prev.filter((_, idx) => idx !== existsIdx);
+        const next = prev.filter((_, idx) => idx !== existsIdx);
+        syncPriceForFirstCoach(next);
+        return next;
       }
       if (prev.length >= VALIDATION_LIMITS.COACHES_PER_EVENT_MAX) {
         setCoachInputError(
@@ -347,7 +373,9 @@ export function EventFormModal({
         );
         return prev;
       }
-      return [...prev, { uid: admin.uid, name: admin.displayName.trim() }];
+      const next = [...prev, { uid: admin.uid, name: admin.displayName.trim() }];
+      syncPriceForFirstCoach(next);
+      return next;
     });
   };
 
@@ -377,16 +405,24 @@ export function EventFormModal({
     const matchedTeam = activeTeamCoaches.find(
       (a) => a.displayName.trim().toLowerCase() === clean.toLowerCase()
     );
-    setSelectedCoaches((prev) => [
-      ...prev,
-      { uid: matchedTeam?.uid, name: matchedTeam?.displayName.trim() || clean },
-    ]);
+    setSelectedCoaches((prev) => {
+      const next = [
+        ...prev,
+        { uid: matchedTeam?.uid, name: matchedTeam?.displayName.trim() || clean },
+      ];
+      syncPriceForFirstCoach(next);
+      return next;
+    });
     setCustomCoachName('');
   };
 
   const removeCoachAt = (index: number) => {
     setCoachInputError(null);
-    setSelectedCoaches((prev) => prev.filter((_, i) => i !== index));
+    setSelectedCoaches((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      syncPriceForFirstCoach(next);
+      return next;
+    });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -1194,7 +1230,10 @@ export function EventFormModal({
                       inputMode="decimal"
                       required={isPaid}
                       value={priceEurosInput}
-                      onChange={(e) => setPriceEurosInput(e.target.value)}
+                      onChange={(e) => {
+                        setPriceTouched(true);
+                        setPriceEurosInput(e.target.value);
+                      }}
                       placeholder="15"
                       className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-9 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
@@ -1205,6 +1244,33 @@ export function EventFormModal({
                   <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                     Entre 1 € et 1 000 € (ex. 15 ou 12,50).
                   </p>
+                  {(() => {
+                    const primaryCoachUid = selectedCoaches[0]?.uid || coachUid;
+                    const primaryAdmin =
+                      coachAdmins.find((a) => a.uid === primaryCoachUid) ??
+                      coachAdmins.find((a) => a.uid === coachUid);
+                    if (!hasCoachGroupSessionPrice(primaryAdmin?.pricing)) {
+                      return null;
+                    }
+                    const coachPriceCents = getCoachGroupSessionPriceCents(
+                      primaryAdmin?.pricing
+                    );
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPriceEurosInput(
+                            formatCentsForInput(coachPriceCents).replace('.', ',')
+                          );
+                          setPriceTouched(false);
+                        }}
+                        className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                      >
+                        Appliquer le tarif de {primaryAdmin?.displayName || defaultCoachName} :{' '}
+                        {formatPriceEuros(coachPriceCents)}
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 <div>

@@ -7,10 +7,10 @@ import {
   Dumbbell,
   Footprints,
   Gauge,
-  ListChecks,
   Pencil,
   Plus,
   Search,
+  SlidersHorizontal,
   Sparkles,
   Target,
   Timer,
@@ -32,14 +32,16 @@ import {
 import {
   createExercise,
   deleteExercise,
-  deleteMemberScheduleSession,
   deleteTrainingProgram,
-  isInternalScheduleOverride,
   payTrainingProgram,
   seedStarterExercises,
   updateExercise,
 } from '../services/firestoreService';
 import { formatFrenchDateShort, formatPriceEuros } from '../utils/dateAndValidation';
+import {
+  getCoachRunningProgramPriceCents,
+  hasCoachCustomRunningPrice,
+} from '../utils/coachPricingHelpers';
 import {
   clampExerciseParams,
   EXERCISE_OBJECTIVE_OPTIONS,
@@ -52,7 +54,6 @@ import {
   computeVmaPaceZones,
   formatDurationHMS,
   formatPaceMinPerKm,
-  formatPreferredDaysShort,
   getProgramDeliveryProgress,
   getProgramPhases,
   getProgramRunnerLevelLabel,
@@ -63,8 +64,8 @@ import {
   ProgramBuilderModal,
   ProgramMemberCandidate,
 } from './ProgramBuilderModal';
-import { ProgramSessionsModal } from './ProgramSessionsModal';
 import { RunningProgramBuilderModal } from './RunningProgramBuilderModal';
+import { RunningSessionEditorModal } from './RunningSessionEditorModal';
 import { VmaTestModal } from './VmaTestModal';
 
 interface ExerciseLibraryViewProps {
@@ -77,6 +78,7 @@ interface ExerciseLibraryViewProps {
   trainingPrograms?: TrainingProgram[];
   memberSchedules?: MemberScheduleSession[];
   nowMs?: number;
+  onOpenCoachPricing?: () => void;
 }
 
 interface DisplayExerciseRow {
@@ -110,7 +112,12 @@ export function ExerciseLibraryView({
   trainingPrograms = [],
   memberSchedules = [],
   nowMs = Date.now(),
+  onOpenCoachPricing,
 }: ExerciseLibraryViewProps) {
+  const myCoachDirectoryEntry = useMemo(
+    () => coachDirectory.find((c) => c.uid === coachUid) ?? null,
+    [coachDirectory, coachUid]
+  );
   const [libraryTab, setLibraryTab] = useState<'exercises' | 'programs'>(
     'exercises'
   );
@@ -150,12 +157,6 @@ export function ExerciseLibraryView({
   const [programInitialExercises, setProgramInitialExercises] = useState<
     ScheduledExerciseItem[]
   >([]);
-  const [editingCustomSession, setEditingCustomSession] =
-    useState<MemberScheduleSession | null>(null);
-  const [confirmDeleteCustomId, setConfirmDeleteCustomId] = useState<
-    string | null
-  >(null);
-  const [deletingCustomId, setDeletingCustomId] = useState<string | null>(null);
 
   // Running 12-week Programs (5km, 10km, 21km, 42km)
   const [programSearch, setProgramSearch] = useState('');
@@ -170,9 +171,8 @@ export function ExerciseLibraryView({
   const [vmaTestProgram, setVmaTestProgram] = useState<TrainingProgram | null>(
     null
   );
-  const [inspectProgram, setInspectProgram] = useState<TrainingProgram | null>(
-    null
-  );
+  const [editingSessionsProgramTarget, setEditingSessionsProgramTarget] =
+    useState<{ programId: string; sessionKey?: string } | null>(null);
   const [payingProgramId, setPayingProgramId] = useState<string | null>(null);
   const [confirmDeleteProgramId, setConfirmDeleteProgramId] = useState<
     string | null
@@ -444,11 +444,7 @@ export function ExerciseLibraryView({
     }
   };
 
-  const handleOpenProgramWithExercise = (
-    row?: DisplayExerciseRow,
-    sessionToEdit: MemberScheduleSession | null = null
-  ) => {
-    setEditingCustomSession(sessionToEdit);
+  const handleOpenProgramWithExercise = (row?: DisplayExerciseRow) => {
     if (row) {
       setProgramInitialExercises([
         {
@@ -486,7 +482,7 @@ export function ExerciseLibraryView({
       });
       setFeedback({
         type: 'success',
-        text: `Paiement de ${formatPriceEuros(program.priceCents)} validé pour ${program.memberName}. Le Test VMA est ouvert (effectuable n’importe quel jour) et le programme démarrera ensuite selon les jours choisis.`,
+        text: `Paiement de ${formatPriceEuros(program.priceCents)} validé pour ${program.memberName}. La Semaine 1 vient d’être envoyée (les semaines suivantes suivront à la fin de chaque semaine) et le test VMA Jour 1 est ouvert.`,
       });
     } catch (err) {
       setFeedback({
@@ -524,34 +520,8 @@ export function ExerciseLibraryView({
     }
   };
 
-  const handleDeleteCustomSession = async (session: MemberScheduleSession) => {
-    setFeedback(null);
-    setDeletingCustomId(session.id);
-    try {
-      await deleteMemberScheduleSession(session.id);
-      setConfirmDeleteCustomId(null);
-      setFeedback({
-        type: 'success',
-        text: `Séance « ${session.title} » supprimée pour ${session.memberName}.`,
-      });
-    } catch (err) {
-      setFeedback({
-        type: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : 'Impossible de supprimer cette séance.',
-      });
-    } finally {
-      setDeletingCustomId(null);
-    }
-  };
-
   const coachCustomSessions = useMemo(
-    () =>
-      memberSchedules.filter(
-        (s) => s.createdByRole === 'coach' && !isInternalScheduleOverride(s)
-      ),
+    () => memberSchedules.filter((s) => s.createdByRole === 'coach'),
     [memberSchedules]
   );
 
@@ -745,14 +715,32 @@ export function ExerciseLibraryView({
                   Modèles spécifiques (5 km, 10 km, 21 km, 42 km)
                 </h3>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  Durée adaptée au niveau (Débutant / Régulier &amp; Expérimenté) · 3 séances/sem. par défaut (paramétrable de 2 à 6) · Test VMA effectuable n’importe quel jour.
+                  Durée adaptée au niveau (Débutant / Régulier &amp; Expérimenté) · 3 séances/sem. par défaut (paramétrable de 2 à 6) · Test VMA Jour 1.
                 </p>
               </div>
+              {onOpenCoachPricing && (
+                <button
+                  type="button"
+                  onClick={onOpenCoachPricing}
+                  className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Configurer mes tarifs</span>
+                </button>
+              )}
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               {RUNNING_DISTANCE_LIST.map((tpl) => {
                 const defaultPhases = getProgramPhases(tpl.key, tpl.regularWeeks);
+                const resolvedPriceCents = getCoachRunningProgramPriceCents(
+                  myCoachDirectoryEntry?.pricing,
+                  tpl.key
+                );
+                const isCustomCoachPrice = hasCoachCustomRunningPrice(
+                  myCoachDirectoryEntry?.pricing,
+                  tpl.key
+                );
                 return (
                   <div
                     key={tpl.key}
@@ -764,7 +752,8 @@ export function ExerciseLibraryView({
                           {tpl.shortLabel}
                         </span>
                         <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                          {formatPriceEuros(tpl.defaultPriceCents)}
+                          {formatPriceEuros(resolvedPriceCents)}
+                          {isCustomCoachPrice ? ' · Mon tarif' : ''}
                         </span>
                       </div>
                       <p className="mt-0.5 font-mono text-[11px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
@@ -810,7 +799,7 @@ export function ExerciseLibraryView({
                   Programmes attribués aux adhérents ({trainingPrograms.length})
                 </h3>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  Suivez le règlement, le Test VMA (effectuable n’importe quel jour) et la progression sur les jours choisis.
+                  Suivez le règlement, le test VMA du Jour 1 et la progression du cycle.
                 </p>
               </div>
 
@@ -845,7 +834,7 @@ export function ExerciseLibraryView({
                 >
                   <option value="all">Tous les statuts</option>
                   <option value="awaiting_payment">Paiement en attente</option>
-                  <option value="awaiting_vma">Test VMA en attente</option>
+                  <option value="awaiting_vma">Test VMA Jour 1 en attente</option>
                   <option value="active">Actifs</option>
                   <option value="completed">Terminés</option>
                 </select>
@@ -868,9 +857,7 @@ export function ExerciseLibraryView({
                 {filteredTrainingPrograms.map((prog) => {
                   const tpl = RUNNING_DISTANCE_TEMPLATES[prog.distance];
                   const totalSessions = prog.durationWeeks * prog.sessionsPerWeek;
-                  const doneCount = (prog.completedSessionKeys ?? []).filter(
-                    (k) => k !== 'vma-test'
-                  ).length;
+                  const doneCount = prog.completedSessionKeys?.length ?? 0;
                   const pct =
                     totalSessions > 0
                       ? Math.min(100, Math.round((doneCount / totalSessions) * 100))
@@ -931,8 +918,7 @@ export function ExerciseLibraryView({
                               );
                             })()}
                             <p className="mt-0.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                              Jours : {formatPreferredDaysShort(prog.preferredDays, prog.sessionsPerWeek)} · Dès le{' '}
-                              {formatFrenchDateShort((prog.desiredStartAt ?? prog.startAt).toDate())}
+                              Jour 1 : {formatFrenchDateShort(prog.startAt.toDate())}
                             </p>
                           </div>
                         </div>
@@ -953,7 +939,7 @@ export function ExerciseLibraryView({
                           <div>
                             <p className="flex items-center gap-1 text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">
                               <Gauge className="h-3 w-3" aria-hidden="true" />
-                              Test VMA (n’importe quel jour)
+                              Test VMA (Jour 1)
                             </p>
                             <p
                               className={`mt-0.5 font-mono text-xs font-bold tabular-nums ${
@@ -992,21 +978,16 @@ export function ExerciseLibraryView({
                               Envoi progressif :{' '}
                               {!delivery.hasAccess
                                 ? 'en attente du paiement'
-                                : prog.vmaTestStatus === 'pending'
-                                  ? 'en attente du Test VMA'
-                                  : delivery.allWeeksReleased
-                                    ? `${delivery.totalWeeks}/${delivery.totalWeeks} sem. envoyées`
-                                    : `Sem. ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée`}
+                                : delivery.allWeeksReleased
+                                  ? `${delivery.totalWeeks}/${delivery.totalWeeks} sem. envoyées`
+                                  : `Sem. ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée`}
                             </span>
-                            {delivery.hasAccess &&
-                              prog.vmaTestStatus === 'completed' &&
-                              delivery.nextWeekNumber &&
-                              delivery.nextUnlockAtMs && (
-                                <span className="font-mono text-[10px] text-sky-700 dark:text-sky-400 tabular-nums">
-                                  Sem. {delivery.nextWeekNumber} le{' '}
-                                  {formatFrenchDateShort(new Date(delivery.nextUnlockAtMs))}
-                                </span>
-                              )}
+                            {delivery.hasAccess && delivery.nextWeekNumber && delivery.nextUnlockAtMs && (
+                              <span className="font-mono text-[10px] text-sky-700 dark:text-sky-400 tabular-nums">
+                                Sem. {delivery.nextWeekNumber} le{' '}
+                                {formatFrenchDateShort(new Date(delivery.nextUnlockAtMs))}
+                              </span>
+                            )}
                           </div>
                           <div className="mt-2 flex flex-wrap gap-1">
                             {delivery.weeks.map((wk) => (
@@ -1015,11 +996,9 @@ export function ExerciseLibraryView({
                                 title={
                                   !delivery.hasAccess
                                     ? `Semaine ${wk.weekNumber} : en attente du paiement`
-                                    : prog.vmaTestStatus === 'pending'
-                                      ? `Semaine ${wk.weekNumber} : démarre après le Test VMA`
-                                      : wk.unlocked
-                                        ? `Semaine ${wk.weekNumber} envoyée`
-                                        : `Semaine ${wk.weekNumber} : envoi auto le ${formatFrenchDateShort(new Date(wk.unlockAtMs))}`
+                                    : wk.unlocked
+                                      ? `Semaine ${wk.weekNumber} envoyée`
+                                      : `Semaine ${wk.weekNumber} : envoi auto le ${formatFrenchDateShort(new Date(wk.unlockAtMs))}`
                                 }
                                 className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums ${
                                   wk.unlocked
@@ -1055,15 +1034,6 @@ export function ExerciseLibraryView({
 
                           <button
                             type="button"
-                            onClick={() => setInspectProgram(prog)}
-                            className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 whitespace-nowrap shrink-0 cursor-pointer"
-                          >
-                            <ListChecks className="h-3 w-3" aria-hidden="true" />
-                            <span>Voir / modifier séances</span>
-                          </button>
-
-                          <button
-                            type="button"
                             onClick={() => setVmaTestProgram(prog)}
                             className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 whitespace-nowrap shrink-0 cursor-pointer"
                           >
@@ -1072,6 +1042,25 @@ export function ExerciseLibraryView({
                               {prog.vmaTestStatus === 'completed'
                                 ? 'Modifier VMA'
                                 : 'Saisir VMA'}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditingSessionsProgramTarget({
+                                programId: prog.id,
+                                sessionKey: `w${Math.max(1, delivery.currentWeekNumber)}-s1`,
+                              })
+                            }
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 whitespace-nowrap shrink-0 cursor-pointer"
+                          >
+                            <SlidersHorizontal className="h-3 w-3" aria-hidden="true" />
+                            <span>
+                              Séances &amp; exercices
+                              {(prog.sessionOverrides?.length ?? 0) > 0
+                                ? ` (${prog.sessionOverrides?.length})`
+                                : ''}
                             </span>
                           </button>
                         </div>
@@ -1194,51 +1183,6 @@ export function ExerciseLibraryView({
                         {sess.durationMinutes} min
                         {sess.objective ? ` · ${sess.objective}` : ''}
                       </p>
-
-                      <div className="mt-2.5 flex items-center justify-end gap-1.5 border-t border-slate-200/80 pt-2 dark:border-slate-800">
-                        {confirmDeleteCustomId === sess.id ? (
-                          <>
-                            <button
-                              type="button"
-                              disabled={deletingCustomId === sess.id}
-                              onClick={() => void handleDeleteCustomSession(sess)}
-                              className="min-h-[30px] rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
-                            >
-                              {deletingCustomId === sess.id
-                                ? 'Suppr...'
-                                : 'Confirmer'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteCustomId(null)}
-                              className="min-h-[30px] rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 cursor-pointer"
-                            >
-                              Annuler
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleOpenProgramWithExercise(undefined, sess)
-                              }
-                              className="inline-flex min-h-[30px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
-                            >
-                              <Pencil className="h-3 w-3" aria-hidden="true" />
-                              <span>Modifier</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteCustomId(sess.id)}
-                              aria-label={`Supprimer la séance de ${sess.memberName}`}
-                              className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
-                          </>
-                        )}
-                      </div>
                     </div>
                   );
                 })}
@@ -1874,11 +1818,7 @@ export function ExerciseLibraryView({
           exercises={exercises}
           memberCandidates={memberCandidates}
           initialExercises={programInitialExercises}
-          editingSession={editingCustomSession}
-          onClose={() => {
-            setProgramModalOpen(false);
-            setEditingCustomSession(null);
-          }}
+          onClose={() => setProgramModalOpen(false)}
           onSaved={(msg) => {
             setLibraryTab('programs');
             setFeedback({
@@ -1927,21 +1867,29 @@ export function ExerciseLibraryView({
           }
         />
       )}
-      {/* Coach Program All-Sessions Overview & Editor Modal */}
-      {inspectProgram && (
-        <ProgramSessionsModal
-          program={
-            trainingPrograms.find((p) => p.id === inspectProgram.id) ??
-            inspectProgram
-          }
-          memberSchedules={memberSchedules}
-          exercises={exercises}
-          coachUid={coachUid}
-          nowMs={nowMs}
-          onClose={() => setInspectProgram(null)}
-          onUpdated={(msg) => setFeedback({ type: 'success', text: msg })}
-        />
-      )}
+
+      {/* Program Sessions & Exercises Editor Modal */}
+      {editingSessionsProgramTarget &&
+        (() => {
+          const liveProg = trainingPrograms.find(
+            (p) => p.id === editingSessionsProgramTarget.programId
+          );
+          if (!liveProg) return null;
+          return (
+            <RunningSessionEditorModal
+              program={liveProg}
+              exercises={exercises}
+              initialSessionKey={editingSessionsProgramTarget.sessionKey}
+              onClose={() => setEditingSessionsProgramTarget(null)}
+              onSaved={(msg) =>
+                setFeedback({
+                  type: 'success',
+                  text: msg,
+                })
+              }
+            />
+          );
+        })()}
     </div>
   );
 }

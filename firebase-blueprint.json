@@ -489,6 +489,19 @@
           "maxLength": 80000,
           "description": "Photo de profil du coach (JPEG compact encodé en base64 ou URL)."
         },
+        "pricing": {
+          "type": "object",
+          "description": "Tarifs personnalisés proposés par le coach (en centimes d'euro, 0 si non défini).",
+          "properties": {
+            "groupSessionPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "customSessionPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "program5kmPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "program10kmPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "program21kmPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "program42kmPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "pricingNotes": { "type": "string", "maxLength": 300 }
+          }
+        },
         "role": {
           "type": "string",
           "enum": ["coach", "coach_admin"]
@@ -1157,6 +1170,19 @@
           "type": "string",
           "maxLength": 80000
         },
+        "pricing": {
+          "type": "object",
+          "description": "Tarifs personnalisés proposés par le coach (en centimes d'euro, 0 si non défini).",
+          "properties": {
+            "groupSessionPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "customSessionPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "program5kmPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "program10kmPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "program21kmPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "program42kmPriceCents": { "type": "integer", "minimum": 0, "maximum": 200000 },
+            "pricingNotes": { "type": "string", "maxLength": 300 }
+          }
+        },
         "active": {
           "type": "boolean"
         },
@@ -1640,6 +1666,10 @@
         "completedSessionKeys": {
           "type": "array",
           "description": "Identifiants des séances cochées comme réalisées (max 100)."
+        },
+        "sessionOverrides": {
+          "type": "array",
+          "description": "Personnalisations coach par séance (titre, durée, consignes et liste d'exercices modifiés/ajoutés/remplacés/supprimés, max 100)."
         },
         "notes": {
           "type": "string",

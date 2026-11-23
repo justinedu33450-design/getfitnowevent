@@ -102,6 +102,7 @@ export const VALIDATION_LIMITS = {
   SPECIALTY_MAX: 120,
   CERTIFICATIONS_MAX: 200,
   BIO_MAX: 600,
+  PRICING_NOTES_MAX: 300,
   PHOTO_URL_MAX: 80000,
   BIRTH_DATE_MAX: 10,
   BIRTH_DATE_REGEX: /^\d{4}-\d{2}-\d{2}$/,
@@ -152,6 +153,7 @@ export const VALIDATION_LIMITS = {
   PROGRAM_TARGET_TIME_MIN_SEC: 600,
   PROGRAM_TARGET_TIME_MAX_SEC: 36000,
   PROGRAM_COMPLETED_KEYS_MAX: 100,
+  PROGRAM_OVERRIDES_MAX: 100,
 } as const;
 
 export interface SportEvent {
@@ -287,6 +289,16 @@ export type CoachAccessRequestStatus = 'pending' | 'approved' | 'rejected';
 export type CoachInviteStatus = 'pending' | 'disabled' | 'claimed';
 export type CoachAccessResolution = 'active' | 'disabled' | 'none';
 
+export interface CoachPricing {
+  groupSessionPriceCents?: number;
+  customSessionPriceCents?: number;
+  program5kmPriceCents?: number;
+  program10kmPriceCents?: number;
+  program21kmPriceCents?: number;
+  program42kmPriceCents?: number;
+  pricingNotes?: string;
+}
+
 export interface CoachAdminUser {
   id: string;
   uid: string;
@@ -300,6 +312,7 @@ export interface CoachAdminUser {
   certifications?: string;
   bio?: string;
   photoUrl?: string;
+  pricing?: CoachPricing;
   role: CoachRole;
   adminRequestStatus?: CoachAdminRequestStatus;
   active: boolean;
@@ -451,6 +464,7 @@ export interface CoachDirectoryEntry {
   region?: string;
   bio?: string;
   photoUrl?: string;
+  pricing?: CoachPricing;
   active: boolean;
   updatedAt: Timestamp;
 }
@@ -598,6 +612,15 @@ export interface RunningPaceZones {
   targetRacePaceSecPerKm: number;
 }
 
+export interface ProgramSessionOverride {
+  sessionKey: string;
+  title: string;
+  durationMinutes: number;
+  coachNotes: string;
+  exercises: ScheduledExerciseItem[];
+  updatedAtMs: number;
+}
+
 export interface TrainingProgram {
   id: string;
   memberEmail: string;
@@ -618,6 +641,7 @@ export interface TrainingProgram {
   vmaTestDurationSeconds: number;
   vmaTestedAt?: Timestamp | null;
   completedSessionKeys: string[];
+  sessionOverrides?: ProgramSessionOverride[];
   notes: string;
   coachUid: string;
   coachName: string;

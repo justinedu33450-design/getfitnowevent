@@ -4,10 +4,9 @@ import {
   signOut,
   User,
 } from 'firebase/auth';
-import { collection, getDocsFromServer, query, where } from 'firebase/firestore';
 import { APIProvider } from '@vis.gl/react-google-maps';
-import { AlertTriangle, BookOpen, Calendar, Heart, Sparkles, X } from 'lucide-react';
-import { auth, BOOTSTRAPPED_COACH_EMAIL, db } from './firebase';
+import { BookOpen, Calendar, Sparkles, X } from 'lucide-react';
+import { auth, BOOTSTRAPPED_COACH_EMAIL } from './firebase';
 import {
   acknowledgeAllMemberProgramNotifications,
   acknowledgeMemberProgramNotification,
@@ -40,7 +39,6 @@ import {
   subscribeMyAdminStatus,
   subscribeMyCoachAccessRequest,
   subscribeMyCoachNotifications,
-  subscribeMyEventLikes,
   subscribeMyMemberNotifications,
   subscribeMyMemberProfile,
   subscribeMyMemberSchedule,
@@ -49,7 +47,6 @@ import {
   subscribePublishedEventReviews,
   subscribeRegistrations,
   syncCoachDirectoryFromAdmins,
-  toggleEventLike,
   validateMemberSession,
 } from './services/firestoreService';
 import {
@@ -106,7 +103,6 @@ import { CoachAuthGate } from './components/CoachAuthGate';
 import { MemberAuthGate } from './components/MemberAuthGate';
 import { MemberPortalView } from './components/MemberPortalView';
 import { MessagesView } from './components/MessagesView';
-import { EmailPasswordAuthForm } from './components/EmailPasswordAuthForm';
 import { EventShareModal } from './components/EventShareModal';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
@@ -193,6 +189,7 @@ export default function App() {
   );
   const [exercises, setExercises] = useState<ExerciseLibraryItem[]>([]);
   const [manageTab, setManageTab] = useState<'events' | 'exercises'>('events');
+  const [openCoachProfileNonce, setOpenCoachProfileNonce] = useState(0);
   const [pendingMessageTarget, setPendingMessageTarget] =
     useState<PendingMessageTarget | null>(null);
   const [pendingMemberTrackingKey, setPendingMemberTrackingKey] = useState<
@@ -223,14 +220,6 @@ export default function App() {
   const [rosterInitialTab, setRosterInitialTab] = useState<'roster' | 'reviews'>(
     'roster'
   );
-  const [likedEventIds, setLikedEventIds] = useState<Set<string>>(
-    () => new Set()
-  );
-  const [likingEventId, setLikingEventId] = useState<string | null>(null);
-  const [pendingLikeEvent, setPendingLikeEvent] = useState<SportEvent | null>(
-    null
-  );
-  const [likeError, setLikeError] = useState<string | null>(null);
   const [publishedReviews, setPublishedReviews] = useState<EventReview[]>([]);
   const [pendingReviewRegId, setPendingReviewRegId] = useState<string | null>(
     null
@@ -505,20 +494,6 @@ export default function App() {
     const unsub = subscribeDisciplines(setCustomDisciplines);
     return () => unsub();
   }, []);
-
-  // Signed-in user's liked events (/eventLikes)
-  useEffect(() => {
-    if (authLoading || !isVerifiedUser || !user?.uid) {
-      setLikedEventIds(new Set());
-      return;
-    }
-    const unsub = subscribeMyEventLikes(
-      user.uid,
-      setLikedEventIds,
-      () => setLikedEventIds(new Set())
-    );
-    return () => unsub();
-  }, [authLoading, isVerifiedUser, user?.uid]);
 
   // Published event reviews & comments (/eventReviews, public read)
   useEffect(() => {
@@ -873,43 +848,6 @@ export default function App() {
     [reviewsByRegId]
   );
 
-  const formatLikeErrorMessage = (err: unknown): string => {
-    if (err instanceof Error) {
-      const msg = err.message.trim();
-      if (msg.startsWith('{')) {
-        try {
-          const parsed = JSON.parse(msg) as { error?: string };
-          if (parsed.error?.toLowerCase().includes('permission')) {
-            return 'Autorisation refusée pour enregistrer votre j’aime. Réessayez dans un instant.';
-          }
-          if (parsed.error) return parsed.error;
-        } catch {
-          return msg;
-        }
-      }
-      return msg || 'Impossible de mettre à jour votre j’aime.';
-    }
-    return 'Impossible de mettre à jour votre j’aime.';
-  };
-
-  const handleToggleLike = async (event: SportEvent) => {
-    setLikeError(null);
-    if (!isVerifiedUser || !user?.uid) {
-      setPendingLikeEvent(event);
-      return;
-    }
-    if (likingEventId === event.id) return;
-    setLikingEventId(event.id);
-    try {
-      await toggleEventLike(event, user.uid);
-    } catch (err) {
-      console.error('Impossible de mettre à jour le j’aime :', err);
-      setLikeError(formatLikeErrorMessage(err));
-    } finally {
-      setLikingEventId(null);
-    }
-  };
-
   const handleValidateSessionWithBadgeNotice = async (
     reg: Registration,
     showFloatingToast: boolean
@@ -1009,8 +947,6 @@ export default function App() {
     setEventFormState({ open: false });
     setRosterEventId(null);
     setRosterInitialTab('roster');
-    setLikedEventIds(new Set());
-    setPendingLikeEvent(null);
     setPendingReviewRegId(null);
     setBadgeToast(null);
     setPortalBadgesExpandNonce(0);
@@ -1535,9 +1471,6 @@ export default function App() {
                 isCoach={isCoach}
                 isCoachAdmin={isCoachAdmin}
                 registeredEventIds={registeredEventIds}
-                likedEventIds={likedEventIds}
-                likingEventId={likingEventId}
-                onToggleLike={(ev) => void handleToggleLike(ev)}
                 onShareEvent={(ev) => setSharingEvent(ev)}
                 ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
@@ -1563,9 +1496,6 @@ export default function App() {
                 isCoach={isCoach}
                 isCoachAdmin={isCoachAdmin}
                 registeredEventIds={registeredEventIds}
-                likedEventIds={likedEventIds}
-                likingEventId={likingEventId}
-                onToggleLike={(ev) => void handleToggleLike(ev)}
                 onShareEvent={(ev) => setSharingEvent(ev)}
                 ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
@@ -1582,9 +1512,6 @@ export default function App() {
                 events={activeEvents}
                 disciplines={disciplineCatalog}
                 nowMs={nowMs}
-                likedEventIds={likedEventIds}
-                likingEventId={likingEventId}
-                onToggleLike={(ev) => void handleToggleLike(ev)}
                 onShareEvent={(ev) => setSharingEvent(ev)}
                 reviewsByRegId={reviewsByRegId}
                 ratingSummaryByEventId={ratingSummaryByEventId}
@@ -1763,6 +1690,10 @@ export default function App() {
                         trainingPrograms={effectiveTrainingPrograms}
                         memberSchedules={memberSchedules}
                         nowMs={nowMs}
+                        onOpenCoachPricing={() => {
+                          setOpenCoachProfileNonce((n) => n + 1);
+                          setActiveSection('coaches');
+                        }}
                       />
                     </section>
                   )}
@@ -1854,6 +1785,7 @@ export default function App() {
                   myRegistrations={myRegistrations}
                   events={activeEvents}
                   nowMs={nowMs}
+                  openProfileNonce={openCoachProfileNonce}
                   onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
                   onExploreCalendar={() => setActiveSection('calendar')}
                   onCancelRegistration={
@@ -1965,9 +1897,6 @@ export default function App() {
           invitedGuestRegistrations={invitedGuestRegistrationsForBooking}
           isEventActive={isCurrentBookingEventActive}
           currentUserUid={user?.uid ?? null}
-          likedEventIds={likedEventIds}
-          likingEventId={likingEventId}
-          onToggleLike={(ev) => void handleToggleLike(ev)}
           onShareEvent={(ev) => setSharingEvent(ev)}
           eventReviews={reviewsByEventId.get(currentBookingEvent.id) ?? []}
           ratingSummary={ratingSummaryByEventId.get(currentBookingEvent.id)}
@@ -2102,90 +2031,6 @@ export default function App() {
         />
       )}
 
-      {/* Quick Member Auth Modal triggered by unauthenticated Like click */}
-      {pendingLikeEvent && !isVerifiedUser && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="quick-like-auth-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
-          onClick={() => setPendingLikeEvent(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
-              <div className="flex items-start gap-2.5 min-w-0">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
-                  <Heart className="h-4 w-4 fill-current" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <h2
-                    id="quick-like-auth-title"
-                    className="font-display text-base font-bold text-slate-900 dark:text-white"
-                  >
-                    Connectez-vous pour aimer cette séance
-                  </h2>
-                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate">
-                    {pendingLikeEvent.title}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPendingLikeEvent(null)}
-                aria-label="Fermer la fenêtre"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="mt-4">
-              <EmailPasswordAuthForm
-                audience="member"
-                onSuccess={(signedInUser) => {
-                  const targetEv = pendingLikeEvent;
-                  setPendingLikeEvent(null);
-                  void (async () => {
-                    await handleAuthenticatedUser(signedInUser, 'member');
-                    if (
-                      targetEv &&
-                      targetEv.status === 'published' &&
-                      signedInUser.uid
-                    ) {
-                      try {
-                        const existingLikesSnap = await getDocsFromServer(
-                          query(
-                            collection(db, 'eventLikes'),
-                            where('userId', '==', signedInUser.uid)
-                          )
-                        );
-                        const alreadyLiked = existingLikesSnap.docs.some(
-                          (d) =>
-                            d.id === `${targetEv.id}__${signedInUser.uid}` ||
-                            d.data().eventId === targetEv.id
-                        );
-                        if (!alreadyLiked) {
-                          await toggleEventLike(targetEv, signedInUser.uid);
-                        }
-                      } catch (err) {
-                        console.error(
-                          'Erreur lors du j’aime après connexion :',
-                          err
-                        );
-                        setLikeError(formatLikeErrorMessage(err));
-                      }
-                    }
-                  })();
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Event Social Share Modal */}
       {sharingEvent && (
         <EventShareModal
@@ -2245,26 +2090,6 @@ export default function App() {
         </div>
       )}
 
-      {likeError && (
-        <div
-          role="alert"
-          className="fixed bottom-20 right-4 z-50 flex max-w-sm items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-900 shadow-lg dark:border-rose-800 dark:bg-rose-950/95 dark:text-rose-100 md:bottom-5"
-        >
-          <AlertTriangle
-            className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400"
-            aria-hidden="true"
-          />
-          <span className="flex-1">{likeError}</span>
-          <button
-            type="button"
-            onClick={() => setLikeError(null)}
-            aria-label="Fermer le message d’erreur"
-            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-rose-600 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-900/60 cursor-pointer"
-          >
-            <X className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-        </div>
-      )}
       <OfflineIndicator />
     </div>
   );

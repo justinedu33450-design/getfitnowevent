@@ -25,6 +25,10 @@ import {
   toLocalDateInputValue,
 } from '../utils/dateAndValidation';
 import {
+  getCoachRunningProgramPriceCents,
+  hasCoachCustomRunningPrice,
+} from '../utils/coachPricingHelpers';
+import {
   computeTargetRacePaceSecPerKm,
   formatDurationHMS,
   formatPaceMinPerKm,
@@ -204,22 +208,38 @@ export function RunningProgramBuilderModal({
       : toLocalDateInputValue(new Date())
   );
 
+  const [coachRefUid, setCoachRefUid] = useState<string>(
+    editingProgram?.coachUid || coachUid
+  );
+  const selectedCoachEntry = useMemo(
+    () => coachDirectory.find((c) => c.uid === coachRefUid) ?? null,
+    [coachDirectory, coachRefUid]
+  );
+  const [priceTouched, setPriceTouched] = useState<boolean>(
+    Boolean(editingProgram)
+  );
+
   const [isPaid, setIsPaid] = useState<boolean>(() =>
     editingProgram ? Boolean(editingProgram.isPaid) : true
   );
-  const [priceEuros, setPriceEuros] = useState<string>(() =>
-    ((editingProgram?.priceCents && editingProgram.priceCents >= 100
-      ? editingProgram.priceCents
-      : tpl.defaultPriceCents) / 100).toFixed(2)
-  );
+  const [priceEuros, setPriceEuros] = useState<string>(() => {
+    if (editingProgram?.priceCents && editingProgram.priceCents >= 100) {
+      return (editingProgram.priceCents / 100).toFixed(2);
+    }
+    const initialCoach = coachDirectory.find(
+      (c) => c.uid === (editingProgram?.coachUid || coachUid)
+    );
+    const resolved = getCoachRunningProgramPriceCents(
+      initialCoach?.pricing,
+      editingProgram?.distance ?? initialDistance
+    );
+    return (resolved / 100).toFixed(2);
+  });
   const [paymentMode, setPaymentMode] = useState<EventPaymentMode>(
     editingProgram?.paymentMode ?? 'both'
   );
   const [markPaid, setMarkPaid] = useState<boolean>(false);
 
-  const [coachRefUid, setCoachRefUid] = useState<string>(
-    editingProgram?.coachUid || coachUid
-  );
   const [notes, setNotes] = useState<string>(editingProgram?.notes || '');
 
   const [saving, setSaving] = useState(false);
@@ -261,7 +281,25 @@ export function RunningProgramBuilderModal({
     setTargetHours(hms.h);
     setTargetMinutes(hms.m);
     setTargetSeconds(hms.s);
-    setPriceEuros((nextTpl.defaultPriceCents / 100).toFixed(2));
+    if (!priceTouched) {
+      const nextPriceCents = getCoachRunningProgramPriceCents(
+        selectedCoachEntry?.pricing,
+        nextDist
+      );
+      setPriceEuros((nextPriceCents / 100).toFixed(2));
+    }
+  };
+
+  const handleCoachChange = (nextCoachUid: string) => {
+    setCoachRefUid(nextCoachUid);
+    if (!editingProgram && !priceTouched) {
+      const nextCoach = coachDirectory.find((c) => c.uid === nextCoachUid);
+      const nextPriceCents = getCoachRunningProgramPriceCents(
+        nextCoach?.pricing,
+        distance
+      );
+      setPriceEuros((nextPriceCents / 100).toFixed(2));
+    }
   };
 
   const handleLevelChange = (nextLevel: ProgramRunnerLevel) => {
@@ -821,9 +859,37 @@ export function RunningProgramBuilderModal({
                         step="0.50"
                         required
                         value={priceEuros}
-                        onChange={(e) => setPriceEuros(e.target.value)}
+                        onChange={(e) => {
+                          setPriceTouched(true);
+                          setPriceEuros(e.target.value);
+                        }}
                         className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       />
+                      {hasCoachCustomRunningPrice(
+                        selectedCoachEntry?.pricing,
+                        distance
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const customCents = getCoachRunningProgramPriceCents(
+                              selectedCoachEntry?.pricing,
+                              distance
+                            );
+                            setPriceEuros((customCents / 100).toFixed(2));
+                            setPriceTouched(false);
+                          }}
+                          className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                        >
+                          Tarif de {selectedCoachEntry?.displayName || coachName} ({tpl.shortLabel}) :{' '}
+                          {formatPriceEuros(
+                            getCoachRunningProgramPriceCents(
+                              selectedCoachEntry?.pricing,
+                              distance
+                            )
+                          )}
+                        </button>
+                      )}
                     </div>
 
                     <div>
@@ -879,7 +945,7 @@ export function RunningProgramBuilderModal({
                 <select
                   id="rp-coach"
                   value={coachRefUid}
-                  onChange={(e) => setCoachRefUid(e.target.value)}
+                  onChange={(e) => handleCoachChange(e.target.value)}
                   className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 >
                   {coachName && !coachDirectory.some((c) => c.uid === coachUid) && (

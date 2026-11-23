@@ -61,7 +61,6 @@ import { downloadPaymentReceipt } from '../utils/paymentHelpers';
 import { PhotoUploadField, ProfileAvatar } from './ProfileAvatar';
 import { PasswordSettingsCard } from './PasswordSettingsCard';
 import {
-  EventLikeButton,
   EventRatingInline,
   EventReviewComposer,
   EventShareButton,
@@ -78,9 +77,6 @@ interface MemberPortalViewProps {
   events: SportEvent[];
   disciplines: DisciplineItem[];
   nowMs: number;
-  likedEventIds?: Set<string>;
-  likingEventId?: string | null;
-  onToggleLike?: (event: SportEvent) => void;
   onShareEvent?: (event: SportEvent) => void;
   reviewsByRegId?: Map<string, EventReview>;
   ratingSummaryByEventId?: Map<string, EventRatingSummary>;
@@ -109,9 +105,6 @@ export function MemberPortalView({
   events,
   disciplines,
   nowMs,
-  likedEventIds,
-  likingEventId,
-  onToggleLike,
   onShareEvent,
   reviewsByRegId,
   ratingSummaryByEventId,
@@ -1257,20 +1250,6 @@ export function MemberPortalView({
                         canCancelReg ||
                         hasReceipt) && (
                         <div className="flex flex-wrap items-center gap-2 shrink-0">
-                          {matchedEvent &&
-                            matchedEvent.status === 'published' &&
-                            onToggleLike && (
-                              <EventLikeButton
-                                compact
-                                count={matchedEvent.likesCount ?? 0}
-                                liked={Boolean(
-                                  likedEventIds?.has(matchedEvent.id)
-                                )}
-                                loading={likingEventId === matchedEvent.id}
-                                eventTitle={matchedEvent.title}
-                                onClick={() => onToggleLike(matchedEvent)}
-                              />
-                            )}
                           {matchedEvent &&
                             matchedEvent.status === 'published' &&
                             onShareEvent && (

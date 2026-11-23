@@ -67,7 +67,6 @@ import { DisciplineIcon } from './DisciplineIcon';
 import { EventLocationMap } from './EventLocationMap';
 import { EmailPasswordAuthForm } from './EmailPasswordAuthForm';
 import {
-  EventLikeButton,
   EventRatingInline,
   EventReviewsSection,
   EventShareButton,
@@ -93,9 +92,6 @@ interface BookingModalProps {
   invitedGuestRegistrations?: Registration[];
   isEventActive?: boolean;
   currentUserUid?: string | null;
-  likedEventIds?: Set<string>;
-  likingEventId?: string | null;
-  onToggleLike?: (event: SportEvent) => void;
   onShareEvent?: (event: SportEvent) => void;
   eventReviews?: EventReview[];
   ratingSummary?: EventRatingSummary | null;
@@ -127,9 +123,6 @@ export function BookingModal({
   invitedGuestRegistrations = [],
   isEventActive = true,
   currentUserUid,
-  likedEventIds,
-  likingEventId,
-  onToggleLike,
   onShareEvent,
   eventReviews = [],
   ratingSummary,
@@ -743,15 +736,6 @@ export function BookingModal({
             </h2>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {evaluation.state !== 'cancelled' && onToggleLike && (
-              <EventLikeButton
-                count={event.likesCount ?? 0}
-                liked={Boolean(likedEventIds?.has(event.id))}
-                loading={likingEventId === event.id}
-                eventTitle={event.title}
-                onClick={() => onToggleLike(event)}
-              />
-            )}
             {evaluation.state !== 'cancelled' && onShareEvent && (
               <EventShareButton
                 eventTitle={event.title}

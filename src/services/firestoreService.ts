@@ -36,6 +36,7 @@ import {
   CoachAdminUser,
   CoachDirectoryEntry,
   CoachNotification,
+  CoachPricing,
   CoachRole,
   Conversation,
   ConversationSenderRole,
@@ -63,6 +64,7 @@ import {
   PaymentRecord,
   PaymentStatus,
   ProgramRunnerLevel,
+  ProgramSessionOverride,
   Registration,
   RunningDistanceKey,
   ScheduledExerciseItem,
@@ -103,6 +105,10 @@ import {
   slugifyDiscipline,
 } from '../utils/disciplineColors';
 import { generatePaymentReference } from '../utils/paymentHelpers';
+import {
+  areCoachPricingsEqual,
+  sanitizeCoachPricing,
+} from '../utils/coachPricingHelpers';
 
 export async function resolveCoachSession(user: User | null): Promise<{
   isCoach: boolean;
@@ -811,6 +817,7 @@ export async function updateMyCoachProfile(params: {
   certifications: string;
   bio: string;
   photoUrl?: string;
+  pricing?: CoachPricing;
 }): Promise<void> {
   const displayName = params.displayName
     .trim()
@@ -820,6 +827,7 @@ export async function updateMyCoachProfile(params: {
     throw new Error('Votre nom d’affichage doit contenir au moins 2 caractères.');
   }
 
+  const sanitizedPricing = sanitizeCoachPricing(params.pricing);
   const adminRef = doc(db, 'admins', params.user.uid);
   const payload = {
     displayName,
@@ -832,6 +840,7 @@ export async function updateMyCoachProfile(params: {
       .slice(0, VALIDATION_LIMITS.CERTIFICATIONS_MAX),
     bio: params.bio.trim().slice(0, VALIDATION_LIMITS.BIO_MAX),
     photoUrl: (params.photoUrl ?? '').trim().slice(0, VALIDATION_LIMITS.PHOTO_URL_MAX),
+    pricing: sanitizedPricing,
     updatedAt: serverTimestamp(),
   };
 
@@ -865,6 +874,7 @@ export async function updateMyCoachProfile(params: {
       region: payload.region,
       bio: payload.bio,
       photoUrl: payload.photoUrl,
+      pricing: sanitizedPricing,
       active: true,
       updatedAt: serverTimestamp(),
     });
@@ -4409,6 +4419,7 @@ export async function syncCoachDirectoryFromAdmins(params: {
       (existing.region ?? '') !== (admin.region ?? '') ||
       (existing.bio ?? '') !== (admin.bio ?? '') ||
       (existing.photoUrl ?? '') !== (admin.photoUrl ?? '') ||
+      !areCoachPricingsEqual(existing.pricing, admin.pricing) ||
       existing.active !== admin.active
     );
   });
@@ -4435,6 +4446,7 @@ export async function syncCoachDirectoryFromAdmins(params: {
           0,
           VALIDATION_LIMITS.PHOTO_URL_MAX
         ),
+        pricing: sanitizeCoachPricing(admin.pricing),
         active: Boolean(admin.active),
         updatedAt: serverTimestamp(),
       });
@@ -7205,6 +7217,98 @@ export async function toggleTrainingProgramSessionCompleted(
 
 function programIdFallback(program: TrainingProgram): string {
   return program.id;
+}
+
+export async function saveProgramSessionExercisesOverride(params: {
+  program: TrainingProgram;
+  sessionKey: string;
+  title: string;
+  durationMinutes: number;
+  coachNotes: string;
+  exercises: ScheduledExerciseItem[];
+}): Promise<void> {
+  const cleanKey = params.sessionKey.trim().slice(0, 32);
+  if (!/^w\d{1,2}-s[1-6]$/.test(cleanKey)) {
+    throw new Error('Identifiant de séance invalide.');
+  }
+
+  const cleanTitle = params.title.trim().slice(0, VALIDATION_LIMITS.TITLE_MAX);
+  if (cleanTitle.length < VALIDATION_LIMITS.TITLE_MIN) {
+    throw new Error(
+      `Le titre de la séance doit contenir au moins ${VALIDATION_LIMITS.TITLE_MIN} caractères.`
+    );
+  }
+
+  const durationMinutes = Math.min(
+    VALIDATION_LIMITS.DURATION_MAX,
+    Math.max(
+      VALIDATION_LIMITS.DURATION_MIN,
+      Math.round(Number(params.durationMinutes) || 45)
+    )
+  );
+  const coachNotes = (params.coachNotes ?? '')
+    .trim()
+    .slice(0, VALIDATION_LIMITS.SCHEDULE_NOTES_MAX);
+  const exercises = sanitizeScheduledExercises(params.exercises);
+
+  const nextOverride: ProgramSessionOverride = {
+    sessionKey: cleanKey,
+    title: cleanTitle,
+    durationMinutes,
+    coachNotes,
+    exercises,
+    updatedAtMs: Date.now(),
+  };
+
+  const existingList = Array.isArray(params.program.sessionOverrides)
+    ? params.program.sessionOverrides.filter(
+        (ov) => ov && ov.sessionKey !== cleanKey
+      )
+    : [];
+  const nextOverrides = [...existingList, nextOverride].slice(
+    -VALIDATION_LIMITS.PROGRAM_OVERRIDES_MAX
+  );
+
+  try {
+    await updateDoc(doc(db, 'trainingPrograms', params.program.id), {
+      sessionOverrides: nextOverrides,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `trainingPrograms/${params.program.id}`
+    );
+  }
+}
+
+export async function clearTrainingProgramSessionOverride(params: {
+  program: TrainingProgram;
+  sessionKey: string;
+}): Promise<void> {
+  const cleanKey = params.sessionKey.trim().slice(0, 32);
+  if (!cleanKey) return;
+
+  const existingList = Array.isArray(params.program.sessionOverrides)
+    ? params.program.sessionOverrides
+    : [];
+  const nextOverrides = existingList.filter(
+    (ov) => ov && ov.sessionKey !== cleanKey
+  );
+
+  try {
+    await updateDoc(doc(db, 'trainingPrograms', params.program.id), {
+      sessionOverrides: nextOverrides,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      OperationType.UPDATE,
+      `trainingPrograms/${params.program.id}`
+    );
+  }
 }
 
 export async function deleteTrainingProgram(programId: string): Promise<void> {

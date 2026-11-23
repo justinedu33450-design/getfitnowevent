@@ -5,7 +5,6 @@ import {
   Copy,
   Download,
   Edit3,
-  Heart,
   LogOut,
   MapPin,
   MessageSquare,
@@ -808,10 +807,6 @@ export function CoachEventsView({
                       </span>
                     </span>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="inline-flex items-center gap-1 font-mono text-xs text-rose-600 dark:text-rose-400 tabular-nums">
-                        <Heart className="h-3.5 w-3.5" aria-hidden="true" />
-                        {ev.likesCount ?? 0}
-                      </span>
                       <EventRatingInline
                         summary={ratingSummaryByEventId?.get(ev.id)}
                       />
@@ -834,7 +829,7 @@ export function CoachEventsView({
                     <button
                       type="button"
                       onClick={() => onOpenRoster(ev, 'reviews')}
-                      title="Consulter les avis et mentions J'aime"
+                      title="Consulter les avis"
                       className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
                     >
                       <MessageSquare className="h-4 w-4" aria-hidden="true" />
@@ -999,10 +994,6 @@ export function CoachEventsView({
                             <span>{formatEventCoachesLabel(ev)}</span>
                           </p>
                           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
-                            <span className="inline-flex items-center gap-1 font-mono text-rose-600 dark:text-rose-400 tabular-nums">
-                              <Heart className="h-3.5 w-3.5" aria-hidden="true" />
-                              {ev.likesCount ?? 0} J’aime
-                            </span>
                             <EventRatingInline
                               summary={ratingSummaryByEventId?.get(ev.id)}
                             />
@@ -1069,7 +1060,7 @@ export function CoachEventsView({
                             <button
                               type="button"
                               onClick={() => onOpenRoster(ev, 'reviews')}
-                              title="Consulter les avis et mentions J'aime"
+                              title="Consulter les avis"
                               className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
                             >
                               <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />

@@ -33,9 +33,14 @@ import {
   updateMemberScheduleSession,
 } from '../services/firestoreService';
 import {
+  formatPriceEuros,
   toLocalDateInputValue,
   toLocalTimeInputValue,
 } from '../utils/dateAndValidation';
+import {
+  getCoachCustomSessionPriceCents,
+  hasCoachCustomSessionPrice,
+} from '../utils/coachPricingHelpers';
 import {
   clampExerciseParams,
   doesExerciseMatchGoal,
@@ -177,15 +182,28 @@ export function ProgramBuilderModal({
   const [coachRefUid, setCoachRefUid] = useState(
     editingSession?.coachUid ?? coachUid
   );
+  const selectedCoachEntry = useMemo(
+    () => coachDirectory.find((c) => c.uid === coachRefUid) ?? null,
+    [coachDirectory, coachRefUid]
+  );
+  const [priceTouched, setPriceTouched] = useState<boolean>(
+    Boolean(editingSession)
+  );
   const [notes, setNotes] = useState(editingSession?.notes || '');
   const [isPaid, setIsPaid] = useState<boolean>(() =>
     editingSession ? Boolean(editingSession.isPaid) : true
   );
-  const [priceEuros, setPriceEuros] = useState<string>(() =>
-    (((editingSession?.priceCents && editingSession.priceCents >= 100
-      ? editingSession.priceCents
-      : 900)) / 100).toFixed(2)
-  );
+  const [priceEuros, setPriceEuros] = useState<string>(() => {
+    if (editingSession?.priceCents && editingSession.priceCents >= 100) {
+      return (editingSession.priceCents / 100).toFixed(2);
+    }
+    const initialCoach = coachDirectory.find(
+      (c) => c.uid === (editingSession?.coachUid ?? coachUid)
+    );
+    return (
+      getCoachCustomSessionPriceCents(initialCoach?.pricing) / 100
+    ).toFixed(2);
+  });
   const [paymentMode, setPaymentMode] = useState<EventPaymentMode>(
     editingSession?.paymentMode ?? 'both'
   );
@@ -193,6 +211,16 @@ export function ProgramBuilderModal({
   const [programExercises, setProgramExercises] = useState<
     ScheduledExerciseItem[]
   >(() => editingSession?.exercises ?? initialExercises);
+
+  const handleCoachRefChange = (nextCoachUid: string) => {
+    setCoachRefUid(nextCoachUid);
+    if (!editingSession && !priceTouched) {
+      const nextCoach = coachDirectory.find((c) => c.uid === nextCoachUid);
+      setPriceEuros(
+        (getCoachCustomSessionPriceCents(nextCoach?.pricing) / 100).toFixed(2)
+      );
+    }
+  };
 
   // Library browser filters
   const [librarySearch, setLibrarySearch] = useState('');
@@ -1162,7 +1190,7 @@ export function ProgramBuilderModal({
                   <select
                     id="pb-coach"
                     value={coachRefUid}
-                    onChange={(e) => setCoachRefUid(e.target.value)}
+                    onChange={(e) => handleCoachRefChange(e.target.value)}
                     className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   >
                     {coachName &&
@@ -1274,9 +1302,35 @@ export function ProgramBuilderModal({
                           step="0.50"
                           required
                           value={priceEuros}
-                          onChange={(e) => setPriceEuros(e.target.value)}
+                          onChange={(e) => {
+                            setPriceTouched(true);
+                            setPriceEuros(e.target.value);
+                          }}
                           className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         />
+                        {hasCoachCustomSessionPrice(selectedCoachEntry?.pricing) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPriceEuros(
+                                (
+                                  getCoachCustomSessionPriceCents(
+                                    selectedCoachEntry?.pricing
+                                  ) / 100
+                                ).toFixed(2)
+                              );
+                              setPriceTouched(false);
+                            }}
+                            className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                          >
+                            Tarif de {selectedCoachEntry?.displayName || coachName} :{' '}
+                            {formatPriceEuros(
+                              getCoachCustomSessionPriceCents(
+                                selectedCoachEntry?.pricing
+                              )
+                            )}
+                          </button>
+                        )}
                       </div>
                       <div>
                         <label

@@ -186,9 +186,9 @@ export function TopBar({
           >
             <span className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 overflow-hidden rounded-lg bg-black ring-1 ring-slate-900/10 dark:ring-white/15">
               <img
-                src="/assets/aistudio/Logo___Ge___en_orbite_dynamique_dd8ecb29.png"
+                src="/assets/aistudio/logo_GE_0fa11105.png"
                 alt="Logo GetFitNow Event"
-                className="h-full w-full scale-[1.08] object-cover"
+                className="h-full w-full object-contain"
               />
             </span>
             <span>GetFitNow Event</span>

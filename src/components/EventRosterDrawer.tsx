@@ -3,7 +3,6 @@ import {
   Check,
   CreditCard,
   Download,
-  Heart,
   MessageSquare,
   RotateCcw,
   Star,
@@ -348,14 +347,9 @@ export function EventRosterDrawer({
               }`}
             >
               <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-              Avis & J’aime ({eventReviews.length})
+              Avis ({eventReviews.length})
             </button>
           </div>
-
-          <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-rose-600 dark:text-rose-400 tabular-nums">
-            <Heart className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
-            {event.likesCount ?? 0}
-          </span>
         </div>
 
         {/* Paid Event Financial Summary Bar */}
@@ -497,16 +491,7 @@ export function EventRosterDrawer({
         {/* Roster or Reviews Content */}
         {drawerTab === 'reviews' ? (
           <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
-            <div className="grid grid-cols-3 divide-x divide-slate-200 rounded-xl border border-slate-200 bg-slate-50/70 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-800/40">
-              <div className="px-4 py-3">
-                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  Mentions J’aime
-                </p>
-                <p className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-base font-bold text-rose-600 dark:text-rose-400 tabular-nums">
-                  <Heart className="h-4 w-4 fill-current" aria-hidden="true" />
-                  {event.likesCount ?? 0}
-                </p>
-              </div>
+            <div className="grid grid-cols-2 divide-x divide-slate-200 rounded-xl border border-slate-200 bg-slate-50/70 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-800/40">
               <div className="px-4 py-3">
                 <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                   Note moyenne

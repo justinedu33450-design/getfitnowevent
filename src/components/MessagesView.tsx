@@ -24,6 +24,7 @@ import { BOOTSTRAPPED_COACH_EMAIL } from '../firebase';
 import {
   CoachAdminUser,
   CoachDirectoryEntry,
+  CoachPricing,
   Conversation,
   DirectMessage,
   FollowUpStatus,
@@ -45,6 +46,7 @@ import {
   formatFrenchTime,
   hashEmailKey,
 } from '../utils/dateAndValidation';
+import { getCoachPricingItems } from '../utils/coachPricingHelpers';
 import { ProfileAvatar } from './ProfileAvatar';
 
 interface MessagesViewProps {
@@ -92,6 +94,7 @@ interface CoachContactItem {
   photoUrl?: string;
   specialty?: string;
   city?: string;
+  pricing?: CoachPricing;
 }
 
 const FOLLOW_UP_LABELS: Record<FollowUpStatus, string> = {
@@ -289,6 +292,7 @@ export function MessagesView({
         photoUrl: entry.photoUrl,
         specialty: entry.specialty,
         city: entry.city,
+        pricing: entry.pricing,
       });
     });
 
@@ -1008,6 +1012,14 @@ export function MessagesView({
                             .filter(Boolean)
                             .join(' · ') || 'Coach sportif GetFitNow'}
                         </p>
+                        {getCoachPricingItems(coach.pricing).length > 0 && (
+                          <p className="mt-0.5 truncate font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                            {getCoachPricingItems(coach.pricing)
+                              .slice(0, 3)
+                              .map((p) => `${p.shortLabel} ${p.formattedPrice}`)
+                              .join(' · ')}
+                          </p>
+                        )}
                       </div>
                     </button>
                   );

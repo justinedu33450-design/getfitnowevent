@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Calendar as CalendarIcon,
   ChevronDown,
@@ -35,7 +35,6 @@ import { getDisciplineStyle } from '../utils/disciplineColors';
 import { DisciplineIcon } from './DisciplineIcon';
 import { EventsOverviewMap } from './EventLocationMap';
 import {
-  EventLikeButton,
   EventRatingInline,
   EventShareButton,
 } from './EventEngagementWidgets';
@@ -47,9 +46,6 @@ interface CalendarViewProps {
   isCoach: boolean;
   isCoachAdmin?: boolean;
   registeredEventIds?: Set<string>;
-  likedEventIds?: Set<string>;
-  likingEventId?: string | null;
-  onToggleLike?: (event: SportEvent) => void;
   onShareEvent?: (event: SportEvent) => void;
   ratingSummaryByEventId?: Map<string, EventRatingSummary>;
   loading: boolean;
@@ -67,9 +63,6 @@ export function CalendarView({
   isCoach,
   isCoachAdmin = false,
   registeredEventIds,
-  likedEventIds,
-  likingEventId,
-  onToggleLike,
   onShareEvent,
   ratingSummaryByEventId,
   loading,
@@ -87,6 +80,9 @@ export function CalendarView({
   const [cityQuery, setCityQuery] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
   const [dayAgendaExpanded, setDayAgendaExpanded] = useState(false);
+  const skipNextAutoCollapseRef = useRef(false);
+  const prevSelectedDayKeyRef = useRef<string | null>(null);
+  const prevHasEventsRef = useRef<boolean>(false);
 
   const disciplineFilterOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -156,6 +152,28 @@ export function CalendarView({
     );
   }, [filteredEvents, selectedDate]);
 
+  const selectedDayKey = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
+  const hasEventsForSelectedDay = eventsForSelectedDay.length > 0;
+
+  useEffect(() => {
+    const dayChanged = prevSelectedDayKeyRef.current !== selectedDayKey;
+    const eventsPresenceChanged =
+      prevHasEventsRef.current !== hasEventsForSelectedDay;
+
+    prevSelectedDayKeyRef.current = selectedDayKey;
+    prevHasEventsRef.current = hasEventsForSelectedDay;
+
+    if (skipNextAutoCollapseRef.current) {
+      skipNextAutoCollapseRef.current = false;
+      setDayAgendaExpanded(true);
+      return;
+    }
+
+    if (dayChanged || eventsPresenceChanged) {
+      setDayAgendaExpanded(hasEventsForSelectedDay);
+    }
+  }, [selectedDayKey, hasEventsForSelectedDay]);
+
   const headerTitle = useMemo(() => {
     if (viewMode === 'month') {
       return new Intl.DateTimeFormat('fr-FR', {
@@ -211,9 +229,13 @@ export function CalendarView({
   };
 
   const handleTodayMap = () => {
-    const today = new Date();
-    setAnchorDate(today);
-    setSelectedDate(today);
+    const todayDate = new Date();
+    const todayKey = `${todayDate.getFullYear()}-${todayDate.getMonth()}-${todayDate.getDate()}`;
+    if (todayKey !== selectedDayKey) {
+      skipNextAutoCollapseRef.current = true;
+    }
+    setAnchorDate(todayDate);
+    setSelectedDate(todayDate);
     setDayDisplayMode('map');
     setDayAgendaExpanded(true);
     window.setTimeout(() => {
@@ -760,25 +782,13 @@ export function CalendarView({
                                     </p>
                                   </div>
                                 </div>
-                                {evalInfo.state !== 'cancelled' && (onToggleLike || onShareEvent) && (
+                                {evalInfo.state !== 'cancelled' && onShareEvent && (
                                   <div className="flex items-center gap-1.5 shrink-0">
-                                    {onToggleLike && (
-                                      <EventLikeButton
-                                        compact
-                                        count={ev.likesCount ?? 0}
-                                        liked={Boolean(likedEventIds?.has(ev.id))}
-                                        loading={likingEventId === ev.id}
-                                        eventTitle={ev.title}
-                                        onClick={() => onToggleLike(ev)}
-                                      />
-                                    )}
-                                    {onShareEvent && (
-                                      <EventShareButton
-                                        compact
-                                        eventTitle={ev.title}
-                                        onClick={() => onShareEvent(ev)}
-                                      />
-                                    )}
+                                    <EventShareButton
+                                      compact
+                                      eventTitle={ev.title}
+                                      onClick={() => onShareEvent(ev)}
+                                    />
                                   </div>
                                 )}
                               </div>
@@ -1001,16 +1011,6 @@ export function CalendarView({
                           >
                             {evalInfo.statusLabel}
                           </span>
-                          {evalInfo.state !== 'cancelled' && onToggleLike && (
-                            <EventLikeButton
-                              compact
-                              count={ev.likesCount ?? 0}
-                              liked={Boolean(likedEventIds?.has(ev.id))}
-                              loading={likingEventId === ev.id}
-                              eventTitle={ev.title}
-                              onClick={() => onToggleLike(ev)}
-                            />
-                          )}
                           {evalInfo.state !== 'cancelled' && onShareEvent && (
                             <EventShareButton
                               compact

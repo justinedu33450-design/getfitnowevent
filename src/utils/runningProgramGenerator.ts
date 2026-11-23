@@ -1,6 +1,7 @@
 import {
   ExerciseCategory,
   ProgramRunnerLevel,
+  ProgramSessionOverride,
   RunningDistanceKey,
   RunningPaceZones,
   ScheduledExerciseItem,
@@ -406,6 +407,31 @@ export interface GeneratedProgramSession {
   coachNotes: string;
   exercises: ScheduledExerciseItem[];
   completed: boolean;
+  isCustomized?: boolean;
+}
+
+export function estimateExercisesDurationMinutes(
+  exercises: ScheduledExerciseItem[]
+): number {
+  if (!exercises.length) return 45;
+  let totalSeconds = 0;
+  for (const item of exercises) {
+    const workPerSet =
+      item.durationSeconds > 0
+        ? item.durationSeconds
+        : Math.max(15, item.repetitions * 4);
+    const pausePerSet =
+      item.intraSetPauseSeconds > 0 ? item.intraSetPauseSeconds : 0;
+    const rounds = Math.max(1, item.setsOrRounds || 1);
+    const roundsRest =
+      rounds > 1 ? (rounds - 1) * (item.restBetweenRoundsSeconds || 0) : 0;
+    totalSeconds += rounds * (workPerSet + pausePerSet) + roundsRest + 45;
+  }
+  const minutes = Math.round(totalSeconds / 60);
+  return Math.min(
+    VALIDATION_LIMITS.DURATION_MAX,
+    Math.max(VALIDATION_LIMITS.DURATION_MIN, minutes || 30)
+  );
 }
 
 function makeEx(
@@ -1213,6 +1239,14 @@ export function generateRunningProgramSessions(
       : null;
 
   const completedSet = new Set(program.completedSessionKeys || []);
+  const overrideMap = new Map<string, ProgramSessionOverride>();
+  if (Array.isArray(program.sessionOverrides)) {
+    for (const ov of program.sessionOverrides) {
+      if (ov && typeof ov.sessionKey === 'string' && ov.sessionKey.trim()) {
+        overrideMap.set(ov.sessionKey.trim(), ov);
+      }
+    }
+  }
   const sessions: GeneratedProgramSession[] = [];
 
   // Standalone preliminary VMA test session (can be done on ANY day before the program starts)
@@ -1270,6 +1304,7 @@ export function generateRunningProgramSessions(
         zones,
         durationWeeks
       );
+      const override = overrideMap.get(key);
 
       sessions.push({
         key,
@@ -1278,8 +1313,17 @@ export function generateRunningProgramSessions(
         sessionIndexInWeek: s + 1,
         phaseLabel,
         scheduledDate: dates[s],
-        durationMinutes: workout.durationMinutes,
-        title: workout.title,
+        durationMinutes:
+          override &&
+          typeof override.durationMinutes === 'number' &&
+          override.durationMinutes >= VALIDATION_LIMITS.DURATION_MIN &&
+          override.durationMinutes <= VALIDATION_LIMITS.DURATION_MAX
+            ? override.durationMinutes
+            : workout.durationMinutes,
+        title:
+          override && override.title?.trim()
+            ? override.title.trim()
+            : workout.title,
         discipline: 'Course à pied',
         focusZone: workout.focusZone,
         focusLabel: workout.focusLabel,
@@ -1287,9 +1331,15 @@ export function generateRunningProgramSessions(
         isRaceDay: workout.isRaceDay,
         targetPaceLabel: paceInfo.label,
         targetPaceRangeLabel: paceInfo.range,
-        coachNotes: workout.coachNotes,
-        exercises: workout.exercises,
+        coachNotes:
+          override && typeof override.coachNotes === 'string'
+            ? override.coachNotes
+            : workout.coachNotes,
+        exercises: override
+          ? (override.exercises || []).map((ex) => ({ ...ex }))
+          : workout.exercises,
         completed: completedSet.has(key),
+        isCustomized: Boolean(override),
       });
     }
   }

@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  CreditCard,
   FileDown,
   FileText,
   LogOut,
@@ -58,6 +59,12 @@ import {
   getRegistrationPaymentBadgeInfo,
 } from '../utils/dateAndValidation';
 import { downloadPaymentReceipt } from '../utils/paymentHelpers';
+import {
+  formatCentsForInput,
+  getCoachPricingItems,
+  hasAnyCoachPricing,
+  parseOptionalEurosInputToCents,
+} from '../utils/coachPricingHelpers';
 import { PhotoUploadField, ProfileAvatar } from './ProfileAvatar';
 import { PasswordSettingsCard } from './PasswordSettingsCard';
 
@@ -70,6 +77,7 @@ interface CoachesAdminViewProps {
   myRegistrations?: Registration[];
   events?: SportEvent[];
   nowMs?: number;
+  openProfileNonce?: number;
   onSelectEvent?: (event: SportEvent) => void;
   onExploreCalendar?: () => void;
   onCancelRegistration?: (registration: Registration) => Promise<void>;
@@ -85,6 +93,7 @@ export function CoachesAdminView({
   myRegistrations = [],
   events = [],
   nowMs = Date.now(),
+  openProfileNonce = 0,
   onSelectEvent,
   onExploreCalendar,
   onCancelRegistration,
@@ -106,6 +115,13 @@ export function CoachesAdminView({
   const [profileCertifications, setProfileCertifications] = useState('');
   const [profileBio, setProfileBio] = useState('');
   const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
+  const [profileGroupSessionPrice, setProfileGroupSessionPrice] = useState('');
+  const [profileCustomSessionPrice, setProfileCustomSessionPrice] = useState('');
+  const [profileProgram5kmPrice, setProfileProgram5kmPrice] = useState('');
+  const [profileProgram10kmPrice, setProfileProgram10kmPrice] = useState('');
+  const [profileProgram21kmPrice, setProfileProgram21kmPrice] = useState('');
+  const [profileProgram42kmPrice, setProfileProgram42kmPrice] = useState('');
+  const [profilePricingNotes, setProfilePricingNotes] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileFeedback, setProfileFeedback] = useState<{
     type: 'success' | 'error';
@@ -128,6 +144,25 @@ export function CoachesAdminView({
     setProfileCertifications(myAdminRecord.certifications || '');
     setProfileBio(myAdminRecord.bio || '');
     setProfilePhotoUrl(myAdminRecord.photoUrl || '');
+    setProfileGroupSessionPrice(
+      formatCentsForInput(myAdminRecord.pricing?.groupSessionPriceCents)
+    );
+    setProfileCustomSessionPrice(
+      formatCentsForInput(myAdminRecord.pricing?.customSessionPriceCents)
+    );
+    setProfileProgram5kmPrice(
+      formatCentsForInput(myAdminRecord.pricing?.program5kmPriceCents)
+    );
+    setProfileProgram10kmPrice(
+      formatCentsForInput(myAdminRecord.pricing?.program10kmPriceCents)
+    );
+    setProfileProgram21kmPrice(
+      formatCentsForInput(myAdminRecord.pricing?.program21kmPriceCents)
+    );
+    setProfileProgram42kmPrice(
+      formatCentsForInput(myAdminRecord.pricing?.program42kmPriceCents)
+    );
+    setProfilePricingNotes(myAdminRecord.pricing?.pricingNotes || '');
   }, [
     myAdminRecord?.id,
     myAdminRecord?.displayName,
@@ -138,6 +173,7 @@ export function CoachesAdminView({
     myAdminRecord?.certifications,
     myAdminRecord?.bio,
     myAdminRecord?.photoUrl,
+    myAdminRecord?.pricing,
     currentAdminUser.displayName,
   ]);
 
@@ -159,7 +195,14 @@ export function CoachesAdminView({
 
   const [requestingAdmin, setRequestingAdmin] = useState(false);
   const [coachBookingsExpanded, setCoachBookingsExpanded] = useState(false);
-  const [coachProfileExpanded, setCoachProfileExpanded] = useState(false);
+  const [coachProfileExpanded, setCoachProfileExpanded] = useState(
+    openProfileNonce > 0
+  );
+  useEffect(() => {
+    if (openProfileNonce > 0) {
+      setCoachProfileExpanded(true);
+    }
+  }, [openProfileNonce]);
   const [addCoachExpanded, setAddCoachExpanded] = useState(false);
   const [accessRequestsExpanded, setAccessRequestsExpanded] = useState(false);
   const [adminPromotionsExpanded, setAdminPromotionsExpanded] = useState(false);
@@ -275,6 +318,36 @@ export function CoachesAdminView({
     setProfileFeedback(null);
     setSavingProfile(true);
     try {
+      const pricing = {
+        groupSessionPriceCents: parseOptionalEurosInputToCents(
+          profileGroupSessionPrice,
+          'Séance collective'
+        ),
+        customSessionPriceCents: parseOptionalEurosInputToCents(
+          profileCustomSessionPrice,
+          'Séance sur mesure'
+        ),
+        program5kmPriceCents: parseOptionalEurosInputToCents(
+          profileProgram5kmPrice,
+          'Programme 5 km'
+        ),
+        program10kmPriceCents: parseOptionalEurosInputToCents(
+          profileProgram10kmPrice,
+          'Programme 10 km'
+        ),
+        program21kmPriceCents: parseOptionalEurosInputToCents(
+          profileProgram21kmPrice,
+          'Semi-marathon 21 km'
+        ),
+        program42kmPriceCents: parseOptionalEurosInputToCents(
+          profileProgram42kmPrice,
+          'Marathon 42 km'
+        ),
+        pricingNotes: profilePricingNotes
+          .trim()
+          .slice(0, VALIDATION_LIMITS.PRICING_NOTES_MAX),
+      };
+
       await updateMyCoachProfile({
         user: currentAdminUser,
         displayName: profileName,
@@ -285,10 +358,11 @@ export function CoachesAdminView({
         certifications: profileCertifications,
         bio: profileBio,
         photoUrl: profilePhotoUrl,
+        pricing,
       });
       setProfileFeedback({
         type: 'success',
-        text: 'Votre fiche de renseignement coach a été enregistrée.',
+        text: 'Votre fiche coach et vos tarifs personnalisés ont été enregistrés.',
       });
     } catch (err) {
       setProfileFeedback({
@@ -889,11 +963,20 @@ export function CoachesAdminView({
               <UserCog className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                Ma fiche de renseignement coach
-              </h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                  Ma fiche de renseignement coach
+                </h3>
+                {getCoachPricingItems(myAdminRecord?.pricing).length > 0 && (
+                  <span className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                    · {getCoachPricingItems(myAdminRecord?.pricing).length} tarif
+                    {getCoachPricingItems(myAdminRecord?.pricing).length > 1 ? 's' : ''}{' '}
+                    configuré{getCoachPricingItems(myAdminRecord?.pricing).length > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Personnalisez votre nom affiché sur vos séances, vos spécialités, diplômes, coordonnées et présentation.
+                Personnalisez votre nom affiché, vos spécialités, coordonnées, présentation et vos propres tarifs.
               </p>
             </div>
           </button>
@@ -1060,6 +1143,184 @@ export function CoachesAdminView({
               placeholder="Décrivez votre parcours, votre méthode d’accompagnement et vos objectifs pour vos groupes..."
               className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
             />
+          </div>
+
+          {/* Personal Coach Pricing Grid */}
+          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20 space-y-3.5">
+            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-emerald-200/70 pb-2.5 dark:border-emerald-900/60">
+              <div className="flex items-start gap-2">
+                <CreditCard
+                  className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
+                <div>
+                  <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                    Mes tarifs proposés (€)
+                  </h4>
+                  <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
+                    Définissez vos propres tarifs. Ils seront visibles par les adhérents et préremplis automatiquement lors de la création de vos séances et programmes (laissez vide pour conserver le tarif par défaut).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label
+                  htmlFor="coach-price-group"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Séance collective / événement (€)
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    id="coach-price-group"
+                    type="text"
+                    inputMode="decimal"
+                    value={profileGroupSessionPrice}
+                    onChange={(e) => setProfileGroupSessionPrice(e.target.value)}
+                    placeholder="Ex. 15"
+                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                    €
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="coach-price-custom"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Séance sur mesure / perso (€)
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    id="coach-price-custom"
+                    type="text"
+                    inputMode="decimal"
+                    value={profileCustomSessionPrice}
+                    onChange={(e) => setProfileCustomSessionPrice(e.target.value)}
+                    placeholder="Ex. 45"
+                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                    €
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="coach-price-5km"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Programme 5 km (€)
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    id="coach-price-5km"
+                    type="text"
+                    inputMode="decimal"
+                    value={profileProgram5kmPrice}
+                    onChange={(e) => setProfileProgram5kmPrice(e.target.value)}
+                    placeholder="Défaut : 39 €"
+                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                    €
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="coach-price-10km"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Programme 10 km (€)
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    id="coach-price-10km"
+                    type="text"
+                    inputMode="decimal"
+                    value={profileProgram10kmPrice}
+                    onChange={(e) => setProfileProgram10kmPrice(e.target.value)}
+                    placeholder="Défaut : 49 €"
+                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                    €
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="coach-price-21km"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Semi-marathon 21 km (€)
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    id="coach-price-21km"
+                    type="text"
+                    inputMode="decimal"
+                    value={profileProgram21kmPrice}
+                    onChange={(e) => setProfileProgram21kmPrice(e.target.value)}
+                    placeholder="Défaut : 69 €"
+                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                    €
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="coach-price-42km"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Marathon 42 km (€)
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    id="coach-price-42km"
+                    type="text"
+                    inputMode="decimal"
+                    value={profileProgram42kmPrice}
+                    onChange={(e) => setProfileProgram42kmPrice(e.target.value)}
+                    placeholder="Défaut : 89 €"
+                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                    €
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="coach-pricing-notes"
+                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              >
+                Précisions & formules tarifaires (optionnel)
+              </label>
+              <textarea
+                id="coach-pricing-notes"
+                rows={2}
+                maxLength={VALIDATION_LIMITS.PRICING_NOTES_MAX}
+                value={profilePricingNotes}
+                onChange={(e) => setProfilePricingNotes(e.target.value)}
+                placeholder="Ex. Bilan VMA inclus, pack 10 séances dégressif, tarif réduit étudiants..."
+                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              />
+            </div>
           </div>
 
           {profileFeedback && (
@@ -1626,6 +1887,14 @@ export function CoachesAdminView({
                           {[admin.city, admin.phone].filter(Boolean).join(' · ')}
                         </p>
                       )}
+                      {getCoachPricingItems(admin.pricing).length > 0 && (
+                        <p className="mt-1 font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                          {getCoachPricingItems(admin.pricing)
+                            .slice(0, 3)
+                            .map((p) => `${p.shortLabel} ${p.formattedPrice}`)
+                            .join(' · ')}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <span
@@ -1793,6 +2062,14 @@ export function CoachesAdminView({
                             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">
                               {[admin.specialty, admin.certifications]
                                 .filter(Boolean)
+                                .join(' · ')}
+                            </p>
+                          )}
+                          {getCoachPricingItems(admin.pricing).length > 0 && (
+                            <p className="mt-0.5 font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 truncate max-w-xs">
+                              {getCoachPricingItems(admin.pricing)
+                                .slice(0, 3)
+                                .map((p) => `${p.shortLabel} ${p.formattedPrice}`)
                                 .join(' · ')}
                             </p>
                           )}
@@ -2170,6 +2447,48 @@ export function CoachesAdminView({
                   {inspectedCoach.bio?.trim() ||
                     'Aucune présentation renseignée pour le moment.'}
                 </p>
+              </div>
+
+              <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/40 p-3.5 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+                <div className="flex items-center gap-1.5">
+                  <CreditCard
+                    className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400"
+                    aria-hidden="true"
+                  />
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">
+                    Tarifs proposés par ce coach
+                  </p>
+                </div>
+                {hasAnyCoachPricing(inspectedCoach.pricing) ? (
+                  <div className="mt-2.5 space-y-2">
+                    {getCoachPricingItems(inspectedCoach.pricing).length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {getCoachPricingItems(inspectedCoach.pricing).map((item) => (
+                          <div
+                            key={item.key}
+                            className="flex items-center justify-between gap-2 rounded-md border border-slate-200/80 bg-white px-2.5 py-1.5 text-xs dark:border-slate-800 dark:bg-slate-900"
+                          >
+                            <span className="text-slate-600 dark:text-slate-300 truncate">
+                              {item.label}
+                            </span>
+                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 tabular-nums shrink-0">
+                              {item.formattedPrice}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {inspectedCoach.pricing?.pricingNotes?.trim() && (
+                      <p className="whitespace-pre-line text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                        {inspectedCoach.pricing.pricingNotes.trim()}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    Tarifs personnalisés non renseignés (tarifs standards appliqués par défaut).
+                  </p>
+                )}
               </div>
             </div>
           </div>
