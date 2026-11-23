@@ -79,6 +79,7 @@ interface ProgramBuilderModalProps {
   coachUid: string;
   coachName: string;
   coachDirectory: CoachDirectoryEntry[];
+  isPrimaryCoach?: boolean;
   disciplines: DisciplineItem[];
   exercises: ExerciseLibraryItem[];
   memberCandidates: ProgramMemberCandidate[];
@@ -102,6 +103,7 @@ export function ProgramBuilderModal({
   coachUid,
   coachName,
   coachDirectory,
+  isPrimaryCoach = false,
   disciplines,
   exercises,
   memberCandidates,
@@ -434,8 +436,11 @@ export function ProgramBuilderModal({
       );
     }
 
-    const selectedCoach = coachDirectory.find((c) => c.uid === coachRefUid);
-    const resolvedCoachUid = coachRefUid.trim();
+    const effectiveCoachUid = isPrimaryCoach
+      ? coachRefUid.trim() || coachUid
+      : editingSession?.coachUid || coachUid;
+    const selectedCoach = coachDirectory.find((c) => c.uid === effectiveCoachUid);
+    const resolvedCoachUid = effectiveCoachUid;
     const resolvedCoachName =
       selectedCoach?.displayName ||
       (resolvedCoachUid === coachUid ? coachName : editingSession?.coachName || '');
@@ -1187,22 +1192,31 @@ export function ProgramBuilderModal({
                   >
                     Coach référent
                   </label>
-                  <select
-                    id="pb-coach"
-                    value={coachRefUid}
-                    onChange={(e) => handleCoachRefChange(e.target.value)}
-                    className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  >
-                    {coachName &&
-                      !coachDirectory.some((c) => c.uid === coachUid) && (
-                        <option value={coachUid}>{coachName}</option>
-                      )}
-                    {coachDirectory.map((c) => (
-                      <option key={c.uid} value={c.uid}>
-                        {c.displayName}
-                      </option>
-                    ))}
-                  </select>
+                  {isPrimaryCoach ? (
+                    <select
+                      id="pb-coach"
+                      value={coachRefUid}
+                      onChange={(e) => handleCoachRefChange(e.target.value)}
+                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      {coachName &&
+                        !coachDirectory.some((c) => c.uid === coachUid) && (
+                          <option value={coachUid}>{coachName}</option>
+                        )}
+                      {coachDirectory.map((c) => (
+                        <option key={c.uid} value={c.uid}>
+                          {c.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div
+                      id="pb-coach"
+                      className="mt-1 flex min-h-[38px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+                    >
+                      {coachName || editingSession?.coachName || 'Coach'}
+                    </div>
+                  )}
                 </div>
 
                 <div>

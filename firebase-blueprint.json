@@ -402,6 +402,17 @@
           "maxLength": 80000,
           "description": "Photo de profil de l'adhérent (JPEG compact encodé en base64 ou URL)."
         },
+        "referentCoachUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^$|^[a-zA-Z0-9_\\-]+$",
+          "description": "UID du coach référent auquel l'adhérent est rattaché (David Frosio par défaut)."
+        },
+        "referentCoachName": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Nom du coach référent de l'adhérent."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
@@ -1185,6 +1196,10 @@
         },
         "active": {
           "type": "boolean"
+        },
+        "isPrimary": {
+          "type": "boolean",
+          "description": "Indique s'il s'agit du coach administrateur principal (David Frosio)."
         },
         "updatedAt": {
           "type": "string",

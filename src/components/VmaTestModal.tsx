@@ -147,8 +147,9 @@ export function VmaTestModal({
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-700 dark:text-sky-400" aria-hidden="true" />
             <p>
               Seule la séance <strong>Test VMA</strong> peut être effectuée n’importe quel jour.
-              Votre programme démarrera ensuite selon les jours choisis (
-              <strong>{chosenDaysLabel}</strong>).
+              Tant que ce test n’est pas validé, l’envoi du programme reste en attente.
+              Dès validation, vous recevez immédiatement la <strong>Semaine 1</strong> (jours choisis :{' '}
+              <strong>{chosenDaysLabel}</strong>), puis la Semaine 2 le <strong>dimanche à 18h00</strong> et ainsi de suite chaque dimanche à 18h00.
             </p>
           </div>
 

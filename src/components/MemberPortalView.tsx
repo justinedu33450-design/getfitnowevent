@@ -34,6 +34,8 @@ import {
 } from '../types';
 import {
   deleteEventReview,
+  resolveDefaultPrimaryCoach,
+  updateMyReferentCoach,
   upsertEventReview,
   upsertMyMemberProfile,
 } from '../services/firestoreService';
@@ -183,6 +185,14 @@ export function MemberPortalView({
   const [highlightedBadgeIds, setHighlightedBadgeIds] = useState<string[]>(
     initialHighlightedBadgeIds
   );
+  const [selectedReferentCoachUid, setSelectedReferentCoachUid] = useState(
+    memberProfile?.referentCoachUid || ''
+  );
+  const [savingReferentCoach, setSavingReferentCoach] = useState(false);
+  const [referentCoachFeedback, setReferentCoachFeedback] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     if (initialBadgesExpandNonce > 0) {
@@ -222,6 +232,50 @@ export function MemberPortalView({
     memberProfile?.photoUrl,
     defaultNames.firstName,
     defaultNames.lastName,
+  ]);
+
+  const activeCoaches = useMemo(
+    () =>
+      coachDirectory
+        .filter((c) => c.active && c.uid)
+        .slice()
+        .sort((a, b) => {
+          if (a.isPrimary && !b.isPrimary) return -1;
+          if (!a.isPrimary && b.isPrimary) return 1;
+          return (a.displayName || '').localeCompare(b.displayName || '', 'fr', {
+            sensitivity: 'base',
+          });
+        }),
+    [coachDirectory]
+  );
+
+  const defaultPrimaryCoach = useMemo(
+    () => resolveDefaultPrimaryCoach(coachDirectory),
+    [coachDirectory]
+  );
+
+  const effectiveCurrentCoachUid =
+    memberProfile?.referentCoachUid || defaultPrimaryCoach.uid || '';
+
+  const currentReferentCoachEntry = useMemo(
+    () =>
+      activeCoaches.find((c) => c.uid === effectiveCurrentCoachUid) ??
+      activeCoaches.find((c) => c.isPrimary) ??
+      null,
+    [activeCoaches, effectiveCurrentCoachUid]
+  );
+
+  useEffect(() => {
+    setSelectedReferentCoachUid(
+      memberProfile?.referentCoachUid ||
+        defaultPrimaryCoach.uid ||
+        activeCoaches[0]?.uid ||
+        ''
+    );
+  }, [
+    memberProfile?.referentCoachUid,
+    defaultPrimaryCoach.uid,
+    activeCoaches,
   ]);
 
   const todayIso = useMemo(() => toLocalDateInputValue(new Date()), []);
@@ -316,6 +370,41 @@ export function MemberPortalView({
     user.email ||
     'Mon profil';
 
+  const handleSaveReferentCoach = async () => {
+    const chosen = activeCoaches.find((c) => c.uid === selectedReferentCoachUid);
+    if (!chosen) {
+      setReferentCoachFeedback({
+        type: 'error',
+        text: 'Veuillez sélectionner un coach dans la liste.',
+      });
+      return;
+    }
+    setSavingReferentCoach(true);
+    setReferentCoachFeedback(null);
+    try {
+      await updateMyReferentCoach({
+        user,
+        coachUid: chosen.uid,
+        coachName: chosen.displayName,
+        existingProfile: memberProfile,
+      });
+      setReferentCoachFeedback({
+        type: 'success',
+        text: `${chosen.displayName} est désormais votre coach référent.`,
+      });
+    } catch (err) {
+      setReferentCoachFeedback({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Impossible de mettre à jour votre coach référent.',
+      });
+    } finally {
+      setSavingReferentCoach(false);
+    }
+  };
+
   const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
     setFeedback(null);
@@ -330,6 +419,10 @@ export function MemberPortalView({
         birthDate,
         fitnessLevel,
         photoUrl,
+        referentCoachUid:
+          memberProfile?.referentCoachUid || defaultPrimaryCoach.uid,
+        referentCoachName:
+          memberProfile?.referentCoachName || defaultPrimaryCoach.displayName,
         existingProfile: memberProfile,
       });
       setFeedback({
@@ -643,8 +736,119 @@ export function MemberPortalView({
 
       {/* Main Split: Profile Editor + Personal Event Tracking & Badges */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
-        {/* Left Column: Profile + Password */}
+        {/* Left Column: Referent Coach + Profile + Password */}
         <div className="space-y-6 lg:col-span-5">
+          {/* Referent Coach Selection Card */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                  Mon coach référent
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Par défaut, vous êtes rattaché(e) au coach administrateur David Frosio. Vous pouvez choisir un autre coach enregistré à tout moment.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+              <ProfileAvatar
+                name={
+                  currentReferentCoachEntry?.displayName ||
+                  memberProfile?.referentCoachName ||
+                  defaultPrimaryCoach.displayName ||
+                  'David Frosio'
+                }
+                photoUrl={currentReferentCoachEntry?.photoUrl}
+                size="md"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                  {currentReferentCoachEntry?.displayName ||
+                    memberProfile?.referentCoachName ||
+                    defaultPrimaryCoach.displayName ||
+                    'David Frosio'}
+                </p>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                  {currentReferentCoachEntry?.specialty ||
+                    (memberProfile?.referentCoachUid
+                      ? 'Coach référent sélectionné'
+                      : 'Coach principal par défaut')}
+                  {currentReferentCoachEntry?.city
+                    ? ` · ${currentReferentCoachEntry.city}`
+                    : ''}
+                </p>
+              </div>
+              {onRequestCoachProgram && currentReferentCoachEntry && (
+                <button
+                  type="button"
+                  onClick={() => onRequestCoachProgram(currentReferentCoachEntry)}
+                  className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 cursor-pointer"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                  Écrire
+                </button>
+              )}
+            </div>
+
+            {activeCoaches.length > 0 && (
+              <div className="space-y-2.5">
+                <label
+                  htmlFor="member-referent-coach"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Choisir mon coach référent
+                </label>
+                <select
+                  id="member-referent-coach"
+                  value={selectedReferentCoachUid}
+                  onChange={(e) => {
+                    setSelectedReferentCoachUid(e.target.value);
+                    setReferentCoachFeedback(null);
+                  }}
+                  className="min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                >
+                  {activeCoaches.map((c) => (
+                    <option key={c.uid} value={c.uid}>
+                      {c.displayName}
+                      {c.isPrimary ? ' (Coach principal)' : ''}
+                      {c.city ? ` · ${c.city}` : ''}
+                    </option>
+                  ))}
+                </select>
+
+                {referentCoachFeedback && (
+                  <p
+                    className={`rounded-lg border p-2.5 text-xs ${
+                      referentCoachFeedback.type === 'success'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
+                        : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                    }`}
+                  >
+                    {referentCoachFeedback.text}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  disabled={
+                    savingReferentCoach ||
+                    !selectedReferentCoachUid ||
+                    (Boolean(memberProfile?.referentCoachUid) &&
+                      selectedReferentCoachUid === memberProfile?.referentCoachUid)
+                  }
+                  onClick={() => void handleSaveReferentCoach()}
+                  className="inline-flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+                >
+                  <Save className="h-3.5 w-3.5" aria-hidden="true" />
+                  {savingReferentCoach
+                    ? 'Enregistrement...'
+                    : 'Enregistrer mon coach référent'}
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Profile Card */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div

@@ -52,11 +52,13 @@ import { ProfileAvatar } from './ProfileAvatar';
 interface MessagesViewProps {
   user: User;
   isCoach: boolean;
+  isPrimaryBootstrapped?: boolean;
   currentUserDisplayName: string;
   currentUserPhotoUrl?: string;
   conversations: Conversation[];
   coachDirectory: CoachDirectoryEntry[];
   memberProfiles: MemberProfile[];
+  allMemberProfiles?: MemberProfile[];
   registrations: Registration[];
   coachAdmins: CoachAdminUser[];
   events: SportEvent[];
@@ -153,11 +155,13 @@ function getDayKey(date: Date): string {
 export function MessagesView({
   user,
   isCoach,
+  isPrimaryBootstrapped = false,
   currentUserDisplayName,
   currentUserPhotoUrl,
   conversations,
   coachDirectory,
   memberProfiles,
+  allMemberProfiles,
   registrations,
   coachAdmins,
   events,
@@ -209,10 +213,20 @@ export function MessagesView({
     return { emails, emailKeys };
   }, [coachAdmins, currentUserEmail]);
 
-  // Member contacts list (for Coach)
+  // Member contacts list (for Coach) — strictly scoped to the coach's own attached members
   const memberContacts = useMemo<MemberContactItem[]>(() => {
     if (!isCoach) return [];
     const map = new Map<string, MemberContactItem>();
+
+    const sourceAllProfiles = allMemberProfiles ?? memberProfiles;
+    const reassignedKeys = new Set<string>();
+    const reassignedEmails = new Set<string>();
+    sourceAllProfiles.forEach((p) => {
+      if (p.referentCoachUid && p.referentCoachUid !== user.uid) {
+        if (p.emailKey) reassignedKeys.add(p.emailKey);
+        if (p.email?.trim()) reassignedEmails.add(p.email.trim().toLowerCase());
+      }
+    });
 
     memberProfiles.forEach((p) => {
       const cleanEmail = (p.email ?? '').trim().toLowerCase();
@@ -223,6 +237,11 @@ export function MessagesView({
       ) {
         return;
       }
+      const isAttachedToMe = isPrimaryBootstrapped
+        ? !p.referentCoachUid || p.referentCoachUid === user.uid
+        : p.referentCoachUid === user.uid;
+      if (!isAttachedToMe) return;
+
       const name = `${p.firstName || ''} ${p.lastName || ''}`.trim() || cleanEmail;
       map.set(p.emailKey, {
         email: cleanEmail,
@@ -234,27 +253,31 @@ export function MessagesView({
       });
     });
 
-    registrations.forEach((reg) => {
-      if (reg.status !== 'confirmed') return;
-      const cleanEmail = (reg.email ?? '').trim().toLowerCase();
-      if (
-        !cleanEmail ||
-        coachIdentitySets.emailKeys.has(reg.emailKey) ||
-        coachIdentitySets.emails.has(cleanEmail)
-      ) {
-        return;
-      }
-      if (!map.has(reg.emailKey)) {
-        const name =
-          `${reg.firstName || ''} ${reg.lastName || ''}`.trim() || cleanEmail;
-        map.set(reg.emailKey, {
-          email: cleanEmail,
-          emailKey: reg.emailKey,
-          name,
-          followUpStatus: 'active',
-        });
-      }
-    });
+    if (isPrimaryBootstrapped) {
+      registrations.forEach((reg) => {
+        if (reg.status !== 'confirmed') return;
+        const cleanEmail = (reg.email ?? '').trim().toLowerCase();
+        if (
+          !cleanEmail ||
+          coachIdentitySets.emailKeys.has(reg.emailKey) ||
+          coachIdentitySets.emails.has(cleanEmail) ||
+          reassignedKeys.has(reg.emailKey) ||
+          reassignedEmails.has(cleanEmail)
+        ) {
+          return;
+        }
+        if (!map.has(reg.emailKey)) {
+          const name =
+            `${reg.firstName || ''} ${reg.lastName || ''}`.trim() || cleanEmail;
+          map.set(reg.emailKey, {
+            email: cleanEmail,
+            emailKey: reg.emailKey,
+            name,
+            followUpStatus: 'active',
+          });
+        }
+      });
+    }
 
     conversations.forEach((conv) => {
       if (
@@ -277,7 +300,16 @@ export function MessagesView({
     return Array.from(map.values()).sort((a, b) =>
       a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })
     );
-  }, [isCoach, memberProfiles, registrations, conversations, coachIdentitySets]);
+  }, [
+    isCoach,
+    isPrimaryBootstrapped,
+    user.uid,
+    memberProfiles,
+    allMemberProfiles,
+    registrations,
+    conversations,
+    coachIdentitySets,
+  ]);
 
   // Coach contacts list (for Member)
   const coachContacts = useMemo<CoachContactItem[]>(() => {

@@ -130,9 +130,7 @@ export async function resolveCoachSession(user: User | null): Promise<{
       const snap = await getDoc(adminRef);
       const emailKey = await hashEmailKey(userEmail);
       const displayName = (
-        user.displayName?.trim() ||
-        userEmail.split('@')[0] ||
-        'Coach principal'
+        user.displayName?.trim() || 'David Frosio'
       ).slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
 
       if (!snap.exists()) {
@@ -152,10 +150,15 @@ export async function resolveCoachSession(user: User | null): Promise<{
         });
       } else {
         const data = snap.data() as Partial<CoachAdminUser>;
-        if (data.active === false || data.role !== 'coach_admin') {
+        if (
+          data.active === false ||
+          data.role !== 'coach_admin' ||
+          data.isPrimary !== true
+        ) {
           await updateDoc(adminRef, {
             active: true,
             role: 'coach_admin',
+            isPrimary: true,
             adminRequestStatus: 'none',
             updatedAt: serverTimestamp(),
           });
@@ -846,10 +849,12 @@ export async function updateMyCoachProfile(params: {
 
   try {
     const snap = await getDoc(adminRef);
+    const email = (params.user.email || '').trim().toLowerCase();
+    const isPrimaryUser =
+      email === BOOTSTRAPPED_COACH_EMAIL.toLowerCase() ||
+      (snap.exists() && (snap.data() as Partial<CoachAdminUser>).isPrimary === true);
     if (!snap.exists()) {
-      const email = (params.user.email || '').trim().toLowerCase();
       const emailKey = await hashEmailKey(email);
-      const isPrimaryUser = email === BOOTSTRAPPED_COACH_EMAIL.toLowerCase();
       await setDoc(adminRef, {
         uid: params.user.uid,
         email,
@@ -876,6 +881,7 @@ export async function updateMyCoachProfile(params: {
       photoUrl: payload.photoUrl,
       pricing: sanitizedPricing,
       active: true,
+      isPrimary: isPrimaryUser,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
@@ -1172,6 +1178,39 @@ export function subscribeMembers(
       } catch (wrapped) {
         if (onError && wrapped instanceof Error) {
           onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export function subscribeMembersForCoach(params: {
+  coachUid: string;
+  isPrimaryBootstrapped: boolean;
+  onData: (members: MemberProfile[]) => void;
+  onError?: (err: Error) => void;
+}): Unsubscribe {
+  const sourceQuery = params.isPrimaryBootstrapped
+    ? collection(db, 'members')
+    : query(
+        collection(db, 'members'),
+        where('referentCoachUid', '==', params.coachUid)
+      );
+  return onSnapshot(
+    sourceQuery,
+    (snapshot) => {
+      const list: MemberProfile[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<MemberProfile, 'id'>),
+      }));
+      params.onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'members');
+      } catch (wrapped) {
+        if (params.onError && wrapped instanceof Error) {
+          params.onError(wrapped);
         }
       }
     }
@@ -3326,6 +3365,78 @@ function normalizeMemberBirthDateAndLevel(
   };
 }
 
+export function resolveDefaultPrimaryCoach(
+  coachDirectory: CoachDirectoryEntry[] = [],
+  coachAdmins: CoachAdminUser[] = []
+): { uid: string; displayName: string } {
+  const fromDir =
+    coachDirectory.find((c) => c.active && c.isPrimary) ??
+    coachDirectory.find(
+      (c) =>
+        c.active &&
+        c.displayName.trim().toLowerCase().includes('david frosio')
+    );
+  if (fromDir) {
+    return {
+      uid: fromDir.uid,
+      displayName: (fromDir.displayName || 'David Frosio')
+        .trim()
+        .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX),
+    };
+  }
+
+  const fromAdmins =
+    coachAdmins.find(
+      (a) =>
+        a.email?.trim().toLowerCase() === BOOTSTRAPPED_COACH_EMAIL.toLowerCase()
+    ) ?? coachAdmins.find((a) => a.isPrimary);
+  if (fromAdmins) {
+    return {
+      uid: fromAdmins.uid,
+      displayName: (fromAdmins.displayName || 'David Frosio')
+        .trim()
+        .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX),
+    };
+  }
+
+  return { uid: '', displayName: 'David Frosio' };
+}
+
+async function fetchDefaultPrimaryCoachFromDirectory(): Promise<{
+  uid: string;
+  displayName: string;
+}> {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'coachDirectory'), where('active', '==', true))
+    );
+    const entries: CoachDirectoryEntry[] = snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as Omit<CoachDirectoryEntry, 'id'>),
+    }));
+    return resolveDefaultPrimaryCoach(entries);
+  } catch {
+    return { uid: '', displayName: 'David Frosio' };
+  }
+}
+
+function sanitizeReferentCoachFields(
+  coachUid?: string,
+  coachName?: string
+): { referentCoachUid: string; referentCoachName: string } | null {
+  if (coachUid === undefined && coachName === undefined) return null;
+  const rawUid = (coachUid ?? '').trim().slice(0, 128);
+  const safeUid =
+    rawUid === '' || /^[a-zA-Z0-9_\-]+$/.test(rawUid) ? rawUid : '';
+  const safeName = (coachName ?? (safeUid ? 'Coach GetFitNow' : 'David Frosio'))
+    .trim()
+    .slice(0, VALIDATION_LIMITS.DISPLAY_NAME_MAX);
+  return {
+    referentCoachUid: safeUid,
+    referentCoachName: safeName,
+  };
+}
+
 export async function upsertMemberProfile(params: {
   emailKey: string;
   email: string;
@@ -3338,6 +3449,8 @@ export async function upsertMemberProfile(params: {
   notes: string;
   followUpStatus: FollowUpStatus;
   photoUrl?: string;
+  referentCoachUid?: string;
+  referentCoachName?: string;
   exists: boolean;
 }): Promise<void> {
   const memberRef = doc(db, 'members', params.emailKey);
@@ -3345,7 +3458,11 @@ export async function upsertMemberProfile(params: {
     params.birthDate,
     params.fitnessLevel
   );
-  const cleanPayload = {
+  const coachFields = sanitizeReferentCoachFields(
+    params.referentCoachUid,
+    params.referentCoachName
+  );
+  const cleanPayload: Record<string, unknown> = {
     firstName: params.firstName.trim().slice(0, VALIDATION_LIMITS.FIRST_NAME_MAX),
     lastName: params.lastName.trim().slice(0, VALIDATION_LIMITS.LAST_NAME_MAX),
     email: params.email.trim().toLowerCase().slice(0, VALIDATION_LIMITS.EMAIL_MAX),
@@ -3357,6 +3474,15 @@ export async function upsertMemberProfile(params: {
     followUpStatus: params.followUpStatus,
     photoUrl: (params.photoUrl ?? '').trim().slice(0, VALIDATION_LIMITS.PHOTO_URL_MAX),
   };
+
+  if (coachFields) {
+    cleanPayload.referentCoachUid = coachFields.referentCoachUid;
+    cleanPayload.referentCoachName = coachFields.referentCoachName;
+  } else if (!params.exists) {
+    const primary = await fetchDefaultPrimaryCoachFromDirectory();
+    cleanPayload.referentCoachUid = primary.uid;
+    cleanPayload.referentCoachName = primary.displayName;
+  }
 
   try {
     if (params.exists) {
@@ -3379,6 +3505,184 @@ export async function upsertMemberProfile(params: {
       `members/${params.emailKey}`
     );
   }
+}
+
+export async function assignMemberReferentCoach(params: {
+  emailKey: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  existingProfile: MemberProfile | null;
+  coachUid: string;
+  coachName: string;
+}): Promise<void> {
+  const cleanUid = params.coachUid.trim().slice(0, 128);
+  if (!cleanUid || !/^[a-zA-Z0-9_\-]+$/.test(cleanUid)) {
+    throw new Error('Identifiant du coach référent invalide.');
+  }
+  const cleanCoachName = (params.coachName.trim() || 'Coach GetFitNow').slice(
+    0,
+    VALIDATION_LIMITS.DISPLAY_NAME_MAX
+  );
+  const memberRef = doc(db, 'members', params.emailKey);
+
+  try {
+    if (params.existingProfile) {
+      await updateDoc(memberRef, {
+        referentCoachUid: cleanUid,
+        referentCoachName: cleanCoachName,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      const email = params.email.trim().toLowerCase().slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+      const firstName = (
+        params.firstName.trim() ||
+        email.split('@')[0] ||
+        'Adhérent'
+      ).slice(0, VALIDATION_LIMITS.FIRST_NAME_MAX);
+      const lastName = (params.lastName.trim() || 'GetFitNow').slice(
+        0,
+        VALIDATION_LIMITS.LAST_NAME_MAX
+      );
+      await setDoc(memberRef, {
+        emailKey: params.emailKey,
+        email,
+        firstName,
+        lastName,
+        phone: '',
+        goal: '',
+        birthDate: '',
+        fitnessLevel: '',
+        notes: '',
+        followUpStatus: 'active',
+        photoUrl: '',
+        referentCoachUid: cleanUid,
+        referentCoachName: cleanCoachName,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    handleFirestoreError(
+      error,
+      params.existingProfile ? OperationType.UPDATE : OperationType.CREATE,
+      `members/${params.emailKey}`
+    );
+  }
+}
+
+export async function updateMyReferentCoach(params: {
+  user: User;
+  coachUid: string;
+  coachName: string;
+  existingProfile: MemberProfile | null;
+}): Promise<void> {
+  if (!params.user.email) {
+    throw new Error('Vous devez être connecté pour choisir votre coach référent.');
+  }
+  const cleanUid = params.coachUid.trim().slice(0, 128);
+  if (!cleanUid || !/^[a-zA-Z0-9_\-]+$/.test(cleanUid)) {
+    throw new Error('Veuillez sélectionner un coach référent valide.');
+  }
+  const cleanCoachName = (params.coachName.trim() || 'Coach GetFitNow').slice(
+    0,
+    VALIDATION_LIMITS.DISPLAY_NAME_MAX
+  );
+  const email = params.user.email
+    .trim()
+    .toLowerCase()
+    .slice(0, VALIDATION_LIMITS.EMAIL_MAX);
+
+  try {
+    let targetId = params.existingProfile?.id ?? null;
+    if (!targetId) {
+      const snap = await getDocs(
+        query(collection(db, 'members'), where('email', '==', email))
+      );
+      if (!snap.empty) {
+        targetId = snap.docs[0].id;
+      }
+    }
+
+    if (targetId) {
+      await updateDoc(doc(db, 'members', targetId), {
+        referentCoachUid: cleanUid,
+        referentCoachName: cleanCoachName,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      const emailKey = await hashEmailKey(email);
+      const resolvedParts = (params.user.displayName || '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      const firstName = (
+        resolvedParts[0] ||
+        email.split('@')[0] ||
+        'Adhérent'
+      ).slice(0, VALIDATION_LIMITS.FIRST_NAME_MAX);
+      const lastName = (
+        resolvedParts.length > 1 ? resolvedParts.slice(1).join(' ') : 'GetFitNow'
+      ).slice(0, VALIDATION_LIMITS.LAST_NAME_MAX);
+
+      await setDoc(doc(db, 'members', emailKey), {
+        emailKey,
+        email,
+        firstName,
+        lastName,
+        phone: '',
+        goal: '',
+        birthDate: '',
+        fitnessLevel: '',
+        notes: '',
+        followUpStatus: 'active',
+        photoUrl: '',
+        referentCoachUid: cleanUid,
+        referentCoachName: cleanCoachName,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `members/${email}`);
+  }
+}
+
+export async function backfillUnassignedMembersToPrimaryCoach(params: {
+  primaryUid: string;
+  primaryName: string;
+  members: MemberProfile[];
+}): Promise<number> {
+  if (!params.primaryUid) return 0;
+  const targets = params.members.filter(
+    (m) => !m.referentCoachUid || m.referentCoachUid.trim() === ''
+  );
+  if (targets.length === 0) return 0;
+
+  const cleanName = (params.primaryName.trim() || 'David Frosio').slice(
+    0,
+    VALIDATION_LIMITS.DISPLAY_NAME_MAX
+  );
+  let updated = 0;
+  const CHUNK_SIZE = 350;
+  try {
+    for (let i = 0; i < targets.length; i += CHUNK_SIZE) {
+      const slice = targets.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      slice.forEach((m) => {
+        batch.update(doc(db, 'members', m.id), {
+          referentCoachUid: params.primaryUid,
+          referentCoachName: cleanName,
+          updatedAt: serverTimestamp(),
+        });
+      });
+      await batch.commit();
+      updated += slice.length;
+    }
+  } catch (error) {
+    console.warn('Rattachement par défaut différé:', error);
+  }
+  return updated;
 }
 
 const ensureProfileQueueByEmail = new Map<string, Promise<void>>();
@@ -3406,29 +3710,41 @@ export async function ensureMyMemberProfile(
           .split(/\s+/)
           .filter(Boolean);
         if (!existingSnap.empty) {
-          if (syncDisplayName && resolvedName.length > 0) {
-            const existingDoc = existingSnap.docs[0];
-            const existingData = existingDoc.data() as Partial<MemberProfile>;
-            if (existingData.lastName === 'GetFitNow') {
-              const firstName = resolvedName[0].slice(
-                0,
-                VALIDATION_LIMITS.FIRST_NAME_MAX
-              );
-              const lastName = (
-                resolvedName.length > 1
-                  ? resolvedName.slice(1).join(' ')
-                  : existingData.lastName
-              ).slice(0, VALIDATION_LIMITS.LAST_NAME_MAX);
-              await updateDoc(doc(db, 'members', existingDoc.id), {
-                firstName,
-                lastName,
-                updatedAt: serverTimestamp(),
-              });
+          const existingDoc = existingSnap.docs[0];
+          const existingData = existingDoc.data() as Partial<MemberProfile>;
+          const pendingPatch: Record<string, unknown> = {};
+          if (
+            syncDisplayName &&
+            resolvedName.length > 0 &&
+            existingData.lastName === 'GetFitNow'
+          ) {
+            pendingPatch.firstName = resolvedName[0].slice(
+              0,
+              VALIDATION_LIMITS.FIRST_NAME_MAX
+            );
+            pendingPatch.lastName = (
+              resolvedName.length > 1
+                ? resolvedName.slice(1).join(' ')
+                : existingData.lastName
+            ).slice(0, VALIDATION_LIMITS.LAST_NAME_MAX);
+          }
+          if (!existingData.referentCoachUid) {
+            const primary = await fetchDefaultPrimaryCoachFromDirectory();
+            if (primary.uid) {
+              pendingPatch.referentCoachUid = primary.uid;
+              pendingPatch.referentCoachName = primary.displayName;
             }
+          }
+          if (Object.keys(pendingPatch).length > 0) {
+            await updateDoc(doc(db, 'members', existingDoc.id), {
+              ...pendingPatch,
+              updatedAt: serverTimestamp(),
+            });
           }
           return;
         }
 
+        const primary = await fetchDefaultPrimaryCoachFromDirectory();
         const emailKey = await hashEmailKey(email);
         const firstName = (
           resolvedName[0] ||
@@ -3451,6 +3767,8 @@ export async function ensureMyMemberProfile(
           notes: '',
           followUpStatus: 'active',
           photoUrl: '',
+          referentCoachUid: primary.uid,
+          referentCoachName: primary.displayName,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -3471,6 +3789,8 @@ export async function upsertMyMemberProfile(params: {
   birthDate?: string;
   fitnessLevel?: FitnessLevel | '';
   photoUrl: string;
+  referentCoachUid?: string;
+  referentCoachName?: string;
   existingProfile: MemberProfile | null;
 }): Promise<void> {
   if (!params.user.email) {
@@ -3500,7 +3820,12 @@ export async function upsertMyMemberProfile(params: {
     params.fitnessLevel
   );
 
-  const cleanUpdates = {
+  const coachFields = sanitizeReferentCoachFields(
+    params.referentCoachUid,
+    params.referentCoachName
+  );
+
+  const cleanUpdates: Record<string, unknown> = {
     firstName,
     lastName,
     phone: params.phone.trim().slice(0, VALIDATION_LIMITS.PHONE_MAX),
@@ -3508,6 +3833,7 @@ export async function upsertMyMemberProfile(params: {
     birthDate,
     fitnessLevel,
     photoUrl: params.photoUrl.trim().slice(0, VALIDATION_LIMITS.PHOTO_URL_MAX),
+    ...(coachFields ?? {}),
     updatedAt: serverTimestamp(),
   };
 
@@ -3525,11 +3851,20 @@ export async function upsertMyMemberProfile(params: {
     if (targetId) {
       await updateDoc(doc(db, 'members', targetId), cleanUpdates);
     } else {
+      const defaultCoach = coachFields
+        ? null
+        : await fetchDefaultPrimaryCoachFromDirectory();
       const emailKey = await hashEmailKey(email);
       await setDoc(doc(db, 'members', emailKey), {
         emailKey,
         email,
         ...cleanUpdates,
+        ...(defaultCoach
+          ? {
+              referentCoachUid: defaultCoach.uid,
+              referentCoachName: defaultCoach.displayName,
+            }
+          : {}),
         notes: '',
         followUpStatus: 'active',
         createdAt: serverTimestamp(),
@@ -3551,6 +3886,8 @@ export async function createManualMember(params: {
   notes: string;
   followUpStatus: FollowUpStatus;
   photoUrl?: string;
+  referentCoachUid?: string;
+  referentCoachName?: string;
   existingEmailKeys: Set<string>;
 }): Promise<string> {
   const firstName = params.firstName
@@ -3582,11 +3919,48 @@ export async function createManualMember(params: {
   const emailKey = await hashEmailKey(email);
   if (params.existingEmailKeys.has(emailKey)) {
     throw new Error(
-      'Un adhérent avec cette adresse email existe déjà dans le répertoire.'
+      'Un adhérent avec cette adresse email existe déjà dans votre répertoire.'
     );
   }
 
   const memberRef = doc(db, 'members', emailKey);
+  try {
+    const existingSnap = await getDoc(memberRef);
+    if (existingSnap.exists()) {
+      throw new Error(
+        'Un adhérent avec cette adresse email existe déjà dans le répertoire.'
+      );
+    }
+  } catch (checkErr) {
+    const code = (checkErr as { code?: string })?.code ?? '';
+    const msg = checkErr instanceof Error ? checkErr.message.toLowerCase() : '';
+    if (
+      code === 'permission-denied' ||
+      msg.includes('permission') ||
+      msg.includes('insufficient permissions')
+    ) {
+      throw new Error(
+        'Cet adhérent possède déjà une fiche rattachée à un autre coach. Demandez à l’adhérent de vous choisir comme coach référent depuis son espace ou à son coach actuel de vous le rattacher.'
+      );
+    }
+    if (checkErr instanceof Error && msg.includes('existe déjà')) {
+      throw checkErr;
+    }
+  }
+
+  const coachFields = sanitizeReferentCoachFields(
+    params.referentCoachUid,
+    params.referentCoachName
+  );
+  const resolvedCoachFields =
+    coachFields ??
+    (() => {
+      return null;
+    })();
+  const fallbackPrimary = resolvedCoachFields
+    ? null
+    : await fetchDefaultPrimaryCoachFromDirectory();
+
   try {
     await setDoc(memberRef, {
       emailKey,
@@ -3600,6 +3974,12 @@ export async function createManualMember(params: {
       notes: params.notes.trim().slice(0, VALIDATION_LIMITS.NOTES_MAX),
       followUpStatus: params.followUpStatus,
       photoUrl: (params.photoUrl ?? '').trim().slice(0, VALIDATION_LIMITS.PHOTO_URL_MAX),
+      referentCoachUid:
+        resolvedCoachFields?.referentCoachUid ?? fallbackPrimary?.uid ?? '',
+      referentCoachName:
+        resolvedCoachFields?.referentCoachName ??
+        fallbackPrimary?.displayName ??
+        'David Frosio',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -3614,6 +3994,8 @@ export async function deleteMemberCompletely(params: {
   email?: string;
   registrations: Registration[];
   events: SportEvent[];
+  coachUid?: string;
+  isPrimaryBootstrapped?: boolean;
 }): Promise<void> {
   let failingOp: OperationType = OperationType.GET;
   let failingPath = `members/${params.emailKey}`;
@@ -3646,13 +4028,31 @@ export async function deleteMemberCompletely(params: {
       }
     }
 
+    const currentCoachUid = (params.coachUid || auth.currentUser?.uid || '').trim();
+    const isPrimary = Boolean(params.isPrimaryBootstrapped);
+
     if (cleanEmail) {
       failingOp = OperationType.LIST;
       failingPath = 'members';
-      const membersByEmailSnap = await getDocsFromServer(
-        query(collection(db, 'members'), where('email', '==', cleanEmail))
-      );
-      membersByEmailSnap.docs.forEach((d) => memberDocIds.add(d.id));
+      if (isPrimary || !currentCoachUid) {
+        const membersByEmailSnap = await getDocsFromServer(
+          query(collection(db, 'members'), where('email', '==', cleanEmail))
+        );
+        membersByEmailSnap.docs.forEach((d) => memberDocIds.add(d.id));
+      } else {
+        const membersByCoachSnap = await getDocsFromServer(
+          query(
+            collection(db, 'members'),
+            where('referentCoachUid', '==', currentCoachUid)
+          )
+        );
+        membersByCoachSnap.docs.forEach((d) => {
+          const data = d.data() as Partial<MemberProfile>;
+          if ((data.email ?? '').trim().toLowerCase() === cleanEmail) {
+            memberDocIds.add(d.id);
+          }
+        });
+      }
     }
 
     failingOp = OperationType.LIST;
@@ -3868,58 +4268,96 @@ export async function deleteMemberCompletely(params: {
 
     failingOp = OperationType.LIST;
     failingPath = 'memberSchedules';
-    const scheduleQueryPromises = [
-      getDocsFromServer(
-        query(
-          collection(db, 'memberSchedules'),
-          where('memberEmailKey', '==', params.emailKey)
-        )
-      ),
-    ];
-    if (cleanEmail) {
-      scheduleQueryPromises.push(
+    const scheduleIds = new Set<string>();
+    if (isPrimary || !currentCoachUid) {
+      const scheduleQueryPromises = [
         getDocsFromServer(
           query(
             collection(db, 'memberSchedules'),
-            where('memberEmail', '==', cleanEmail)
+            where('memberEmailKey', '==', params.emailKey)
           )
+        ),
+      ];
+      if (cleanEmail) {
+        scheduleQueryPromises.push(
+          getDocsFromServer(
+            query(
+              collection(db, 'memberSchedules'),
+              where('memberEmail', '==', cleanEmail)
+            )
+          )
+        );
+      }
+      const scheduleSnaps = await Promise.all(scheduleQueryPromises);
+      scheduleSnaps.forEach((snap) => {
+        snap.docs.forEach((d) => scheduleIds.add(d.id));
+      });
+    } else {
+      const coachSchedSnap = await getDocsFromServer(
+        query(
+          collection(db, 'memberSchedules'),
+          where('coachUid', '==', currentCoachUid)
         )
       );
+      coachSchedSnap.docs.forEach((d) => {
+        const data = d.data() as Partial<MemberScheduleSession>;
+        const schedEmail = (data.memberEmail ?? '').trim().toLowerCase();
+        if (
+          data.memberEmailKey === params.emailKey ||
+          (cleanEmail && schedEmail === cleanEmail)
+        ) {
+          scheduleIds.add(d.id);
+        }
+      });
     }
-    const scheduleSnaps = await Promise.all(scheduleQueryPromises);
-    const scheduleIds = new Set<string>();
-    scheduleSnaps.forEach((snap) => {
-      snap.docs.forEach((d) => scheduleIds.add(d.id));
-    });
     scheduleIds.forEach((id) => {
       ops.push((batch) => batch.delete(doc(db, 'memberSchedules', id)));
     });
 
     failingOp = OperationType.LIST;
     failingPath = 'trainingPrograms';
-    const programQueryPromises = [
-      getDocsFromServer(
-        query(
-          collection(db, 'trainingPrograms'),
-          where('memberEmailKey', '==', params.emailKey)
-        )
-      ),
-    ];
-    if (cleanEmail) {
-      programQueryPromises.push(
+    const programIds = new Set<string>();
+    if (isPrimary || !currentCoachUid) {
+      const programQueryPromises = [
         getDocsFromServer(
           query(
             collection(db, 'trainingPrograms'),
-            where('memberEmail', '==', cleanEmail)
+            where('memberEmailKey', '==', params.emailKey)
           )
+        ),
+      ];
+      if (cleanEmail) {
+        programQueryPromises.push(
+          getDocsFromServer(
+            query(
+              collection(db, 'trainingPrograms'),
+              where('memberEmail', '==', cleanEmail)
+            )
+          )
+        );
+      }
+      const programSnaps = await Promise.all(programQueryPromises);
+      programSnaps.forEach((snap) => {
+        snap.docs.forEach((d) => programIds.add(d.id));
+      });
+    } else {
+      const coachProgSnap = await getDocsFromServer(
+        query(
+          collection(db, 'trainingPrograms'),
+          where('coachUid', '==', currentCoachUid)
         )
       );
+      coachProgSnap.docs.forEach((d) => {
+        const data = d.data() as Partial<TrainingProgram>;
+        const progEmail = (data.memberEmail ?? '').trim().toLowerCase();
+        if (
+          data.memberEmailKey === params.emailKey ||
+          (cleanEmail && progEmail === cleanEmail)
+        ) {
+          programIds.add(d.id);
+        }
+      });
     }
-    const programSnaps = await Promise.all(programQueryPromises);
-    const programIds = new Set<string>();
-    programSnaps.forEach((snap) => {
-      snap.docs.forEach((d) => programIds.add(d.id));
-    });
     programIds.forEach((id) => {
       ops.push((batch) => batch.delete(doc(db, 'trainingPrograms', id)));
     });
@@ -4420,7 +4858,8 @@ export async function syncCoachDirectoryFromAdmins(params: {
       (existing.bio ?? '') !== (admin.bio ?? '') ||
       (existing.photoUrl ?? '') !== (admin.photoUrl ?? '') ||
       !areCoachPricingsEqual(existing.pricing, admin.pricing) ||
-      existing.active !== admin.active
+      existing.active !== admin.active ||
+      Boolean(existing.isPrimary) !== Boolean(admin.isPrimary)
     );
   });
 
@@ -4448,6 +4887,7 @@ export async function syncCoachDirectoryFromAdmins(params: {
         ),
         pricing: sanitizeCoachPricing(admin.pricing),
         active: Boolean(admin.active),
+        isPrimary: Boolean(admin.isPrimary),
         updatedAt: serverTimestamp(),
       });
     });
@@ -4902,6 +5342,42 @@ export function subscribeAllMemberSchedules(
       } catch (wrapped) {
         if (onError && wrapped instanceof Error) {
           onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export function subscribeCoachMemberSchedules(params: {
+  coachUid: string;
+  isPrimaryBootstrapped: boolean;
+  onData: (sessions: MemberScheduleSession[]) => void;
+  onError?: (err: Error) => void;
+}): Unsubscribe {
+  const sourceQuery = params.isPrimaryBootstrapped
+    ? collection(db, 'memberSchedules')
+    : query(
+        collection(db, 'memberSchedules'),
+        where('coachUid', '==', params.coachUid)
+      );
+  return onSnapshot(
+    sourceQuery,
+    (snapshot) => {
+      const list: MemberScheduleSession[] = snapshot.docs.map((d) =>
+        normalizeMemberScheduleDoc(
+          d.id,
+          d.data() as Omit<MemberScheduleSession, 'id'>
+        )
+      );
+      list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+      params.onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'memberSchedules');
+      } catch (wrapped) {
+        if (params.onError && wrapped instanceof Error) {
+          params.onError(wrapped);
         }
       }
     }
@@ -6083,14 +6559,18 @@ export function buildMemberProgramNotifications(params: {
 
     if (baseAck?.status !== 'dismissed') {
       const paymentLabel = isFree
-        ? prog.vmaTestStatus === 'pending'
-          ? 'Offert · Test VMA prêt dès maintenant'
-          : 'Offert par votre coach'
+        ? delivery.awaitingVma
+          ? 'Offert · Envoi en attente du Test VMA (Sem. 1 dès validation)'
+          : delivery.unlockedWeeks <= 1
+            ? `Offert · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ' (Sem. 2 dimanche à 18h)' : ''}`
+            : `Offert · Semaine ${delivery.unlockedWeeks}/${durationWeeks} envoyée`
         : requiresPayment
-          ? `${formatPriceEuros(prog.priceCents)} · Paiement requis pour démarrer`
-          : prog.vmaTestStatus === 'pending'
-            ? 'Payé · Test VMA prêt dès maintenant'
-            : 'Payé · Programme actif';
+          ? `${formatPriceEuros(prog.priceCents)} · Paiement requis · Envoi après Test VMA`
+          : delivery.awaitingVma
+            ? 'Payé · Envoi en attente du Test VMA (Sem. 1 dès validation)'
+            : delivery.unlockedWeeks <= 1
+              ? `Payé · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ' (Sem. 2 dimanche à 18h)' : ''}`
+              : `Payé · Semaine ${delivery.unlockedWeeks}/${durationWeeks} envoyée`;
 
       results.push({
         id: baseNotifId,
@@ -6103,7 +6583,10 @@ export function buildMemberProgramNotifications(params: {
         isFree,
         requiresPayment,
         durationWeeks,
-        weekNumber: delivery.hasAccess ? Math.max(1, delivery.unlockedWeeks) : undefined,
+        weekNumber:
+          delivery.hasAccess && !delivery.awaitingVma && delivery.unlockedWeeks >= 1
+            ? delivery.unlockedWeeks
+            : undefined,
         startDate,
         createdAtMs,
         read: baseAck?.status === 'read',
@@ -6113,20 +6596,30 @@ export function buildMemberProgramNotifications(params: {
 
     if (
       delivery.hasAccess &&
-      delivery.unlockedWeeks >= 2 &&
-      (baseAck?.status === 'read' || baseAck?.status === 'dismissed')
+      !delivery.awaitingVma &&
+      delivery.unlockedWeeks >= 1 &&
+      (delivery.unlockedWeeks >= 2 ||
+        baseAck?.status === 'read' ||
+        baseAck?.status === 'dismissed')
     ) {
       const weekNotifId = `week__${prog.id}__w${delivery.unlockedWeeks}`;
       const weekAck = ackByNotifId.get(weekNotifId);
       if (weekAck?.status !== 'dismissed') {
         const currentWeekWindow = delivery.weeks[delivery.unlockedWeeks - 1];
+        const nextWeekHint =
+          delivery.nextWeekNumber && delivery.nextUnlockAtMs
+            ? ` Prochaine semaine (Sem. ${delivery.nextWeekNumber}) envoyée dimanche à 18h00.`
+            : '';
         results.push({
           id: weekNotifId,
           kind: 'program_week',
           title: `${prog.title} · Semaine ${delivery.unlockedWeeks}/${durationWeeks}`,
           coachName: prog.coachName || 'Votre coach',
           coachUid: prog.coachUid,
-          summary: `La semaine ${delivery.unlockedWeeks} de votre programme ${tpl.shortLabel} est disponible dans votre planning.`,
+          summary:
+            delivery.unlockedWeeks === 1
+              ? `Test VMA validé : la Semaine 1 de votre programme ${tpl.shortLabel} est disponible dans votre planning.${nextWeekHint}`
+              : `La semaine ${delivery.unlockedWeeks} de votre programme ${tpl.shortLabel} est disponible dans votre planning.${nextWeekHint}`,
           priceCents: prog.priceCents,
           isFree,
           requiresPayment: false,
@@ -6627,6 +7120,42 @@ export function subscribeAllTrainingPrograms(
       } catch (wrapped) {
         if (onError && wrapped instanceof Error) {
           onError(wrapped);
+        }
+      }
+    }
+  );
+}
+
+export function subscribeCoachTrainingPrograms(params: {
+  coachUid: string;
+  isPrimaryBootstrapped: boolean;
+  onData: (programs: TrainingProgram[]) => void;
+  onError?: (err: Error) => void;
+}): Unsubscribe {
+  const sourceQuery = params.isPrimaryBootstrapped
+    ? collection(db, 'trainingPrograms')
+    : query(
+        collection(db, 'trainingPrograms'),
+        where('coachUid', '==', params.coachUid)
+      );
+  return onSnapshot(
+    sourceQuery,
+    (snapshot) => {
+      const list: TrainingProgram[] = snapshot.docs.map((d) =>
+        normalizeTrainingProgramDoc(
+          d.id,
+          d.data() as Omit<TrainingProgram, 'id'>
+        )
+      );
+      list.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
+      params.onData(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'trainingPrograms');
+      } catch (wrapped) {
+        if (params.onError && wrapped instanceof Error) {
+          params.onError(wrapped);
         }
       }
     }
@@ -7329,16 +7858,39 @@ export async function deleteTrainingProgram(programId: string): Promise<void> {
       `${PROG_NOTIF_ACK_PREFIX}week__${programId}__`,
       `${PROG_VMA_RESULT_PREFIX}${programId}`,
     ];
-    for (const prefix of prefixes) {
-      const snap = await getDocs(
+    const currentEmail = auth.currentUser?.email?.trim().toLowerCase() ?? '';
+    const currentUid = auth.currentUser?.uid ?? '';
+    const isPrimary =
+      Boolean(auth.currentUser?.emailVerified) &&
+      currentEmail === BOOTSTRAPPED_COACH_EMAIL.toLowerCase();
+    if (isPrimary) {
+      for (const prefix of prefixes) {
+        const snap = await getDocs(
+          query(
+            collection(db, 'memberSchedules'),
+            where('objective', '>=', prefix),
+            where('objective', '<=', `${prefix}\uf8ff`)
+          )
+        );
+        if (!snap.empty) {
+          await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+        }
+      }
+    } else if (currentUid) {
+      const coachSchedSnap = await getDocs(
         query(
           collection(db, 'memberSchedules'),
-          where('objective', '>=', prefix),
-          where('objective', '<=', `${prefix}\uf8ff`)
+          where('coachUid', '==', currentUid)
         )
       );
-      if (!snap.empty) {
-        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+      const matchingDocs = coachSchedSnap.docs.filter((d) => {
+        const obj = String(
+          (d.data() as Partial<MemberScheduleSession>).objective ?? ''
+        );
+        return prefixes.some((p) => obj.startsWith(p));
+      });
+      if (matchingDocs.length > 0) {
+        await Promise.all(matchingDocs.map((d) => deleteDoc(d.ref)));
       }
     }
   } catch {

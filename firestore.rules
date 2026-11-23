@@ -381,7 +381,9 @@ service cloud.firestore {
       data.keys().hasOnly([
         'emailKey', 'email', 'firstName', 'lastName', 'phone',
         'goal', 'birthDate', 'fitnessLevel',
-        'notes', 'followUpStatus', 'photoUrl', 'createdAt', 'updatedAt'
+        'notes', 'followUpStatus', 'photoUrl',
+        'referentCoachUid', 'referentCoachName',
+        'createdAt', 'updatedAt'
       ]) &&
       isValidEmailKey(data.emailKey) &&
       isValidEmail(data.email) &&
@@ -394,6 +396,8 @@ service cloud.firestore {
       data.notes is string && data.notes.size() <= 1000 &&
       data.followUpStatus in ['active', 'to_follow_up', 'paused'] &&
       (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 80000)) &&
+      (!('referentCoachUid' in data) || (data.referentCoachUid is string && (data.referentCoachUid == '' || isValidId(data.referentCoachUid)))) &&
+      (!('referentCoachName' in data) || (data.referentCoachName is string && data.referentCoachName.size() <= 80)) &&
       data.createdAt is timestamp &&
       data.updatedAt is timestamp;
     }
@@ -974,25 +978,55 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
-    // /members/{memberId} (Coach manages all; verified Member reads/edits own basic profile)
+    // /members/{memberId} (Isolated per referent coach; primary admin manages unassigned/own; member chooses own coach)
     // -------------------------------------------------------------------------
+    function isMyAttachedMember(memberData) {
+      return isBootstrappedAdmin() || (
+        isCoach() &&
+        memberData.get('referentCoachUid', '') == request.auth.uid
+      );
+    }
+
+    function isValidReferentCoachAssignment(data) {
+      return !('referentCoachUid' in data) ||
+        data.referentCoachUid == '' ||
+        (
+          isValidId(data.referentCoachUid) && (
+            exists(/databases/$(database)/documents/coachDirectory/$(data.referentCoachUid)) ||
+            exists(/databases/$(database)/documents/admins/$(data.referentCoachUid))
+          )
+        );
+    }
+
     match /members/{memberId} {
       allow get: if isValidId(memberId) && (
-        isAdmin() ||
-        (hasAuthenticatedEmail() && resource != null && existing().email == request.auth.token.email.lower())
+        (resource == null && isAdmin()) ||
+        (resource != null && (
+          isMyAttachedMember(existing()) ||
+          (hasAuthenticatedEmail() && existing().email == request.auth.token.email.lower())
+        ))
       );
-      allow list: if isAdmin() || (
-        hasAuthenticatedEmail() &&
-        resource.data.email == request.auth.token.email.lower()
-      );
+      allow list: if isBootstrappedAdmin() ||
+        (isCoach() && resource.data.referentCoachUid == request.auth.uid) ||
+        (
+          hasAuthenticatedEmail() &&
+          resource.data.email == request.auth.token.email.lower()
+        );
 
       allow create: if isValidId(memberId) &&
         isValidMemberProfile(incoming()) &&
         memberId == incoming().emailKey &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time &&
+        isValidReferentCoachAssignment(incoming()) &&
         (
-          isAdmin() ||
+          (
+            isAdmin() &&
+            (
+              isBootstrappedAdmin() ||
+              (('referentCoachUid' in incoming()) && isValidId(incoming().referentCoachUid))
+            )
+          ) ||
           (
             hasAuthenticatedEmail() &&
             incoming().email == request.auth.token.email.lower() &&
@@ -1008,9 +1042,11 @@ service cloud.firestore {
         incoming().updatedAt == request.time &&
         (
           (
-            isAdmin() &&
+            isMyAttachedMember(existing()) &&
+            isValidReferentCoachAssignment(incoming()) &&
             incoming().diff(existing()).affectedKeys().hasOnly([
-              'firstName', 'lastName', 'email', 'phone', 'goal', 'birthDate', 'fitnessLevel', 'notes', 'followUpStatus', 'photoUrl', 'updatedAt'
+              'firstName', 'lastName', 'email', 'phone', 'goal', 'birthDate', 'fitnessLevel',
+              'notes', 'followUpStatus', 'photoUrl', 'referentCoachUid', 'referentCoachName', 'updatedAt'
             ])
           ) ||
           (
@@ -1019,13 +1055,22 @@ service cloud.firestore {
             incoming().email == existing().email &&
             incoming().notes == existing().notes &&
             incoming().followUpStatus == existing().followUpStatus &&
+            (
+              incoming().get('referentCoachUid', '') == existing().get('referentCoachUid', '') ||
+              (
+                ('referentCoachUid' in incoming()) &&
+                isValidId(incoming().referentCoachUid) &&
+                isValidReferentCoachAssignment(incoming())
+              )
+            ) &&
             incoming().diff(existing()).affectedKeys().hasOnly([
-              'firstName', 'lastName', 'phone', 'goal', 'birthDate', 'fitnessLevel', 'photoUrl', 'updatedAt'
+              'firstName', 'lastName', 'phone', 'goal', 'birthDate', 'fitnessLevel',
+              'photoUrl', 'referentCoachUid', 'referentCoachName', 'updatedAt'
             ])
           )
         );
 
-      allow delete: if isAdmin() && isValidId(memberId);
+      allow delete: if isValidId(memberId) && isMyAttachedMember(existing());
     }
 
     // -------------------------------------------------------------------------
@@ -1592,7 +1637,7 @@ service cloud.firestore {
     function isValidCoachDirectoryEntry(data) {
       return data.keys().hasAll(['uid', 'displayName', 'active', 'updatedAt']) &&
         data.keys().hasOnly([
-          'uid', 'displayName', 'specialty', 'city', 'region', 'bio', 'photoUrl', 'pricing', 'active', 'updatedAt'
+          'uid', 'displayName', 'specialty', 'city', 'region', 'bio', 'photoUrl', 'pricing', 'active', 'isPrimary', 'updatedAt'
         ]) &&
         isValidId(data.uid) &&
         data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
@@ -1603,6 +1648,7 @@ service cloud.firestore {
         (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 80000)) &&
         (!('pricing' in data) || isValidCoachPricing(data.pricing)) &&
         data.active is bool &&
+        (!('isPrimary' in data) || data.isPrimary is bool) &&
         data.updatedAt is timestamp;
     }
 
@@ -1999,16 +2045,28 @@ service cloud.firestore {
       data.updatedAt is timestamp;
     }
 
+    function isMyAttachedSchedule(sessData) {
+      return isBootstrappedAdmin() || (
+        isCoach() &&
+        sessData.get('coachUid', '') == request.auth.uid
+      );
+    }
+
     match /memberSchedules/{sessionId} {
       allow get: if isValidId(sessionId) && (
-        isAdmin() ||
-        (hasAuthenticatedEmail() && resource != null && existing().memberEmail == request.auth.token.email.lower())
+        (resource == null && isAdmin()) ||
+        (resource != null && (
+          isMyAttachedSchedule(existing()) ||
+          (hasAuthenticatedEmail() && existing().memberEmail == request.auth.token.email.lower())
+        ))
       );
 
-      allow list: if isAdmin() || (
-        hasAuthenticatedEmail() &&
-        resource.data.memberEmail == request.auth.token.email.lower()
-      );
+      allow list: if isBootstrappedAdmin() ||
+        (isCoach() && resource.data.coachUid == request.auth.uid) ||
+        (
+          hasAuthenticatedEmail() &&
+          resource.data.memberEmail == request.auth.token.email.lower()
+        );
 
       allow create: if hasAuthenticatedEmail() &&
         isValidId(sessionId) &&
@@ -2017,6 +2075,7 @@ service cloud.firestore {
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time &&
         isAdmin() &&
+        (isBootstrappedAdmin() || incoming().coachUid == request.auth.uid) &&
         incoming().createdByRole == 'coach' &&
         (
           (incoming().get('isPaid', false) == false && incoming().get('priceCents', 0) == 0) ||
@@ -2034,7 +2093,8 @@ service cloud.firestore {
         incoming().updatedAt == request.time &&
         (
           (
-            isAdmin() &&
+            isMyAttachedSchedule(existing()) &&
+            (isBootstrappedAdmin() || incoming().coachUid == existing().coachUid) &&
             incoming().diff(existing()).affectedKeys().hasOnly([
               'memberName', 'title', 'discipline', 'notes', 'location',
               'startAt', 'durationMinutes', 'coachUid', 'coachName',
@@ -2081,7 +2141,7 @@ service cloud.firestore {
           )
         );
 
-      allow delete: if isValidId(sessionId) && isAdmin();
+      allow delete: if isValidId(sessionId) && isMyAttachedSchedule(existing());
     }
 
     // -------------------------------------------------------------------------
@@ -2285,21 +2345,34 @@ service cloud.firestore {
       data.updatedAt is timestamp;
     }
 
+    function isMyAttachedProgram(progData) {
+      return isBootstrappedAdmin() || (
+        isCoach() &&
+        progData.get('coachUid', '') == request.auth.uid
+      );
+    }
+
     match /trainingPrograms/{programId} {
       allow get: if isValidId(programId) && (
-        isAdmin() ||
-        (hasAuthenticatedEmail() && resource != null && existing().memberEmail == request.auth.token.email.lower())
+        (resource == null && isAdmin()) ||
+        (resource != null && (
+          isMyAttachedProgram(existing()) ||
+          (hasAuthenticatedEmail() && existing().memberEmail == request.auth.token.email.lower())
+        ))
       );
 
-      allow list: if isAdmin() || (
-        hasAuthenticatedEmail() &&
-        resource.data.memberEmail == request.auth.token.email.lower()
-      );
+      allow list: if isBootstrappedAdmin() ||
+        (isCoach() && resource.data.coachUid == request.auth.uid) ||
+        (
+          hasAuthenticatedEmail() &&
+          resource.data.memberEmail == request.auth.token.email.lower()
+        );
 
       allow create: if isAdmin() &&
         isValidId(programId) &&
         isValidTrainingProgram(incoming()) &&
         isValidProgramDurationForDistanceAndLevel(incoming()) &&
+        (isBootstrappedAdmin() || incoming().coachUid == request.auth.uid) &&
         incoming().createdByUid == request.auth.uid &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time;
@@ -2315,7 +2388,8 @@ service cloud.firestore {
         incoming().updatedAt == request.time &&
         (
           (
-            isAdmin() &&
+            isMyAttachedProgram(existing()) &&
+            (isBootstrappedAdmin() || incoming().coachUid == existing().coachUid) &&
             incoming().diff(existing()).affectedKeys().hasOnly([
               'memberName', 'title', 'level', 'durationWeeks', 'sessionsPerWeek', 'preferredDays',
               'targetTimeSeconds', 'startAt', 'notes', 'coachUid', 'coachName',
@@ -2385,7 +2459,7 @@ service cloud.firestore {
           )
         );
 
-      allow delete: if isAdmin() && isValidId(programId);
+      allow delete: if isValidId(programId) && isMyAttachedProgram(existing());
     }
   }
 }

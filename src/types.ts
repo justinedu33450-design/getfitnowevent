@@ -263,6 +263,8 @@ export interface MemberProfile {
   notes: string;
   followUpStatus: FollowUpStatus;
   photoUrl?: string;
+  referentCoachUid?: string;
+  referentCoachName?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -466,6 +468,7 @@ export interface CoachDirectoryEntry {
   photoUrl?: string;
   pricing?: CoachPricing;
   active: boolean;
+  isPrimary?: boolean;
   updatedAt: Timestamp;
 }
 

@@ -31,8 +31,10 @@ import {
   VALIDATION_LIMITS,
 } from '../types';
 import {
+  assignMemberReferentCoach,
   createManualMember,
   deleteMemberCompletely,
+  resolveDefaultPrimaryCoach,
   toggleRegistrationAttendance,
   upsertMemberProfile,
 } from '../services/firestoreService';
@@ -56,11 +58,13 @@ interface MembersTrackingViewProps {
   coachEmail: string;
   currentCoachUid?: string;
   currentCoachName?: string;
+  isPrimaryBootstrapped?: boolean;
   coachAdmins?: CoachAdminUser[];
   coachDirectory?: CoachDirectoryEntry[];
   events: SportEvent[];
   registrations: Registration[];
   memberProfiles: MemberProfile[];
+  allMemberProfiles?: MemberProfile[];
   memberSchedules?: MemberScheduleSession[];
   trainingPrograms?: TrainingProgram[];
   disciplines?: DisciplineItem[];
@@ -83,11 +87,13 @@ export function MembersTrackingView({
   coachEmail,
   currentCoachUid = '',
   currentCoachName = '',
+  isPrimaryBootstrapped = false,
   coachAdmins = [],
   coachDirectory = [],
   events,
   registrations,
   memberProfiles,
+  allMemberProfiles,
   memberSchedules = [],
   trainingPrograms = [],
   disciplines = [],
@@ -127,8 +133,68 @@ export function MembersTrackingView({
     return { emails, emailKeys };
   }, [coachAdmins, coachEmail]);
 
-  // Aggregate unique members from registrations + saved profiles (excluding coaches)
+  const defaultPrimaryCoach = useMemo(
+    () => resolveDefaultPrimaryCoach(coachDirectory, coachAdmins),
+    [coachDirectory, coachAdmins]
+  );
+
+  const coachOptions = useMemo(() => {
+    const byUid = new Map<
+      string,
+      { uid: string; displayName: string; isPrimary?: boolean }
+    >();
+    coachDirectory.forEach((c) => {
+      if (!c.active || !c.uid) return;
+      byUid.set(c.uid, {
+        uid: c.uid,
+        displayName: c.displayName || 'Coach GetFitNow',
+        isPrimary: c.isPrimary,
+      });
+    });
+    coachAdmins.forEach((a) => {
+      if (!a.active || !a.uid || byUid.has(a.uid)) return;
+      byUid.set(a.uid, {
+        uid: a.uid,
+        displayName: a.displayName || a.email || 'Coach GetFitNow',
+        isPrimary: a.isPrimary,
+      });
+    });
+    if (currentCoachUid && !byUid.has(currentCoachUid)) {
+      byUid.set(currentCoachUid, {
+        uid: currentCoachUid,
+        displayName: currentCoachName || coachEmail || 'Mon compte coach',
+        isPrimary: isPrimaryBootstrapped,
+      });
+    }
+    return Array.from(byUid.values()).sort((a, b) => {
+      if (a.isPrimary && !b.isPrimary) return -1;
+      if (!a.isPrimary && b.isPrimary) return 1;
+      return a.displayName.localeCompare(b.displayName, 'fr', {
+        sensitivity: 'base',
+      });
+    });
+  }, [
+    coachDirectory,
+    coachAdmins,
+    currentCoachUid,
+    currentCoachName,
+    coachEmail,
+    isPrimaryBootstrapped,
+  ]);
+
+  // Aggregate coach's own members strictly (David Frosio sees his + unassigned registrants;
+  // other coaches ONLY see members explicitly attached to their UID)
   const members = useMemo<MemberAggregate[]>(() => {
+    const sourceAllProfiles = allMemberProfiles ?? memberProfiles;
+    const reassignedKeys = new Set<string>();
+    const reassignedEmails = new Set<string>();
+    sourceAllProfiles.forEach((p) => {
+      if (p.referentCoachUid && p.referentCoachUid !== currentCoachUid) {
+        if (p.emailKey) reassignedKeys.add(p.emailKey);
+        if (p.email?.trim()) reassignedEmails.add(p.email.trim().toLowerCase());
+      }
+    });
+
     const profileMap = new Map<string, MemberProfile>();
     memberProfiles.forEach((p) => {
       const cleanEmail = (p.email ?? '').trim().toLowerCase();
@@ -136,6 +202,12 @@ export function MembersTrackingView({
         coachIdentitySets.emailKeys.has(p.emailKey) ||
         (cleanEmail && coachIdentitySets.emails.has(cleanEmail))
       ) {
+        return;
+      }
+      const isAttachedToMe = isPrimaryBootstrapped
+        ? !p.referentCoachUid || p.referentCoachUid === currentCoachUid
+        : p.referentCoachUid === currentCoachUid;
+      if (!isAttachedToMe) {
         return;
       }
       profileMap.set(p.emailKey, p);
@@ -151,15 +223,25 @@ export function MembersTrackingView({
       ) {
         return;
       }
+      if (!isPrimaryBootstrapped) {
+        // Non-primary coaches ONLY match registrations for their already-attached members
+        if (!profileMap.has(reg.emailKey)) {
+          return;
+        }
+      } else if (
+        reassignedKeys.has(reg.emailKey) ||
+        (cleanEmail && reassignedEmails.has(cleanEmail))
+      ) {
+        return;
+      }
       const list = grouped.get(reg.emailKey) ?? [];
       list.push(reg);
       grouped.set(reg.emailKey, list);
     });
 
-    const allKeys = new Set<string>([
-      ...profileMap.keys(),
-      ...grouped.keys(),
-    ]);
+    const allKeys = isPrimaryBootstrapped
+      ? new Set<string>([...profileMap.keys(), ...grouped.keys()])
+      : new Set<string>([...profileMap.keys()]);
 
     const result: MemberAggregate[] = [];
     allKeys.forEach((key) => {
@@ -215,11 +297,22 @@ export function MembersTrackingView({
         'fr'
       )
     );
-  }, [registrations, memberProfiles, coachIdentitySets, nowMs]);
+  }, [
+    registrations,
+    memberProfiles,
+    allMemberProfiles,
+    currentCoachUid,
+    isPrimaryBootstrapped,
+    coachIdentitySets,
+    nowMs,
+  ]);
 
   const existingEmailKeys = useMemo(
-    () => new Set(members.map((m) => m.emailKey)),
-    [members]
+    () =>
+      new Set(
+        (allMemberProfiles ?? memberProfiles).map((m) => m.emailKey)
+      ),
+    [allMemberProfiles, memberProfiles]
   );
 
   const filteredMembers = useMemo(() => {
@@ -303,6 +396,8 @@ export function MembersTrackingView({
         email: member.email,
         registrations,
         events,
+        coachUid: currentCoachUid,
+        isPrimaryBootstrapped,
       });
       if (selectedMemberKey === member.emailKey) {
         setSelectedMemberKey(null);
@@ -371,7 +466,7 @@ export function MembersTrackingView({
             Suivi des adhérents
           </h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Répertoire des participants ({coachEmail}) · Ajoutez, suivez ou supprimez des fiches adhérents.
+            Vos adhérents rattachés ({currentCoachName || coachEmail}) · Ajoutez, suivez ou réaffectez un adhérent à un coach.
           </p>
         </div>
 
@@ -835,14 +930,28 @@ export function MembersTrackingView({
         <AddMemberModal
           existingEmailKeys={existingEmailKeys}
           coachEmails={coachIdentitySets.emails}
+          coachOptions={coachOptions}
+          currentCoachUid={currentCoachUid}
+          currentCoachName={currentCoachName || coachEmail}
+          defaultPrimaryCoach={defaultPrimaryCoach}
           onClose={() => setIsAddModalOpen(false)}
-          onCreated={(emailKey, fullName) => {
+          onCreated={(emailKey, fullName, referentCoachUid, referentCoachName) => {
             setIsAddModalOpen(false);
-            setSelectedMemberKey(emailKey);
-            setFeedback({
-              type: 'success',
-              text: `L’adhérent ${fullName} a été ajouté au répertoire.`,
-            });
+            const belongsToMe =
+              referentCoachUid === currentCoachUid ||
+              (isPrimaryBootstrapped && !referentCoachUid);
+            if (belongsToMe) {
+              setSelectedMemberKey(emailKey);
+              setFeedback({
+                type: 'success',
+                text: `L’adhérent ${fullName} a été ajouté et rattaché à votre suivi.`,
+              });
+            } else {
+              setFeedback({
+                type: 'success',
+                text: `L’adhérent ${fullName} a été créé et rattaché à ${referentCoachName}.`,
+              });
+            }
           }}
         />
       )}
@@ -857,7 +966,10 @@ export function MembersTrackingView({
           memberTrainingPrograms={selectedMemberTrainingPrograms}
           currentCoachUid={currentCoachUid}
           currentCoachName={currentCoachName}
+          isPrimaryBootstrapped={isPrimaryBootstrapped}
           coachDirectory={coachDirectory}
+          coachOptions={coachOptions}
+          defaultPrimaryCoach={defaultPrimaryCoach}
           events={events}
           disciplines={disciplines}
           exercises={exercises}
@@ -874,6 +986,15 @@ export function MembersTrackingView({
                 }
               : undefined
           }
+          onMemberReassigned={(targetMember, nextCoachUid, nextCoachName) => {
+            if (nextCoachUid !== currentCoachUid) {
+              setSelectedMemberKey(null);
+              setFeedback({
+                type: 'success',
+                text: `${targetMember.firstName} ${targetMember.lastName} est désormais rattaché(e) à ${nextCoachName}.`,
+              });
+            }
+          }}
           deleting={deletingKey === selectedMember.emailKey}
           onDelete={() => void handleDeleteMember(selectedMember)}
           onClose={() => setSelectedMemberKey(null)}
@@ -883,16 +1004,35 @@ export function MembersTrackingView({
   );
 }
 
+interface CoachOptionItem {
+  uid: string;
+  displayName: string;
+  isPrimary?: boolean;
+}
+
 interface AddMemberModalProps {
   existingEmailKeys: Set<string>;
   coachEmails: Set<string>;
+  coachOptions: CoachOptionItem[];
+  currentCoachUid: string;
+  currentCoachName: string;
+  defaultPrimaryCoach: { uid: string; displayName: string };
   onClose: () => void;
-  onCreated: (emailKey: string, fullName: string) => void;
+  onCreated: (
+    emailKey: string,
+    fullName: string,
+    referentCoachUid: string,
+    referentCoachName: string
+  ) => void;
 }
 
 function AddMemberModal({
   existingEmailKeys,
   coachEmails,
+  coachOptions,
+  currentCoachUid,
+  currentCoachName,
+  defaultPrimaryCoach,
   onClose,
   onCreated,
 }: AddMemberModalProps) {
@@ -904,6 +1044,9 @@ function AddMemberModal({
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel | ''>('');
   const [goal, setGoal] = useState('');
   const [followUpStatus, setFollowUpStatus] = useState<FollowUpStatus>('active');
+  const [referentCoachUid, setReferentCoachUid] = useState(
+    currentCoachUid || defaultPrimaryCoach.uid || coachOptions[0]?.uid || ''
+  );
   const [notes, setNotes] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [saving, setSaving] = useState(false);
@@ -925,6 +1068,18 @@ function AddMemberModal({
       );
       return;
     }
+    const chosenUid = (
+      referentCoachUid ||
+      currentCoachUid ||
+      defaultPrimaryCoach.uid
+    ).trim();
+    const chosenOption = coachOptions.find((c) => c.uid === chosenUid);
+    const chosenName =
+      chosenOption?.displayName ||
+      (chosenUid === currentCoachUid ? currentCoachName : '') ||
+      defaultPrimaryCoach.displayName ||
+      'David Frosio';
+
     setSaving(true);
     try {
       const emailKey = await createManualMember({
@@ -938,9 +1093,16 @@ function AddMemberModal({
         notes,
         followUpStatus,
         photoUrl,
+        referentCoachUid: chosenUid,
+        referentCoachName: chosenName,
         existingEmailKeys,
       });
-      onCreated(emailKey, `${firstName.trim()} ${lastName.trim()}`);
+      onCreated(
+        emailKey,
+        `${firstName.trim()} ${lastName.trim()}`,
+        chosenUid,
+        chosenName
+      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -1171,6 +1333,31 @@ function AddMemberModal({
 
           <div>
             <label
+              htmlFor="add-member-referent-coach"
+              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+            >
+              Coach référent (rattachement)
+            </label>
+            <select
+              id="add-member-referent-coach"
+              value={referentCoachUid}
+              onChange={(e) => setReferentCoachUid(e.target.value)}
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+            >
+              {coachOptions.map((c) => (
+                <option key={c.uid} value={c.uid}>
+                  {c.displayName}
+                  {c.isPrimary ? ' (Administrateur)' : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              Seul le coach référent choisi pourra voir et gérer cet adhérent dans son espace.
+            </p>
+          </div>
+
+          <div>
+            <label
               htmlFor="add-member-notes"
               className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
             >
@@ -1223,13 +1410,21 @@ interface MemberDetailDrawerProps {
   memberTrainingPrograms: TrainingProgram[];
   currentCoachUid: string;
   currentCoachName: string;
+  isPrimaryBootstrapped: boolean;
   coachDirectory: CoachDirectoryEntry[];
+  coachOptions: CoachOptionItem[];
+  defaultPrimaryCoach: { uid: string; displayName: string };
   events: SportEvent[];
   disciplines: DisciplineItem[];
   exercises?: ExerciseLibraryItem[];
   nowMs: number;
   unreadMessagesCount?: number;
   onMessageMember?: () => void;
+  onMemberReassigned?: (
+    member: MemberAggregate,
+    nextCoachUid: string,
+    nextCoachName: string
+  ) => void;
   deleting: boolean;
   onDelete: () => void;
   onClose: () => void;
@@ -1242,13 +1437,17 @@ function MemberDetailDrawer({
   memberTrainingPrograms,
   currentCoachUid,
   currentCoachName,
+  isPrimaryBootstrapped,
   coachDirectory,
+  coachOptions,
+  defaultPrimaryCoach,
   events,
   disciplines,
   exercises = [],
   nowMs,
   unreadMessagesCount = 0,
   onMessageMember,
+  onMemberReassigned,
   deleting,
   onDelete,
   onClose,
@@ -1269,6 +1468,14 @@ function MemberDetailDrawer({
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [selectedReferentUid, setSelectedReferentUid] = useState(
+    member.profile?.referentCoachUid ||
+      defaultPrimaryCoach.uid ||
+      currentCoachUid
+  );
+  const [reassignSaving, setReassignSaving] = useState(false);
+  const [reassignFeedback, setReassignFeedback] = useState<string | null>(null);
+  const [reassignError, setReassignError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [profileExpanded, setProfileExpanded] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState(false);
@@ -1283,6 +1490,13 @@ function MemberDetailDrawer({
     setFollowUpStatus(member.profile?.followUpStatus ?? 'active');
     setNotes(member.profile?.notes ?? '');
     setPhotoUrl(member.profile?.photoUrl ?? '');
+    setSelectedReferentUid(
+      member.profile?.referentCoachUid ||
+        defaultPrimaryCoach.uid ||
+        currentCoachUid
+    );
+    setReassignFeedback(null);
+    setReassignError(null);
   }, [
     member.emailKey,
     member.firstName,
@@ -1294,6 +1508,9 @@ function MemberDetailDrawer({
     member.profile?.followUpStatus,
     member.profile?.notes,
     member.profile?.photoUrl,
+    member.profile?.referentCoachUid,
+    defaultPrimaryCoach.uid,
+    currentCoachUid,
   ]);
 
   const todayIso = useMemo(() => toLocalDateInputValue(new Date()), []);
@@ -1317,6 +1534,60 @@ function MemberDetailDrawer({
     [allRegistrations, events, disciplines, member.email, nowMs]
   );
 
+  const currentReferentName = useMemo(() => {
+    const uid = member.profile?.referentCoachUid;
+    if (uid) {
+      const matched = coachOptions.find((c) => c.uid === uid);
+      if (matched) return matched.displayName;
+      if (member.profile?.referentCoachName) {
+        return member.profile.referentCoachName;
+      }
+    }
+    return defaultPrimaryCoach.displayName || 'David Frosio';
+  }, [
+    member.profile?.referentCoachUid,
+    member.profile?.referentCoachName,
+    coachOptions,
+    defaultPrimaryCoach.displayName,
+  ]);
+
+  const handleAssignReferentCoach = async () => {
+    const targetOption = coachOptions.find((c) => c.uid === selectedReferentUid);
+    const nextUid = (selectedReferentUid || defaultPrimaryCoach.uid).trim();
+    const nextName =
+      targetOption?.displayName ||
+      defaultPrimaryCoach.displayName ||
+      'David Frosio';
+    if (!nextUid) {
+      setReassignError('Sélectionnez un coach référent valide.');
+      return;
+    }
+    setReassignSaving(true);
+    setReassignFeedback(null);
+    setReassignError(null);
+    try {
+      await assignMemberReferentCoach({
+        emailKey: member.emailKey,
+        email: member.email,
+        firstName: firstName.trim() || member.firstName,
+        lastName: lastName.trim() || member.lastName,
+        existingProfile: member.profile,
+        coachUid: nextUid,
+        coachName: nextName,
+      });
+      setReassignFeedback(`Rattaché(e) à ${nextName}.`);
+      onMemberReassigned?.(member, nextUid, nextName);
+    } catch (err) {
+      setReassignError(
+        err instanceof Error
+          ? err.message
+          : 'Impossible de modifier le coach référent.'
+      );
+    } finally {
+      setReassignSaving(false);
+    }
+  };
+
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -1335,6 +1606,14 @@ function MemberDetailDrawer({
         notes,
         followUpStatus,
         photoUrl,
+        referentCoachUid:
+          member.profile?.referentCoachUid ||
+          defaultPrimaryCoach.uid ||
+          currentCoachUid,
+        referentCoachName:
+          member.profile?.referentCoachName ||
+          defaultPrimaryCoach.displayName ||
+          'David Frosio',
         exists: Boolean(member.profile),
       });
       setSavedNotice(true);
@@ -1425,6 +1704,71 @@ function MemberDetailDrawer({
               </button>
             </div>
           )}
+          {/* Referent Coach Assignment Card */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 p-4 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs">
+                <p className="font-bold text-slate-900 dark:text-white">
+                  Coach référent &amp; rattachement
+                </p>
+                <p className="mt-0.5 text-slate-500 dark:text-slate-400">
+                  Actuellement rattaché à{' '}
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {currentReferentName}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {coachOptions.length > 0 && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <select
+                  aria-label="Choisir le coach référent pour cet adhérent"
+                  value={selectedReferentUid}
+                  onChange={(e) => {
+                    setSelectedReferentUid(e.target.value);
+                    setReassignFeedback(null);
+                    setReassignError(null);
+                  }}
+                  className="min-h-[38px] flex-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs text-slate-900 dark:text-slate-100"
+                >
+                  {coachOptions.map((c) => (
+                    <option key={c.uid} value={c.uid}>
+                      {c.displayName}
+                      {c.isPrimary ? ' (Administrateur)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={
+                    reassignSaving ||
+                    !selectedReferentUid ||
+                    (Boolean(member.profile?.referentCoachUid) &&
+                      selectedReferentUid === member.profile?.referentCoachUid)
+                  }
+                  onClick={() => void handleAssignReferentCoach()}
+                  className="min-h-[38px] shrink-0 rounded-lg bg-slate-900 dark:bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white disabled:opacity-50 cursor-pointer"
+                >
+                  {reassignSaving
+                    ? 'Rattachement...'
+                    : 'Rattacher à ce coach'}
+                </button>
+              </div>
+            )}
+
+            {reassignFeedback && (
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                {reassignFeedback}
+              </p>
+            )}
+            {reassignError && (
+              <p className="text-xs text-rose-700 dark:text-rose-300">
+                {reassignError}
+              </p>
+            )}
+          </div>
+
           {/* Coaching Profile Form */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5">
             <div
@@ -1697,6 +2041,7 @@ function MemberDetailDrawer({
                 memberFitnessLevel={member.profile?.fitnessLevel ?? ''}
                 currentUserUid={currentCoachUid}
                 currentCoachName={currentCoachName}
+                isPrimaryCoach={isPrimaryBootstrapped}
                 customSessions={memberScheduleSessions}
                 trainingPrograms={memberTrainingPrograms}
                 registrations={allRegistrations}

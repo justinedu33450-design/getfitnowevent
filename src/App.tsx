@@ -10,6 +10,7 @@ import { auth, BOOTSTRAPPED_COACH_EMAIL } from './firebase';
 import {
   acknowledgeAllMemberProgramNotifications,
   acknowledgeMemberProgramNotification,
+  backfillUnassignedMembersToPrimaryCoach,
   buildMemberProgramNotifications,
   cancelMyRegistration,
   deleteCoachNotification,
@@ -24,18 +25,18 @@ import {
   mergeTrainingProgramsWithMemberSchedules,
   notifyMembersOfEndedEvent,
   resolveCoachSession,
-  subscribeAllMemberSchedules,
-  subscribeAllTrainingPrograms,
   subscribeCoachAccessRequests,
   subscribeCoachAdmins,
   subscribeCoachConversations,
   subscribeCoachDirectory,
   subscribeCoachInvites,
+  subscribeCoachMemberSchedules,
+  subscribeCoachTrainingPrograms,
   subscribeDisciplines,
   subscribeEvents,
   subscribeExercises,
   subscribeMemberConversations,
-  subscribeMembers,
+  subscribeMembersForCoach,
   subscribeMyAdminStatus,
   subscribeMyCoachAccessRequest,
   subscribeMyCoachNotifications,
@@ -524,8 +525,10 @@ export default function App() {
       coachRole === 'coach_admin' ||
       myAdminProfile?.role === 'coach_admin');
 
+  const backfillDoneRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (authLoading || !isCoach || !user?.email) {
+    if (authLoading || !isCoach || !user?.email || !user.uid) {
       setRegistrations([]);
       setMemberProfiles([]);
       setCoachAdmins([]);
@@ -534,7 +537,11 @@ export default function App() {
       return;
     }
     const unsubRegs = subscribeRegistrations(setRegistrations);
-    const unsubMembers = subscribeMembers(setMemberProfiles);
+    const unsubMembers = subscribeMembersForCoach({
+      coachUid: user.uid,
+      isPrimaryBootstrapped,
+      onData: setMemberProfiles,
+    });
     const unsubAdmins = subscribeCoachAdmins(setCoachAdmins);
     const unsubNotifs = subscribeMyCoachNotifications(
       user.uid,
@@ -546,7 +553,7 @@ export default function App() {
       unsubAdmins();
       unsubNotifs();
     };
-  }, [authLoading, isCoach, user]);
+  }, [authLoading, isCoach, isPrimaryBootstrapped, user]);
 
   useEffect(() => {
     if (authLoading || !isCoachAdmin || !user?.email) {
@@ -603,37 +610,43 @@ export default function App() {
     return () => unsub();
   }, [authLoading, isVerifiedUser, isCoach, user?.uid, user?.email]);
 
-  // Real-time personalized weekly schedule sessions (coach sees all, member sees own)
+  // Real-time personalized weekly schedule sessions (coach sees own, primary sees all, member sees own)
   useEffect(() => {
     if (authLoading || !isVerifiedUser || !user?.email) {
       setMemberSchedules([]);
       return;
     }
     const unsub = isCoach
-      ? subscribeAllMemberSchedules(setMemberSchedules, () =>
-          setMemberSchedules([])
-        )
+      ? subscribeCoachMemberSchedules({
+          coachUid: user.uid,
+          isPrimaryBootstrapped,
+          onData: setMemberSchedules,
+          onError: () => setMemberSchedules([]),
+        })
       : subscribeMyMemberSchedule(user.email, setMemberSchedules, () =>
           setMemberSchedules([])
         );
     return () => unsub();
-  }, [authLoading, isVerifiedUser, isCoach, user?.email]);
+  }, [authLoading, isVerifiedUser, isCoach, isPrimaryBootstrapped, user?.uid, user?.email]);
 
-  // Real-time 12-week running programs (coach sees all, member sees own)
+  // Real-time 12-week running programs (coach sees own, primary sees all, member sees own)
   useEffect(() => {
     if (authLoading || !isVerifiedUser || !user?.email) {
       setTrainingPrograms([]);
       return;
     }
     const unsub = isCoach
-      ? subscribeAllTrainingPrograms(setTrainingPrograms, () =>
-          setTrainingPrograms([])
-        )
+      ? subscribeCoachTrainingPrograms({
+          coachUid: user.uid,
+          isPrimaryBootstrapped,
+          onData: setTrainingPrograms,
+          onError: () => setTrainingPrograms([]),
+        })
       : subscribeMyTrainingPrograms(user.email, setTrainingPrograms, () =>
           setTrainingPrograms([])
         );
     return () => unsub();
-  }, [authLoading, isVerifiedUser, isCoach, user?.email]);
+  }, [authLoading, isVerifiedUser, isCoach, isPrimaryBootstrapped, user?.uid, user?.email]);
 
   useEffect(() => {
     if (!user?.uid || isCoach) {
@@ -962,6 +975,7 @@ export default function App() {
     autoDeleteAttemptedRef.current.clear();
     endedNotifyAttemptedRef.current.clear();
     memberNotifAttemptedRef.current.clear();
+    backfillDoneRef.current = null;
     setSignOutNonce((prev) => prev + 1);
     setActiveSection('calendar');
   };
@@ -1047,6 +1061,44 @@ export default function App() {
   const coachDisplayName =
     myAdminProfile?.displayName || user?.displayName || 'David Frosio';
 
+  // Attach any unassigned / legacy member docs to primary administrator David Frosio
+  useEffect(() => {
+    if (
+      authLoading ||
+      !isCoach ||
+      !isPrimaryBootstrapped ||
+      !user?.uid ||
+      backfillDoneRef.current === user.uid
+    ) {
+      return;
+    }
+    if (!memberProfiles.some((m) => !m.referentCoachUid)) {
+      return;
+    }
+    backfillDoneRef.current = user.uid;
+    void backfillUnassignedMembersToPrimaryCoach({
+      primaryUid: user.uid,
+      primaryName: coachDisplayName,
+      members: memberProfiles,
+    });
+  }, [
+    authLoading,
+    isCoach,
+    isPrimaryBootstrapped,
+    user?.uid,
+    coachDisplayName,
+    memberProfiles,
+  ]);
+
+  const managedMemberProfiles = useMemo(() => {
+    if (!isCoach || !user?.uid) return [];
+    return isPrimaryBootstrapped
+      ? memberProfiles.filter(
+          (p) => !p.referentCoachUid || p.referentCoachUid === user.uid
+        )
+      : memberProfiles.filter((p) => p.referentCoachUid === user.uid);
+  }, [isCoach, isPrimaryBootstrapped, user?.uid, memberProfiles]);
+
   const programMemberCandidates = useMemo<ProgramMemberCandidate[]>(() => {
     const coachEmails = new Set<string>([
       BOOTSTRAPPED_COACH_EMAIL.trim().toLowerCase(),
@@ -1060,8 +1112,17 @@ export default function App() {
       if (a.emailKey?.trim()) coachEmailKeys.add(a.emailKey.trim());
     });
 
+    const reassignedKeys = new Set<string>();
+    const reassignedEmails = new Set<string>();
+    memberProfiles.forEach((p) => {
+      if (p.referentCoachUid && p.referentCoachUid !== user?.uid) {
+        if (p.emailKey) reassignedKeys.add(p.emailKey);
+        if (p.email?.trim()) reassignedEmails.add(p.email.trim().toLowerCase());
+      }
+    });
+
     const byEmail = new Map<string, ProgramMemberCandidate>();
-    memberProfiles.forEach((profile) => {
+    managedMemberProfiles.forEach((profile) => {
       const email = (profile.email || '').trim();
       const emailLower = email.toLowerCase();
       const emailKey = (profile.emailKey || profile.id || emailLower).trim();
@@ -1082,31 +1143,45 @@ export default function App() {
         fitnessLevel: profile.fitnessLevel || '',
       });
     });
-    registrations.forEach((reg) => {
-      if (reg.status !== 'confirmed' || reg.isGuest) return;
-      const email = (reg.email || '').trim();
-      const emailLower = email.toLowerCase();
-      const emailKey = (reg.emailKey || emailLower).trim();
-      if (
-        !email ||
-        !emailLower ||
-        byEmail.has(emailLower) ||
-        coachEmails.has(emailLower) ||
-        (emailKey && coachEmailKeys.has(emailKey))
-      ) {
-        return;
-      }
-      const fullName = `${reg.firstName} ${reg.lastName}`.trim() || email;
-      byEmail.set(emailLower, {
-        email,
-        emailKey: emailKey || emailLower,
-        name: fullName,
+
+    if (isPrimaryBootstrapped) {
+      registrations.forEach((reg) => {
+        if (reg.status !== 'confirmed' || reg.isGuest) return;
+        const email = (reg.email || '').trim();
+        const emailLower = email.toLowerCase();
+        const emailKey = (reg.emailKey || emailLower).trim();
+        if (
+          !email ||
+          !emailLower ||
+          byEmail.has(emailLower) ||
+          coachEmails.has(emailLower) ||
+          (emailKey && coachEmailKeys.has(emailKey)) ||
+          (emailKey && reassignedKeys.has(emailKey)) ||
+          reassignedEmails.has(emailLower)
+        ) {
+          return;
+        }
+        const fullName = `${reg.firstName} ${reg.lastName}`.trim() || email;
+        byEmail.set(emailLower, {
+          email,
+          emailKey: emailKey || emailLower,
+          name: fullName,
+        });
       });
-    });
+    }
     return Array.from(byEmail.values()).sort((a, b) =>
       a.name.localeCompare(b.name, 'fr')
     );
-  }, [memberProfiles, registrations, coachAdmins, isCoach, user?.email]);
+  }, [
+    managedMemberProfiles,
+    memberProfiles,
+    registrations,
+    coachAdmins,
+    isCoach,
+    isPrimaryBootstrapped,
+    user?.uid,
+    user?.email,
+  ]);
 
   const memberDisplayName = myMemberProfile
     ? `${myMemberProfile.firstName} ${myMemberProfile.lastName}`.trim()
@@ -1567,6 +1642,7 @@ export default function App() {
               <MessagesView
                 user={user}
                 isCoach={isCoach}
+                isPrimaryBootstrapped={isPrimaryBootstrapped}
                 currentUserDisplayName={
                   isCoach ? coachDisplayName : memberDisplayName
                 }
@@ -1575,7 +1651,8 @@ export default function App() {
                 }
                 conversations={conversations}
                 coachDirectory={coachDirectory}
-                memberProfiles={memberProfiles}
+                memberProfiles={isCoach ? managedMemberProfiles : memberProfiles}
+                allMemberProfiles={memberProfiles}
                 registrations={registrations}
                 coachAdmins={coachAdmins}
                 events={activeEvents}
@@ -1684,6 +1761,7 @@ export default function App() {
                         coachUid={user.uid}
                         coachName={coachDisplayName}
                         coachDirectory={coachDirectory}
+                        isPrimaryCoach={isPrimaryBootstrapped}
                         disciplines={disciplineCatalog}
                         exercises={exercises}
                         memberCandidates={programMemberCandidates}
@@ -1723,11 +1801,13 @@ export default function App() {
                   coachEmail={user.email || ''}
                   currentCoachUid={user.uid}
                   currentCoachName={coachDisplayName}
+                  isPrimaryBootstrapped={isPrimaryBootstrapped}
                   coachAdmins={coachAdmins}
                   coachDirectory={coachDirectory}
                   events={activeEvents}
                   registrations={registrations}
-                  memberProfiles={memberProfiles}
+                  memberProfiles={managedMemberProfiles}
+                  allMemberProfiles={memberProfiles}
                   memberSchedules={memberSchedules}
                   trainingPrograms={effectiveTrainingPrograms}
                   disciplines={disciplineCatalog}

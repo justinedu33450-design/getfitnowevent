@@ -72,6 +72,7 @@ interface ExerciseLibraryViewProps {
   coachUid: string;
   coachName: string;
   coachDirectory: CoachDirectoryEntry[];
+  isPrimaryCoach?: boolean;
   disciplines: DisciplineItem[];
   exercises: ExerciseLibraryItem[];
   memberCandidates: ProgramMemberCandidate[];
@@ -106,6 +107,7 @@ export function ExerciseLibraryView({
   coachUid,
   coachName,
   coachDirectory,
+  isPrimaryCoach = false,
   disciplines,
   exercises,
   memberCandidates,
@@ -978,15 +980,25 @@ export function ExerciseLibraryView({
                               Envoi progressif :{' '}
                               {!delivery.hasAccess
                                 ? 'en attente du paiement'
-                                : delivery.allWeeksReleased
-                                  ? `${delivery.totalWeeks}/${delivery.totalWeeks} sem. envoyées`
-                                  : `Sem. ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée`}
+                                : delivery.awaitingVma
+                                  ? 'en attente du Test VMA'
+                                  : delivery.allWeeksReleased
+                                    ? `${delivery.totalWeeks}/${delivery.totalWeeks} sem. envoyées`
+                                    : `Sem. ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée`}
                             </span>
-                            {delivery.hasAccess && delivery.nextWeekNumber && delivery.nextUnlockAtMs && (
-                              <span className="font-mono text-[10px] text-sky-700 dark:text-sky-400 tabular-nums">
-                                Sem. {delivery.nextWeekNumber} le{' '}
-                                {formatFrenchDateShort(new Date(delivery.nextUnlockAtMs))}
+                            {delivery.hasAccess && delivery.awaitingVma ? (
+                              <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400">
+                                Sem. 1 dès validation · puis dim. 18h
                               </span>
+                            ) : (
+                              delivery.hasAccess &&
+                              delivery.nextWeekNumber &&
+                              delivery.nextUnlockAtMs && (
+                                <span className="font-mono text-[10px] text-sky-700 dark:text-sky-400 tabular-nums">
+                                  Sem. {delivery.nextWeekNumber} le{' '}
+                                  {formatFrenchDateShort(new Date(delivery.nextUnlockAtMs))} à 18h00
+                                </span>
+                              )
                             )}
                           </div>
                           <div className="mt-2 flex flex-wrap gap-1">
@@ -996,9 +1008,13 @@ export function ExerciseLibraryView({
                                 title={
                                   !delivery.hasAccess
                                     ? `Semaine ${wk.weekNumber} : en attente du paiement`
-                                    : wk.unlocked
-                                      ? `Semaine ${wk.weekNumber} envoyée`
-                                      : `Semaine ${wk.weekNumber} : envoi auto le ${formatFrenchDateShort(new Date(wk.unlockAtMs))}`
+                                    : delivery.awaitingVma
+                                      ? wk.weekNumber === 1
+                                        ? 'Semaine 1 : envoyée dès validation du Test VMA'
+                                        : `Semaine ${wk.weekNumber} : en attente (envoyée le dimanche à 18h00 après validation du Test VMA)`
+                                      : wk.unlocked
+                                        ? `Semaine ${wk.weekNumber} envoyée`
+                                        : `Semaine ${wk.weekNumber} : envoi auto le ${formatFrenchDateShort(new Date(wk.unlockAtMs))} à 18h00`
                                 }
                                 className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums ${
                                   wk.unlocked
@@ -1814,6 +1830,7 @@ export function ExerciseLibraryView({
           coachUid={coachUid}
           coachName={coachName}
           coachDirectory={coachDirectory}
+          isPrimaryCoach={isPrimaryCoach}
           disciplines={disciplines}
           exercises={exercises}
           memberCandidates={memberCandidates}
@@ -1835,6 +1852,7 @@ export function ExerciseLibraryView({
           coachUid={coachUid}
           coachName={coachName}
           coachDirectory={coachDirectory}
+          isPrimaryCoach={isPrimaryCoach}
           memberCandidates={memberCandidates}
           initialDistance={runningInitialDistance}
           editingProgram={editingRunningProgram}

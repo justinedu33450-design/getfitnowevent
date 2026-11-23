@@ -97,6 +97,7 @@ interface MemberWeeklyScheduleCardProps {
   memberFitnessLevel?: string;
   currentUserUid: string;
   currentCoachName?: string;
+  isPrimaryCoach?: boolean;
   customSessions: MemberScheduleSession[];
   trainingPrograms?: TrainingProgram[];
   registrations: Registration[];
@@ -171,6 +172,7 @@ export function MemberWeeklyScheduleCard({
   memberFitnessLevel = '',
   currentUserUid,
   currentCoachName = '',
+  isPrimaryCoach = false,
   customSessions,
   trainingPrograms = [],
   registrations,
@@ -454,7 +456,7 @@ export function MemberWeeklyScheduleCard({
       generated.forEach((gs) => {
         if (mode === 'member' && delivery) {
           if (!delivery.hasAccess) {
-            if (gs.weekNumber !== 1 || gs.sessionIndexInWeek !== 1) return;
+            if (!gs.isVmaTest) return;
           } else if (gs.weekNumber > delivery.unlockedWeeks) {
             return;
           }
@@ -961,16 +963,44 @@ export function MemberWeeklyScheduleCard({
 
           <div className="mt-1 flex flex-wrap items-center justify-between gap-1.5">
             <p className="font-mono text-[10px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
-              Plan {tpl.shortLabel} · Sem. {progSession.weekNumber}/
-              {prog.durationWeeks || 12} · {progSession.focusLabel}
+              Plan {tpl.shortLabel} ·{' '}
+              {progSession.isVmaTest
+                ? 'Test VMA'
+                : `Sem. ${progSession.weekNumber}/${prog.durationWeeks || 12}`}{' '}
+              · {progSession.focusLabel}
             </p>
             {mode === 'coach' && (() => {
               const delivery = deliveryByProgramId.get(prog.id);
-              const weekWindow = delivery?.weeks[progSession.weekNumber - 1];
+              const weekWindow =
+                progSession.weekNumber >= 1
+                  ? delivery?.weeks[progSession.weekNumber - 1]
+                  : undefined;
               if (!hasAccess) {
                 return (
                   <span className="font-mono text-[9px] font-semibold text-amber-700 dark:text-amber-400">
                     Paiement requis
+                  </span>
+                );
+              }
+              if (progSession.isVmaTest) {
+                return (
+                  <span
+                    className={`font-mono text-[9px] font-semibold ${
+                      prog.vmaTestStatus === 'completed'
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-sky-700 dark:text-sky-400'
+                    }`}
+                  >
+                    {prog.vmaTestStatus === 'completed'
+                      ? 'VMA validée'
+                      : 'Disponible'}
+                  </span>
+                );
+              }
+              if (delivery?.awaitingVma) {
+                return (
+                  <span className="font-mono text-[9px] font-semibold text-amber-700 dark:text-amber-400">
+                    En attente du Test VMA
                   </span>
                 );
               }
@@ -984,7 +1014,7 @@ export function MemberWeeklyScheduleCard({
               if (weekWindow) {
                 return (
                   <span className="font-mono text-[9px] font-medium text-slate-500 dark:text-slate-400 tabular-nums">
-                    Envoi le {formatFrenchDateShort(new Date(weekWindow.unlockAtMs))}
+                    Envoi le {formatFrenchDateShort(new Date(weekWindow.unlockAtMs))} à 18h00
                   </span>
                 );
               }
@@ -1023,7 +1053,7 @@ export function MemberWeeklyScheduleCard({
               <p className="flex items-start gap-1.5 text-[11px] font-medium text-amber-950 dark:text-amber-100">
                 <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
                 <span>
-                  Programme personnalisé payant ({formatPriceEuros(prog.priceCents)}) : réglez pour recevoir votre Semaine 1 (puis chaque semaine suivante à la fin de la précédente).
+                  Programme personnalisé payant ({formatPriceEuros(prog.priceCents)}) : réglez pour accéder au Test VMA, puis recevoir votre Semaine 1 dès validation du test et chaque semaine suivante le dimanche à 18h00.
                 </span>
               </p>
               <button
@@ -1058,7 +1088,7 @@ export function MemberWeeklyScheduleCard({
               {hasAccess && progSession.isVmaTest && prog.vmaTestStatus === 'pending' && (
                 <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50/80 p-2.5 dark:border-sky-800 dark:bg-sky-950/50">
                   <p className="text-[11px] font-semibold text-sky-950 dark:text-sky-100">
-                    Test VMA Jour 1 requis pour calculer vos allures des {prog.durationWeeks || 12} semaines.
+                    Test VMA requis : l’envoi du programme ({prog.durationWeeks || 12} sem.) reste en attente jusqu’à validation. Dès validation, la Semaine 1 est envoyée immédiatement, puis la semaine suivante chaque dimanche à 18h00.
                   </p>
                   <button
                     type="button"
@@ -1525,12 +1555,10 @@ export function MemberWeeklyScheduleCard({
                       </p>
                       <p className="mt-0.5 text-emerald-800 dark:text-emerald-200">
                         {delivery.unlockedWeeks === 1
-                          ? delivery.isFree
-                            ? 'Programme offert : la Semaine 1 est prête dans votre planning.'
-                            : 'Votre paiement est validé : la Semaine 1 est prête dans votre planning.'
-                          : `La semaine ${delivery.unlockedWeeks - 1} est terminée : vos nouvelles séances de la semaine ${delivery.unlockedWeeks} sont disponibles.`}
+                          ? 'Test VMA validé : la Semaine 1 est envoyée dans votre planning.'
+                          : `Nouvelle semaine disponible : vos séances de la semaine ${delivery.unlockedWeeks} viennent d’être envoyées.`}
                         {delivery.nextWeekNumber && delivery.nextUnlockAtMs
-                          ? ` Prochain envoi : Semaine ${delivery.nextWeekNumber} le ${formatFrenchDateLong(new Date(delivery.nextUnlockAtMs))}.`
+                          ? ` Prochain envoi : Semaine ${delivery.nextWeekNumber} le ${formatFrenchDateLong(new Date(delivery.nextUnlockAtMs))} à 18h00.`
                           : ' Dernière semaine du programme envoyée !'}
                       </p>
                     </div>
@@ -1607,12 +1635,20 @@ export function MemberWeeklyScheduleCard({
                             Coach : {prog.coachName} · {doneCount}/{totalSessions} séances
                           </p>
                           {delivery && (
-                            <p className="mt-0.5 font-mono text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                            <p
+                              className={`mt-0.5 font-mono text-[10px] font-semibold tabular-nums ${
+                                !delivery.hasAccess || delivery.awaitingVma
+                                  ? 'text-amber-700 dark:text-amber-400'
+                                  : 'text-emerald-700 dark:text-emerald-400'
+                              }`}
+                            >
                               {!delivery.hasAccess
-                                ? 'Semaine 1 envoyée dès le paiement'
-                                : delivery.allWeeksReleased
-                                  ? `Toutes les semaines envoyées (${delivery.totalWeeks}/${delivery.totalWeeks})`
-                                  : `Semaine ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée · Sem. ${delivery.nextWeekNumber} le ${formatFrenchDateShort(new Date(delivery.nextUnlockAtMs!))}`}
+                                ? 'Test VMA puis Semaine 1 dès le paiement'
+                                : delivery.awaitingVma
+                                  ? 'Envoi en attente du Test VMA (Sem. 1 dès validation, puis dimanche 18h)'
+                                  : delivery.allWeeksReleased
+                                    ? `Toutes les semaines envoyées (${delivery.totalWeeks}/${delivery.totalWeeks})`
+                                    : `Semaine ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée · Sem. ${delivery.nextWeekNumber} le ${formatFrenchDateShort(new Date(delivery.nextUnlockAtMs!))} à 18h00`}
                             </p>
                           )}
                         </div>
@@ -1636,11 +1672,21 @@ export function MemberWeeklyScheduleCard({
                           type="button"
                           onClick={() => {
                             setFilter('all');
-                            setWeekAnchor(startDate);
+                            setWeekAnchor(
+                              mode === 'member' && delivery?.awaitingVma
+                                ? new Date(nowMs)
+                                : delivery && delivery.unlockedWeeks >= 1
+                                  ? delivery.weeks[0]?.firstSessionDate ?? startDate
+                                  : startDate
+                            );
                           }}
                           className="inline-flex min-h-[28px] items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
                         >
-                          <span>Aller au Jour 1</span>
+                          <span>
+                            {mode === 'member' && delivery?.awaitingVma
+                              ? 'Voir le Test VMA'
+                              : 'Voir Semaine 1'}
+                          </span>
                         </button>
 
                         {delivery && delivery.hasAccess && delivery.unlockedWeeks > 1 && (
@@ -2244,12 +2290,16 @@ export function MemberWeeklyScheduleCard({
                       />
                       <div className="min-w-0">
                         <p className="font-bold">
-                          Semaine {lockedWk}/{delivery.totalWeeks} de « {program.title} » pas encore envoyée
+                          {delivery.awaitingVma
+                            ? `Envoi de « ${program.title} » en attente du Test VMA`
+                            : `Semaine ${lockedWk}/${delivery.totalWeeks} de « ${program.title} » pas encore envoyée`}
                         </p>
                         <p className="mt-0.5 text-amber-900/90 dark:text-amber-200/90">
                           {!delivery.hasAccess
-                            ? `Réglez votre programme (${formatPriceEuros(program.priceCents)}) pour recevoir d’abord la Semaine 1, puis chaque semaine suivante automatiquement.`
-                            : `Elle vous sera envoyée automatiquement à la fin de la semaine ${lockedWk - 1} (le ${formatFrenchDateLong(new Date(unlockAtMs))}).`}
+                            ? `Réglez votre programme (${formatPriceEuros(program.priceCents)}) pour accéder au Test VMA, puis recevoir votre Semaine 1 dès validation du test et chaque semaine suivante le dimanche à 18h00.`
+                            : delivery.awaitingVma
+                              ? 'Validez d’abord votre Test VMA pour déclencher l’envoi immédiat de la Semaine 1, puis de la Semaine 2 le dimanche à 18h00 et ainsi de suite.'
+                              : `Elle vous sera envoyée automatiquement le dimanche à 18h00 (${formatFrenchDateLong(new Date(unlockAtMs))} à ${formatFrenchTime(new Date(unlockAtMs))}).`}
                         </p>
                       </div>
                     </div>
@@ -2264,6 +2314,15 @@ export function MemberWeeklyScheduleCard({
                         >
                           <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
                           <span>Régler {formatPriceEuros(program.priceCents)}</span>
+                        </button>
+                      ) : delivery.awaitingVma ? (
+                        <button
+                          type="button"
+                          onClick={() => setVmaTestProgram(program)}
+                          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg bg-sky-700 px-3 py-1 text-xs font-semibold text-white hover:bg-sky-800 dark:bg-sky-600 dark:hover:bg-sky-500 whitespace-nowrap cursor-pointer"
+                        >
+                          <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>Passer / saisir mon test VMA</span>
                         </button>
                       ) : (
                         <button
@@ -2498,6 +2557,7 @@ export function MemberWeeklyScheduleCard({
           coachUid={currentUserUid}
           coachName={currentCoachName || 'Coach'}
           coachDirectory={coachDirectory}
+          isPrimaryCoach={isPrimaryCoach}
           disciplines={disciplines}
           exercises={exercises}
           memberCandidates={[
@@ -2534,6 +2594,7 @@ export function MemberWeeklyScheduleCard({
           coachUid={currentUserUid}
           coachName={currentCoachName || 'Coach'}
           coachDirectory={coachDirectory}
+          isPrimaryCoach={isPrimaryCoach}
           memberCandidates={[
             {
               email: memberEmail,

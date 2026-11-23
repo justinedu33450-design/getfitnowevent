@@ -1347,6 +1347,23 @@ export function generateRunningProgramSessions(
   return sessions;
 }
 
+function getSunday18hBeforeDate(date: Date): Date {
+  const startOfDay = toStartOfDay(date);
+  const isoDay = toIsoWeekday(startOfDay); // 1=Mon..7=Sun
+  return addDaysAtHour(startOfDay, -isoDay, 18, 0);
+}
+
+function getNextSunday18hAfter(ms: number): Date {
+  const ref = new Date(ms);
+  const refDayStart = toStartOfDay(ref);
+  const daysUntilSunday = (7 - ref.getDay()) % 7;
+  const candidate = addDaysAtHour(refDayStart, daysUntilSunday, 18, 0);
+  if (candidate.getTime() <= ms) {
+    return addDaysAtHour(refDayStart, daysUntilSunday + 7, 18, 0);
+  }
+  return candidate;
+}
+
 export interface ProgramWeekWindow {
   weekNumber: number; // 1..durationWeeks
   startAtMs: number;
@@ -1361,6 +1378,7 @@ export interface ProgramDeliveryProgress {
   isPaid: boolean;
   isFree: boolean;
   hasAccess: boolean;
+  awaitingVma: boolean;
   totalWeeks: number;
   unlockedWeeks: number;
   currentWeekNumber: number;
@@ -1403,10 +1421,26 @@ export function getProgramDeliveryProgress(
   const isPaid = Boolean(program.isPaid) && program.paymentStatus === 'paid';
   const hasAccess = isFree || isPaid;
   const vmaCompleted = program.vmaTestStatus === 'completed';
+  const awaitingVma = !vmaCompleted;
   const paidMs = isFree
     ? programAnchor.getTime()
     : (program.paidAt?.toMillis?.() ?? programAnchor.getTime());
-  const vmaDoneMs = program.vmaTestedAt?.toMillis?.() ?? paidMs;
+  const vmaDoneMs =
+    program.vmaTestedAt?.toMillis?.() ??
+    program.updatedAt?.toMillis?.() ??
+    paidMs;
+  const week1ReleaseMs = Math.max(paidMs, vmaDoneMs);
+
+  let week2SundayDate: Date | null = null;
+  if (vmaCompleted && totalWeeks >= 2 && weekDates[1]?.[0]) {
+    const firstSundayAfterVma = getNextSunday18hAfter(week1ReleaseMs);
+    const sundayBeforeWeek2 = getSunday18hBeforeDate(weekDates[1][0]);
+    week2SundayDate =
+      sundayBeforeWeek2.getTime() > firstSundayAfterVma.getTime()
+        ? sundayBeforeWeek2
+        : firstSundayAfterVma;
+  }
+
   const weeks: ProgramWeekWindow[] = [];
 
   for (let w = 1; w <= totalWeeks; w += 1) {
@@ -1426,12 +1460,14 @@ export function getProgramDeliveryProgress(
       999
     ).getTime();
 
-    const unlockAtMs =
-      w === 1
-        ? vmaCompleted
-          ? Math.max(paidMs, vmaDoneMs)
-          : startAtMs
-        : weeks[idx - 1].endAtMs + 1;
+    const unlockAtMs = !vmaCompleted
+      ? startAtMs
+      : w === 1
+        ? week1ReleaseMs
+        : week2SundayDate
+          ? addDaysAtHour(week2SundayDate, (w - 2) * 7, 18, 0).getTime()
+          : startAtMs;
+
     const unlocked =
       hasAccess && vmaCompleted && (w === 1 || nowMs >= unlockAtMs);
 
@@ -1446,19 +1482,24 @@ export function getProgramDeliveryProgress(
     });
   }
 
-  const unlockedWeeks = hasAccess ? weeks.filter((wk) => wk.unlocked).length : 0;
-  const allWeeksReleased = hasAccess && unlockedWeeks >= totalWeeks;
-  const nextLocked = hasAccess ? weeks.find((wk) => !wk.unlocked) ?? null : null;
+  const unlockedWeeks =
+    hasAccess && vmaCompleted ? weeks.filter((wk) => wk.unlocked).length : 0;
+  const allWeeksReleased =
+    hasAccess && vmaCompleted && unlockedWeeks >= totalWeeks;
+  const nextLocked =
+    hasAccess && vmaCompleted ? weeks.find((wk) => !wk.unlocked) ?? null : null;
 
   return {
     isPaid,
     isFree,
     hasAccess,
+    awaitingVma,
     totalWeeks,
     unlockedWeeks,
-    currentWeekNumber: unlockedWeeks > 0 ? unlockedWeeks : 1,
-    nextWeekNumber: hasAccess ? (nextLocked ? nextLocked.weekNumber : null) : 1,
-    nextUnlockAtMs: hasAccess ? (nextLocked ? nextLocked.unlockAtMs : null) : null,
+    currentWeekNumber: unlockedWeeks,
+    nextWeekNumber: !hasAccess || awaitingVma ? 1 : nextLocked ? nextLocked.weekNumber : null,
+    nextUnlockAtMs:
+      hasAccess && vmaCompleted && nextLocked ? nextLocked.unlockAtMs : null,
     allWeeksReleased,
     weeks,
   };

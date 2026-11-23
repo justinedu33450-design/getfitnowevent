@@ -1014,7 +1014,7 @@ export function ProgramSessionsModal({
                               className={`font-mono text-[11px] font-semibold tabular-nums ${
                                 !delivery.hasAccess
                                   ? 'text-amber-700 dark:text-amber-400'
-                                  : program.vmaTestStatus === 'pending'
+                                  : delivery.awaitingVma
                                     ? 'text-amber-700 dark:text-amber-400'
                                     : weekWindow.unlocked
                                       ? 'text-emerald-700 dark:text-emerald-400'
@@ -1023,11 +1023,13 @@ export function ProgramSessionsModal({
                             >
                               {!delivery.hasAccess
                                 ? 'Paiement requis'
-                                : program.vmaTestStatus === 'pending'
-                                  ? 'Démarre après le Test VMA'
+                                : delivery.awaitingVma
+                                  ? weekNum === 1
+                                    ? 'En attente · envoyée dès validation du Test VMA'
+                                    : 'En attente du Test VMA (puis dimanche 18h00)'
                                   : weekWindow.unlocked
                                     ? 'Envoyée à l’adhérent'
-                                    : `Envoi prévu le ${formatFrenchDateShort(new Date(weekWindow.unlockAtMs))}`}
+                                    : `Envoi prévu le ${formatFrenchDateShort(new Date(weekWindow.unlockAtMs))} à 18h00`}
                             </span>
                           )
                         )}

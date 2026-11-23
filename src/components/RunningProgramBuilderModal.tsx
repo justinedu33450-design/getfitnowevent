@@ -51,6 +51,7 @@ interface RunningProgramBuilderModalProps {
   coachUid: string;
   coachName: string;
   coachDirectory: CoachDirectoryEntry[];
+  isPrimaryCoach?: boolean;
   memberCandidates: ProgramMemberCandidate[];
   initialMember?: ProgramMemberCandidate | null;
   initialDistance?: RunningDistanceKey;
@@ -103,6 +104,7 @@ export function RunningProgramBuilderModal({
   coachUid,
   coachName,
   coachDirectory,
+  isPrimaryCoach = false,
   memberCandidates,
   initialMember = null,
   initialDistance = '10km',
@@ -395,8 +397,11 @@ export function RunningProgramBuilderModal({
       preferredDays,
       sessionsPerWeek
     );
-    const selectedCoach = coachDirectory.find((c) => c.uid === coachRefUid);
-    const resolvedCoachUid = (coachRefUid || coachUid).trim();
+    const effectiveCoachUid = isPrimaryCoach
+      ? (coachRefUid || coachUid).trim()
+      : editingProgram?.coachUid || coachUid;
+    const selectedCoach = coachDirectory.find((c) => c.uid === effectiveCoachUid);
+    const resolvedCoachUid = effectiveCoachUid;
     const resolvedCoachName =
       selectedCoach?.displayName || coachName || 'Coach';
 
@@ -742,8 +747,7 @@ export function RunningProgramBuilderModal({
                   className="mt-2 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
                 <p className="mt-2 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
-                  Seule la séance Test VMA peut être effectuée n’importe quel jour.
-                  Les {durationWeeks * sessionsPerWeek} séances du programme démarrent ensuite selon les jours choisis ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}).
+                  Tant que le Test VMA n’est pas validé, l’envoi du programme reste en attente. Dès validation du test, la Semaine 1 est envoyée immédiatement sur les jours choisis ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}), puis la Semaine 2 le dimanche à 18h00 et ainsi de suite chaque dimanche à 18h00.
                 </p>
               </div>
             </div>
@@ -928,7 +932,7 @@ export function RunningProgramBuilderModal({
                 </>
               ) : (
                 <p className="rounded-lg border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-800/60 dark:bg-slate-900/60 dark:text-emerald-200">
-                  Programme offert : aucun paiement demandé. La séance Test VMA est disponible dès maintenant (effectuable n’importe quel jour), puis le programme démarre selon les jours choisis ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}).
+                  Programme offert : aucun paiement demandé. Seule la séance Test VMA est disponible immédiatement ; l’envoi du programme reste en attente jusqu’à validation du test, puis la Semaine 1 est envoyée immédiatement et les suivantes chaque dimanche à 18h00 ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}).
                 </p>
               )}
             </div>
@@ -942,21 +946,30 @@ export function RunningProgramBuilderModal({
                 >
                   Coach référent
                 </label>
-                <select
-                  id="rp-coach"
-                  value={coachRefUid}
-                  onChange={(e) => handleCoachChange(e.target.value)}
-                  className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                >
-                  {coachName && !coachDirectory.some((c) => c.uid === coachUid) && (
-                    <option value={coachUid}>{coachName}</option>
-                  )}
-                  {coachDirectory.map((c) => (
-                    <option key={c.uid} value={c.uid}>
-                      {c.displayName}
-                    </option>
-                  ))}
-                </select>
+                {isPrimaryCoach ? (
+                  <select
+                    id="rp-coach"
+                    value={coachRefUid}
+                    onChange={(e) => handleCoachChange(e.target.value)}
+                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  >
+                    {coachName && !coachDirectory.some((c) => c.uid === coachUid) && (
+                      <option value={coachUid}>{coachName}</option>
+                    )}
+                    {coachDirectory.map((c) => (
+                      <option key={c.uid} value={c.uid}>
+                        {c.displayName}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div
+                    id="rp-coach"
+                    className="mt-1 flex min-h-[40px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+                  >
+                    {coachName || editingProgram?.coachName || 'Coach'}
+                  </div>
+                )}
               </div>
               <div>
                 <label
@@ -1005,8 +1018,8 @@ export function RunningProgramBuilderModal({
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/60">
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {isPaid
-                ? `Après paiement, l’adhérent passe le Test VMA n’importe quel jour, puis démarre sur ${formatPreferredDaysShort(preferredDays, sessionsPerWeek)} (${durationWeeks} sem.).`
-                : `Programme offert : Test VMA disponible dès maintenant (n’importe quel jour), puis démarrage sur ${formatPreferredDaysShort(preferredDays, sessionsPerWeek)} (${durationWeeks} sem.).`}
+                ? `Après paiement : Test VMA disponible. Tant qu’il n’est pas validé, l’envoi reste en attente ; dès validation, Semaine 1 envoyée puis chaque semaine suivante le dimanche à 18h00 (${durationWeeks} sem.).`
+                : `Programme offert : Test VMA disponible. Envoi du programme en attente jusqu’à validation du test, puis Semaine 1 immédiate et semaines suivantes chaque dimanche à 18h00 (${durationWeeks} sem.).`}
             </p>
             <div className="flex items-center gap-2">
               <button
