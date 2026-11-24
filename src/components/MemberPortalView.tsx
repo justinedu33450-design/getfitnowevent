@@ -25,6 +25,7 @@ import {
   EventRatingSummary,
   EventReview,
   FitnessLevel,
+  MemberNotification,
   MemberProfile,
   MemberScheduleSession,
   Registration,
@@ -34,6 +35,7 @@ import {
 } from '../types';
 import {
   deleteEventReview,
+  mergeRegistrationsWithArchivedStats,
   resolveDefaultPrimaryCoach,
   updateMyReferentCoach,
   upsertEventReview,
@@ -94,6 +96,7 @@ interface MemberPortalViewProps {
   recentConversations?: Conversation[];
   onOpenMessages?: (conversation?: Conversation) => void;
   customScheduleSessions?: MemberScheduleSession[];
+  memberNotifications?: MemberNotification[];
   trainingPrograms?: TrainingProgram[];
   coachDirectory?: CoachDirectoryEntry[];
   onRequestCoachProgram?: (coach?: CoachDirectoryEntry) => void;
@@ -122,6 +125,7 @@ export function MemberPortalView({
   recentConversations = [],
   onOpenMessages,
   customScheduleSessions = [],
+  memberNotifications = [],
   trainingPrograms = [],
   coachDirectory = [],
   onRequestCoachProgram,
@@ -289,22 +293,47 @@ export function MemberPortalView({
     [events]
   );
 
+  const statsRegistrations = useMemo(
+    () =>
+      mergeRegistrationsWithArchivedStats(
+        registrations,
+        customScheduleSessions,
+        {
+          events,
+          memberNotifications,
+        }
+      ),
+    [registrations, customScheduleSessions, events, memberNotifications]
+  );
+
   const confirmedRegistrations = useMemo(
-    () => registrations.filter((r) => r.status === 'confirmed'),
-    [registrations]
+    () =>
+      statsRegistrations.filter((r) => {
+        if (r.isArchivedStat || r.status !== 'confirmed') return false;
+        const matchedEvent = eventsById.get(r.eventId) ?? null;
+        return r.cancelledBy !== 'admin' && matchedEvent?.status !== 'cancelled';
+      }),
+    [statsRegistrations, eventsById]
   );
 
   const cancelledRegistrations = useMemo(
     () =>
-      registrations
-        .filter((r) => r.status === 'cancelled')
+      statsRegistrations
+        .filter((r) => {
+          const matchedEvent = eventsById.get(r.eventId) ?? null;
+          return (
+            r.status === 'cancelled' ||
+            r.cancelledBy === 'admin' ||
+            matchedEvent?.status === 'cancelled'
+          );
+        })
         .slice()
         .sort((a, b) => {
           const aMs = a.updatedAt?.toMillis?.() ?? a.eventStartAt.toMillis();
           const bMs = b.updatedAt?.toMillis?.() ?? b.eventStartAt.toMillis();
           return bMs - aMs;
         }),
-    [registrations]
+    [statsRegistrations, eventsById]
   );
 
   const upcomingRegistrations = useMemo(
@@ -343,25 +372,64 @@ export function MemberPortalView({
     [pastRegistrations, eventsById, userEmailLower]
   );
 
+  const statsTotalRegistrationsCount = useMemo(
+    () =>
+      statsRegistrations.filter((r) => {
+        const matchedEvent = eventsById.get(r.eventId) ?? null;
+        const isEventCancelled =
+          Boolean(r.eventCancelled) || matchedEvent?.status === 'cancelled';
+        if (r.status === 'confirmed' && !isEventCancelled) return true;
+        if (r.status === 'cancelled' && r.cancelledBy !== 'admin' && !isEventCancelled) {
+          return true;
+        }
+        if (r.isArchivedStat && !r.eventCancelled) return true;
+        if (r.attended && r.cancelledBy === 'admin') return true;
+        return false;
+      }).length,
+    [statsRegistrations, eventsById]
+  );
+
+  const statsPastCount = useMemo(
+    () =>
+      statsRegistrations.filter((r) => {
+        const matchedEvent = eventsById.get(r.eventId) ?? null;
+        const isEventCancelled =
+          Boolean(r.eventCancelled) || matchedEvent?.status === 'cancelled';
+        if (r.status === 'cancelled' && r.cancelledBy !== 'admin' && !isEventCancelled) {
+          return false;
+        }
+        if (isEventCancelled && !r.attended) return false;
+        return getRegistrationEndMs(r, matchedEvent) <= nowMs;
+      }).length,
+    [statsRegistrations, eventsById, nowMs]
+  );
+
   const attendedCount = useMemo(
     () =>
-      confirmedRegistrations.filter(
-        (r) => r.attended && r.email.trim().toLowerCase() === userEmailLower
-      ).length,
-    [confirmedRegistrations, userEmailLower]
+      statsRegistrations.filter((r) => {
+        if (!r.attended || r.email.trim().toLowerCase() !== userEmailLower) {
+          return false;
+        }
+        return (
+          r.status === 'confirmed' ||
+          r.cancelledBy === 'admin' ||
+          Boolean(r.isArchivedStat)
+        );
+      }).length,
+    [statsRegistrations, userEmailLower]
   );
 
   const badgesSummary = useMemo(
     () =>
       computeMemberBadges({
-        registrations,
+        registrations: statsRegistrations,
         events,
         disciplines,
         memberEmail: user.email,
         reviewsByRegId,
         nowMs,
       }),
-    [registrations, events, disciplines, user.email, reviewsByRegId, nowMs]
+    [statsRegistrations, events, disciplines, user.email, reviewsByRegId, nowMs]
   );
 
   const fullName =
@@ -449,7 +517,7 @@ export function MemberPortalView({
     const beforeSummary = badgesSummary;
     try {
       await onValidateSession(reg);
-      const afterRegs = registrations.map((item) =>
+      const afterRegs = statsRegistrations.map((item) =>
         item.id === reg.id ? { ...item, attended: true } : item
       );
       const afterSummary = computeMemberBadges({
@@ -637,7 +705,7 @@ export function MemberPortalView({
             Inscriptions totales
           </p>
           <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
-            {confirmedRegistrations.length}
+            {statsTotalRegistrationsCount}
           </p>
         </div>
         <div className="p-4 sm:px-5">
@@ -649,7 +717,7 @@ export function MemberPortalView({
         <div className="p-4 sm:px-5">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Séances passées</p>
           <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
-            {pastRegistrations.length}
+            {statsPastCount}
           </p>
         </div>
         <div className="p-4 sm:px-5">
@@ -1241,7 +1309,7 @@ export function MemberPortalView({
 
           <div className="mt-4">
             <MemberRegularityChart
-              registrations={registrations}
+              registrations={statsRegistrations}
               events={events}
               nowMs={nowMs}
               memberEmail={user.email ?? undefined}
@@ -1291,12 +1359,17 @@ export function MemberPortalView({
                 const endMs = getRegistrationEndMs(reg, matchedEvent);
                 const durationForDisplay =
                   matchedEvent?.durationMinutes ?? reg.eventDurationMinutes;
-                const discStyle = matchedEvent
-                  ? getDisciplineStyle(matchedEvent.discipline, disciplines)
+                const discName = matchedEvent?.discipline || reg.discipline;
+                const discStyle = discName
+                  ? getDisciplineStyle(discName, disciplines)
                   : null;
                 const isRegCancelled = reg.status === 'cancelled';
-                const isEventCancelled = matchedEvent?.status === 'cancelled';
-                const isCancelled = isRegCancelled || isEventCancelled;
+                const isEventCancelled =
+                  Boolean(reg.eventCancelled) ||
+                  matchedEvent?.status === 'cancelled';
+                const isAdminCancelled =
+                  reg.cancelledBy === 'admin' || isEventCancelled;
+                const isCancelled = isRegCancelled || isAdminCancelled;
                 const isEnded = endMs <= nowMs;
                 const isOngoing = !isCancelled && startMs <= nowMs && !isEnded;
                 const isOwnRegistration =
@@ -1308,12 +1381,14 @@ export function MemberPortalView({
                   (reg.invitedByEmail ?? '').trim().toLowerCase() === userEmailLower;
                 const canValidateNow =
                   Boolean(onValidateSession) &&
+                  !reg.isArchivedStat &&
                   isOwnRegistration &&
                   isEnded &&
                   !isCancelled &&
                   !reg.attended;
                 const canCancelReg =
                   Boolean(onCancelRegistration) &&
+                  !reg.isArchivedStat &&
                   (isOwnRegistration || isHostedGuest) &&
                   trackingTab === 'upcoming' &&
                   !isCancelled &&
@@ -1336,26 +1411,31 @@ export function MemberPortalView({
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 space-y-1.5">
                         <div className="flex flex-wrap items-center gap-2">
-                          {matchedEvent && discStyle && (
+                          {discName && discStyle && (
                             <span
                               className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                             >
                               <DisciplineIcon
-                                disciplineName={matchedEvent.discipline}
+                                disciplineName={discName}
                                 catalog={disciplines}
                                 className="h-3 w-3 shrink-0"
                               />
-                              {matchedEvent.discipline}
+                              {discName}
                             </span>
                           )}
 
-                          {isRegCancelled ? (
-                            <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">
-                              Inscription annulée
-                            </span>
-                          ) : isEventCancelled ? (
-                            <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">
-                              Séance annulée
+                          {isCancelled ? (
+                            <span className="inline-flex flex-wrap items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-400">
+                              <span>
+                                {isAdminCancelled
+                                  ? 'Annulé par l’administrateur'
+                                  : 'Annulé par vous-même'}
+                              </span>
+                              {reg.attended && isAdminCancelled && (
+                                <span className="text-emerald-700 dark:text-emerald-400">
+                                  · Présence conservée
+                                </span>
+                              )}
                             </span>
                           ) : reg.attended ? (
                             <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">

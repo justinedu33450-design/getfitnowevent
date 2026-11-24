@@ -9,6 +9,7 @@ import {
   Clock,
   Copy,
   CreditCard,
+  ExternalLink,
   FileDown,
   Lock,
   MapPin,
@@ -45,12 +46,14 @@ import {
   evaluateEventBooking,
   formatEventCoachesLabel,
   formatEventPrice,
+  formatExternalUrlLabel,
   formatFrenchDateLong,
   formatFrenchTime,
   formatPaymentModeLabel,
   formatPriceEuros,
   formatTimeRange,
   getRegistrationPaymentBadgeInfo,
+  getSafeExternalHref,
 } from '../utils/dateAndValidation';
 import {
   detectCardBrand,
@@ -827,6 +830,29 @@ export function BookingModal({
               {event.description}
             </p>
           )}
+
+          {(() => {
+            const safeExternalUrl = getSafeExternalHref(event.externalUrl);
+            if (!safeExternalUrl) return null;
+            return (
+              <a
+                href={safeExternalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100/80 dark:border-emerald-800/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/70"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">
+                    Lien associé : {formatExternalUrlLabel(safeExternalUrl)}
+                  </span>
+                </span>
+                <span className="shrink-0 text-xs font-semibold underline underline-offset-2">
+                  Ouvrir
+                </span>
+              </a>
+            );
+          })()}
 
           {/* Interactive Event Location Map */}
           <div>

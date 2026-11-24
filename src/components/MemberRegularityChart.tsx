@@ -220,10 +220,19 @@ export function MemberRegularityChart({
         return;
       }
       const matchedEvent = eventsById.get(reg.eventId);
-      const isCancelled =
-        reg.status === 'cancelled' || matchedEvent?.status === 'cancelled';
+      const isAdminCancelled =
+        reg.cancelledBy === 'admin' || matchedEvent?.status === 'cancelled';
 
-      if (isCancelled) {
+      if (isAdminCancelled) {
+        if (reg.attended) {
+          validatedCount += 1;
+        } else if (reg.isArchivedStat && !reg.eventCancelled) {
+          registeredCount += 1;
+        }
+        return;
+      }
+
+      if (reg.status === 'cancelled') {
         cancelledCount += 1;
       } else if (reg.attended) {
         validatedCount += 1;

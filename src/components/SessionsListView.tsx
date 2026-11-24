@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Clock,
+  ExternalLink,
   List,
   Map as MapIcon,
   MapPin,
@@ -19,10 +20,12 @@ import {
   evaluateEventBooking,
   formatEventCoachesLabel,
   formatEventPrice,
+  formatExternalUrlLabel,
   formatFrenchDateShort,
   formatPaymentModeLabel,
   formatTimeRange,
   getEventCoachNames,
+  getSafeExternalHref,
   isSameCalendarDay,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
@@ -489,6 +492,24 @@ export function SessionsListView({
                       <UserCheck className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
                       <span className="truncate">{formatEventCoachesLabel(ev)}</span>
                     </div>
+                    {(() => {
+                      const safeExternalUrl = getSafeExternalHref(ev.externalUrl);
+                      if (!safeExternalUrl) return null;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <ExternalLink className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                          <a
+                            href={safeExternalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="truncate font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                          >
+                            {formatExternalUrlLabel(safeExternalUrl)}
+                          </a>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 

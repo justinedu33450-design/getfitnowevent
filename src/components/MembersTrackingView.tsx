@@ -34,6 +34,7 @@ import {
   assignMemberReferentCoach,
   createManualMember,
   deleteMemberCompletely,
+  mergeRegistrationsWithArchivedStats,
   resolveDefaultPrimaryCoach,
   toggleRegistrationAttendance,
   upsertMemberProfile,
@@ -182,6 +183,14 @@ export function MembersTrackingView({
     isPrimaryBootstrapped,
   ]);
 
+  const statsRegistrations = useMemo(
+    () =>
+      mergeRegistrationsWithArchivedStats(registrations, memberSchedules, {
+        events,
+      }),
+    [registrations, memberSchedules, events]
+  );
+
   // Aggregate coach's own members strictly (David Frosio sees his + unassigned registrants;
   // other coaches ONLY see members explicitly attached to their UID)
   const members = useMemo<MemberAggregate[]>(() => {
@@ -214,8 +223,8 @@ export function MembersTrackingView({
     });
 
     const grouped = new Map<string, Registration[]>();
-    registrations.forEach((reg) => {
-      if (reg.status !== 'confirmed') return;
+    statsRegistrations.forEach((reg) => {
+      if (reg.status !== 'confirmed' && reg.status !== 'cancelled') return;
       const cleanEmail = (reg.email ?? '').trim().toLowerCase();
       if (
         coachIdentitySets.emailKeys.has(reg.emailKey) ||
@@ -249,7 +258,11 @@ export function MembersTrackingView({
       const regs = (grouped.get(key) ?? []).slice().sort(
         (a, b) => b.eventStartAt.toMillis() - a.eventStartAt.toMillis()
       );
-      const latestReg = regs[0];
+      if (!profile && regs.length === 0) {
+        return;
+      }
+      const liveRegs = regs.filter((r) => !r.isArchivedStat);
+      const latestReg = liveRegs[0] ?? regs[0];
       const email = profile?.email || latestReg?.email || '';
       const cleanEmail = email.trim().toLowerCase();
       if (
@@ -261,18 +274,60 @@ export function MembersTrackingView({
       const firstName = profile?.firstName || latestReg?.firstName || '';
       const lastName = profile?.lastName || latestReg?.lastName || '';
 
-      const pastRegs = regs.filter((r) => r.eventStartAt.toMillis() <= nowMs);
-      const upcomingRegs = regs.filter((r) => r.eventStartAt.toMillis() > nowMs);
+      const selfCancelledRegs = regs.filter(
+        (r) => r.status === 'cancelled' && r.cancelledBy !== 'admin'
+      );
+      const activeConfirmedRegs = regs.filter(
+        (r) => r.status === 'confirmed' && r.cancelledBy !== 'admin'
+      );
+      const adminRemovedPreservedRegs = regs.filter(
+        (r) => r.isArchivedStat && !r.eventCancelled
+      );
+      const adminCancelledAttendedRegs = regs.filter(
+        (r) => r.cancelledBy === 'admin' && !r.isArchivedStat && r.attended
+      );
+
+      const pastConfirmedRegs = activeConfirmedRegs.filter(
+        (r) => r.eventStartAt.toMillis() <= nowMs
+      );
+      const liveUpcomingRegs = activeConfirmedRegs.filter(
+        (r) => !r.isArchivedStat && r.eventStartAt.toMillis() > nowMs
+      );
       const attendedCount = regs.filter((r) => r.attended).length;
 
+      // Self-cancellations count in member stats; admin removals/cancellations leave member stats unchanged
+      const totalRegistrations =
+        activeConfirmedRegs.filter((r) => !r.isArchivedStat).length +
+        selfCancelledRegs.length +
+        adminRemovedPreservedRegs.length +
+        adminCancelledAttendedRegs.length;
+
+      const pastEffectiveCount =
+        pastConfirmedRegs.length +
+        selfCancelledRegs.length +
+        adminRemovedPreservedRegs.filter(
+          (r) => r.eventStartAt.toMillis() <= nowMs
+        ).length +
+        adminCancelledAttendedRegs.length;
+
       const attendanceRate =
-        pastRegs.length > 0
-          ? Math.round((attendedCount / pastRegs.length) * 100)
+        pastEffectiveCount > 0
+          ? Math.min(100, Math.round((attendedCount / pastEffectiveCount) * 100))
           : null;
 
-      const lastSession = pastRegs[0]?.eventStartAt.toDate() ?? null;
+      const lastSession =
+        [
+          ...pastConfirmedRegs,
+          ...selfCancelledRegs,
+          ...adminRemovedPreservedRegs.filter(
+            (r) => r.eventStartAt.toMillis() <= nowMs
+          ),
+          ...adminCancelledAttendedRegs,
+        ].sort((a, b) => b.eventStartAt.toMillis() - a.eventStartAt.toMillis())[0]
+          ?.eventStartAt.toDate() ?? null;
       const nextSession =
-        upcomingRegs[upcomingRegs.length - 1]?.eventStartAt.toDate() ?? null;
+        liveUpcomingRegs[liveUpcomingRegs.length - 1]?.eventStartAt.toDate() ??
+        null;
 
       result.push({
         emailKey: key,
@@ -281,10 +336,10 @@ export function MembersTrackingView({
         lastName,
         profile,
         registrations: regs,
-        totalRegistrations: regs.length,
+        totalRegistrations,
         attendedCount,
-        pastRegistrationsCount: pastRegs.length,
-        upcomingRegistrationsCount: upcomingRegs.length,
+        pastRegistrationsCount: pastEffectiveCount,
+        upcomingRegistrationsCount: liveUpcomingRegs.length,
         attendanceRate,
         lastSessionDate: lastSession,
         nextSessionDate: nextSession,
@@ -298,7 +353,7 @@ export function MembersTrackingView({
       )
     );
   }, [
-    registrations,
+    statsRegistrations,
     memberProfiles,
     allMemberProfiles,
     currentCoachUid,
@@ -343,6 +398,11 @@ export function MembersTrackingView({
   );
 
   const selectedMemberAllRegistrations = useMemo(() => {
+    if (!selectedMember) return [];
+    return statsRegistrations.filter((r) => r.emailKey === selectedMember.emailKey);
+  }, [statsRegistrations, selectedMember]);
+
+  const selectedMemberLiveRegistrations = useMemo(() => {
     if (!selectedMember) return [];
     return registrations.filter((r) => r.emailKey === selectedMember.emailKey);
   }, [registrations, selectedMember]);
@@ -962,6 +1022,7 @@ export function MembersTrackingView({
           key={selectedMember.emailKey}
           member={selectedMember}
           allRegistrations={selectedMemberAllRegistrations}
+          liveRegistrations={selectedMemberLiveRegistrations}
           memberScheduleSessions={selectedMemberScheduleSessions}
           memberTrainingPrograms={selectedMemberTrainingPrograms}
           currentCoachUid={currentCoachUid}
@@ -1406,6 +1467,7 @@ function AddMemberModal({
 interface MemberDetailDrawerProps {
   member: MemberAggregate;
   allRegistrations: Registration[];
+  liveRegistrations: Registration[];
   memberScheduleSessions: MemberScheduleSession[];
   memberTrainingPrograms: TrainingProgram[];
   currentCoachUid: string;
@@ -1433,6 +1495,7 @@ interface MemberDetailDrawerProps {
 function MemberDetailDrawer({
   member,
   allRegistrations,
+  liveRegistrations,
   memberScheduleSessions,
   memberTrainingPrograms,
   currentCoachUid,
@@ -2044,7 +2107,7 @@ function MemberDetailDrawer({
                 isPrimaryCoach={isPrimaryBootstrapped}
                 customSessions={memberScheduleSessions}
                 trainingPrograms={memberTrainingPrograms}
-                registrations={allRegistrations}
+                registrations={liveRegistrations}
                 events={events}
                 disciplines={disciplines}
                 exercises={exercises}
@@ -2095,9 +2158,33 @@ function MemberDetailDrawer({
                       Historique des séances ({member.registrations.length})
                     </h3>
                     <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                      {member.attendedCount} présence
-                      {member.attendedCount > 1 ? 's' : ''} confirmée
-                      {member.attendedCount > 1 ? 's' : ''} · pointage et suivi des participations
+                      {(() => {
+                        const historyAttendedCount = member.registrations.filter(
+                          (r) => r.attended
+                        ).length;
+                        const historyUpcomingCount = member.registrations.filter(
+                          (r) =>
+                            r.status === 'confirmed' &&
+                            r.cancelledBy !== 'admin' &&
+                            !r.isArchivedStat &&
+                            r.eventStartAt.toMillis() > nowMs
+                        ).length;
+                        const historyCancelledCount = member.registrations.filter(
+                          (r) => r.status === 'cancelled' || r.cancelledBy === 'admin'
+                        ).length;
+                        const parts = [
+                          `${historyAttendedCount} présence${historyAttendedCount > 1 ? 's' : ''} confirmée${historyAttendedCount > 1 ? 's' : ''}`,
+                        ];
+                        if (historyUpcomingCount > 0) {
+                          parts.push(`${historyUpcomingCount} à venir`);
+                        }
+                        if (historyCancelledCount > 0) {
+                          parts.push(
+                            `${historyCancelledCount} annulée${historyCancelledCount > 1 ? 's' : ''}`
+                          );
+                        }
+                        return parts.join(' · ');
+                      })()}
                     </p>
                   </div>
                 </button>
@@ -2133,45 +2220,87 @@ function MemberDetailDrawer({
                     <div className="space-y-2">
                       {member.registrations.map((reg) => {
                         const startDate = reg.eventStartAt.toDate();
-                        const isUpcoming = startDate.getTime() > nowMs;
+                        const matchedEvent =
+                          events.find((ev) => ev.id === reg.eventId) ?? null;
+                        const isAdminCancelled =
+                          reg.cancelledBy === 'admin' ||
+                          matchedEvent?.status === 'cancelled';
+                        const isMemberCancelled =
+                          reg.status === 'cancelled' && !isAdminCancelled;
+                        const isCancelled = isAdminCancelled || isMemberCancelled;
+                        const isUpcoming =
+                          !isCancelled &&
+                          !reg.isArchivedStat &&
+                          startDate.getTime() > nowMs;
+                        const isPastParticipated = !isCancelled && !isUpcoming;
+
                         return (
                           <div
                             key={reg.id}
-                            className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm"
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm"
                           >
-                            <div className="min-w-0">
-                              <p className="font-medium text-slate-900 dark:text-white truncate">
-                                {reg.eventTitle}
-                              </p>
-                              <p className="flex items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums capitalize">
-                                <Clock className="h-3 w-3" aria-hidden="true" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-medium text-slate-900 dark:text-white truncate">
+                                  {reg.eventTitle}
+                                </p>
+                                {isUpcoming && (
+                                  <span className="inline-flex items-center rounded border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                                    Participe
+                                  </span>
+                                )}
+                                {isPastParticipated && (
+                                  <span className="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                                    A participé
+                                  </span>
+                                )}
+                                {isMemberCancelled && (
+                                  <span className="inline-flex items-center rounded border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 text-[11px] font-semibold text-rose-800 dark:text-rose-300">
+                                    Annulé par l’adhérent
+                                  </span>
+                                )}
+                                {isAdminCancelled && (
+                                  <span className="inline-flex items-center rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                                    Annulé par l’administrateur
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums capitalize">
+                                <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
                                 {formatFrenchDateShort(startDate)} ·{' '}
                                 {formatFrenchTime(startDate)}
                                 {isUpcoming && (
-                                  <span className="text-emerald-700 dark:text-emerald-400 font-sans font-semibold">
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-sans font-semibold normal-case">
                                     · À venir
+                                  </span>
+                                )}
+                                {isAdminCancelled && reg.attended && (
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-sans font-semibold normal-case">
+                                    · Présence conservée
                                   </span>
                                 )}
                               </p>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void toggleRegistrationAttendance(
-                                  reg.id,
-                                  !reg.attended
-                                )
-                              }
-                              className={`inline-flex min-h-[38px] shrink-0 items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold cursor-pointer ${
-                                reg.attended
-                                  ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
-                                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                              }`}
-                            >
-                              <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                              {reg.attended ? 'Présent' : 'Pointer'}
-                            </button>
+                            {!isCancelled && !reg.isArchivedStat && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void toggleRegistrationAttendance(
+                                    reg.id,
+                                    !reg.attended
+                                  )
+                                }
+                                className={`inline-flex min-h-[38px] shrink-0 items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold cursor-pointer ${
+                                  reg.attended
+                                    ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                                {reg.attended ? 'Présent' : 'Pointer'}
+                              </button>
+                            )}
                           </div>
                         );
                       })}

@@ -6,6 +6,7 @@ import {
   Copy,
   Download,
   Edit3,
+  ExternalLink,
   History,
   LogOut,
   MapPin,
@@ -41,11 +42,13 @@ import {
   formatCapacityCompact,
   formatEventCoachesLabel,
   formatEventPrice,
+  formatExternalUrlLabel,
   formatFrenchDateShort,
   formatPaymentModeLabel,
   formatPriceEuros,
   formatTimeRange,
   getEventCoachNames,
+  getSafeExternalHref,
 } from '../utils/dateAndValidation';
 import {
   DISCIPLINE_COLOR_KEYS,
@@ -235,22 +238,31 @@ export function CoachEventsView({
         'Capacité',
         'Statut',
       ],
-      events.map((ev) => [
-        ev.title,
-        ev.discipline,
-        formatFrenchDateShort(ev.startAt.toDate()),
-        formatTimeRange(ev.startAt.toDate(), ev.durationMinutes),
-        ev.city || '',
-        ev.region || '',
-        ev.location,
-        getEventCoachNames(ev).join(', ') || ev.coachName,
-        formatEventPrice(ev),
-        ev.isPaid ? formatPaymentModeLabel(ev.paymentMode) : 'Gratuit',
-        ev.isPaid ? formatPriceEuros(getCollectedCents(ev.id)) : '0 €',
-        String(ev.registeredCount),
-        ev.isUnlimitedCapacity ? 'Illimité' : String(ev.maxCapacity),
-        evaluateEventBooking(ev, nowMs).statusLabel,
-      ])
+      events.map((ev) => {
+        const regCount = registrations.filter(
+          (r) => r.eventId === ev.id && r.status === 'confirmed'
+        ).length;
+        const effectiveEvent =
+          ev.registeredCount === regCount
+            ? ev
+            : { ...ev, registeredCount: regCount };
+        return [
+          ev.title,
+          ev.discipline,
+          formatFrenchDateShort(ev.startAt.toDate()),
+          formatTimeRange(ev.startAt.toDate(), ev.durationMinutes),
+          ev.city || '',
+          ev.region || '',
+          ev.location,
+          getEventCoachNames(ev).join(', ') || ev.coachName,
+          formatEventPrice(ev),
+          ev.isPaid ? formatPaymentModeLabel(ev.paymentMode) : 'Gratuit',
+          ev.isPaid ? formatPriceEuros(getCollectedCents(ev.id)) : '0 €',
+          String(regCount),
+          ev.isUnlimitedCapacity ? 'Illimité' : String(ev.maxCapacity),
+          evaluateEventBooking(effectiveEvent, nowMs).statusLabel,
+        ];
+      })
     );
   };
 
@@ -271,11 +283,15 @@ export function CoachEventsView({
   }, [events, nowMs]);
 
   const renderMobileEventCard = (ev: SportEvent) => {
-    const evalInfo = evaluateEventBooking(ev, nowMs);
     const discStyle = getDisciplineStyle(ev.discipline, disciplines);
     const regCount = registrations.filter(
       (r) => r.eventId === ev.id && r.status === 'confirmed'
     ).length;
+    const effectiveEvent =
+      ev.registeredCount === regCount
+        ? ev
+        : { ...ev, registeredCount: regCount };
+    const evalInfo = evaluateEventBooking(effectiveEvent, nowMs);
     const presentCount = registrations.filter(
       (r) =>
         r.eventId === ev.id &&
@@ -338,6 +354,23 @@ export function CoachEventsView({
               />
               <span>{formatEventCoachesLabel(ev)}</span>
             </p>
+            {(() => {
+              const safeExternalUrl = getSafeExternalHref(ev.externalUrl);
+              if (!safeExternalUrl) return null;
+              return (
+                <p className="mt-1">
+                  <a
+                    href={safeExternalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{formatExternalUrlLabel(safeExternalUrl)}</span>
+                  </a>
+                </p>
+              );
+            })()}
           </div>
           <div className="shrink-0 text-right">
             <span
@@ -379,7 +412,7 @@ export function CoachEventsView({
           <div className="flex items-center gap-3 shrink-0">
             <EventRatingInline summary={ratingSummaryByEventId?.get(ev.id)} />
             <span className="font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
-              {formatCapacityCompact(ev)}
+              {formatCapacityCompact(effectiveEvent)}
               {regCount > 0 && ` (${presentCount} prés.)`}
             </span>
           </div>
@@ -388,11 +421,11 @@ export function CoachEventsView({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => onOpenRoster(ev, 'roster')}
+            onClick={() => onOpenRoster(effectiveEvent, 'roster')}
             className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
           >
             <Users className="h-4 w-4" aria-hidden="true" />
-            Inscrits ({ev.registeredCount})
+            Inscrits ({regCount})
           </button>
           <button
             type="button"
@@ -479,11 +512,15 @@ export function CoachEventsView({
   };
 
   const renderDesktopEventRow = (ev: SportEvent) => {
-    const evalInfo = evaluateEventBooking(ev, nowMs);
     const discStyle = getDisciplineStyle(ev.discipline, disciplines);
     const regCount = registrations.filter(
       (r) => r.eventId === ev.id && r.status === 'confirmed'
     ).length;
+    const effectiveEvent =
+      ev.registeredCount === regCount
+        ? ev
+        : { ...ev, registeredCount: regCount };
+    const evalInfo = evaluateEventBooking(effectiveEvent, nowMs);
     const presentCount = registrations.filter(
       (r) =>
         r.eventId === ev.id &&
@@ -545,6 +582,23 @@ export function CoachEventsView({
             />
             <span>{formatEventCoachesLabel(ev)}</span>
           </p>
+          {(() => {
+            const safeExternalUrl = getSafeExternalHref(ev.externalUrl);
+            if (!safeExternalUrl) return null;
+            return (
+              <p className="mt-1">
+                <a
+                  href={safeExternalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{formatExternalUrlLabel(safeExternalUrl)}</span>
+                </a>
+              </p>
+            );
+          })()}
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
             <EventRatingInline summary={ratingSummaryByEventId?.get(ev.id)} />
           </div>
@@ -562,7 +616,7 @@ export function CoachEventsView({
 
         <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-right font-mono tabular-nums whitespace-nowrap">
           <p className="font-semibold text-slate-900 dark:text-white">
-            {formatCapacityCompact(ev)}
+            {formatCapacityCompact(effectiveEvent)}
           </p>
           {regCount > 0 && (
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -600,7 +654,7 @@ export function CoachEventsView({
           <div className="flex flex-wrap items-center justify-end gap-1.5 xl:flex-nowrap">
             <button
               type="button"
-              onClick={() => onOpenRoster(ev, 'roster')}
+              onClick={() => onOpenRoster(effectiveEvent, 'roster')}
               className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
             >
               <Users className="h-3.5 w-3.5" aria-hidden="true" />

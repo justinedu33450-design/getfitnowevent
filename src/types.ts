@@ -70,6 +70,7 @@ export const VALIDATION_LIMITS = {
   DISCIPLINE_MIN: 2,
   DISCIPLINE_MAX: 50,
   DESCRIPTION_MAX: 600,
+  EVENT_URL_MAX: 500,
   LOCATION_MIN: 2,
   LOCATION_MAX: 120,
   CITY_MIN: 2,
@@ -161,6 +162,7 @@ export interface SportEvent {
   title: string;
   discipline: Discipline;
   description: string;
+  externalUrl?: string;
   location: string;
   city: string;
   region: string;
@@ -217,6 +219,10 @@ export interface Registration {
   invitedByEmail?: string;
   invitedByEmailKey?: string;
   invitedByName?: string;
+  discipline?: string;
+  isArchivedStat?: boolean;
+  cancelledBy?: 'member' | 'admin';
+  eventCancelled?: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -402,6 +408,16 @@ export interface MemberNotification {
   validated: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface MemberCoachAckNotification {
+  id: string;
+  conversationId: string;
+  coachUid: string;
+  coachName: string;
+  messageText: string;
+  createdAtMs: number;
+  conversation: Conversation;
 }
 
 export type MemberProgramNotificationKind =

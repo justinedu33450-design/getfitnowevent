@@ -154,15 +154,26 @@ export function computeMemberBadges({
   const emailLower = (memberEmail ?? '').trim().toLowerCase();
   const eventsById = new Map(events.map((ev) => [ev.id, ev]));
 
-  // Filter strictly to this member's confirmed & validated registrations
+  // Filter strictly to this member's validated registrations (preserving already-attended
+  // sessions if an admin later cancels/deletes the event or removes the registrant)
   const validatedRegs = registrations
     .filter((reg) => {
-      if (reg.status !== 'confirmed' || !reg.attended) return false;
+      if (!reg.attended) return false;
+      const isConfirmed = reg.status === 'confirmed';
+      const isPreservedByAdmin =
+        reg.cancelledBy === 'admin' || Boolean(reg.isArchivedStat);
+      if (!isConfirmed && !isPreservedByAdmin) return false;
       if (emailLower && reg.email.trim().toLowerCase() !== emailLower) {
         return false;
       }
       const matchedEvent = eventsById.get(reg.eventId) ?? null;
-      if (matchedEvent?.status === 'cancelled') return false;
+      if (
+        matchedEvent?.status === 'cancelled' &&
+        !isPreservedByAdmin &&
+        !reg.attended
+      ) {
+        return false;
+      }
       return true;
     })
     .slice()
@@ -316,6 +327,7 @@ export function computeMemberBadges({
     const matchedEvent = eventsById.get(reg.eventId) ?? null;
     const rawDiscipline =
       matchedEvent?.discipline?.trim() ||
+      reg.discipline?.trim() ||
       reviewsByRegId?.get(reg.id)?.discipline?.trim() ||
       '';
     if (!rawDiscipline) return;

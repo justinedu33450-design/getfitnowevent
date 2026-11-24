@@ -50,6 +50,8 @@ interface EventRosterDrawerProps {
   eventReviews?: EventReview[];
   ratingSummary?: EventRatingSummary | null;
   currentUserUid?: string | null;
+  isCoachAdmin?: boolean;
+  isPrimaryBootstrapped?: boolean;
   initialTab?: 'roster' | 'reviews';
   onMessageParticipant?: (reg: Registration, event: SportEvent) => void;
   onClose: () => void;
@@ -63,6 +65,8 @@ export function EventRosterDrawer({
   eventReviews = [],
   ratingSummary,
   currentUserUid,
+  isCoachAdmin = false,
+  isPrimaryBootstrapped = false,
   initialTab = 'roster',
   onMessageParticipant,
   onClose,
@@ -78,6 +82,7 @@ export function EventRosterDrawer({
   const [paymentActionError, setPaymentActionError] = useState<string | null>(null);
   const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [removingRegId, setRemovingRegId] = useState<string | null>(null);
 
   useEffect(() => {
     setDrawerTab(initialTab);
@@ -201,6 +206,34 @@ export function EventRosterDrawer({
     }
   };
 
+  const handleRemoveRegistration = async (reg: Registration) => {
+    if (!isCoachAdmin) return;
+    setPaymentActionError(null);
+    setRemovingRegId(reg.id);
+    try {
+      const matchedProfile =
+        profileByKeyOrEmail.byKey.get(reg.emailKey) ??
+        profileByKeyOrEmail.byEmail.get(reg.email.trim().toLowerCase());
+      await removeRegistration(reg, eventRegistrations.length, {
+        isCoachAdmin,
+        actorUid: currentUserUid ?? undefined,
+        eventDiscipline: event.discipline,
+        eventDurationMinutes: event.durationMinutes,
+        memberReferentCoachUid: matchedProfile?.referentCoachUid,
+        isPrimaryBootstrapped,
+      });
+      setConfirmDeleteId(null);
+    } catch (err) {
+      setPaymentActionError(
+        err instanceof Error
+          ? err.message
+          : 'Impossible de désinscrire ce participant.'
+      );
+    } finally {
+      setRemovingRegId(null);
+    }
+  };
+
   const handleExportCsv = () => {
     exportCsv(
       `participants-${event.id}.csv`,
@@ -238,7 +271,7 @@ export function EventRosterDrawer({
   };
 
   const isFull =
-    !event.isUnlimitedCapacity && event.registeredCount >= event.maxCapacity;
+    !event.isUnlimitedCapacity && eventRegistrations.length >= event.maxCapacity;
 
   const renderPaymentBadge = (reg: Registration) => {
     const info = getRegistrationPaymentBadgeInfo(reg);
@@ -653,38 +686,36 @@ export function EventRosterDrawer({
                           </button>
                         )}
 
-                        {confirmDeleteId === reg.id ? (
-                          <div className="flex items-center gap-1.5">
+                        {isCoachAdmin && (
+                          confirmDeleteId === reg.id ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                disabled={removingRegId === reg.id}
+                                onClick={() => void handleRemoveRegistration(reg)}
+                                className="min-h-[44px] rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                              >
+                                {removingRegId === reg.id ? 'Suppression…' : 'Confirmer'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={removingRegId === reg.id}
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="min-h-[44px] rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-60 cursor-pointer"
+                              >
+                                Non
+                              </button>
+                            </div>
+                          ) : (
                             <button
                               type="button"
-                              onClick={async () => {
-                                await removeRegistration(
-                                  reg,
-                                  event.registeredCount
-                                );
-                                setConfirmDeleteId(null);
-                              }}
-                              className="min-h-[44px] rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                              onClick={() => setConfirmDeleteId(reg.id)}
+                              aria-label={`Désinscrire ${reg.firstName} ${reg.lastName}`}
+                              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
                             >
-                              Confirmer
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="min-h-[44px] rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
-                            >
-                              Non
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteId(reg.id)}
-                            aria-label={`Désinscrire ${reg.firstName} ${reg.lastName}`}
-                            className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
-                          >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
-                          </button>
+                          )
                         )}
                       </div>
                     </div>
@@ -817,39 +848,37 @@ export function EventRosterDrawer({
                                 </button>
                               )}
 
-                              {confirmDeleteId === reg.id ? (
-                                <div className="flex items-center gap-1">
+                              {isCoachAdmin && (
+                                confirmDeleteId === reg.id ? (
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={removingRegId === reg.id}
+                                      onClick={() => void handleRemoveRegistration(reg)}
+                                      className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                    >
+                                      {removingRegId === reg.id ? 'Suppression…' : 'Confirmer'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={removingRegId === reg.id}
+                                      onClick={() => setConfirmDeleteId(null)}
+                                      className="min-h-[34px] rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-60 cursor-pointer"
+                                    >
+                                      Non
+                                    </button>
+                                  </div>
+                                ) : (
                                   <button
                                     type="button"
-                                    onClick={async () => {
-                                      await removeRegistration(
-                                        reg,
-                                        event.registeredCount
-                                      );
-                                      setConfirmDeleteId(null);
-                                    }}
-                                    className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                                    onClick={() => setConfirmDeleteId(reg.id)}
+                                    title="Désinscrire"
+                                    aria-label={`Désinscrire ${reg.firstName} ${reg.lastName}`}
+                                    className="flex h-[34px] w-[34px] items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
                                   >
-                                    Confirmer
+                                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConfirmDeleteId(null)}
-                                    className="min-h-[34px] rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
-                                  >
-                                    Non
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmDeleteId(reg.id)}
-                                  title="Désinscrire"
-                                  aria-label={`Désinscrire ${reg.firstName} ${reg.lastName}`}
-                                  className="flex h-[34px] w-[34px] items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                                </button>
+                                )
                               )}
                             </div>
                           </td>

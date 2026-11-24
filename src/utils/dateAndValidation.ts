@@ -33,6 +33,44 @@ export function formatEventCoachesLabel(
   return `Animateurs : ${names.join(', ')}`;
 }
 
+export function getEventCoachFirstName(
+  event: Pick<SportEvent, 'coachName' | 'coachNames' | 'coachUids'> | null | undefined,
+  actingCoachUid?: string | null,
+  fallbackCoachName?: string | null
+): string {
+  let targetName = '';
+  if (event) {
+    const names = getEventCoachNames(event);
+    if (
+      actingCoachUid &&
+      Array.isArray(event.coachUids) &&
+      event.coachUids.length > 0
+    ) {
+      const idx = event.coachUids.indexOf(actingCoachUid);
+      if (idx >= 0 && names[idx]) {
+        targetName = names[idx];
+      }
+    }
+    if (!targetName && names.length > 0) {
+      targetName = names[0];
+    }
+  }
+  if (!targetName && fallbackCoachName) {
+    targetName = fallbackCoachName.trim();
+  }
+  const firstToken = targetName.trim().split(/\s+/)[0] || '';
+  return firstToken || 'Votre coach';
+}
+
+export function buildRegistrationAckMessage(coachFirstName: string): string {
+  return `${coachFirstName} a bien pris en compte l'inscription. À tout à l'heure pour la séance.`;
+}
+
+export function isRegistrationAckMessage(text?: string | null): boolean {
+  if (!text) return false;
+  return text.toLowerCase().includes("a bien pris en compte l'inscription");
+}
+
 export function getRegistrationEndMs(
   reg: Registration,
   matchedEvent?: SportEvent | null
@@ -387,11 +425,16 @@ export function downloadEventIcs(event: SportEvent): void {
   const escapeIcs = (text: string) =>
     text.replace(/\\/g, '\\\\').replace(/,/g, '\\,').replace(/\n/g, '\\n');
 
+  const safeExternalUrl = getSafeExternalHref(event.externalUrl);
   const fullLocation = [event.location, event.city, event.region]
     .filter(Boolean)
     .join(', ');
+  const baseDescription = `${event.description || 'Séance sportive'} — ${formatEventCoachesLabel(event)}`;
+  const fullDescription = safeExternalUrl
+    ? `${baseDescription}\nLien : ${safeExternalUrl}`
+    : baseDescription;
 
-  const icsContent = [
+  const icsLines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//GetFitNow Event//FR',
@@ -402,12 +445,12 @@ export function downloadEventIcs(event: SportEvent): void {
     `DTEND:${fmt(end)}`,
     `SUMMARY:${escapeIcs(`${event.title} (${event.discipline})`)}`,
     `LOCATION:${escapeIcs(fullLocation)}`,
-    `DESCRIPTION:${escapeIcs(
-      `${event.description || 'Séance sportive'} — ${formatEventCoachesLabel(event)}`
-    )}`,
+    `DESCRIPTION:${escapeIcs(fullDescription)}`,
+    ...(safeExternalUrl ? [`URL:${safeExternalUrl}`] : []),
     'END:VEVENT',
     'END:VCALENDAR',
-  ].join('\r\n');
+  ];
+  const icsContent = icsLines.join('\r\n');
 
   const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -654,4 +697,105 @@ export function formatPublicAuthorName(
     ? clean
     : 'Adhérent';
 }
+
+export function normalizeEventExternalUrl(raw?: string | null): {
+  url: string;
+  error?: string;
+} {
+  const trimmed = (raw ?? '').trim();
+  if (!trimmed) {
+    return { url: '' };
+  }
+  if (/\s/.test(trimmed)) {
+    return {
+      url: '',
+      error: 'Le lien ne doit pas contenir d’espaces.',
+    };
+  }
+  if (trimmed.startsWith('/')) {
+    return {
+      url: '',
+      error: 'Veuillez saisir une adresse web complète commençant par https:// ou http://.',
+    };
+  }
+
+  const hasExplicitScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed);
+  if (hasExplicitScheme && !/^https?:\/\//i.test(trimmed)) {
+    return {
+      url: '',
+      error: 'Le lien doit utiliser le protocole https:// ou http://.',
+    };
+  }
+
+  const candidate = hasExplicitScheme ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return {
+        url: '',
+        error: 'Le lien doit utiliser le protocole https:// ou http://.',
+      };
+    }
+    if (
+      !parsed.hostname ||
+      !parsed.hostname.includes('.') ||
+      parsed.hostname.startsWith('.') ||
+      parsed.hostname.endsWith('.')
+    ) {
+      return {
+        url: '',
+        error: 'Veuillez saisir une adresse web valide (ex. https://exemple.fr).',
+      };
+    }
+    const finalUrl = parsed.href;
+    if (finalUrl.length > VALIDATION_LIMITS.EVENT_URL_MAX || /\s/.test(finalUrl)) {
+      return {
+        url: '',
+        error: `Le lien ne doit pas dépasser ${VALIDATION_LIMITS.EVENT_URL_MAX} caractères.`,
+      };
+    }
+    return { url: finalUrl };
+  } catch {
+    return {
+      url: '',
+      error: 'Veuillez saisir une adresse web valide (ex. https://exemple.fr).',
+    };
+  }
+}
+
+export function getSafeExternalHref(raw?: string | null): string | null {
+  const trimmed = (raw ?? '').trim();
+  if (
+    !trimmed ||
+    trimmed.length > VALIDATION_LIMITS.EVENT_URL_MAX ||
+    /\s/.test(trimmed)
+  ) {
+    return null;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return null;
+    }
+    if (!parsed.hostname) return null;
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
+export function formatExternalUrlLabel(safeHref: string): string {
+  try {
+    const parsed = new URL(safeHref);
+    const host = parsed.hostname.replace(/^www\./i, '');
+    const path =
+      parsed.pathname && parsed.pathname !== '/' ? parsed.pathname : '';
+    const combined = `${host}${path}`;
+    return combined.length > 42 ? `${combined.slice(0, 39)}…` : combined;
+  } catch {
+    return 'Voir le lien';
+  }
+}
+
 

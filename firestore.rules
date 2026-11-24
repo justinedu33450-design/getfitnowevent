@@ -100,7 +100,7 @@ service cloud.firestore {
         'lastRegId', 'status', 'createdBy', 'createdAt', 'updatedAt'
       ]) &&
       data.keys().hasOnly([
-        'title', 'discipline', 'description', 'location', 'city', 'region',
+        'title', 'discipline', 'description', 'externalUrl', 'location', 'city', 'region',
         'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
         'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity', 'registeredCount',
         'lastRegId', 'likesCount', 'lastLikeId', 'status', 'cancelReason', 'bookingCutoffMinutes', 'disableAutoClose',
@@ -110,6 +110,11 @@ service cloud.firestore {
       data.title is string && data.title.size() >= 2 && data.title.size() <= 100 &&
       isValidDiscipline(data.discipline) &&
       data.description is string && data.description.size() <= 600 &&
+      (!('externalUrl' in data) || (
+        data.externalUrl is string &&
+        data.externalUrl.size() <= 500 &&
+        (data.externalUrl.size() == 0 || data.externalUrl.matches('^https?://[^\\s]+$'))
+      )) &&
       data.location is string && data.location.size() >= 2 && data.location.size() <= 120 &&
       data.city is string && data.city.size() >= 2 && data.city.size() <= 80 &&
       (!('region' in data) || (data.region is string && data.region.size() <= 80)) &&
@@ -642,7 +647,7 @@ service cloud.firestore {
           incoming().updatedAt == request.time &&
           (
             incoming().diff(existing()).affectedKeys().hasOnly([
-              'title', 'discipline', 'description', 'location', 'city', 'region',
+              'title', 'discipline', 'description', 'externalUrl', 'location', 'city', 'region',
               'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
               'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity',
               'isPaid', 'priceCents', 'currency', 'paymentMode',

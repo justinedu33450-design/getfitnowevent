@@ -95,13 +95,17 @@ import {
   RUNNING_DISTANCE_TEMPLATES,
 } from '../utils/runningProgramGenerator';
 import {
+  buildRegistrationAckMessage,
   evaluateEventBooking,
   formatPriceEuros,
   formatPublicAuthorName,
+  getEventCoachFirstName,
   getRegistrationEndMs,
+  getSafeExternalHref,
   hashEmailKey,
   isValidBirthDateString,
   normalizeBookingCutoffMinutes,
+  normalizeEventExternalUrl,
 } from '../utils/dateAndValidation';
 import {
   inferDisciplineIconKey,
@@ -1098,6 +1102,7 @@ export function subscribeEvents(
         return {
           ...(raw as Omit<SportEvent, 'id'>),
           id: d.id,
+          externalUrl: getSafeExternalHref(raw.externalUrl) ?? '',
           city: typeof raw.city === 'string' && raw.city.trim() ? raw.city : 'Paris',
           region: typeof raw.region === 'string' ? raw.region : '',
           isUnlimitedCapacity: Boolean(raw.isUnlimitedCapacity),
@@ -1328,6 +1333,8 @@ export interface EventFormInput {
   title: string;
   discipline: Discipline;
   description: string;
+  externalUrl?: string;
+  hadExternalUrl?: boolean;
   location: string;
   city: string;
   region: string;
@@ -1435,6 +1442,11 @@ export async function createEvent(
   const description = input.description
     .trim()
     .slice(0, VALIDATION_LIMITS.DESCRIPTION_MAX);
+  const { url: externalUrl, error: externalUrlError } =
+    normalizeEventExternalUrl(input.externalUrl);
+  if (externalUrlError) {
+    throw new Error(externalUrlError);
+  }
   const location = input.location
     .trim()
     .slice(0, VALIDATION_LIMITS.LOCATION_MAX);
@@ -1479,6 +1491,7 @@ export async function createEvent(
       title,
       discipline,
       description,
+      ...(externalUrl ? { externalUrl } : {}),
       location,
       city,
       region,
@@ -1527,6 +1540,11 @@ export async function updateEvent(
   const description = input.description
     .trim()
     .slice(0, VALIDATION_LIMITS.DESCRIPTION_MAX);
+  const { url: externalUrl, error: externalUrlError } =
+    normalizeEventExternalUrl(input.externalUrl);
+  if (externalUrlError) {
+    throw new Error(externalUrlError);
+  }
   const location = input.location
     .trim()
     .slice(0, VALIDATION_LIMITS.LOCATION_MAX);
@@ -1563,6 +1581,11 @@ export async function updateEvent(
       title,
       discipline,
       description,
+      ...(externalUrl
+        ? { externalUrl }
+        : input.hadExternalUrl
+          ? { externalUrl: '' }
+          : {}),
       location,
       city,
       region,
@@ -1761,11 +1784,122 @@ async function deleteEventLikesForEvent(eventId: string): Promise<void> {
   }
 }
 
+async function archiveAdminCancelledRegistrations(
+  regs: Registration[],
+  eventData?: Partial<SportEvent> | null
+): Promise<void> {
+  const actorUid = (auth.currentUser?.uid || '').trim();
+  if (!actorUid || regs.length === 0) return;
+  try {
+    const rawTitle = (eventData?.title || regs[0]?.eventTitle || 'Séance')
+      .trim()
+      .slice(0, 100);
+    const cleanTitle = rawTitle.length >= 2 ? rawTitle : 'Séance';
+    const rawDiscipline = (
+      eventData?.discipline ||
+      regs[0]?.discipline ||
+      'Événement'
+    )
+      .trim()
+      .slice(0, 50);
+    const cleanDiscipline =
+      rawDiscipline.length >= 2 ? rawDiscipline : 'Événement';
+    const cleanDuration = Math.min(
+      240,
+      Math.max(
+        15,
+        Math.round(
+          eventData?.durationMinutes ?? regs[0]?.eventDurationMinutes ?? 60
+        )
+      )
+    );
+
+    const CHUNK_SIZE = 10;
+    for (let i = 0; i < regs.length; i += CHUNK_SIZE) {
+      const chunk = regs.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map(async (reg) => {
+          const cleanEmail = reg.email.trim().toLowerCase();
+          if (!cleanEmail || !reg.emailKey) return;
+          const statRef = doc(
+            db,
+            'memberSchedules',
+            buildArchivedRegistrationStatDocId(reg.id)
+          );
+          const buildNotes = (firstMax: number, lastMax: number) =>
+            JSON.stringify({
+              regId: reg.id,
+              eventId: reg.eventId,
+              isGuest: Boolean(reg.isGuest),
+              firstName: reg.firstName.trim().slice(0, firstMax),
+              lastName: reg.lastName.trim().slice(0, lastMax),
+              cancelledBy: 'admin',
+              eventCancelled: true,
+            });
+          let cleanNotes = buildNotes(50, 50);
+          if (cleanNotes.length > VALIDATION_LIMITS.SCHEDULE_NOTES_MAX) {
+            cleanNotes = buildNotes(20, 20).slice(
+              0,
+              VALIDATION_LIMITS.SCHEDULE_NOTES_MAX
+            );
+          }
+          const cleanMemberName =
+            `${reg.firstName} ${reg.lastName}`.trim().slice(0, 125) ||
+            cleanEmail.slice(0, 125);
+          try {
+            const snap = await getDoc(statRef);
+            if (snap.exists()) {
+              await updateDoc(statRef, {
+                notes: cleanNotes,
+                completed: Boolean(reg.attended),
+                updatedAt: serverTimestamp(),
+              });
+            } else {
+              await setDoc(statRef, {
+                memberEmail: cleanEmail,
+                memberEmailKey: reg.emailKey,
+                memberName: cleanMemberName,
+                title: cleanTitle,
+                discipline: cleanDiscipline,
+                notes: cleanNotes,
+                location: '',
+                startAt: reg.eventStartAt,
+                durationMinutes: cleanDuration,
+                coachUid: actorUid,
+                coachName: '',
+                objective: `${REG_STAT_PREFIX}${reg.id}`.slice(0, 120),
+                isPaid: false,
+                priceCents: 0,
+                createdByUid: actorUid,
+                createdByRole: 'coach' as const,
+                completed: Boolean(reg.attended),
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              });
+            }
+          } catch (statError) {
+            console.warn(
+              `archiveAdminCancelledRegistrations skipped for ${reg.id}:`,
+              statError
+            );
+          }
+        })
+      );
+    }
+  } catch (error) {
+    console.warn('archiveAdminCancelledRegistrations failed:', error);
+  }
+}
+
 async function cancelRegistrationsAndDeleteEvent(
   eventId: string,
-  confirmedRegs: Registration[]
+  confirmedRegs: Registration[],
+  eventData?: Partial<SportEvent> | null
 ): Promise<void> {
   await deleteEventLikesForEvent(eventId);
+  if (confirmedRegs.length > 0 && eventData?.cancelReason !== 'no_registrants') {
+    await archiveAdminCancelledRegistrations(confirmedRegs, eventData);
+  }
 
   const CHUNK_SIZE = 5;
   for (let i = 0; i < confirmedRegs.length; i += CHUNK_SIZE) {
@@ -1822,6 +1956,7 @@ export async function toggleEventStatus(
         .map((d) => ({ id: d.id, ...(d.data() as Omit<Registration, 'id'>) }))
         .filter((r) => r.status === 'confirmed');
       if (confirmedRegs.length > 0) {
+        await archiveAdminCancelledRegistrations(confirmedRegs, eventData);
         await notifyMembersOfCancelledEvent({
           eventId,
           eventData,
@@ -1869,7 +2004,7 @@ export async function autoDeleteCancelledEvent(
       });
     }
 
-    await cancelRegistrationsAndDeleteEvent(eventId, confirmedRegs);
+    await cancelRegistrationsAndDeleteEvent(eventId, confirmedRegs, eventData);
     return true;
   } catch (error) {
     console.warn(
@@ -2212,6 +2347,53 @@ export async function markCoachNotificationRead(
   }
 }
 
+export async function acknowledgeCoachRegistrationNotification(params: {
+  notification: CoachNotification;
+  event?: SportEvent | null;
+  coachUid: string;
+  coachEmail: string;
+  coachName: string;
+  coachPhotoUrl?: string;
+  memberPhotoUrl?: string;
+}): Promise<{ sent: boolean; messageText: string }> {
+  await markCoachNotificationRead(params.notification.id);
+
+  const coachFirstName = getEventCoachFirstName(
+    params.event,
+    params.coachUid,
+    params.coachName
+  );
+  const messageText = buildRegistrationAckMessage(coachFirstName);
+
+  const cleanMemberEmail = params.notification.memberEmail.trim().toLowerCase();
+  const cleanCoachEmail = params.coachEmail.trim().toLowerCase();
+  if (
+    !cleanMemberEmail ||
+    !cleanCoachEmail ||
+    cleanMemberEmail === cleanCoachEmail
+  ) {
+    return { sent: false, messageText };
+  }
+
+  await sendDirectMessage({
+    coachUid: params.coachUid,
+    coachName: params.coachName,
+    coachPhotoUrl: params.coachPhotoUrl,
+    memberEmail: cleanMemberEmail,
+    memberName: params.notification.memberName,
+    memberPhotoUrl: params.memberPhotoUrl,
+    senderUid: params.coachUid,
+    senderEmail: cleanCoachEmail,
+    senderName: params.coachName,
+    senderRole: 'coach',
+    text: messageText,
+    contextEventId: params.notification.eventId,
+    contextEventTitle: params.notification.eventTitle,
+  });
+
+  return { sent: true, messageText };
+}
+
 export async function markAllCoachNotificationsRead(
   notifications: CoachNotification[]
 ): Promise<void> {
@@ -2272,7 +2454,7 @@ export async function deleteEvent(
           })
         : 0;
 
-    await cancelRegistrationsAndDeleteEvent(eventId, confirmedRegs);
+    await cancelRegistrationsAndDeleteEvent(eventId, confirmedRegs, eventData);
     return {
       cancelledRegistrations: confirmedRegs.length,
       notificationsSent,
@@ -2342,6 +2524,7 @@ function parseLiveSportEventSnapshot(
   return {
     ...(raw as Omit<SportEvent, 'id'>),
     id,
+    externalUrl: getSafeExternalHref(raw.externalUrl) ?? '',
     city: typeof raw.city === 'string' && raw.city.trim() ? raw.city : 'Paris',
     region: typeof raw.region === 'string' ? raw.region : '',
     isUnlimitedCapacity: Boolean(raw.isUnlimitedCapacity),
@@ -3307,16 +3490,251 @@ export async function toggleRegistrationAttendance(
   }
 }
 
+const REG_STAT_PREFIX = 'GFN_REG_STAT:';
+
+function buildArchivedRegistrationStatDocId(registrationId: string): string {
+  const sanitize = (val: string) => val.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  return `regstat__${sanitize(registrationId)}`.slice(0, 128);
+}
+
+export interface RemoveRegistrationOptions {
+  isCoachAdmin?: boolean;
+  actorUid?: string;
+  eventDiscipline?: string;
+  eventDurationMinutes?: number;
+  memberReferentCoachUid?: string;
+  isPrimaryBootstrapped?: boolean;
+}
+
 export async function removeRegistration(
   registration: Registration,
-  eventRegisteredCount: number
+  eventRegisteredCount: number,
+  options?: RemoveRegistrationOptions
 ): Promise<void> {
-  const batch = writeBatch(db);
-  batch.delete(doc(db, 'registrations', registration.id));
+  if (!options?.isCoachAdmin) {
+    throw new Error(
+      'Seul un administrateur peut supprimer un inscrit à une séance.'
+    );
+  }
+
+  const actorUid = (options.actorUid || auth.currentUser?.uid || '').trim();
+  const regRef = doc(db, 'registrations', registration.id);
   const payRef = doc(db, 'payments', registration.id);
-  const paySnap = await getDoc(payRef);
-  if (paySnap.exists()) {
-    if (registration.paymentStatus === 'paid') {
+  const eventRef = doc(db, 'events', registration.eventId);
+  const statDocId = buildArchivedRegistrationStatDocId(registration.id);
+  const statRef = doc(db, 'memberSchedules', statDocId);
+
+  const readLiveDoc = async (ref: ReturnType<typeof doc>) => {
+    try {
+      return await getDocFromServer(ref);
+    } catch {
+      try {
+        return await getDoc(ref);
+      } catch {
+        return null;
+      }
+    }
+  };
+
+  const readLiveEventRegs = async () => {
+    const q = query(
+      collection(db, 'registrations'),
+      where('eventId', '==', registration.eventId)
+    );
+    try {
+      return await getDocsFromServer(q);
+    } catch {
+      try {
+        return await getDocs(q);
+      } catch {
+        return null;
+      }
+    }
+  };
+
+  const [regSnap, paySnap, eventSnap, statSnap, eventRegsSnap] =
+    await Promise.all([
+      readLiveDoc(regRef),
+      readLiveDoc(payRef),
+      readLiveDoc(eventRef),
+      actorUid ? readLiveDoc(statRef) : Promise.resolve(null),
+      readLiveEventRegs(),
+    ]);
+
+  const liveRegData = regSnap?.exists()
+    ? (regSnap.data() as Partial<Registration>)
+    : null;
+  const liveRegStatus = liveRegData?.status ?? registration.status;
+  const liveAttended = Boolean(
+    liveRegData?.attended ?? registration.attended
+  );
+  const liveEventData = eventSnap?.exists()
+    ? (eventSnap.data() as Partial<SportEvent>)
+    : null;
+  const liveEventCount = liveEventData?.registeredCount ?? eventRegisteredCount;
+  const remainingConfirmedDocs = eventRegsSnap
+    ? eventRegsSnap.docs.filter(
+        (d) =>
+          d.id !== registration.id &&
+          (d.data() as Partial<Registration>).status === 'confirmed'
+      )
+    : null;
+  const fallbackRemainingCount =
+    typeof liveEventCount === 'number' && liveEventCount > 0
+      ? liveEventCount - 1
+      : 0;
+  const rawTargetCount = remainingConfirmedDocs
+    ? remainingConfirmedDocs.length
+    : fallbackRemainingCount;
+  const maxAllowedCount =
+    liveEventData &&
+    !liveEventData.isUnlimitedCapacity &&
+    typeof liveEventData.maxCapacity === 'number' &&
+    liveEventData.maxCapacity >= 1
+      ? liveEventData.maxCapacity
+      : 10000;
+  const targetRegisteredCount = Math.max(
+    0,
+    Math.min(rawTargetCount, maxAllowedCount)
+  );
+  const nextLastRegId =
+    remainingConfirmedDocs !== null
+      ? remainingConfirmedDocs[0]?.id || 'none'
+      : undefined;
+  const shouldSyncEventCounter =
+    (eventSnap ? eventSnap.exists() : true) &&
+    (remainingConfirmedDocs !== null
+      ? liveEventData?.registeredCount !== targetRegisteredCount ||
+        liveEventData?.lastRegId === registration.id
+      : (regSnap
+          ? regSnap.exists() && liveRegStatus !== 'cancelled'
+          : registration.status !== 'cancelled') &&
+        typeof liveEventCount === 'number' &&
+        liveEventCount > 0);
+  const eventCounterUpdatePayload =
+    nextLastRegId !== undefined
+      ? {
+          registeredCount: targetRegisteredCount,
+          lastRegId: nextLastRegId,
+          updatedAt: serverTimestamp(),
+        }
+      : {
+          registeredCount: targetRegisteredCount,
+          updatedAt: serverTimestamp(),
+        };
+
+  const isPaidPayment =
+    (paySnap?.exists() ? paySnap.data()?.status : undefined) === 'paid' ||
+    registration.paymentStatus === 'paid';
+
+  const cleanEmail = registration.email.trim().toLowerCase();
+  const rawTitle = (
+    liveEventData?.title ||
+    registration.eventTitle ||
+    'Séance'
+  )
+    .trim()
+    .slice(0, 100);
+  const cleanTitle = rawTitle.length >= 2 ? rawTitle : 'Séance';
+  const rawDiscipline = (
+    liveEventData?.discipline ||
+    options.eventDiscipline ||
+    registration.discipline ||
+    'Événement'
+  )
+    .trim()
+    .slice(0, 50);
+  const cleanDiscipline =
+    rawDiscipline.length >= 2 ? rawDiscipline : 'Événement';
+  const cleanDuration = Math.min(
+    240,
+    Math.max(
+      15,
+      Math.round(
+        liveEventData?.durationMinutes ??
+          options.eventDurationMinutes ??
+          registration.eventDurationMinutes ??
+          60
+      )
+    )
+  );
+  const cleanMemberName =
+    `${registration.firstName} ${registration.lastName}`
+      .trim()
+      .slice(0, 125) || cleanEmail.slice(0, 125);
+  const targetCoachUid = options.isPrimaryBootstrapped
+    ? options.memberReferentCoachUid?.trim() || actorUid
+    : actorUid;
+
+  const buildArchiveNotes = (firstNameMax: number, lastNameMax: number) =>
+    JSON.stringify({
+      regId: registration.id,
+      eventId: registration.eventId,
+      isGuest: Boolean(registration.isGuest),
+      firstName: registration.firstName.trim().slice(0, firstNameMax),
+      lastName: registration.lastName.trim().slice(0, lastNameMax),
+      cancelledBy: 'admin',
+    });
+  let cleanNotes = buildArchiveNotes(50, 50);
+  if (cleanNotes.length > VALIDATION_LIMITS.SCHEDULE_NOTES_MAX) {
+    cleanNotes = buildArchiveNotes(20, 20).slice(
+      0,
+      VALIDATION_LIMITS.SCHEDULE_NOTES_MAX
+    );
+  }
+
+  const statAlreadyExists = Boolean(statSnap?.exists());
+  const existingStatCoachUid = statSnap?.exists()
+    ? String(statSnap.data()?.coachUid ?? '')
+    : '';
+  const canUpdateExistingStat =
+    statAlreadyExists &&
+    Boolean(actorUid) &&
+    (Boolean(options.isPrimaryBootstrapped) || existingStatCoachUid === actorUid);
+  const canCreateArchiveStat =
+    Boolean(actorUid) &&
+    !statAlreadyExists &&
+    liveRegStatus === 'confirmed' &&
+    Boolean(cleanEmail) &&
+    Boolean(registration.emailKey);
+
+  const statCreatePayload = {
+    memberEmail: cleanEmail,
+    memberEmailKey: registration.emailKey,
+    memberName: cleanMemberName,
+    title: cleanTitle,
+    discipline: cleanDiscipline,
+    notes: cleanNotes,
+    location: '',
+    startAt: registration.eventStartAt,
+    durationMinutes: cleanDuration,
+    coachUid: targetCoachUid,
+    coachName: '',
+    objective: `${REG_STAT_PREFIX}${registration.id}`.slice(0, 120),
+    isPaid: false,
+    priceCents: 0,
+    createdByUid: actorUid,
+    createdByRole: 'coach' as const,
+    completed: liveAttended,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  const statUpdatePayload = {
+    notes: cleanNotes,
+    completed: liveAttended,
+    updatedAt: serverTimestamp(),
+  };
+
+  const batch = writeBatch(db);
+  if (canCreateArchiveStat) {
+    batch.set(statRef, statCreatePayload);
+  } else if (canUpdateExistingStat && liveRegStatus === 'confirmed') {
+    batch.update(statRef, statUpdatePayload);
+  }
+  batch.delete(regRef);
+  if (paySnap?.exists()) {
+    if (isPaidPayment) {
       batch.update(payRef, {
         status: 'refunded',
         updatedAt: serverTimestamp(),
@@ -3325,20 +3743,74 @@ export async function removeRegistration(
       batch.delete(payRef);
     }
   }
-  if (eventRegisteredCount > 0) {
-    batch.update(doc(db, 'events', registration.eventId), {
-      registeredCount: increment(-1),
-      updatedAt: serverTimestamp(),
-    });
+  if (shouldSyncEventCounter) {
+    batch.update(eventRef, eventCounterUpdatePayload);
   }
+
   try {
     await batch.commit();
-  } catch (error) {
-    handleFirestoreError(
-      error,
-      OperationType.DELETE,
-      `registrations/${registration.id}`
-    );
+  } catch (batchError) {
+    // Fallback: preserve stats first, then delete the registration directly so a
+    // legacy/stale payment or event doc does not block removing the participant.
+    if (canCreateArchiveStat) {
+      try {
+        await setDoc(statRef, statCreatePayload);
+      } catch (statCreateError) {
+        console.warn(
+          'removeRegistration: isolated stat archive create skipped:',
+          statCreateError
+        );
+      }
+    } else if (canUpdateExistingStat && liveRegStatus === 'confirmed') {
+      try {
+        await updateDoc(statRef, statUpdatePayload);
+      } catch (statUpdateError) {
+        console.warn(
+          'removeRegistration: isolated stat archive update skipped:',
+          statUpdateError
+        );
+      }
+    }
+
+    try {
+      await deleteDoc(regRef);
+    } catch (regDeleteError) {
+      handleFirestoreError(
+        regDeleteError ?? batchError,
+        OperationType.DELETE,
+        `registrations/${registration.id}`
+      );
+      return;
+    }
+
+    if (paySnap?.exists()) {
+      try {
+        if (isPaidPayment) {
+          await updateDoc(payRef, {
+            status: 'refunded',
+            updatedAt: serverTimestamp(),
+          });
+        } else {
+          await deleteDoc(payRef);
+        }
+      } catch (payCleanupError) {
+        console.warn(
+          'removeRegistration: isolated payment cleanup skipped:',
+          payCleanupError
+        );
+      }
+    }
+
+    if (shouldSyncEventCounter) {
+      try {
+        await updateDoc(eventRef, eventCounterUpdatePayload);
+      } catch (eventDecrementError) {
+        console.warn(
+          'removeRegistration: isolated event counter sync skipped:',
+          eventDecrementError
+        );
+      }
+    }
   }
 }
 
@@ -6226,6 +6698,131 @@ export function mergeTrainingProgramsWithMemberSchedules(
   });
 }
 
+export function parseArchivedRegistrationStat(
+  session: MemberScheduleSession
+): Registration | null {
+  const obj = (session.objective ?? '').trim();
+  const isRegStat =
+    obj.startsWith(REG_STAT_PREFIX) || session.id.startsWith('regstat__');
+  if (!isRegStat) return null;
+
+  let parsedMeta: {
+    regId?: string;
+    eventId?: string;
+    isGuest?: boolean;
+    firstName?: string;
+    lastName?: string;
+    cancelledBy?: 'member' | 'admin';
+    eventCancelled?: boolean;
+  } = {};
+  try {
+    if (session.notes && session.notes.trim().startsWith('{')) {
+      parsedMeta = JSON.parse(session.notes) as typeof parsedMeta;
+    }
+  } catch {
+    parsedMeta = {};
+  }
+
+  const fallbackRegId = obj.startsWith(REG_STAT_PREFIX)
+    ? obj.slice(REG_STAT_PREFIX.length).trim()
+    : session.id.slice('regstat__'.length).trim();
+  const regId = (parsedMeta.regId || fallbackRegId || session.id).trim();
+  const sepIdx = regId.indexOf('__');
+  const fallbackEventId = sepIdx > 0 ? regId.slice(0, sepIdx) : regId;
+  const eventId = (parsedMeta.eventId || fallbackEventId).trim();
+  if (!regId || !eventId || !session.memberEmail) return null;
+
+  const nameParts = (session.memberName || '').trim().split(/\s+/);
+  const firstName =
+    parsedMeta.firstName?.trim() || nameParts[0] || session.memberEmail;
+  const lastName =
+    parsedMeta.lastName?.trim() || nameParts.slice(1).join(' ') || '';
+
+  return {
+    id: regId,
+    eventId,
+    eventTitle: session.title,
+    eventStartAt: session.startAt,
+    eventDurationMinutes: session.durationMinutes,
+    firstName,
+    lastName,
+    email: session.memberEmail,
+    emailKey: session.memberEmailKey,
+    attended: Boolean(session.completed),
+    status: parsedMeta.eventCancelled ? 'cancelled' : 'confirmed',
+    isGuest: Boolean(parsedMeta.isGuest),
+    discipline: session.discipline,
+    isArchivedStat: true,
+    cancelledBy: parsedMeta.cancelledBy === 'member' ? 'member' : 'admin',
+    eventCancelled: Boolean(parsedMeta.eventCancelled),
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
+  };
+}
+
+export function mergeRegistrationsWithArchivedStats(
+  registrations: Registration[],
+  memberSchedules: MemberScheduleSession[],
+  options?: {
+    events?: SportEvent[];
+    memberNotifications?: MemberNotification[];
+  }
+): Registration[] {
+  const statByRegId = new Map<string, Registration>();
+  memberSchedules.forEach((sess) => {
+    const statReg = parseArchivedRegistrationStat(sess);
+    if (statReg && !statByRegId.has(statReg.id)) {
+      statByRegId.set(statReg.id, statReg);
+    }
+  });
+
+  const eventsById = new Map(
+    (options?.events ?? []).map((ev) => [ev.id, ev])
+  );
+  const adminCancelNotifRegIds = new Set<string>();
+  (options?.memberNotifications ?? []).forEach((notif) => {
+    if (notif.type === 'event_cancelled' && notif.registrationId) {
+      adminCancelNotifRegIds.add(notif.registrationId);
+    }
+  });
+
+  const liveIds = new Set<string>();
+  const enrichedLive = registrations.map((reg) => {
+    liveIds.add(reg.id);
+    const matchedEvent = eventsById.get(reg.eventId);
+    const isEventCancelled = matchedEvent?.status === 'cancelled';
+    const statMeta = statByRegId.get(reg.id);
+
+    if (reg.status === 'confirmed' && !isEventCancelled) {
+      return reg.cancelledBy
+        ? { ...reg, cancelledBy: undefined, eventCancelled: false }
+        : reg;
+    }
+
+    const isAdminCancelled =
+      statMeta?.cancelledBy === 'admin' ||
+      adminCancelNotifRegIds.has(reg.id) ||
+      (reg.status === 'confirmed' && isEventCancelled);
+
+    return {
+      ...reg,
+      attended: reg.attended || Boolean(statMeta?.attended),
+      cancelledBy: isAdminCancelled ? ('admin' as const) : ('member' as const),
+      eventCancelled: Boolean(statMeta?.eventCancelled || isEventCancelled),
+    };
+  });
+
+  const archivedOnly: Registration[] = [];
+  statByRegId.forEach((statReg, regId) => {
+    if (!liveIds.has(regId)) {
+      archivedOnly.push(statReg);
+    }
+  });
+
+  if (archivedOnly.length === 0) return enrichedLive;
+  return [...enrichedLive, ...archivedOnly];
+}
+
 export function isInternalScheduleOverride(
   session: Pick<MemberScheduleSession, 'id' | 'objective'>
 ): boolean {
@@ -6235,7 +6832,9 @@ export function isInternalScheduleOverride(
     parseProgramNotificationAck(session) !== null ||
     parseProgramVmaResultOverride(
       session as Pick<MemberScheduleSession, 'id' | 'objective' | 'notes' | 'startAt'>
-    ) !== null
+    ) !== null ||
+    (session.objective ?? '').trim().startsWith(REG_STAT_PREFIX) ||
+    session.id.startsWith('regstat__')
   );
 }
 

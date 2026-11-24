@@ -9,6 +9,7 @@ import { BookOpen, Calendar, Sparkles, X } from 'lucide-react';
 import { auth, BOOTSTRAPPED_COACH_EMAIL } from './firebase';
 import {
   acknowledgeAllMemberProgramNotifications,
+  acknowledgeCoachRegistrationNotification,
   acknowledgeMemberProgramNotification,
   backfillUnassignedMembersToPrimaryCoach,
   buildMemberProgramNotifications,
@@ -21,7 +22,9 @@ import {
   markAllCoachNotificationsRead,
   markAllMemberNotificationsRead,
   markCoachNotificationRead,
+  markConversationAsRead,
   markMemberNotificationRead,
+  mergeRegistrationsWithArchivedStats,
   mergeTrainingProgramsWithMemberSchedules,
   notifyMembersOfEndedEvent,
   resolveCoachSession,
@@ -65,6 +68,7 @@ import {
   EventReview,
   ExerciseLibraryItem,
   MemberAggregate,
+  MemberCoachAckNotification,
   MemberNotification,
   MemberProfile,
   MemberProgramNotification,
@@ -79,6 +83,7 @@ import { buildDisciplineCatalog } from './utils/disciplineColors';
 import {
   evaluateEventBooking,
   getRegistrationEndMs,
+  isRegistrationAckMessage,
 } from './utils/dateAndValidation';
 import {
   computeMemberBadges,
@@ -742,12 +747,37 @@ export default function App() {
     [programNotifications]
   );
 
+  const coachAckNotifications = useMemo<MemberCoachAckNotification[]>(() => {
+    if (!isVerifiedUser || isCoach || !user?.email) return [];
+    return conversations
+      .filter(
+        (conv) =>
+          conv.lastMessageSenderRole === 'coach' &&
+          conv.memberUnreadCount > 0 &&
+          isRegistrationAckMessage(conv.lastMessageText)
+      )
+      .map((conv) => ({
+        id: `conv_ack__${conv.id}`,
+        conversationId: conv.id,
+        coachUid: conv.coachUid,
+        coachName: conv.coachName || 'Votre coach',
+        messageText: conv.lastMessageText,
+        createdAtMs:
+          conv.lastMessageAt?.toMillis?.() ??
+          conv.updatedAt?.toMillis?.() ??
+          0,
+        conversation: conv,
+      }));
+  }, [isVerifiedUser, isCoach, user?.email, conversations]);
+
   const unreadMemberNotificationsCount = useMemo(
     () =>
       memberNotifications.filter((n) =>
         n.type === 'event_cancelled' ? !n.read : !n.validated
-      ).length + unreadProgramNotificationsCount,
-    [memberNotifications, unreadProgramNotificationsCount]
+      ).length +
+      unreadProgramNotificationsCount +
+      coachAckNotifications.length,
+    [memberNotifications, unreadProgramNotificationsCount, coachAckNotifications.length]
   );
 
   const unreadMessagesCount = useMemo(
@@ -861,12 +891,21 @@ export default function App() {
     [reviewsByRegId]
   );
 
+  const myStatsRegistrations = useMemo(
+    () =>
+      mergeRegistrationsWithArchivedStats(myRegistrations, memberSchedules, {
+        events: activeEvents,
+        memberNotifications,
+      }),
+    [myRegistrations, memberSchedules, activeEvents, memberNotifications]
+  );
+
   const handleValidateSessionWithBadgeNotice = async (
     reg: Registration,
     showFloatingToast: boolean
   ) => {
     const beforeSummary = computeMemberBadges({
-      registrations: myRegistrations,
+      registrations: myStatsRegistrations,
       events: activeEvents,
       disciplines: disciplineCatalog,
       memberEmail: user?.email,
@@ -874,7 +913,7 @@ export default function App() {
       nowMs,
     });
     await validateMemberSession(reg);
-    const afterRegs = myRegistrations.map((item) =>
+    const afterRegs = myStatsRegistrations.map((item) =>
       item.id === reg.id ? { ...item, attended: true } : item
     );
     const afterSummary = computeMemberBadges({
@@ -1343,13 +1382,30 @@ export default function App() {
           />
         ) : (
           <>
-            {isVerifiedUser && isCoach && (
+            {isVerifiedUser && isCoach && user && (
               <CoachNotificationsBar
                 notifications={coachNotifications}
                 events={activeEvents}
                 panelOpen={notificationsPanelOpen}
                 onClosePanel={() => setNotificationsPanelOpen(false)}
                 onMarkRead={(id) => void markCoachNotificationRead(id)}
+                onAcknowledgeNotification={async (notif) => {
+                  const matchedEvent =
+                    events.find((e) => e.id === notif.eventId) ?? null;
+                  const cleanEmail = notif.memberEmail.trim().toLowerCase();
+                  const matchedMember = memberProfiles.find(
+                    (m) => m.email.trim().toLowerCase() === cleanEmail
+                  );
+                  return acknowledgeCoachRegistrationNotification({
+                    notification: notif,
+                    event: matchedEvent,
+                    coachUid: user.uid,
+                    coachEmail: user.email || '',
+                    coachName: coachDisplayName,
+                    coachPhotoUrl: myAdminProfile?.photoUrl,
+                    memberPhotoUrl: matchedMember?.photoUrl,
+                  });
+                }}
                 onMarkAllRead={() =>
                   void markAllCoachNotificationsRead(coachNotifications)
                 }
@@ -1365,6 +1421,7 @@ export default function App() {
               <MemberNotificationsBar
                 notifications={memberNotifications}
                 programNotifications={programNotifications}
+                coachAckNotifications={coachAckNotifications}
                 reviewedRegIds={reviewedRegIds}
                 nowMs={nowMs}
                 panelOpen={memberNotificationsPanelOpen}
@@ -1384,8 +1441,45 @@ export default function App() {
                   );
                 }}
                 onMarkRead={(id) => void markMemberNotificationRead(id)}
+                onMarkCoachAckRead={(conversationId) => {
+                  if (!user?.uid) return;
+                  void markConversationAsRead({
+                    conversationId,
+                    isCoach: false,
+                    currentUid: user.uid,
+                  });
+                }}
+                onOpenCoachAckMessage={(ack) => {
+                  setMemberNotificationsPanelOpen(false);
+                  if (user?.uid) {
+                    void markConversationAsRead({
+                      conversationId: ack.conversationId,
+                      isCoach: false,
+                      currentUid: user.uid,
+                    });
+                  }
+                  setPendingMessageTarget({
+                    coachUid: ack.conversation.coachUid,
+                    coachName: ack.conversation.coachName,
+                    coachPhotoUrl: ack.conversation.coachPhotoUrl,
+                    memberEmail: ack.conversation.memberEmail,
+                    memberEmailKey: ack.conversation.memberEmailKey,
+                    memberName: ack.conversation.memberName,
+                    memberPhotoUrl: ack.conversation.memberPhotoUrl,
+                  });
+                  setActiveSection('messages');
+                }}
                 onMarkAllRead={() => {
                   void markAllMemberNotificationsRead(memberNotifications);
+                  if (user?.uid && coachAckNotifications.length > 0) {
+                    coachAckNotifications.forEach((ack) => {
+                      void markConversationAsRead({
+                        conversationId: ack.conversationId,
+                        isCoach: false,
+                        currentUid: user.uid,
+                      });
+                    });
+                  }
                   if (user?.uid && user?.email && programNotifications.length > 0) {
                     const unreadIds = programNotifications
                       .filter((p) => !p.read)
@@ -1604,6 +1698,7 @@ export default function App() {
                 onExploreCalendar={() => setActiveSection('calendar')}
                 unreadMessagesCount={unreadMessagesCount}
                 recentConversations={conversations}
+                memberNotifications={memberNotifications}
                 customScheduleSessions={memberSchedules}
                 trainingPrograms={effectiveTrainingPrograms}
                 coachDirectory={coachDirectory}
@@ -2081,6 +2176,8 @@ export default function App() {
           eventReviews={reviewsByEventId.get(currentRosterEvent.id) ?? []}
           ratingSummary={ratingSummaryByEventId.get(currentRosterEvent.id)}
           currentUserUid={user.uid}
+          isCoachAdmin={isCoachAdmin}
+          isPrimaryBootstrapped={isPrimaryBootstrapped}
           initialTab={rosterInitialTab}
           onMessageParticipant={(reg, ev) => {
             const matchedProfile = memberProfiles.find(

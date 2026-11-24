@@ -22,6 +22,12 @@
           "maxLength": 600,
           "description": "Détails du programme et matériel requis."
         },
+        "externalUrl": {
+          "type": "string",
+          "maxLength": 500,
+          "pattern": "^$|^https?://[^\\s]+$",
+          "description": "Lien externe optionnel associé à l'événement (parcours, billetterie, document)."
+        },
         "location": {
           "type": "string",
           "minLength": 2,

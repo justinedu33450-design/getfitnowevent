@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Clock, CreditCard, Plus, Trash2, UserCheck, X } from 'lucide-react';
+import { AlertTriangle, Check, Clock, CreditCard, Link2, Plus, Trash2, UserCheck, X } from 'lucide-react';
 import {
   CoachAdminUser,
   Discipline,
@@ -22,6 +22,7 @@ import {
   formatFrenchTime,
   formatPriceEuros,
   normalizeBookingCutoffMinutes,
+  normalizeEventExternalUrl,
   toLocalDateInputValue,
   toLocalTimeInputValue,
 } from '../utils/dateAndValidation';
@@ -222,6 +223,9 @@ export function EventFormModal({
   const [coachInputError, setCoachInputError] = useState<string | null>(null);
   const [description, setDescription] = useState(
     sourceEvent?.description ?? ''
+  );
+  const [externalUrl, setExternalUrl] = useState(
+    sourceEvent?.externalUrl ?? ''
   );
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -492,12 +496,20 @@ export function EventFormModal({
       return;
     }
 
+    const { url: normalizedExternalUrl, error: externalUrlError } =
+      normalizeEventExternalUrl(externalUrl);
+    if (externalUrlError) {
+      setErrorMsg(externalUrlError);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
         title,
         discipline,
         description,
+        externalUrl: normalizedExternalUrl,
         location,
         city,
         region,
@@ -528,7 +540,11 @@ export function EventFormModal({
           : editingEvent.status;
         await updateEvent(
           editingEvent.id,
-          { ...payload, status: nextStatus },
+          {
+            ...payload,
+            hadExternalUrl: Boolean(editingEvent.externalUrl),
+            status: nextStatus,
+          },
           editingEvent.registeredCount
         );
       } else {
@@ -1390,6 +1406,29 @@ export function EventFormModal({
               placeholder="Niveau requis, intensité, bouteille d'eau, serviette..."
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="ev-external-url"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300"
+            >
+              <Link2 className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+              Lien associé à l’événement (optionnel)
+            </label>
+            <input
+              id="ev-external-url"
+              type="text"
+              inputMode="url"
+              maxLength={VALIDATION_LIMITS.EVENT_URL_MAX}
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
+              placeholder="https://exemple.fr/parcours-ou-infos"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              Parcours GPS, billetterie, document PDF ou page d’information (https:// ou http://).
+            </p>
           </div>
 
           <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">

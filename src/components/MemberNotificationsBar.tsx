@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import {
+  MemberCoachAckNotification,
   MemberNotification,
   MemberProgramNotification,
 } from '../types';
@@ -25,6 +26,7 @@ import {
 interface MemberNotificationsBarProps {
   notifications: MemberNotification[];
   programNotifications?: MemberProgramNotification[];
+  coachAckNotifications?: MemberCoachAckNotification[];
   reviewedRegIds?: Set<string>;
   nowMs?: number;
   panelOpen: boolean;
@@ -36,6 +38,8 @@ interface MemberNotificationsBarProps {
   onMarkProgramRead?: (notificationId: string) => void;
   onDeleteProgramNotification?: (notificationId: string) => void;
   onOpenProgramNotification?: (notification: MemberProgramNotification) => void;
+  onMarkCoachAckRead?: (conversationId: string) => void;
+  onOpenCoachAckMessage?: (ack: MemberCoachAckNotification) => void;
   onOpenMyTracking: () => void;
   onOpenReview?: (registrationId: string) => void;
 }
@@ -43,6 +47,7 @@ interface MemberNotificationsBarProps {
 export function MemberNotificationsBar({
   notifications,
   programNotifications = [],
+  coachAckNotifications = [],
   reviewedRegIds,
   nowMs = Date.now(),
   panelOpen,
@@ -54,6 +59,8 @@ export function MemberNotificationsBar({
   onMarkProgramRead,
   onDeleteProgramNotification,
   onOpenProgramNotification,
+  onMarkCoachAckRead,
+  onOpenCoachAckMessage,
   onOpenMyTracking,
   onOpenReview,
 }: MemberNotificationsBarProps) {
@@ -74,7 +81,12 @@ export function MemberNotificationsBar({
   const itemsToShow = panelOpen ? notifications : unread;
   const programItemsToShow = panelOpen ? programNotifications : unreadPrograms;
 
-  if (itemsToShow.length === 0 && programItemsToShow.length === 0 && !panelOpen) {
+  if (
+    itemsToShow.length === 0 &&
+    programItemsToShow.length === 0 &&
+    coachAckNotifications.length === 0 &&
+    !panelOpen
+  ) {
     return null;
   }
 
@@ -86,7 +98,15 @@ export function MemberNotificationsBar({
     unreadPrograms.length > 0 &&
     unreadCancelled.length === 0 &&
     unvalidated.length === 0;
-  const hasAnyUnread = unread.length > 0 || unreadPrograms.length > 0;
+  const isAckFocused =
+    coachAckNotifications.length > 0 &&
+    unreadCancelled.length === 0 &&
+    unvalidated.length === 0 &&
+    unreadPrograms.length === 0;
+  const hasAnyUnread =
+    unread.length > 0 ||
+    unreadPrograms.length > 0 ||
+    coachAckNotifications.length > 0;
 
   const handleValidate = async (notif: MemberNotification) => {
     setErrorMsg(null);
@@ -152,6 +172,13 @@ export function MemberNotificationsBar({
         : `${unreadCancelled.length} séances annulées par l’animateur`;
     headerSubtitle =
       'Votre inscription a été annulée automatiquement (et remboursée si la séance était payante).';
+  } else if (isAckFocused) {
+    headerTitle =
+      coachAckNotifications.length === 1
+        ? 'Inscription prise en compte par votre coach'
+        : `${coachAckNotifications.length} confirmations d’inscription reçues`;
+    headerSubtitle =
+      'Votre coach a confirmé la prise en compte de votre participation à la séance.';
   } else if (unvalidated.length > 0) {
     headerTitle =
       unvalidated.length === 1
@@ -170,7 +197,9 @@ export function MemberNotificationsBar({
           ? 'border-rose-200 bg-rose-50/90 dark:border-rose-900/70 dark:bg-rose-950/40'
           : isProgramFocused
             ? 'border-sky-200 bg-sky-50/90 dark:border-sky-900/70 dark:bg-sky-950/35'
-            : 'border-amber-200 bg-amber-50/90 dark:border-amber-900/70 dark:bg-amber-950/40'
+            : isAckFocused
+              ? 'border-emerald-200 bg-emerald-50/90 dark:border-emerald-900/70 dark:bg-emerald-950/40'
+              : 'border-amber-200 bg-amber-50/90 dark:border-amber-900/70 dark:bg-amber-950/40'
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
@@ -182,13 +211,17 @@ export function MemberNotificationsBar({
                   ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/70 dark:text-rose-300'
                   : isProgramFocused
                     ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/70 dark:text-sky-300'
-                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/70 dark:text-amber-300'
+                    : isAckFocused
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/70 dark:text-emerald-300'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/70 dark:text-amber-300'
               }`}
             >
               {isCancellationAlert ? (
                 <Ban className="h-4 w-4" aria-hidden="true" />
               ) : isProgramFocused ? (
                 <Footprints className="h-4 w-4" aria-hidden="true" />
+              ) : isAckFocused ? (
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
               ) : (
                 <BellRing className="h-4 w-4" aria-hidden="true" />
               )}
@@ -200,7 +233,9 @@ export function MemberNotificationsBar({
                     ? 'text-rose-950 dark:text-rose-100'
                     : isProgramFocused
                       ? 'text-sky-950 dark:text-sky-100'
-                      : 'text-amber-950 dark:text-amber-100'
+                      : isAckFocused
+                        ? 'text-emerald-950 dark:text-emerald-100'
+                        : 'text-amber-950 dark:text-amber-100'
                 }`}
               >
                 {headerTitle}
@@ -211,7 +246,9 @@ export function MemberNotificationsBar({
                     ? 'text-rose-900/85 dark:text-rose-200/85'
                     : isProgramFocused
                       ? 'text-sky-900/85 dark:text-sky-200/85'
-                      : 'text-amber-900/80 dark:text-amber-200/85'
+                      : isAckFocused
+                        ? 'text-emerald-900/85 dark:text-emerald-200/85'
+                        : 'text-amber-900/80 dark:text-amber-200/85'
                 }`}
               >
                 {headerSubtitle}
@@ -228,7 +265,9 @@ export function MemberNotificationsBar({
                   ? 'border-rose-200 text-rose-950 hover:bg-rose-100/60 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900/40'
                   : isProgramFocused
                     ? 'border-sky-200 text-sky-950 hover:bg-sky-100/60 dark:border-sky-800 dark:text-sky-200 dark:hover:bg-sky-900/40'
-                    : 'border-amber-200 text-amber-950 hover:bg-amber-100/60 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40'
+                    : isAckFocused
+                      ? 'border-emerald-200 text-emerald-950 hover:bg-emerald-100/60 dark:border-emerald-800 dark:text-emerald-200 dark:hover:bg-emerald-900/40'
+                      : 'border-amber-200 text-amber-950 hover:bg-amber-100/60 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40'
               }`}
             >
               Voir mon suivi
@@ -242,7 +281,9 @@ export function MemberNotificationsBar({
                     ? 'border-rose-200 text-rose-950 hover:bg-rose-100/60 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900/40'
                     : isProgramFocused
                       ? 'border-sky-200 text-sky-950 hover:bg-sky-100/60 dark:border-sky-800 dark:text-sky-200 dark:hover:bg-sky-900/40'
-                      : 'border-amber-200 text-amber-950 hover:bg-amber-100/60 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40'
+                      : isAckFocused
+                        ? 'border-emerald-200 text-emerald-950 hover:bg-emerald-100/60 dark:border-emerald-800 dark:text-emerald-200 dark:hover:bg-emerald-900/40'
+                        : 'border-amber-200 text-amber-950 hover:bg-amber-100/60 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-900/40'
                 }`}
               >
                 <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -268,12 +309,60 @@ export function MemberNotificationsBar({
           </div>
         )}
 
-        {itemsToShow.length === 0 && programItemsToShow.length === 0 ? (
+        {itemsToShow.length === 0 &&
+        programItemsToShow.length === 0 &&
+        coachAckNotifications.length === 0 ? (
           <div className="mt-3 rounded-lg border border-slate-200/80 bg-white px-4 py-4 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
             Aucune notification pour le moment.
           </div>
         ) : (
           <div className="mt-3 space-y-2 max-h-[360px] overflow-y-auto pr-0.5">
+            {coachAckNotifications.map((ack) => (
+              <div
+                key={ack.id}
+                className="flex flex-col gap-2.5 rounded-lg border border-emerald-300 bg-white px-3.5 py-2.5 shadow-2xs dark:border-emerald-700/70 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+                      Inscription prise en compte
+                    </span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                      Coach : {ack.coachName}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    {ack.messageText}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {onOpenCoachAckMessage && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCoachAckMessage(ack)}
+                      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                      Voir le message
+                    </button>
+                  )}
+                  {onMarkCoachAckRead && (
+                    <button
+                      type="button"
+                      onClick={() => onMarkCoachAckRead(ack.conversationId)}
+                      title="Marquer comme lu"
+                      aria-label={`Marquer comme lue la confirmation de ${ack.coachName}`}
+                      className="flex h-[36px] w-[36px] items-center justify-center rounded-lg border border-slate-200 bg-white text-emerald-700 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950/50 cursor-pointer"
+                    >
+                      <Check className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+
             {programItemsToShow.map((pNotif) => {
               const badgeLabel =
                 pNotif.kind === 'program_week'

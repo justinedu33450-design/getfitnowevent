@@ -41,6 +41,7 @@ import {
 import {
   createMemberScheduleSession,
   deleteMemberScheduleSession,
+  isInternalScheduleOverride,
   payMemberScheduleSession,
   payTrainingProgram,
   toggleMemberScheduleCompleted,
@@ -336,7 +337,9 @@ export function MemberWeeklyScheduleCard({
   }, [registrations, memberEmailLower, eventsById, nowMs]);
 
   const customEntries = useMemo<WeeklyScheduleEntry[]>(() => {
-    return customSessions.map((session) => {
+    return customSessions
+      .filter((session) => !isInternalScheduleOverride(session))
+      .map((session) => {
       const startDate = session.startAt.toDate();
       const endMs = startDate.getTime() + session.durationMinutes * 60 * 1000;
       return {

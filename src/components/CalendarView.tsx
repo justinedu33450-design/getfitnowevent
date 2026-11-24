@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  ExternalLink,
   List,
   Lock,
   Map as MapIcon,
@@ -24,11 +25,13 @@ import {
   evaluateEventBooking,
   formatEventCoachesLabel,
   formatEventPrice,
+  formatExternalUrlLabel,
   formatFrenchDateLong,
   formatFrenchTime,
   formatPaymentModeLabel,
   formatTimeRange,
   getMonthDaysGrid,
+  getSafeExternalHref,
   getWeekDays,
   isSameCalendarDay,
 } from '../utils/dateAndValidation';
@@ -1125,6 +1128,23 @@ export function CalendarView({
                           <UserCheck className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
                           <span className="truncate">{formatEventCoachesLabel(ev)}</span>
                         </div>
+                        {(() => {
+                          const safeExternalUrl = getSafeExternalHref(ev.externalUrl);
+                          if (!safeExternalUrl) return null;
+                          return (
+                            <div className="flex items-center gap-2">
+                              <ExternalLink className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                              <a
+                                href={safeExternalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="truncate font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                              >
+                                {formatExternalUrlLabel(safeExternalUrl)}
+                              </a>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {ev.isPaid && (

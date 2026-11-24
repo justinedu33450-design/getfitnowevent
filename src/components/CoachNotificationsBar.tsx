@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Bell,
   CalendarClock,
@@ -20,6 +21,9 @@ interface CoachNotificationsBarProps {
   panelOpen: boolean;
   onClosePanel: () => void;
   onMarkRead: (notificationId: string) => void;
+  onAcknowledgeNotification?: (
+    notification: CoachNotification
+  ) => Promise<{ sent: boolean; messageText: string }>;
   onMarkAllRead: () => void;
   onDelete: (notificationId: string) => void;
   onOpenEventRoster: (eventId: string) => void;
@@ -31,18 +35,53 @@ export function CoachNotificationsBar({
   panelOpen,
   onClosePanel,
   onMarkRead,
+  onAcknowledgeNotification,
   onMarkAllRead,
   onDelete,
   onOpenEventRoster,
 }: CoachNotificationsBarProps) {
+  const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+
   const unread = notifications.filter((n) => !n.read);
   const itemsToShow = panelOpen ? notifications : unread;
 
-  if (itemsToShow.length === 0 && !panelOpen) {
+  if (itemsToShow.length === 0 && !panelOpen && !feedback) {
     return null;
   }
 
   const activeEventIds = new Set(events.map((e) => e.id));
+
+  const handleAcknowledgeClick = async (notif: CoachNotification) => {
+    setFeedback(null);
+    if (!onAcknowledgeNotification) {
+      onMarkRead(notif.id);
+      return;
+    }
+    setAcknowledgingId(notif.id);
+    try {
+      const result = await onAcknowledgeNotification(notif);
+      setFeedback({
+        type: 'success',
+        text: result.sent
+          ? `Notification envoyée à ${notif.memberName} : « ${result.messageText} »`
+          : `Inscription de ${notif.memberName} marquée comme lue.`,
+      });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Impossible d’envoyer la notification à l’adhérent.',
+      });
+    } finally {
+      setAcknowledgingId(null);
+    }
+  };
 
   return (
     <div
@@ -163,10 +202,11 @@ export function CoachNotificationsBar({
                     {!notif.read && (
                       <button
                         type="button"
-                        onClick={() => onMarkRead(notif.id)}
-                        title="Marquer comme lu"
-                        aria-label={`Marquer comme lue la notification de ${notif.memberName}`}
-                        className="flex h-[36px] w-[36px] items-center justify-center rounded-lg border border-slate-200 bg-white text-emerald-700 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950/50 cursor-pointer"
+                        disabled={acknowledgingId === notif.id}
+                        onClick={() => void handleAcknowledgeClick(notif)}
+                        title="Marquer comme lu et notifier l’adhérent"
+                        aria-label={`Marquer comme lue la notification de ${notif.memberName} et notifier l’adhérent`}
+                        className="flex h-[36px] w-[36px] items-center justify-center rounded-lg border border-slate-200 bg-white text-emerald-700 hover:bg-emerald-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950/50 cursor-pointer"
                       >
                         <Check className="h-4 w-4" aria-hidden="true" />
                       </button>
@@ -185,6 +225,26 @@ export function CoachNotificationsBar({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {feedback && (
+          <div
+            className={`mt-2.5 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${
+              feedback.type === 'error'
+                ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                : 'border-emerald-200 bg-white text-emerald-900 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-200'
+            }`}
+          >
+            <span>{feedback.text}</span>
+            <button
+              type="button"
+              onClick={() => setFeedback(null)}
+              aria-label="Fermer le message de confirmation"
+              className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
           </div>
         )}
       </div>
