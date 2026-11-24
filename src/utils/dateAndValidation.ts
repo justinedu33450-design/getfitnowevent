@@ -300,6 +300,21 @@ export function evaluateEventBooking(
   };
 }
 
+export function canMemberMessageEventCoach(
+  event: SportEvent,
+  nowMs: number = Date.now(),
+  evaluation?: BookingEvaluation
+): boolean {
+  const hasCoachTarget = Boolean(event.coachUids?.[0] || event.createdBy);
+  if (!hasCoachTarget) return false;
+  const evalInfo = evaluation ?? evaluateEventBooking(event, nowMs);
+  if (nowMs >= evalInfo.startMs) return false;
+  if (evalInfo.state === 'cancelled' && !evalInfo.isAutoCancelledNoRegistrants) {
+    return false;
+  }
+  return true;
+}
+
 export function formatCapacityCompact(event: SportEvent): string {
   if (event.isUnlimitedCapacity) {
     return `${event.registeredCount} · Illimité`;

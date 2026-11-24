@@ -601,7 +601,13 @@ export function MessagesView({
   const selectableContextEvents = useMemo(
     () =>
       events
-        .filter((ev) => ev.status === 'published')
+        .filter(
+          (ev) =>
+            ev.status === 'published' ||
+            (ev.status === 'cancelled' &&
+              ev.cancelReason === 'no_registrants' &&
+              ev.startAt.toMillis() > Date.now())
+        )
         .slice()
         .sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis())
         .slice(0, 25),

@@ -6,6 +6,7 @@ import {
   List,
   Map as MapIcon,
   MapPin,
+  MessageSquare,
   Search,
   UserCheck,
   XCircle,
@@ -17,11 +18,13 @@ import {
   SportEvent,
 } from '../types';
 import {
+  canMemberMessageEventCoach,
   evaluateEventBooking,
   formatEventCoachesLabel,
   formatEventPrice,
   formatExternalUrlLabel,
   formatFrenchDateShort,
+  formatFrenchTime,
   formatPaymentModeLabel,
   formatTimeRange,
   getEventCoachNames,
@@ -48,6 +51,7 @@ interface SessionsListViewProps {
   loading: boolean;
   hasMapsApiKey: boolean;
   onSelectEvent: (event: SportEvent) => void;
+  onMessageCoach?: (event: SportEvent) => void;
 }
 
 type StatusFilter = 'upcoming' | 'today' | 'open' | 'all';
@@ -64,6 +68,7 @@ export function SessionsListView({
   loading,
   hasMapsApiKey,
   onSelectEvent,
+  onMessageCoach,
 }: SessionsListViewProps) {
   const [search, setSearch] = useState('');
   const [cityFilter, setCityFilter] = useState('');
@@ -533,32 +538,59 @@ export function SessionsListView({
                       evalInfo.isUnlimited || (evalInfo.remainingSpots ?? 0) > 0;
                     const canBookFromCard =
                       hasSpots && evalInfo.state === 'open';
+                    const isClosedBeforeStart =
+                      (evalInfo.state === 'closed' ||
+                        (evalInfo.state === 'cancelled' &&
+                          evalInfo.isAutoCancelledNoRegistrants)) &&
+                      nowMs < evalInfo.startMs;
+                    const showClosedMessageCta =
+                      !isCoach &&
+                      Boolean(onMessageCoach) &&
+                      isClosedBeforeStart &&
+                      canMemberMessageEventCoach(ev, nowMs, evalInfo);
                     return (
-                      <div className="flex items-center gap-2">
-                        {evalInfo.state !== 'cancelled' && onShareEvent && (
-                          <EventShareButton
-                            compact
-                            eventTitle={ev.title}
-                            onClick={() => onShareEvent(ev)}
-                          />
+                      <div className="space-y-2">
+                        {showClosedMessageCta && (
+                          <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                            Message à l’animateur possible jusqu’à {formatFrenchTime(startDate)}
+                          </p>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => onSelectEvent(ev)}
-                          className={`flex-1 min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold transition-colors cursor-pointer ${
-                            canBookFromCard
-                              ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                              : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          {evalInfo.state === 'open' && hasSpots
-                            ? ev.isPaid
-                              ? `Réserver (${formatEventPrice(ev)})`
-                              : 'Réserver & voir la carte'
-                            : evalInfo.state === 'cancelled'
-                              ? 'Séance annulée · Voir détails'
-                              : 'Voir la carte et détails'}
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {evalInfo.state !== 'cancelled' && onShareEvent && (
+                            <EventShareButton
+                              compact
+                              eventTitle={ev.title}
+                              onClick={() => onShareEvent(ev)}
+                            />
+                          )}
+                          {showClosedMessageCta && onMessageCoach && (
+                            <button
+                              type="button"
+                              onClick={() => onMessageCoach(ev)}
+                              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-emerald-700 bg-white px-3.5 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-950/50 cursor-pointer"
+                            >
+                              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                              Écrire à l’animateur
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onSelectEvent(ev)}
+                            className={`flex-1 min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold transition-colors cursor-pointer ${
+                              canBookFromCard
+                                ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                                : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            {evalInfo.state === 'open' && hasSpots
+                              ? ev.isPaid
+                                ? `Réserver (${formatEventPrice(ev)})`
+                                : 'Réserver & voir la carte'
+                              : evalInfo.state === 'cancelled'
+                                ? 'Séance annulée · Voir détails'
+                                : 'Voir la carte et détails'}
+                          </button>
+                        </div>
                       </div>
                     );
                   })()}

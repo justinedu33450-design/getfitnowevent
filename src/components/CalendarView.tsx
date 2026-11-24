@@ -10,6 +10,7 @@ import {
   Lock,
   Map as MapIcon,
   MapPin,
+  MessageSquare,
   Plus,
   Search,
   SlidersHorizontal,
@@ -22,6 +23,7 @@ import {
   SportEvent,
 } from '../types';
 import {
+  canMemberMessageEventCoach,
   evaluateEventBooking,
   formatEventCoachesLabel,
   formatEventPrice,
@@ -56,6 +58,7 @@ interface CalendarViewProps {
   hasMapsApiKey: boolean;
   onSelectEvent: (event: SportEvent) => void;
   onCreateEventForDate: (date: Date) => void;
+  onMessageCoach?: (event: SportEvent) => void;
 }
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -73,6 +76,7 @@ export function CalendarView({
   hasMapsApiKey,
   onSelectEvent,
   onCreateEventForDate,
+  onMessageCoach,
 }: CalendarViewProps) {
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [dayDisplayMode, setDayDisplayMode] = useState<'list' | 'map'>('list');
@@ -1168,24 +1172,53 @@ export function CalendarView({
                           evalInfo.isUnlimited || (evalInfo.remainingSpots ?? 0) > 0;
                         const canBookFromCard =
                           hasSpots && evalInfo.state === 'open';
+                        const isClosedBeforeStart =
+                          (evalInfo.state === 'closed' ||
+                            (evalInfo.state === 'cancelled' &&
+                              evalInfo.isAutoCancelledNoRegistrants)) &&
+                          nowMs < evalInfo.startMs;
+                        const showClosedMessageCta =
+                          !isCoach &&
+                          Boolean(onMessageCoach) &&
+                          isClosedBeforeStart &&
+                          canMemberMessageEventCoach(ev, nowMs, evalInfo);
                         return (
-                          <button
-                            type="button"
-                            onClick={() => onSelectEvent(ev)}
-                            className={`mt-3 w-full min-h-[44px] rounded-lg px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-                              canBookFromCard
-                                ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                                : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                            }`}
-                          >
-                            {evalInfo.state === 'open' && hasSpots
-                              ? ev.isPaid
-                                ? `Réserver (${formatEventPrice(ev)})`
-                                : 'Réserver & voir la carte'
-                              : evalInfo.state === 'cancelled'
-                                ? 'Séance annulée · Voir détails'
-                                : 'Voir la carte et détails'}
-                          </button>
+                          <div className="mt-3 space-y-2">
+                            {showClosedMessageCta && (
+                              <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                                Message à l’animateur possible jusqu’à {formatFrenchTime(ev.startAt.toDate())}
+                              </p>
+                            )}
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                              {showClosedMessageCta && onMessageCoach && (
+                                <button
+                                  type="button"
+                                  onClick={() => onMessageCoach(ev)}
+                                  className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-700 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-950/50 cursor-pointer"
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                                  Écrire à l’animateur
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => onSelectEvent(ev)}
+                                className={`min-h-[44px] flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                                  canBookFromCard
+                                    ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                                    : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                {evalInfo.state === 'open' && hasSpots
+                                  ? ev.isPaid
+                                    ? `Réserver (${formatEventPrice(ev)})`
+                                    : 'Réserver & voir la carte'
+                                  : evalInfo.state === 'cancelled'
+                                    ? 'Séance annulée · Voir détails'
+                                    : 'Voir la carte et détails'}
+                              </button>
+                            </div>
+                          </div>
                         );
                       })()}
                     </div>

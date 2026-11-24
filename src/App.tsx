@@ -216,6 +216,7 @@ export default function App() {
   // Modals & Drawers
   const [selectedEventForBooking, setSelectedEventForBooking] =
     useState<SportEvent | null>(null);
+  const [bookingMessageAuthStep, setBookingMessageAuthStep] = useState(false);
   const [eventFormState, setEventFormState] = useState<{
     open: boolean;
     initialDate?: Date | null;
@@ -933,7 +934,8 @@ export default function App() {
 
   const handleAuthenticatedUser = async (
     signedInUser: User,
-    target: 'member' | 'coach'
+    target: 'member' | 'coach',
+    messageEventAfterAuth?: SportEvent | null
   ) => {
     setAuthError(null);
     if (!signedInUser.email) {
@@ -949,6 +951,7 @@ export default function App() {
     if (res.isCoach) {
       setCoachGateIntent(false);
       setMemberAuthReturnToCalendar(false);
+      setBookingMessageAuthStep(false);
       if (
         target === 'coach' &&
         (activeSection === 'calendar' ||
@@ -961,6 +964,11 @@ export default function App() {
       }
     } else if (target === 'member') {
       setCoachGateIntent(false);
+      if (messageEventAfterAuth) {
+        openMessageCoachForEvent(messageEventAfterAuth, signedInUser);
+        setMemberAuthReturnToCalendar(false);
+        return;
+      }
       if (
         activeSection === 'manage' ||
         activeSection === 'members' ||
@@ -996,6 +1004,7 @@ export default function App() {
     setMemberNotificationsPanelOpen(false);
     setLocalProgramNotifAcks(new Map());
     setSelectedEventForBooking(null);
+    setBookingMessageAuthStep(false);
     setEventFormState({ open: false });
     setRosterEventId(null);
     setRosterInitialTab('roster');
@@ -1029,6 +1038,7 @@ export default function App() {
 
   const handleCloseBookingModal = () => {
     setSelectedEventForBooking(null);
+    setBookingMessageAuthStep(false);
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.has('event')) {
@@ -1038,6 +1048,36 @@ export default function App() {
     } catch {
       // Ignore history access errors
     }
+  };
+
+  const openMessageCoachForEvent = (ev: SportEvent, overrideUser?: User) => {
+    const activeAuthUser = overrideUser ?? user;
+    if (!activeAuthUser?.email) return;
+    const targetCoachUid = ev.coachUids?.[0] || ev.createdBy;
+    if (!targetCoachUid) return;
+    const dirEntry = coachDirectoryByUid.get(targetCoachUid);
+    const fallbackCoachName =
+      dirEntry?.displayName ||
+      ev.coachNames?.[0] ||
+      ev.coachName?.split(',')[0]?.trim() ||
+      'Coach GetFitNow';
+    const resolvedMemberName = overrideUser
+      ? overrideUser.displayName?.trim() ||
+        overrideUser.email.split('@')[0] ||
+        'Adhérent'
+      : memberDisplayName;
+    setPendingMessageTarget({
+      coachUid: targetCoachUid,
+      coachName: fallbackCoachName,
+      coachPhotoUrl: dirEntry?.photoUrl,
+      memberEmail: activeAuthUser.email,
+      memberName: resolvedMemberName,
+      memberPhotoUrl: overrideUser ? undefined : myMemberProfile?.photoUrl,
+      contextEventId: ev.id,
+      contextEventTitle: ev.title,
+    });
+    handleCloseBookingModal();
+    setActiveSection('messages');
   };
 
   const isCurrentBookingEventActive = useMemo(() => {
@@ -1644,7 +1684,10 @@ export default function App() {
                 ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
                 hasMapsApiKey={hasMapsApiKey}
-                onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
+                onSelectEvent={(ev) => {
+                  setBookingMessageAuthStep(false);
+                  setSelectedEventForBooking(ev);
+                }}
                 onCreateEventForDate={(date) => {
                   if (!isCoach) return;
                   setEventFormState({
@@ -1654,6 +1697,18 @@ export default function App() {
                     duplicatingEvent: null,
                   });
                 }}
+                onMessageCoach={
+                  !isCoach
+                    ? (ev) => {
+                        if (isVerifiedUser && user?.email) {
+                          openMessageCoachForEvent(ev);
+                        } else {
+                          setBookingMessageAuthStep(true);
+                          setSelectedEventForBooking(ev);
+                        }
+                      }
+                    : undefined
+                }
               />
             )}
 
@@ -1669,7 +1724,22 @@ export default function App() {
                 ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
                 hasMapsApiKey={hasMapsApiKey}
-                onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
+                onSelectEvent={(ev) => {
+                  setBookingMessageAuthStep(false);
+                  setSelectedEventForBooking(ev);
+                }}
+                onMessageCoach={
+                  !isCoach
+                    ? (ev) => {
+                        if (isVerifiedUser && user?.email) {
+                          openMessageCoachForEvent(ev);
+                        } else {
+                          setBookingMessageAuthStep(true);
+                          setSelectedEventForBooking(ev);
+                        }
+                      }
+                    : undefined
+                }
               />
             )}
 
@@ -2088,8 +2158,12 @@ export default function App() {
           onCancelRegistration={
             isVerifiedUser ? (reg) => cancelMyRegistration(reg) : undefined
           }
-          onMemberEmailAuthSuccess={(u) =>
-            void handleAuthenticatedUser(u, 'member')
+          onMemberEmailAuthSuccess={(u, intent) =>
+            void handleAuthenticatedUser(
+              u,
+              'member',
+              intent === 'message' ? currentBookingEvent : null
+            )
           }
           onClose={handleCloseBookingModal}
           onOpenCoachRoster={(ev) => {
@@ -2122,30 +2196,10 @@ export default function App() {
               duplicatingEvent: ev,
             });
           }}
+          initialMessageAuthStep={bookingMessageAuthStep}
           onMessageCoach={
             isVerifiedUser && !isCoach && user?.email
-              ? (ev) => {
-                  const targetCoachUid = ev.coachUids?.[0] || ev.createdBy;
-                  if (!targetCoachUid) return;
-                  const dirEntry = coachDirectoryByUid.get(targetCoachUid);
-                  const fallbackCoachName =
-                    dirEntry?.displayName ||
-                    ev.coachNames?.[0] ||
-                    ev.coachName?.split(',')[0]?.trim() ||
-                    'Coach GetFitNow';
-                  setPendingMessageTarget({
-                    coachUid: targetCoachUid,
-                    coachName: fallbackCoachName,
-                    coachPhotoUrl: dirEntry?.photoUrl,
-                    memberEmail: user.email || '',
-                    memberName: memberDisplayName,
-                    memberPhotoUrl: myMemberProfile?.photoUrl,
-                    contextEventId: ev.id,
-                    contextEventTitle: ev.title,
-                  });
-                  handleCloseBookingModal();
-                  setActiveSection('messages');
-                }
+              ? (ev) => openMessageCoachForEvent(ev)
               : undefined
           }
         />

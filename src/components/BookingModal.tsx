@@ -42,6 +42,7 @@ import {
   upsertEventReview,
 } from '../services/firestoreService';
 import {
+  canMemberMessageEventCoach,
   downloadEventIcs,
   evaluateEventBooking,
   formatEventCoachesLabel,
@@ -101,13 +102,14 @@ interface BookingModalProps {
   eligibleReviewRegistration?: Registration | null;
   onValidateSession?: (registration: Registration) => Promise<void>;
   onCancelRegistration?: (registration: Registration) => Promise<void>;
-  onMemberEmailAuthSuccess?: (user: User) => void;
+  onMemberEmailAuthSuccess?: (user: User, intent?: 'book' | 'message') => void;
   onClose: () => void;
   onOpenCoachRoster: (event: SportEvent) => void;
   onOpenMemberTracking?: () => void;
   onOpenCoachRegistrations?: () => void;
   onDuplicateEvent?: (event: SportEvent) => void;
   onMessageCoach?: (event: SportEvent) => void;
+  initialMessageAuthStep?: boolean;
 }
 
 export function BookingModal({
@@ -139,6 +141,7 @@ export function BookingModal({
   onOpenCoachRegistrations,
   onDuplicateEvent,
   onMessageCoach,
+  initialMessageAuthStep = false,
 }: BookingModalProps) {
   const nameParts = (userDisplayName || '').trim().split(/\s+/).filter(Boolean);
   const initialFirst =
@@ -179,7 +182,12 @@ export function BookingModal({
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
-  const [showAuthStep, setShowAuthStep] = useState(false);
+  const [showAuthStep, setShowAuthStep] = useState(() =>
+    Boolean(initialMessageAuthStep && !isSignedIn && !isCoach)
+  );
+  const [authIntent, setAuthIntent] = useState<'book' | 'message'>(() =>
+    initialMessageAuthStep && !isSignedIn && !isCoach ? 'message' : 'book'
+  );
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
@@ -256,6 +264,13 @@ export function BookingModal({
     evaluation.isUnlimited || (evaluation.remainingSpots ?? 0) > 0;
   const canBookInModal =
     hasAvailableSpots && evaluation.state === 'open';
+  const canMessageCoachNow =
+    !isCoach && canMemberMessageEventCoach(event, nowMs, evaluation);
+  const isClosedBeforeStart =
+    (evaluation.state === 'closed' ||
+      (evaluation.state === 'cancelled' &&
+        evaluation.isAutoCancelledNoRegistrants)) &&
+    nowMs < evaluation.startMs;
   const discStyle = getDisciplineStyle(event.discipline, disciplines);
   const startDate = event.startAt.toDate();
   const cutoffDate = new Date(evaluation.cutoffMs);
@@ -899,12 +914,13 @@ export function BookingModal({
           )}
 
           {isSignedIn &&
-            !isCoach &&
-            onMessageCoach &&
-            Boolean(event.createdBy || event.coachUids?.[0]) && (
+            canMessageCoachNow &&
+            onMessageCoach && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/60">
                 <span className="text-xs text-slate-600 dark:text-slate-300">
-                  Une question sur cette séance ?
+                  {isClosedBeforeStart
+                    ? `Inscriptions clôturées — vous pouvez contacter l’animateur jusqu’à ${formatFrenchTime(startDate)}.`
+                    : 'Une question sur cette séance ?'}
                 </span>
                 <button
                   type="button"
@@ -912,7 +928,7 @@ export function BookingModal({
                   className="inline-flex min-h-[36px] items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2 cursor-pointer"
                 >
                   <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                  Écrire au coach
+                  Écrire à l’animateur
                 </button>
               </div>
             )}
@@ -1746,7 +1762,10 @@ export function BookingModal({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setShowAuthStep(true)}
+                      onClick={() => {
+                        setAuthIntent('book');
+                        setShowAuthStep(true);
+                      }}
                       className="min-h-[44px] rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
                     >
                       {isPaidEvent
@@ -1779,7 +1798,7 @@ export function BookingModal({
                     audience="member"
                     externalError={authError}
                     onSuccess={(signedInUser) =>
-                      onMemberEmailAuthSuccess?.(signedInUser)
+                      onMemberEmailAuthSuccess?.(signedInUser, 'book')
                     }
                   />
                 </div>
@@ -2189,26 +2208,96 @@ export function BookingModal({
               </div>
             </form>
           ) : (
-            <div
-              className={`rounded-xl border p-4 ${
-                evaluation.state === 'cancelled'
-                  ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100'
-                  : evaluation.state === 'closed'
-                    ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-100'
-                    : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <Lock className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-                <div>
-                  <h3 className="font-display text-sm font-bold">
-                    {evaluation.statusLabel}
-                  </h3>
-                  <p className="mt-1 text-sm">
-                    {evaluation.helperText}
-                  </p>
+            <div className="space-y-3">
+              <div
+                className={`rounded-xl border p-4 ${
+                  evaluation.state === 'cancelled'
+                    ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100'
+                    : evaluation.state === 'closed'
+                      ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-100'
+                      : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <Lock className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-sm font-bold">
+                      {evaluation.statusLabel}
+                    </h3>
+                    <p className="mt-1 text-sm">
+                      {evaluation.helperText}
+                    </p>
+                  </div>
                 </div>
+
+                {canMessageCoachNow && (
+                  <div className="mt-3 flex flex-col gap-2.5 border-t border-current/15 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs leading-relaxed opacity-90">
+                      {isClosedBeforeStart
+                        ? `Vous pouvez malgré tout envoyer un message à l’animateur jusqu’au début de la séance (${formatFrenchTime(startDate)}).`
+                        : `Vous pouvez contacter l’animateur jusqu’au début de la séance (${formatFrenchTime(startDate)}).`}
+                    </p>
+                    {isSignedIn && onMessageCoach ? (
+                      <button
+                        type="button"
+                        onClick={() => onMessageCoach(event)}
+                        className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                        Envoyer un message à l’animateur
+                      </button>
+                    ) : !isSignedIn && !showAuthStep ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthIntent('message');
+                          setShowAuthStep(true);
+                        }}
+                        className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                        Se connecter pour écrire à l’animateur
+                      </button>
+                    ) : null}
+                  </div>
+                )}
               </div>
+
+              {canMessageCoachNow &&
+                !isSignedIn &&
+                showAuthStep &&
+                authIntent === 'message' && (
+                  <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <h3 className="font-display text-base font-semibold text-slate-900 dark:text-white">
+                          Identifiez-vous pour écrire à l’animateur
+                        </h3>
+                        <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                          Connectez-vous ou créez votre profil adhérent pour envoyer un message jusqu’à {formatFrenchTime(startDate)}.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAuthStep(false);
+                          setAuthIntent('book');
+                        }}
+                        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shrink-0 cursor-pointer"
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                        Retour
+                      </button>
+                    </div>
+                    <EmailPasswordAuthForm
+                      audience="member"
+                      externalError={authError}
+                      onSuccess={(signedInUser) =>
+                        onMemberEmailAuthSuccess?.(signedInUser, 'message')
+                      }
+                    />
+                  </div>
+                )}
             </div>
           )}
 
