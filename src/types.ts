@@ -71,6 +71,8 @@ export const VALIDATION_LIMITS = {
   DISCIPLINE_MAX: 50,
   DESCRIPTION_MAX: 600,
   EVENT_URL_MAX: 500,
+  EVENT_COVER_IMAGE_MAX: 200000,
+  EVENT_COVER_POSITION_MAX: 20,
   LOCATION_MIN: 2,
   LOCATION_MAX: 120,
   CITY_MIN: 2,
@@ -163,6 +165,8 @@ export interface SportEvent {
   discipline: Discipline;
   description: string;
   externalUrl?: string;
+  coverImageUrl?: string;
+  coverImagePosition?: string;
   location: string;
   city: string;
   region: string;

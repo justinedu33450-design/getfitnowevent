@@ -54,7 +54,9 @@ import {
   formatPriceEuros,
   formatTimeRange,
   getRegistrationPaymentBadgeInfo,
+  getSafeEventCoverImageSrc,
   getSafeExternalHref,
+  normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
 import {
   detectCardBrand,
@@ -275,6 +277,8 @@ export function BookingModal({
   const startDate = event.startAt.toDate();
   const cutoffDate = new Date(evaluation.cutoffMs);
   const hasEventEnded = nowMs >= evaluation.endMs;
+  const coverImageSrc = getSafeEventCoverImageSrc(event.coverImageUrl);
+  const coverImagePosition = normalizeCoverImagePosition(event.coverImagePosition);
 
   const cardDigits = sanitizeCardDigits(cardNumber);
   const cardBrand = detectCardBrand(cardDigits);
@@ -725,49 +729,81 @@ export function BookingModal({
 
         {/* Header */}
         <div
-          className={`flex items-start justify-between gap-4 border-b border-slate-200 border-t-4 dark:border-slate-800 ${discStyle.leftBorder.replace('border-l-', 'border-t-')} p-4 sm:p-6`}
+          className={`overflow-hidden border-b border-slate-200 border-t-4 dark:border-slate-800 ${discStyle.leftBorder.replace('border-l-', 'border-t-')} sm:rounded-t-xl`}
         >
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <span
-                className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
-              >
-                <DisciplineIcon
-                  disciplineName={event.discipline}
-                  catalog={disciplines}
-                  className="h-3 w-3 shrink-0"
-                />
-                {event.discipline}
-              </span>
-              <span>
-                {event.city} · {formatEventCoachesLabel(event)}
-              </span>
-              {hasEventEnded && ratingSummary && (
-                <EventRatingInline summary={ratingSummary} />
-              )}
-            </div>
-            <h2
-              id="booking-modal-title"
-              className="mt-1.5 font-display text-lg font-bold text-slate-900 dark:text-white sm:text-xl"
-            >
-              {event.title}
-            </h2>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {evaluation.state !== 'cancelled' && onShareEvent && (
-              <EventShareButton
-                eventTitle={event.title}
-                onClick={() => onShareEvent(event)}
+          {coverImageSrc && (
+            <div className="relative aspect-[16/7] min-h-[150px] max-h-[240px] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800">
+              <img
+                src={coverImageSrc}
+                alt={event.title}
+                className="h-full w-full object-cover"
+                style={{ objectPosition: coverImagePosition }}
               />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950/45 to-transparent" />
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                {evaluation.state !== 'cancelled' && onShareEvent && (
+                  <EventShareButton
+                    eventTitle={event.title}
+                    onClick={() => onShareEvent(event)}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Fermer la fenêtre"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/90 text-slate-700 shadow-sm backdrop-blur-xs hover:bg-white hover:text-slate-950 dark:bg-slate-900/85 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-start justify-between gap-4 p-4 sm:p-6">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+                >
+                  <DisciplineIcon
+                    disciplineName={event.discipline}
+                    catalog={disciplines}
+                    className="h-3 w-3 shrink-0"
+                  />
+                  {event.discipline}
+                </span>
+                <span>
+                  {event.city} · {formatEventCoachesLabel(event)}
+                </span>
+                {hasEventEnded && ratingSummary && (
+                  <EventRatingInline summary={ratingSummary} />
+                )}
+              </div>
+              <h2
+                id="booking-modal-title"
+                className="mt-1.5 font-display text-lg font-bold text-slate-900 dark:text-white sm:text-xl"
+              >
+                {event.title}
+              </h2>
+            </div>
+            {!coverImageSrc && (
+              <div className="flex items-center gap-2 shrink-0">
+                {evaluation.state !== 'cancelled' && onShareEvent && (
+                  <EventShareButton
+                    eventTitle={event.title}
+                    onClick={() => onShareEvent(event)}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Fermer la fenêtre"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white shrink-0 cursor-pointer"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
             )}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fermer la fenêtre"
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white shrink-0 cursor-pointer"
-            >
-              <X className="h-5 w-5" aria-hidden="true" />
-            </button>
           </div>
         </div>
 

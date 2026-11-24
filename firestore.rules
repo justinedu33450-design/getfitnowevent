@@ -100,7 +100,7 @@ service cloud.firestore {
         'lastRegId', 'status', 'createdBy', 'createdAt', 'updatedAt'
       ]) &&
       data.keys().hasOnly([
-        'title', 'discipline', 'description', 'externalUrl', 'location', 'city', 'region',
+        'title', 'discipline', 'description', 'externalUrl', 'coverImageUrl', 'coverImagePosition', 'location', 'city', 'region',
         'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
         'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity', 'registeredCount',
         'lastRegId', 'likesCount', 'lastLikeId', 'status', 'cancelReason', 'bookingCutoffMinutes', 'disableAutoClose',
@@ -114,6 +114,23 @@ service cloud.firestore {
         data.externalUrl is string &&
         data.externalUrl.size() <= 500 &&
         (data.externalUrl.size() == 0 || data.externalUrl.matches('^https?://[^\\s]+$'))
+      )) &&
+      (!('coverImageUrl' in data) || (
+        data.coverImageUrl is string &&
+        data.coverImageUrl.size() <= 200000 &&
+        (
+          data.coverImageUrl.size() == 0 ||
+          data.coverImageUrl.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$') ||
+          data.coverImageUrl.matches('^https?://[^\\s]+$')
+        )
+      )) &&
+      (!('coverImagePosition' in data) || (
+        data.coverImagePosition is string &&
+        data.coverImagePosition.size() <= 20 &&
+        (
+          data.coverImagePosition.size() == 0 ||
+          data.coverImagePosition.matches('^[0-9]{1,3}% [0-9]{1,3}%$')
+        )
       )) &&
       data.location is string && data.location.size() >= 2 && data.location.size() <= 120 &&
       data.city is string && data.city.size() >= 2 && data.city.size() <= 80 &&
@@ -647,7 +664,7 @@ service cloud.firestore {
           incoming().updatedAt == request.time &&
           (
             incoming().diff(existing()).affectedKeys().hasOnly([
-              'title', 'discipline', 'description', 'externalUrl', 'location', 'city', 'region',
+              'title', 'discipline', 'description', 'externalUrl', 'coverImageUrl', 'coverImagePosition', 'location', 'city', 'region',
               'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
               'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity',
               'isPaid', 'priceCents', 'currency', 'paymentMode',

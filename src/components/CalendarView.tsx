@@ -33,9 +33,11 @@ import {
   formatPaymentModeLabel,
   formatTimeRange,
   getMonthDaysGrid,
+  getSafeEventCoverImageSrc,
   getSafeExternalHref,
   getWeekDays,
   isSameCalendarDay,
+  normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import { DisciplineIcon } from './DisciplineIcon';
@@ -788,6 +790,12 @@ export function CalendarView({
                           });
                           const style = getEventVisualState(ev);
                           const ratingSummary = ratingSummaryByEventId?.get(ev.id);
+                          const coverImageSrc = getSafeEventCoverImageSrc(
+                            ev.coverImageUrl
+                          );
+                          const coverImagePosition = normalizeCoverImagePosition(
+                            ev.coverImagePosition
+                          );
                           return (
                             <div
                               key={ev.id}
@@ -804,10 +812,22 @@ export function CalendarView({
                                   onSelectEvent(ev);
                                 }
                               }}
-                              className={`flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${style.container}`}
+                              className={`flex w-full flex-col gap-2.5 rounded-lg border p-3 text-left transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${style.container}`}
                             >
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
+                              <div className="flex min-w-0 flex-1 flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+                                {coverImageSrc && (
+                                  <div className="aspect-[16/7] w-full overflow-hidden rounded-md border border-slate-200/80 bg-slate-900 dark:border-slate-700/80 sm:aspect-auto sm:h-16 sm:w-28 sm:shrink-0">
+                                    <img
+                                      src={coverImageSrc}
+                                      alt={ev.title}
+                                      className="h-full w-full object-cover"
+                                      style={{ objectPosition: coverImagePosition }}
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
                                   <span className="font-mono font-semibold tabular-nums">
                                     {formatTimeRange(
                                       ev.startAt.toDate(),
@@ -837,9 +857,10 @@ export function CalendarView({
                                     <EventRatingInline summary={ratingSummary} />
                                   )}
                                 </div>
-                                <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300 truncate">
-                                  {formatEventCoachesLabel(ev)}
-                                </p>
+                                  <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                                    {formatEventCoachesLabel(ev)}
+                                  </p>
+                                </div>
                               </div>
                               <div className="flex items-center justify-between gap-3 sm:shrink-0">
                                 <div className="sm:text-right">
@@ -1041,12 +1062,30 @@ export function CalendarView({
                     hideRegisteredCount: !isCoach,
                   });
                   const discStyle = getDisciplineStyle(ev.discipline, disciplines);
+                  const coverImageSrc = getSafeEventCoverImageSrc(
+                    ev.coverImageUrl
+                  );
+                  const coverImagePosition = normalizeCoverImagePosition(
+                    ev.coverImagePosition
+                  );
                   return (
                     <div
                       key={ev.id}
-                      className={`rounded-lg border border-slate-200 border-l-4 ${discStyle.leftBorder} p-4 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700`}
+                      className={`overflow-hidden rounded-lg border border-slate-200 border-l-4 ${discStyle.leftBorder} transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700`}
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      {coverImageSrc && (
+                        <div className="aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800">
+                          <img
+                            src={coverImageSrc}
+                            alt={ev.title}
+                            className="h-full w-full object-cover"
+                            style={{ objectPosition: coverImagePosition }}
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                           <span
                             className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
@@ -1221,6 +1260,7 @@ export function CalendarView({
                           </div>
                         );
                       })()}
+                      </div>
                     </div>
                   );
                 })

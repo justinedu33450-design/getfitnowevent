@@ -813,4 +813,32 @@ export function formatExternalUrlLabel(safeHref: string): string {
   }
 }
 
+export function getSafeEventCoverImageSrc(raw?: string | null): string | null {
+  const trimmed = (raw ?? '').trim();
+  if (!trimmed || trimmed.length > VALIDATION_LIMITS.EVENT_COVER_IMAGE_MAX) {
+    return null;
+  }
+  if (/^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)) {
+    return trimmed;
+  }
+  return getSafeExternalHref(trimmed);
+}
+
+export function parseCoverImagePosition(raw?: string | null): {
+  x: number;
+  y: number;
+} {
+  const match = (raw ?? '').trim().match(/^(\d{1,3})%\s+(\d{1,3})%$/);
+  if (!match) {
+    return { x: 50, y: 50 };
+  }
+  const x = Math.max(0, Math.min(100, Math.round(Number(match[1]))));
+  const y = Math.max(0, Math.min(100, Math.round(Number(match[2]))));
+  return { x, y };
+}
+
+export function normalizeCoverImagePosition(raw?: string | null): string {
+  const { x, y } = parseCoverImagePosition(raw);
+  return `${x}% ${y}%`;
+}
 

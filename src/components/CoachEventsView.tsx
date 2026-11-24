@@ -48,7 +48,9 @@ import {
   formatPriceEuros,
   formatTimeRange,
   getEventCoachNames,
+  getSafeEventCoverImageSrc,
   getSafeExternalHref,
+  normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
 import {
   DISCIPLINE_COLOR_KEYS,
@@ -299,12 +301,29 @@ export function CoachEventsView({
         r.attended
     ).length;
 
+    const coverImageSrc = getSafeEventCoverImageSrc(ev.coverImageUrl);
+    const coverImagePosition = normalizeCoverImagePosition(
+      ev.coverImagePosition
+    );
+
     return (
       <div
         key={ev.id}
-        className={`rounded-xl border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white p-4 dark:border-slate-800 dark:bg-slate-900`}
+        className={`overflow-hidden rounded-xl border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white dark:border-slate-800 dark:bg-slate-900`}
       >
-        <div className="flex items-start justify-between gap-2">
+        {coverImageSrc && (
+          <div className="aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800">
+            <img
+              src={coverImageSrc}
+              alt={ev.title}
+              className="h-full w-full object-cover"
+              style={{ objectPosition: coverImagePosition }}
+              loading="lazy"
+            />
+          </div>
+        )}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-xs font-semibold capitalize text-slate-500 dark:text-slate-400">
               {formatFrenchDateShort(ev.startAt.toDate())} ·{' '}
@@ -506,6 +525,7 @@ export function CoachEventsView({
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
+        </div>
         </div>
       </div>
     );

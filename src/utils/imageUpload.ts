@@ -65,3 +65,72 @@ export async function processProfilePhotoFile(file: File): Promise<string> {
     URL.revokeObjectURL(objectUrl);
   }
 }
+
+const MAX_EVENT_COVER_DATA_URL_LENGTH = 185000;
+
+export async function processEventCoverImageFile(file: File): Promise<string> {
+  if (!file.type || !file.type.startsWith('image/')) {
+    throw new Error('Veuillez sélectionner un fichier image valide (JPG, PNG, WebP).');
+  }
+
+  if (file.size > 15 * 1024 * 1024) {
+    throw new Error('L’image sélectionnée est trop volumineuse (max. 15 Mo).');
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () =>
+        reject(new Error('Impossible de lire ce fichier image.'));
+      image.src = objectUrl;
+    });
+
+    const sourceWidth = img.naturalWidth || img.width;
+    const sourceHeight = img.naturalHeight || img.height;
+    if (!sourceWidth || !sourceHeight) {
+      throw new Error('Dimensions d’image invalides.');
+    }
+
+    const tryEncode = (maxEdge: number, quality: number): string => {
+      const scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+      const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
+      const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Traitement d’image indisponible sur ce navigateur.');
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
+      ctx.drawImage(img, 0, 0, sourceWidth, sourceHeight, 0, 0, targetWidth, targetHeight);
+      return canvas.toDataURL('image/jpeg', quality);
+    };
+
+    const attempts: [number, number][] = [
+      [1280, 0.84],
+      [1200, 0.76],
+      [1024, 0.74],
+      [900, 0.68],
+      [760, 0.62],
+    ];
+
+    for (const [maxEdge, quality] of attempts) {
+      const result = tryEncode(maxEdge, quality);
+      if (result.length <= MAX_EVENT_COVER_DATA_URL_LENGTH) {
+        return result;
+      }
+    }
+
+    throw new Error(
+      'Impossible de compresser suffisamment cette image. Essayez un visuel plus léger.'
+    );
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+

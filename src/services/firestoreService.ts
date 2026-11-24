@@ -101,10 +101,12 @@ import {
   formatPublicAuthorName,
   getEventCoachFirstName,
   getRegistrationEndMs,
+  getSafeEventCoverImageSrc,
   getSafeExternalHref,
   hashEmailKey,
   isValidBirthDateString,
   normalizeBookingCutoffMinutes,
+  normalizeCoverImagePosition,
   normalizeEventExternalUrl,
 } from '../utils/dateAndValidation';
 import {
@@ -1103,6 +1105,8 @@ export function subscribeEvents(
           ...(raw as Omit<SportEvent, 'id'>),
           id: d.id,
           externalUrl: getSafeExternalHref(raw.externalUrl) ?? '',
+          coverImageUrl: getSafeEventCoverImageSrc(raw.coverImageUrl) ?? '',
+          coverImagePosition: normalizeCoverImagePosition(raw.coverImagePosition),
           city: typeof raw.city === 'string' && raw.city.trim() ? raw.city : 'Paris',
           region: typeof raw.region === 'string' ? raw.region : '',
           isUnlimitedCapacity: Boolean(raw.isUnlimitedCapacity),
@@ -1335,6 +1339,9 @@ export interface EventFormInput {
   description: string;
   externalUrl?: string;
   hadExternalUrl?: boolean;
+  coverImageUrl?: string;
+  hadCoverImage?: boolean;
+  coverImagePosition?: string;
   location: string;
   city: string;
   region: string;
@@ -1485,6 +1492,9 @@ export async function createEvent(
 
   const pricing = normalizeEventPricing(input);
 
+  const coverImageUrl = getSafeEventCoverImageSrc(input.coverImageUrl) ?? '';
+  const coverImagePosition = normalizeCoverImagePosition(input.coverImagePosition);
+
   const eventRef = doc(collection(db, 'events'));
   try {
     await setDoc(eventRef, {
@@ -1492,6 +1502,7 @@ export async function createEvent(
       discipline,
       description,
       ...(externalUrl ? { externalUrl } : {}),
+      ...(coverImageUrl ? { coverImageUrl, coverImagePosition } : {}),
       location,
       city,
       region,
@@ -1576,6 +1587,9 @@ export async function updateEvent(
     startAtTs.toMillis() + durationMinutes * 60 * 1000
   );
 
+  const coverImageUrl = getSafeEventCoverImageSrc(input.coverImageUrl) ?? '';
+  const coverImagePosition = normalizeCoverImagePosition(input.coverImagePosition);
+
   try {
     await updateDoc(eventRef, {
       title,
@@ -1585,6 +1599,11 @@ export async function updateEvent(
         ? { externalUrl }
         : input.hadExternalUrl
           ? { externalUrl: '' }
+          : {}),
+      ...(coverImageUrl
+        ? { coverImageUrl, coverImagePosition }
+        : input.hadCoverImage
+          ? { coverImageUrl: '', coverImagePosition: '50% 50%' }
           : {}),
       location,
       city,
@@ -1973,6 +1992,52 @@ export async function toggleEventStatus(
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `events/${eventId}`);
+  }
+}
+
+export async function syncEventRegisteredCounter(params: {
+  event: SportEvent;
+  confirmedCount: number;
+  latestRegistrationId?: string;
+}): Promise<boolean> {
+  const maxAllowed = params.event.isUnlimitedCapacity
+    ? 10000
+    : Math.max(1, Math.min(200, Math.round(params.event.maxCapacity || 1)));
+  const targetCount = Math.max(
+    0,
+    Math.min(Math.round(params.confirmedCount), maxAllowed)
+  );
+  const validIdRegex = /^[a-zA-Z0-9_-]{1,128}$/;
+  const targetLastRegId =
+    targetCount === 0
+      ? 'none'
+      : params.latestRegistrationId &&
+          validIdRegex.test(params.latestRegistrationId)
+        ? params.latestRegistrationId
+        : params.event.lastRegId && validIdRegex.test(params.event.lastRegId)
+          ? params.event.lastRegId
+          : 'none';
+
+  if (
+    params.event.registeredCount === targetCount &&
+    (targetCount > 0 || params.event.lastRegId === 'none')
+  ) {
+    return false;
+  }
+
+  try {
+    await updateDoc(doc(db, 'events', params.event.id), {
+      registeredCount: targetCount,
+      lastRegId: targetLastRegId,
+      updatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.warn(
+      `Synchronisation du compteur différée pour events/${params.event.id}:`,
+      error
+    );
+    return false;
   }
 }
 
@@ -2525,6 +2590,8 @@ function parseLiveSportEventSnapshot(
     ...(raw as Omit<SportEvent, 'id'>),
     id,
     externalUrl: getSafeExternalHref(raw.externalUrl) ?? '',
+    coverImageUrl: getSafeEventCoverImageSrc(raw.coverImageUrl) ?? '',
+    coverImagePosition: normalizeCoverImagePosition(raw.coverImagePosition),
     city: typeof raw.city === 'string' && raw.city.trim() ? raw.city : 'Paris',
     region: typeof raw.region === 'string' ? raw.region : '',
     isUnlimitedCapacity: Boolean(raw.isUnlimitedCapacity),
@@ -7165,14 +7232,14 @@ export function buildMemberProgramNotifications(params: {
         ? delivery.awaitingVma
           ? 'Offert · Envoi en attente du Test VMA (Sem. 1 dès validation)'
           : delivery.unlockedWeeks <= 1
-            ? `Offert · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ` (Sem. 2 ${delivery.autoSendLabel})` : ''}`
+            ? `Offert · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ` (Sem. 2 le ${delivery.autoSendLabel})` : ''}`
             : `Offert · Semaine ${delivery.unlockedWeeks}/${durationWeeks} envoyée`
         : requiresPayment
           ? `${formatPriceEuros(prog.priceCents)} · Paiement requis · Envoi après Test VMA`
           : delivery.awaitingVma
             ? 'Payé · Envoi en attente du Test VMA (Sem. 1 dès validation)'
             : delivery.unlockedWeeks <= 1
-              ? `Payé · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ` (Sem. 2 ${delivery.autoSendLabel})` : ''}`
+              ? `Payé · VMA validée · Semaine 1 envoyée${delivery.nextUnlockAtMs ? ` (Sem. 2 le ${delivery.autoSendLabel})` : ''}`
               : `Payé · Semaine ${delivery.unlockedWeeks}/${durationWeeks} envoyée`;
 
       results.push({
@@ -7211,7 +7278,7 @@ export function buildMemberProgramNotifications(params: {
         const currentWeekWindow = delivery.weeks[delivery.unlockedWeeks - 1];
         const nextWeekHint =
           delivery.nextWeekNumber && delivery.nextUnlockAtMs
-            ? ` Prochaine semaine (Sem. ${delivery.nextWeekNumber}) envoyée ${delivery.autoSendLabel}.`
+            ? ` Prochaine semaine (Sem. ${delivery.nextWeekNumber}) envoyée le ${delivery.autoSendLabel}.`
             : '';
         results.push({
           id: weekNotifId,

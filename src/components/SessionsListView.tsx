@@ -28,8 +28,10 @@ import {
   formatPaymentModeLabel,
   formatTimeRange,
   getEventCoachNames,
+  getSafeEventCoverImageSrc,
   getSafeExternalHref,
   isSameCalendarDay,
+  normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import { DisciplineIcon } from './DisciplineIcon';
@@ -396,14 +398,30 @@ export function SessionsListView({
             });
             const discStyle = getDisciplineStyle(ev.discipline, disciplines);
             const startDate = ev.startAt.toDate();
+            const coverImageSrc = getSafeEventCoverImageSrc(ev.coverImageUrl);
+            const coverImagePosition = normalizeCoverImagePosition(
+              ev.coverImagePosition
+            );
 
             return (
               <article
                 key={ev.id}
-                className={`flex flex-col justify-between rounded-xl border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white p-4 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 sm:p-5`}
+                className={`flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700`}
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  {coverImageSrc && (
+                    <div className="aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800">
+                      <img
+                        src={coverImageSrc}
+                        alt={ev.title}
+                        className="h-full w-full object-cover"
+                        style={{ objectPosition: coverImagePosition }}
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div className="p-4 pb-0 sm:p-5 sm:pb-0">
+                    <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
@@ -516,9 +534,10 @@ export function SessionsListView({
                       );
                     })()}
                   </div>
+                  </div>
                 </div>
 
-                <div className="mt-4 pt-2">
+                <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5 sm:pt-4">
                   {ev.isPaid && (
                     <p className="mb-1.5 font-mono text-[11px] text-amber-800 dark:text-amber-300 tabular-nums">
                       Tarif : {formatEventPrice(ev)} · {formatPaymentModeLabel(ev.paymentMode)}

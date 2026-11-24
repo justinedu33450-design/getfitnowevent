@@ -16,6 +16,8 @@ import {
   formatEventPrice,
   formatFrenchDateShort,
   formatTimeRange,
+  getSafeEventCoverImageSrc,
+  normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
 import {
   buildEventShareContent,
@@ -204,7 +206,22 @@ export function EventShareModal({
 
         <div className="space-y-4 p-4 sm:p-5">
           {/* Event Preview Card */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/50">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-800/50">
+            {getSafeEventCoverImageSrc(event.coverImageUrl) && (
+              <div className="aspect-[16/7] w-full overflow-hidden border-b border-slate-200 bg-slate-900 dark:border-slate-800">
+                <img
+                  src={getSafeEventCoverImageSrc(event.coverImageUrl) || undefined}
+                  alt={event.title}
+                  className="h-full w-full object-cover"
+                  style={{
+                    objectPosition: normalizeCoverImagePosition(
+                      event.coverImagePosition
+                    ),
+                  }}
+                />
+              </div>
+            )}
+            <div className="p-3.5">
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
@@ -233,6 +250,7 @@ export function EventShareModal({
                 <MapPin className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
                 {event.city}
               </span>
+            </div>
             </div>
           </div>
 

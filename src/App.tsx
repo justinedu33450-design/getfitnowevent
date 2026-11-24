@@ -51,6 +51,7 @@ import {
   subscribePublishedEventReviews,
   subscribeRegistrations,
   syncCoachDirectoryFromAdmins,
+  syncEventRegisteredCounter,
   validateMemberSession,
 } from './services/firestoreService';
 import {
@@ -156,6 +157,7 @@ export default function App() {
     []
   );
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [registrationsLoaded, setRegistrationsLoaded] = useState(false);
   const [memberProfiles, setMemberProfiles] = useState<MemberProfile[]>([]);
 
   // Connected member profile & personal registrations
@@ -212,6 +214,7 @@ export default function App() {
   const autoDeleteAttemptedRef = useRef<Set<string>>(new Set());
   const endedNotifyAttemptedRef = useRef<Set<string>>(new Set());
   const memberNotifAttemptedRef = useRef<Set<string>>(new Set());
+  const syncedEventCountsRef = useRef<Map<string, number>>(new Map());
 
   // Modals & Drawers
   const [selectedEventForBooking, setSelectedEventForBooking] =
@@ -536,13 +539,18 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !isCoach || !user?.email || !user.uid) {
       setRegistrations([]);
+      setRegistrationsLoaded(false);
       setMemberProfiles([]);
       setCoachAdmins([]);
       setCoachNotifications([]);
       setNotificationsPanelOpen(false);
       return;
     }
-    const unsubRegs = subscribeRegistrations(setRegistrations);
+    setRegistrationsLoaded(false);
+    const unsubRegs = subscribeRegistrations((list) => {
+      setRegistrations(list);
+      setRegistrationsLoaded(true);
+    });
     const unsubMembers = subscribeMembersForCoach({
       coachUid: user.uid,
       isPrimaryBootstrapped,
@@ -688,13 +696,68 @@ export default function App() {
     return () => unsub();
   }, [authLoading, isVerifiedUser, isCoach]);
 
+  const confirmedRegMetaByEventId = useMemo(() => {
+    const map = new Map<string, { count: number; latestRegId?: string }>();
+    if (!isCoach || !registrationsLoaded) return map;
+    registrations.forEach((reg) => {
+      if (reg.status !== 'confirmed' || !reg.eventId) return;
+      const existing = map.get(reg.eventId);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(reg.eventId, { count: 1, latestRegId: reg.id });
+      }
+    });
+    return map;
+  }, [isCoach, registrationsLoaded, registrations]);
+
+  const reconciledEvents = useMemo(() => {
+    if (!isCoach || !registrationsLoaded) return events;
+    return events.map((ev) => {
+      const liveCount = confirmedRegMetaByEventId.get(ev.id)?.count ?? 0;
+      return ev.registeredCount === liveCount
+        ? ev
+        : { ...ev, registeredCount: liveCount };
+    });
+  }, [events, isCoach, registrationsLoaded, confirmedRegMetaByEventId]);
+
+  useEffect(() => {
+    if (!isCoach || !isVerifiedUser || !registrationsLoaded) return;
+    events.forEach((ev) => {
+      const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
+      if (nowMs >= endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS) return;
+      const meta = confirmedRegMetaByEventId.get(ev.id);
+      const liveCount = meta?.count ?? 0;
+      const maxAllowed = ev.isUnlimitedCapacity
+        ? 10000
+        : Math.max(1, Math.min(200, Math.round(ev.maxCapacity || 1)));
+      const targetCount = Math.max(0, Math.min(liveCount, maxAllowed));
+      const needsSync =
+        ev.registeredCount !== targetCount ||
+        (targetCount === 0 && ev.lastRegId !== 'none');
+      if (!needsSync) {
+        syncedEventCountsRef.current.delete(ev.id);
+        return;
+      }
+      if (syncedEventCountsRef.current.get(ev.id) === targetCount) {
+        return;
+      }
+      syncedEventCountsRef.current.set(ev.id, targetCount);
+      void syncEventRegisteredCounter({
+        event: ev,
+        confirmedCount: targetCount,
+        latestRegistrationId: meta?.latestRegId,
+      });
+    });
+  }, [isCoach, isVerifiedUser, registrationsLoaded, events, confirmedRegMetaByEventId, nowMs]);
+
   const activeEvents = useMemo(
     () =>
-      events.filter((ev) => {
+      reconciledEvents.filter((ev) => {
         const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
         return nowMs < endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS;
       }),
-    [events, nowMs]
+    [reconciledEvents, nowMs]
   );
 
   const activeEventIds = useMemo(
@@ -993,6 +1056,7 @@ export default function App() {
     setMyMemberProfile(null);
     setMyRegistrations([]);
     setRegistrations([]);
+    setRegistrationsLoaded(false);
     setMemberProfiles([]);
     setCoachAdmins([]);
     setCoachRequests([]);
@@ -1023,6 +1087,7 @@ export default function App() {
     autoDeleteAttemptedRef.current.clear();
     endedNotifyAttemptedRef.current.clear();
     memberNotifAttemptedRef.current.clear();
+    syncedEventCountsRef.current.clear();
     backfillDoneRef.current = null;
     setSignOutNonce((prev) => prev + 1);
     setActiveSection('calendar');
@@ -1031,10 +1096,10 @@ export default function App() {
   const currentBookingEvent = useMemo(() => {
     if (!selectedEventForBooking) return null;
     return (
-      events.find((e) => e.id === selectedEventForBooking.id) ??
+      reconciledEvents.find((e) => e.id === selectedEventForBooking.id) ??
       selectedEventForBooking
     );
-  }, [events, selectedEventForBooking]);
+  }, [reconciledEvents, selectedEventForBooking]);
 
   const handleCloseBookingModal = () => {
     setSelectedEventForBooking(null);
@@ -1063,7 +1128,7 @@ export default function App() {
       'Coach GetFitNow';
     const resolvedMemberName = overrideUser
       ? overrideUser.displayName?.trim() ||
-        overrideUser.email.split('@')[0] ||
+        activeAuthUser.email.split('@')[0] ||
         'Adhérent'
       : memberDisplayName;
     setPendingMessageTarget({

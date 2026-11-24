@@ -1,5 +1,5 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Clock, CreditCard, Link2, Plus, Trash2, UserCheck, X } from 'lucide-react';
+import { FormEvent, PointerEvent as ReactPointerEvent, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, Check, Clock, CreditCard, ImagePlus, Link2, Move, Plus, RotateCcw, Trash2, UserCheck, X } from 'lucide-react';
 import {
   CoachAdminUser,
   Discipline,
@@ -21,11 +21,14 @@ import {
   formatFrenchDateShort,
   formatFrenchTime,
   formatPriceEuros,
+  getSafeEventCoverImageSrc,
   normalizeBookingCutoffMinutes,
   normalizeEventExternalUrl,
+  parseCoverImagePosition,
   toLocalDateInputValue,
   toLocalTimeInputValue,
 } from '../utils/dateAndValidation';
+import { processEventCoverImageFile } from '../utils/imageUpload';
 import {
   formatCentsForInput,
   getCoachGroupSessionPriceCents,
@@ -227,8 +230,89 @@ export function EventFormModal({
   const [externalUrl, setExternalUrl] = useState(
     sourceEvent?.externalUrl ?? ''
   );
+  const [coverImageUrl, setCoverImageUrl] = useState(
+    () => getSafeEventCoverImageSrc(sourceEvent?.coverImageUrl) ?? ''
+  );
+  const initialCoverPos = parseCoverImagePosition(sourceEvent?.coverImagePosition);
+  const [coverPosX, setCoverPosX] = useState(initialCoverPos.x);
+  const [coverPosY, setCoverPosY] = useState(initialCoverPos.y);
+  const [processingCover, setProcessingCover] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const coverFileInputRef = useRef<HTMLInputElement | null>(null);
+  const coverDragRef = useRef<{
+    startClientX: number;
+    startClientY: number;
+    startX: number;
+    startY: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleCoverFileSelected = async (file: File | null | undefined) => {
+    if (!file) return;
+    setCoverError(null);
+    setProcessingCover(true);
+    try {
+      const encoded = await processEventCoverImageFile(file);
+      setCoverImageUrl(encoded);
+      setCoverPosX(50);
+      setCoverPosY(50);
+    } catch (err) {
+      setCoverError(
+        err instanceof Error
+          ? err.message
+          : 'Impossible d’importer cette image.'
+      );
+    } finally {
+      setProcessingCover(false);
+      if (coverFileInputRef.current) {
+        coverFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleCoverPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!coverImageUrl) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    coverDragRef.current = {
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startX: coverPosX,
+      startY: coverPosY,
+      width: rect.width,
+      height: rect.height,
+    };
+  };
+
+  const handleCoverPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = coverDragRef.current;
+    if (!drag) return;
+    const dx = e.clientX - drag.startClientX;
+    const dy = e.clientY - drag.startClientY;
+    const nextX = Math.max(
+      0,
+      Math.min(100, Math.round(drag.startX - (dx / drag.width) * 100))
+    );
+    const nextY = Math.max(
+      0,
+      Math.min(100, Math.round(drag.startY - (dy / drag.height) * 100))
+    );
+    setCoverPosX(nextX);
+    setCoverPosY(nextY);
+  };
+
+  const handleCoverPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (coverDragRef.current) {
+      coverDragRef.current = null;
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    }
+  };
 
   const selectOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -510,6 +594,8 @@ export function EventFormModal({
         discipline,
         description,
         externalUrl: normalizedExternalUrl,
+        coverImageUrl,
+        coverImagePosition: `${coverPosX}% ${coverPosY}%`,
         location,
         city,
         region,
@@ -543,6 +629,7 @@ export function EventFormModal({
           {
             ...payload,
             hadExternalUrl: Boolean(editingEvent.externalUrl),
+            hadCoverImage: Boolean(editingEvent.coverImageUrl),
             status: nextStatus,
           },
           editingEvent.registeredCount
@@ -621,6 +708,167 @@ export function EventFormModal({
               placeholder="Ex. Circuit Training Métabolique"
               className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
+          </div>
+
+          {/* Visuel / Image d'en-tête de l'événement */}
+          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <ImagePlus
+                  className="h-4 w-4 text-emerald-700 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Visuel d’en-tête (optionnel)
+                </span>
+              </div>
+              <input
+                ref={coverFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/*"
+                className="sr-only"
+                onChange={(e) =>
+                  void handleCoverFileSelected(e.target.files?.[0])
+                }
+              />
+              {coverImageUrl && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={processingCover}
+                    onClick={() => coverFileInputRef.current?.click()}
+                    className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Remplacer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCoverImageUrl('');
+                      setCoverPosX(50);
+                      setCoverPosY(50);
+                      setCoverError(null);
+                    }}
+                    className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900/70 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-950/50 cursor-pointer"
+                  >
+                    <Trash2 className="h-3 w-3" aria-hidden="true" />
+                    Supprimer
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {!coverImageUrl ? (
+              <button
+                type="button"
+                disabled={processingCover}
+                onClick={() => coverFileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  void handleCoverFileSelected(e.dataTransfer.files?.[0]);
+                }}
+                className="flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-white px-4 py-5 text-center transition-colors hover:border-emerald-500 hover:bg-emerald-50/40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-500/70 dark:hover:bg-emerald-950/20 cursor-pointer"
+              >
+                <ImagePlus
+                  className="h-5 w-5 text-slate-400 dark:text-slate-500"
+                  aria-hidden="true"
+                />
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  {processingCover
+                    ? 'Traitement de l’image en cours...'
+                    : 'Ajouter une image ou un visuel'}
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  JPG, PNG ou WebP · Affiché en tête de l’événement et recadrable à votre convenance
+                </span>
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div
+                  onPointerDown={handleCoverPointerDown}
+                  onPointerMove={handleCoverPointerMove}
+                  onPointerUp={handleCoverPointerUp}
+                  onPointerCancel={handleCoverPointerUp}
+                  className="group relative aspect-[16/7] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 touch-none select-none cursor-grab active:cursor-grabbing dark:border-slate-700"
+                  title="Glissez directement sur l’image pour la replacer"
+                >
+                  <img
+                    src={coverImageUrl}
+                    alt={title || 'Aperçu du visuel d’en-tête'}
+                    draggable={false}
+                    className="h-full w-full object-cover pointer-events-none"
+                    style={{ objectPosition: `${coverPosX}% ${coverPosY}%` }}
+                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/75 via-slate-950/25 to-transparent p-2.5 sm:p-3">
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-white/95">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-950/60 px-2 py-0.5 font-medium backdrop-blur-xs">
+                        <Move className="h-3 w-3" aria-hidden="true" />
+                        Glissez l’image pour la replacer ({coverPosX}% · {coverPosY}%)
+                      </span>
+                      {title.trim() && (
+                        <span className="truncate font-semibold drop-shadow-xs">
+                          {title.trim()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  <label className="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                    <span className="w-16 shrink-0">Horizontal</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={coverPosX}
+                      onChange={(e) => setCoverPosX(Number(e.target.value))}
+                      className="h-1.5 w-full accent-emerald-600 cursor-pointer"
+                    />
+                    <span className="w-9 text-right font-mono tabular-nums">
+                      {coverPosX}%
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                    <span className="w-16 shrink-0">Vertical</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={coverPosY}
+                      onChange={(e) => setCoverPosY(Number(e.target.value))}
+                      className="h-1.5 w-full accent-emerald-600 cursor-pointer"
+                    />
+                    <span className="w-9 text-right font-mono tabular-nums">
+                      {coverPosY}%
+                    </span>
+                  </label>
+                </div>
+
+                {(coverPosX !== 50 || coverPosY !== 50) && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCoverPosX(50);
+                        setCoverPosY(50);
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white cursor-pointer"
+                    >
+                      <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                      Recentrer le visuel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {coverError && (
+              <p className="text-xs font-medium text-rose-700 dark:text-rose-400">
+                {coverError}
+              </p>
+            )}
           </div>
 
           <div>
