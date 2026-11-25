@@ -10,6 +10,7 @@ import {
   Lock,
   Map as MapIcon,
   MapPin,
+  Maximize2,
   MessageSquare,
   Plus,
   Search,
@@ -46,6 +47,7 @@ import {
   EventRatingInline,
   EventShareButton,
 } from './EventEngagementWidgets';
+import { EventImageLightbox } from './EventImageLightbox';
 
 interface CalendarViewProps {
   events: SportEvent[];
@@ -91,6 +93,10 @@ export function CalendarView({
   const [regionFilter, setRegionFilter] = useState('');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [dayAgendaExpanded, setDayAgendaExpanded] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<{
+    src: string;
+    title: string;
+  } | null>(null);
   const skipNextAutoCollapseRef = useRef(false);
   const prevSelectedDayKeyRef = useRef<string | null>(null);
   const prevHasEventsRef = useRef<boolean>(false);
@@ -816,15 +822,29 @@ export function CalendarView({
                             >
                               <div className="flex min-w-0 flex-1 flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                                 {coverImageSrc && (
-                                  <div className="aspect-[16/7] w-full overflow-hidden rounded-md border border-slate-200/80 bg-slate-900 dark:border-slate-700/80 sm:aspect-auto sm:h-16 sm:w-28 sm:shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setLightboxImage({
+                                        src: coverImageSrc,
+                                        title: ev.title,
+                                      });
+                                    }}
+                                    aria-label={`Agrandir le visuel de ${ev.title}`}
+                                    className="group relative aspect-[16/7] w-full overflow-hidden rounded-md border border-slate-200/80 bg-slate-900 dark:border-slate-700/80 sm:aspect-auto sm:h-16 sm:w-28 sm:shrink-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                                  >
                                     <img
                                       src={coverImageSrc}
                                       alt={ev.title}
-                                      className="h-full w-full object-cover"
+                                      className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
                                       style={{ objectPosition: coverImagePosition }}
                                       loading="lazy"
                                     />
-                                  </div>
+                                    <span className="pointer-events-none absolute bottom-1 right-1 inline-flex items-center justify-center rounded bg-slate-950/65 p-1 text-white/95 backdrop-blur-xs">
+                                      <Maximize2 className="h-3 w-3" aria-hidden="true" />
+                                    </span>
+                                  </button>
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
@@ -1074,15 +1094,29 @@ export function CalendarView({
                       className={`overflow-hidden rounded-lg border border-slate-200 border-l-4 ${discStyle.leftBorder} transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700`}
                     >
                       {coverImageSrc && (
-                        <div className="aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLightboxImage({
+                              src: coverImageSrc,
+                              title: ev.title,
+                            })
+                          }
+                          aria-label={`Agrandir le visuel de ${ev.title}`}
+                          className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+                        >
                           <img
                             src={coverImageSrc}
                             alt={ev.title}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                             style={{ objectPosition: coverImagePosition }}
                             loading="lazy"
                           />
-                        </div>
+                          <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
+                            <Maximize2 className="h-3 w-3" aria-hidden="true" />
+                            Agrandir
+                          </span>
+                        </button>
                       )}
                       <div className="p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -1277,6 +1311,14 @@ export function CalendarView({
           )}
         </aside>
       </div>
+
+      {lightboxImage && (
+        <EventImageLightbox
+          src={lightboxImage.src}
+          title={lightboxImage.title}
+          onClose={() => setLightboxImage(null)}
+        />
+      )}
     </section>
   );
 }

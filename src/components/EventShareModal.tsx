@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Mail,
   MapPin,
+  Maximize2,
   Share2,
   X,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ import {
   copyTextToClipboard,
   SocialShareTarget,
 } from '../utils/shareHelpers';
+import { EventImageLightbox } from './EventImageLightbox';
 
 interface EventShareModalProps {
   event: SportEvent;
@@ -96,6 +98,7 @@ export function EventShareModal({
   const [copiedText, setCopiedText] = useState(false);
   const [instagramCopied, setInstagramCopied] = useState(false);
   const [nativeError, setNativeError] = useState<string | null>(null);
+  const [imageLightboxOpen, setImageLightboxOpen] = useState(false);
 
   const shareContent = useMemo(() => buildEventShareContent(event), [event]);
   const targets = useMemo(() => buildSocialShareTargets(event), [event]);
@@ -207,20 +210,33 @@ export function EventShareModal({
         <div className="space-y-4 p-4 sm:p-5">
           {/* Event Preview Card */}
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-800/50">
-            {getSafeEventCoverImageSrc(event.coverImageUrl) && (
-              <div className="aspect-[16/7] w-full overflow-hidden border-b border-slate-200 bg-slate-900 dark:border-slate-800">
-                <img
-                  src={getSafeEventCoverImageSrc(event.coverImageUrl) || undefined}
-                  alt={event.title}
-                  className="h-full w-full object-cover"
-                  style={{
-                    objectPosition: normalizeCoverImagePosition(
-                      event.coverImagePosition
-                    ),
-                  }}
-                />
-              </div>
-            )}
+            {(() => {
+              const coverSrc = getSafeEventCoverImageSrc(event.coverImageUrl);
+              if (!coverSrc) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => setImageLightboxOpen(true)}
+                  aria-label={`Agrandir le visuel de ${event.title}`}
+                  className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200 bg-slate-900 dark:border-slate-800 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+                >
+                  <img
+                    src={coverSrc}
+                    alt={event.title}
+                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                    style={{
+                      objectPosition: normalizeCoverImagePosition(
+                        event.coverImagePosition
+                      ),
+                    }}
+                  />
+                  <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
+                    <Maximize2 className="h-3 w-3" aria-hidden="true" />
+                    Agrandir
+                  </span>
+                </button>
+              );
+            })()}
             <div className="p-3.5">
             <div className="flex flex-wrap items-center gap-2">
               <span
@@ -376,6 +392,14 @@ export function EventShareModal({
           </div>
         </div>
       </div>
+
+      {imageLightboxOpen && getSafeEventCoverImageSrc(event.coverImageUrl) && (
+        <EventImageLightbox
+          src={getSafeEventCoverImageSrc(event.coverImageUrl)!}
+          title={event.title}
+          onClose={() => setImageLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }

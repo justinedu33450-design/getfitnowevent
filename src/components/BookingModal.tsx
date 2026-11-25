@@ -13,6 +13,7 @@ import {
   FileDown,
   Lock,
   MapPin,
+  Maximize2,
   MessageSquare,
   ShieldCheck,
   Trash2,
@@ -77,6 +78,7 @@ import {
   EventReviewsSection,
   EventShareButton,
 } from './EventEngagementWidgets';
+import { EventImageLightbox } from './EventImageLightbox';
 
 interface BookingGuestRow extends GuestInput {
   id: string;
@@ -193,6 +195,7 @@ export function BookingModal({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [imageLightboxOpen, setImageLightboxOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelledFeedback, setCancelledFeedback] = useState<string | null>(null);
   const [validatingSession, setValidatingSession] = useState(false);
@@ -733,14 +736,25 @@ export function BookingModal({
         >
           {coverImageSrc && (
             <div className="relative aspect-[16/7] min-h-[150px] max-h-[240px] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800">
-              <img
-                src={coverImageSrc}
-                alt={event.title}
-                className="h-full w-full object-cover"
-                style={{ objectPosition: coverImagePosition }}
-              />
+              <button
+                type="button"
+                onClick={() => setImageLightboxOpen(true)}
+                aria-label={`Agrandir le visuel de ${event.title}`}
+                className="group block h-full w-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+              >
+                <img
+                  src={coverImageSrc}
+                  alt={event.title}
+                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                  style={{ objectPosition: coverImagePosition }}
+                />
+                <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-md bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
+                  <Maximize2 className="h-3 w-3" aria-hidden="true" />
+                  Agrandir
+                </span>
+              </button>
               <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950/45 to-transparent" />
-              <div className="absolute top-3 right-3 flex items-center gap-2">
+              <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
                 {evaluation.state !== 'cancelled' && onShareEvent && (
                   <EventShareButton
                     eventTitle={event.title}
@@ -2448,6 +2462,14 @@ export function BookingModal({
           )}
         </div>
       </div>
+
+      {imageLightboxOpen && coverImageSrc && (
+        <EventImageLightbox
+          src={coverImageSrc}
+          title={event.title}
+          onClose={() => setImageLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }

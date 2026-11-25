@@ -6,6 +6,7 @@ import {
   List,
   Map as MapIcon,
   MapPin,
+  Maximize2,
   MessageSquare,
   Search,
   UserCheck,
@@ -40,6 +41,7 @@ import {
   EventRatingInline,
   EventShareButton,
 } from './EventEngagementWidgets';
+import { EventImageLightbox } from './EventImageLightbox';
 
 interface SessionsListViewProps {
   events: SportEvent[];
@@ -80,6 +82,10 @@ export function SessionsListView({
     'all'
   );
   const [displayMode, setDisplayMode] = useState<'list' | 'map'>('list');
+  const [lightboxImage, setLightboxImage] = useState<{
+    src: string;
+    title: string;
+  } | null>(null);
 
   const disciplineOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -410,15 +416,26 @@ export function SessionsListView({
               >
                 <div>
                   {coverImageSrc && (
-                    <div className="aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLightboxImage({ src: coverImageSrc, title: ev.title })
+                      }
+                      aria-label={`Agrandir le visuel de ${ev.title}`}
+                      className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+                    >
                       <img
                         src={coverImageSrc}
                         alt={ev.title}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                         style={{ objectPosition: coverImagePosition }}
                         loading="lazy"
                       />
-                    </div>
+                      <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
+                        <Maximize2 className="h-3 w-3" aria-hidden="true" />
+                        Agrandir
+                      </span>
+                    </button>
                   )}
                   <div className="p-4 pb-0 sm:p-5 sm:pb-0">
                     <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -618,6 +635,14 @@ export function SessionsListView({
             );
           })}
         </div>
+      )}
+
+      {lightboxImage && (
+        <EventImageLightbox
+          src={lightboxImage.src}
+          title={lightboxImage.title}
+          onClose={() => setLightboxImage(null)}
+        />
       )}
     </section>
   );
