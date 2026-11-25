@@ -517,6 +517,11 @@ export function EventFormModal({
     e.preventDefault();
     setErrorMsg(null);
 
+    if (title.trim().length < VALIDATION_LIMITS.TITLE_MIN) {
+      setErrorMsg('Le titre doit contenir au moins 2 caractères.');
+      return;
+    }
+
     if (
       !discipline.trim() ||
       discipline.trim().length < VALIDATION_LIMITS.DISCIPLINE_MIN
@@ -527,6 +532,37 @@ export function EventFormModal({
 
     if (selectedCoaches.length === 0) {
       setErrorMsg('Veuillez sélectionner ou ajouter au moins un animateur pour cette séance.');
+      return;
+    }
+
+    if (location.trim().length < VALIDATION_LIMITS.LOCATION_MIN) {
+      setErrorMsg('Veuillez saisir un lieu ou une adresse valide (2 caractères minimum).');
+      return;
+    }
+
+    if (city.trim().length < VALIDATION_LIMITS.CITY_MIN) {
+      setErrorMsg('Veuillez saisir une ville valide (2 caractères minimum).');
+      return;
+    }
+
+    const parsedDuration = Number(durationMinutes);
+    if (
+      !Number.isFinite(parsedDuration) ||
+      parsedDuration < VALIDATION_LIMITS.DURATION_MIN ||
+      parsedDuration > VALIDATION_LIMITS.DURATION_MAX
+    ) {
+      setErrorMsg('La durée doit être comprise entre 15 et 240 minutes.');
+      return;
+    }
+
+    const parsedCapacity = Number(maxCapacity);
+    if (
+      !isUnlimitedCapacity &&
+      (!Number.isFinite(parsedCapacity) ||
+        parsedCapacity < VALIDATION_LIMITS.CAPACITY_MIN ||
+        parsedCapacity > VALIDATION_LIMITS.CAPACITY_MAX)
+    ) {
+      setErrorMsg('Le nombre de places doit être compris entre 1 et 200.');
       return;
     }
 
@@ -639,11 +675,33 @@ export function EventFormModal({
       }
       onClose();
     } catch (err) {
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : 'Impossible d’enregistrer l’événement.'
-      );
+      let friendlyMsg = 'Impossible d’enregistrer l’événement.';
+      if (err instanceof Error && err.message) {
+        const raw = err.message.trim();
+        if (raw.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(raw) as { error?: string };
+            const inner = (parsed.error ?? '').toLowerCase();
+            if (inner.includes('quota')) {
+              friendlyMsg =
+                'Quota Firestore atteint pour aujourd’hui. Réessayez plus tard.';
+            } else if (
+              inner.includes('permission') ||
+              inner.includes('insufficient')
+            ) {
+              friendlyMsg =
+                'L’enregistrement a été refusé par la base de données. Vérifiez que vous êtes connecté avec un compte coach actif et que tous les champs (titre, lieu, image, horaires) sont valides.';
+            } else if (parsed.error) {
+              friendlyMsg = parsed.error;
+            }
+          } catch {
+            friendlyMsg = raw;
+          }
+        } else {
+          friendlyMsg = raw;
+        }
+      }
+      setErrorMsg(friendlyMsg);
     } finally {
       setSubmitting(false);
     }
@@ -1703,7 +1761,7 @@ export function EventFormModal({
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || processingCover}
               className="min-h-[44px] rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-60 cursor-pointer"
             >
               {submitting

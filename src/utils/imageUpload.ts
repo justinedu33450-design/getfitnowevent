@@ -69,7 +69,11 @@ export async function processProfilePhotoFile(file: File): Promise<string> {
 const MAX_EVENT_COVER_DATA_URL_LENGTH = 185000;
 
 export async function processEventCoverImageFile(file: File): Promise<string> {
-  if (!file.type || !file.type.startsWith('image/')) {
+  const isImageByType = Boolean(file.type && file.type.startsWith('image/'));
+  const isImageByExt = /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif)$/i.test(
+    file.name || ''
+  );
+  if (!isImageByType && !isImageByExt) {
     throw new Error('Veuillez sélectionner un fichier image valide (JPG, PNG, WebP).');
   }
 
@@ -117,6 +121,8 @@ export async function processEventCoverImageFile(file: File): Promise<string> {
       [1024, 0.74],
       [900, 0.68],
       [760, 0.62],
+      [640, 0.56],
+      [560, 0.5],
     ];
 
     for (const [maxEdge, quality] of attempts) {

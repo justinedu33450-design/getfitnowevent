@@ -1495,6 +1495,17 @@ export async function createEvent(
   const coverImageUrl = getSafeEventCoverImageSrc(input.coverImageUrl) ?? '';
   const coverImagePosition = normalizeCoverImagePosition(input.coverImagePosition);
 
+  const rawCreateLat = Number(input.lat);
+  const rawCreateLng = Number(input.lng);
+  const safeCreateCoords =
+    Boolean(input.hasCoords) &&
+    Number.isFinite(rawCreateLat) &&
+    rawCreateLat >= -90 &&
+    rawCreateLat <= 90 &&
+    Number.isFinite(rawCreateLng) &&
+    rawCreateLng >= -180 &&
+    rawCreateLng <= 180;
+
   const eventRef = doc(collection(db, 'events'));
   try {
     await setDoc(eventRef, {
@@ -1506,9 +1517,9 @@ export async function createEvent(
       location,
       city,
       region,
-      hasCoords: Boolean(input.hasCoords),
-      lat: input.hasCoords ? Number(input.lat) : 0,
-      lng: input.hasCoords ? Number(input.lng) : 0,
+      hasCoords: safeCreateCoords,
+      lat: safeCreateCoords ? rawCreateLat : 0,
+      lng: safeCreateCoords ? rawCreateLng : 0,
       coachName,
       coachNames,
       coachUids,
@@ -1539,6 +1550,43 @@ export async function createEvent(
   }
 }
 
+const ALLOWED_EVENT_DOC_KEYS = new Set([
+  'title',
+  'discipline',
+  'description',
+  'externalUrl',
+  'coverImageUrl',
+  'coverImagePosition',
+  'location',
+  'city',
+  'region',
+  'hasCoords',
+  'lat',
+  'lng',
+  'coachName',
+  'coachNames',
+  'coachUids',
+  'startAt',
+  'durationMinutes',
+  'isUnlimitedCapacity',
+  'maxCapacity',
+  'registeredCount',
+  'lastRegId',
+  'likesCount',
+  'lastLikeId',
+  'status',
+  'cancelReason',
+  'bookingCutoffMinutes',
+  'disableAutoClose',
+  'isPaid',
+  'priceCents',
+  'currency',
+  'paymentMode',
+  'createdBy',
+  'createdAt',
+  'updatedAt',
+]);
+
 export async function updateEvent(
   eventId: string,
   input: EventFormInput,
@@ -1563,8 +1611,19 @@ export async function updateEvent(
   const region = (input.region ?? '').trim().slice(0, VALIDATION_LIMITS.REGION_MAX);
   const { coachName, coachNames, coachUids } = normalizeEventCoaches(input);
 
+  const durationMinutes = Math.round(Number(input.durationMinutes));
+  const nextMaxCapacity = input.isUnlimitedCapacity
+    ? 0
+    : Math.round(Number(input.maxCapacity));
+
+  if (title.length < VALIDATION_LIMITS.TITLE_MIN) {
+    throw new Error('Le titre doit contenir au moins 2 caractères.');
+  }
   if (discipline.length < VALIDATION_LIMITS.DISCIPLINE_MIN) {
     throw new Error('Veuillez sélectionner ou saisir une discipline valide.');
+  }
+  if (location.length < VALIDATION_LIMITS.LOCATION_MIN) {
+    throw new Error('Le lieu doit contenir au moins 2 caractères.');
   }
   if (city.length < VALIDATION_LIMITS.CITY_MIN) {
     throw new Error('La ville doit contenir au moins 2 caractères.');
@@ -1572,8 +1631,23 @@ export async function updateEvent(
   if (coachNames.length === 0 || coachName.length < VALIDATION_LIMITS.COACH_NAME_MIN) {
     throw new Error('Veuillez sélectionner ou ajouter au moins un animateur (2 caractères minimum).');
   }
+  if (
+    !Number.isFinite(durationMinutes) ||
+    durationMinutes < VALIDATION_LIMITS.DURATION_MIN ||
+    durationMinutes > VALIDATION_LIMITS.DURATION_MAX
+  ) {
+    throw new Error('La durée doit être comprise entre 15 et 240 minutes.');
+  }
+  if (
+    !input.isUnlimitedCapacity &&
+    (!Number.isFinite(nextMaxCapacity) ||
+      nextMaxCapacity < VALIDATION_LIMITS.CAPACITY_MIN ||
+      nextMaxCapacity > VALIDATION_LIMITS.CAPACITY_MAX)
+  ) {
+    throw new Error('La capacité doit être comprise entre 1 et 200 places.');
+  }
 
-  if (!input.isUnlimitedCapacity && input.maxCapacity < currentRegisteredCount) {
+  if (!input.isUnlimitedCapacity && nextMaxCapacity < currentRegisteredCount) {
     throw new Error(
       `La capacité maximale ne peut pas être inférieure au nombre d'inscrits actuels (${currentRegisteredCount}).`
     );
@@ -1582,7 +1656,6 @@ export async function updateEvent(
   const pricing = normalizeEventPricing(input);
   const eventRef = doc(db, 'events', eventId);
   const startAtTs = Timestamp.fromDate(input.startDate);
-  const durationMinutes = Math.round(input.durationMinutes);
   const eventEndAtTs = Timestamp.fromMillis(
     startAtTs.toMillis() + durationMinutes * 60 * 1000
   );
@@ -1590,7 +1663,101 @@ export async function updateEvent(
   const coverImageUrl = getSafeEventCoverImageSrc(input.coverImageUrl) ?? '';
   const coverImagePosition = normalizeCoverImagePosition(input.coverImagePosition);
 
+  let shouldSyncRegistrations = currentRegisteredCount > 0;
+
   try {
+    const liveSnap = await getDocFromServer(eventRef).catch(() =>
+      getDoc(eventRef).catch(() => null)
+    );
+    const healFields: Record<string, unknown> = {};
+    if (liveSnap?.exists()) {
+      const liveData = liveSnap.data() as Record<string, unknown>;
+      const liveRegisteredCount =
+        typeof liveData.registeredCount === 'number' &&
+        Number.isInteger(liveData.registeredCount) &&
+        liveData.registeredCount >= 0
+          ? liveData.registeredCount
+          : -1;
+      const safeTargetCount = Math.max(0, Math.round(currentRegisteredCount));
+
+      if (
+        liveRegisteredCount < 0 ||
+        (input.isUnlimitedCapacity && liveRegisteredCount > 10000) ||
+        (!input.isUnlimitedCapacity &&
+          liveRegisteredCount > nextMaxCapacity &&
+          safeTargetCount <= nextMaxCapacity)
+      ) {
+        const clampedTarget = Math.min(
+          safeTargetCount,
+          input.isUnlimitedCapacity ? 10000 : nextMaxCapacity
+        );
+        healFields.registeredCount = clampedTarget;
+        if (clampedTarget === 0) {
+          healFields.lastRegId = 'none';
+        }
+      }
+
+      const validIdRegex = /^[a-zA-Z0-9_-]{1,128}$/;
+      if (
+        typeof liveData.lastRegId !== 'string' ||
+        !validIdRegex.test(liveData.lastRegId)
+      ) {
+        healFields.lastRegId = 'none';
+      }
+      if (
+        'likesCount' in liveData &&
+        (typeof liveData.likesCount !== 'number' ||
+          !Number.isInteger(liveData.likesCount) ||
+          liveData.likesCount < 0 ||
+          liveData.likesCount > 100000)
+      ) {
+        healFields.likesCount = 0;
+      }
+      if (
+        'lastLikeId' in liveData &&
+        (typeof liveData.lastLikeId !== 'string' ||
+          !validIdRegex.test(liveData.lastLikeId))
+      ) {
+        healFields.lastLikeId = 'none';
+      }
+      if (
+        'disableAutoClose' in liveData &&
+        typeof liveData.disableAutoClose !== 'boolean'
+      ) {
+        healFields.disableAutoClose = Boolean(liveData.disableAutoClose);
+      }
+
+      Object.keys(liveData).forEach((key) => {
+        if (!ALLOWED_EVENT_DOC_KEYS.has(key)) {
+          healFields[key] = deleteField();
+        }
+      });
+
+      const liveStartAt = liveData.startAt as Timestamp | undefined;
+      const prevStartMs = liveStartAt?.toMillis?.() ?? null;
+      const prevTitle = typeof liveData.title === 'string' ? liveData.title : '';
+      const prevDuration =
+        typeof liveData.durationMinutes === 'number'
+          ? liveData.durationMinutes
+          : null;
+      shouldSyncRegistrations =
+        Math.max(currentRegisteredCount, Math.max(0, liveRegisteredCount)) > 0 &&
+        (prevTitle !== title ||
+          prevStartMs !== startAtTs.toMillis() ||
+          prevDuration !== durationMinutes);
+    }
+
+    const rawLat = Number(input.lat);
+    const rawLng = Number(input.lng);
+    const safeHasCoords =
+      Boolean(input.hasCoords) &&
+      Number.isFinite(rawLat) &&
+      rawLat >= -90 &&
+      rawLat <= 90 &&
+      Number.isFinite(rawLng) &&
+      rawLng >= -180 &&
+      rawLng <= 180;
+
     await updateDoc(eventRef, {
       title,
       discipline,
@@ -1605,19 +1772,20 @@ export async function updateEvent(
         : input.hadCoverImage
           ? { coverImageUrl: '', coverImagePosition: '50% 50%' }
           : {}),
+      ...healFields,
       location,
       city,
       region,
-      hasCoords: Boolean(input.hasCoords),
-      lat: input.hasCoords ? Number(input.lat) : 0,
-      lng: input.hasCoords ? Number(input.lng) : 0,
+      hasCoords: safeHasCoords,
+      lat: safeHasCoords ? rawLat : 0,
+      lng: safeHasCoords ? rawLng : 0,
       coachName,
       coachNames,
       coachUids,
       startAt: startAtTs,
       durationMinutes,
       isUnlimitedCapacity: Boolean(input.isUnlimitedCapacity),
-      maxCapacity: input.isUnlimitedCapacity ? 0 : Math.round(input.maxCapacity),
+      maxCapacity: nextMaxCapacity,
       isPaid: pricing.isPaid,
       priceCents: pricing.priceCents,
       currency: pricing.currency,
@@ -1629,8 +1797,12 @@ export async function updateEvent(
       ),
       updatedAt: serverTimestamp(),
     });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `events/${eventId}`);
+  }
 
-    if (currentRegisteredCount > 0) {
+  if (shouldSyncRegistrations) {
+    try {
       const regSnap = await getDocs(
         query(collection(db, 'registrations'), where('eventId', '==', eventId))
       );
@@ -1647,9 +1819,12 @@ export async function updateEvent(
         });
         await regBatch.commit();
       }
+    } catch (syncError) {
+      console.warn(
+        `Synchronisation des inscriptions différée pour events/${eventId}:`,
+        syncError
+      );
     }
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `events/${eventId}`);
   }
 }
 

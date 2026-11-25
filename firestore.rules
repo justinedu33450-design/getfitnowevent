@@ -117,12 +117,7 @@ service cloud.firestore {
       )) &&
       (!('coverImageUrl' in data) || (
         data.coverImageUrl is string &&
-        data.coverImageUrl.size() <= 200000 &&
-        (
-          data.coverImageUrl.size() == 0 ||
-          data.coverImageUrl.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$') ||
-          data.coverImageUrl.matches('^https?://[^\\s]+$')
-        )
+        data.coverImageUrl.size() <= 200000
       )) &&
       (!('coverImagePosition' in data) || (
         data.coverImagePosition is string &&
@@ -662,18 +657,7 @@ service cloud.firestore {
           incoming().createdBy == existing().createdBy &&
           incoming().createdAt == existing().createdAt &&
           incoming().updatedAt == request.time &&
-          (
-            incoming().diff(existing()).affectedKeys().hasOnly([
-              'title', 'discipline', 'description', 'externalUrl', 'coverImageUrl', 'coverImagePosition', 'location', 'city', 'region',
-              'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
-              'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity',
-              'isPaid', 'priceCents', 'currency', 'paymentMode',
-              'status', 'cancelReason', 'bookingCutoffMinutes', 'disableAutoClose', 'updatedAt'
-            ]) ||
-            incoming().diff(existing()).affectedKeys().hasOnly([
-              'registeredCount', 'lastRegId', 'updatedAt'
-            ])
-          )
+          !incoming().diff(existing()).affectedKeys().hasAny(['createdBy', 'createdAt'])
         ) ||
         (
           hasAuthenticatedEmail() &&
