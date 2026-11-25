@@ -48,7 +48,8 @@ import {
 } from '../utils/deviceGeolocation';
 import { DisciplineIcon } from './DisciplineIcon';
 import {
-  buildMapsExternalUrl,
+  buildMapsDirectionsUrl,
+  getExternalMapLinkProps,
   isQuotaError,
   MAPS_ATTRIBUTION_IDS,
   useIsDarkTheme,
@@ -133,10 +134,13 @@ function buildDirectionsUrl(
   dest: GeoPoint,
   event: SportEvent
 ): string {
-  if (origin) {
-    return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${dest.lat},${dest.lng}&travelmode=driving`;
-  }
-  return buildMapsExternalUrl(event.location, event.city, dest);
+  return buildMapsDirectionsUrl({
+    origin: origin ? { lat: origin.lat, lng: origin.lng } : null,
+    originSource: origin?.source,
+    dest,
+    location: event.location,
+    city: event.city,
+  });
 }
 
 interface QuickStartCity {
@@ -939,11 +943,10 @@ export function NearbyEventsMap({
                     )}
                     <a
                       href={buildDirectionsUrl(searchCenter, pos, event)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      {...getExternalMapLinkProps()}
                       className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 touch-manipulation"
                     >
-                      Itinéraire
+                      {isAppleMobileDevice() ? 'Itinéraire Plans' : 'Itinéraire'}
                       <ExternalLink className="h-3 w-3" aria-hidden="true" />
                     </a>
                     <button
@@ -1299,11 +1302,10 @@ function NearbyGoogleMapCanvas({
                       selectedEntry.pos,
                       selectedEntry.event
                     )}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    {...getExternalMapLinkProps()}
                     className="inline-flex min-h-[44px] items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 touch-manipulation"
                   >
-                    Itinéraire
+                    {isAppleMobileDevice() ? 'Plans' : 'Itinéraire'}
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
                 </div>
