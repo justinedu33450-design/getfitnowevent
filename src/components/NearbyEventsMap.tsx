@@ -745,7 +745,7 @@ export function NearbyEventsMap({
           />
         ) : (
           <div className="rounded-xl border border-slate-200 bg-white p-5 text-center text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-            La carte interactive s’affichera dès que la clé Google Maps sera configurée. Les séances à proximité restent calculées et classées par distance ci-dessous.
+            L’aperçu carte Google Maps n’est pas disponible sur ce lien pour le moment. La localisation de votre appareil, le rayon en kilomètres et le classement des séances par distance restent actifs ci-dessous.
           </div>
         )}
       </div>

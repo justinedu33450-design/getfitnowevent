@@ -333,6 +333,16 @@ export async function fetchApproximateNetworkLocation(): Promise<ApproximateLoca
     }
   }
 
+  const ipapi = await fetchJsonWithTimeout('https://ipapi.co/json/');
+  if (ipapi && !ipapi.error) {
+    const lat = Number(ipapi.latitude);
+    const lng = Number(ipapi.longitude);
+    if (isValidCoordPair(lat, lng)) {
+      const city = typeof ipapi.city === 'string' ? ipapi.city.trim() : '';
+      return { ok: true, coords: { lat, lng }, city };
+    }
+  }
+
   return null;
 }
 
