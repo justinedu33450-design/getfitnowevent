@@ -97,7 +97,10 @@ import { CoachNotificationsBar } from './components/CoachNotificationsBar';
 import { MemberNotificationsBar } from './components/MemberNotificationsBar';
 import { HeroSection } from './components/HeroSection';
 import { CalendarView } from './components/CalendarView';
-import { SessionsListView } from './components/SessionsListView';
+import {
+  SessionsDisplayMode,
+  SessionsListView,
+} from './components/SessionsListView';
 import { BookingModal } from './components/BookingModal';
 import { EventFormModal } from './components/EventFormModal';
 import { EventRosterDrawer } from './components/EventRosterDrawer';
@@ -197,12 +200,29 @@ export default function App() {
   );
   const [exercises, setExercises] = useState<ExerciseLibraryItem[]>([]);
   const [manageTab, setManageTab] = useState<'events' | 'exercises'>('events');
+  const [sessionsDisplayModeRequest, setSessionsDisplayModeRequest] = useState<{
+    mode: SessionsDisplayMode;
+    nonce: number;
+  }>({ mode: 'list', nonce: 0 });
   const [openCoachProfileNonce, setOpenCoachProfileNonce] = useState(0);
   const [pendingMessageTarget, setPendingMessageTarget] =
     useState<PendingMessageTarget | null>(null);
   const [pendingMemberTrackingKey, setPendingMemberTrackingKey] = useState<
     string | null
   >(null);
+
+  const openNearbyEvents = () => {
+    setSessionsDisplayModeRequest((prev) => ({
+      mode: 'nearby',
+      nonce: prev.nonce + 1,
+    }));
+    setActiveSection('sessions');
+    window.setTimeout(() => {
+      document
+        .getElementById('sessions-section')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  };
 
   const disciplineCatalog = useMemo(
     () => buildDisciplineCatalog(customDisciplines),
@@ -1081,6 +1101,7 @@ export default function App() {
     setMemberSchedules([]);
     setExercises([]);
     setManageTab('events');
+    setSessionsDisplayModeRequest({ mode: 'list', nonce: 0 });
     setPendingMessageTarget(null);
     setPendingMemberTrackingKey(null);
     setAuthError(null);
@@ -1397,6 +1418,12 @@ export default function App() {
             section === 'member-profile'
           ) {
             setCoachGateIntent(false);
+          }
+          if (section === 'sessions' && activeSection !== 'sessions') {
+            setSessionsDisplayModeRequest((prev) => ({
+              mode: 'list',
+              nonce: prev.nonce,
+            }));
           }
           setMemberAuthReturnToCalendar(false);
           setActiveSection(section);
@@ -1721,6 +1748,7 @@ export default function App() {
                       ?.scrollIntoView({ behavior: 'smooth' });
                   }, 50);
                 }}
+                onExploreNearby={openNearbyEvents}
                 onOpenCoachSpace={() => {
                   if (isCoach) {
                     setActiveSection('members');
@@ -1749,6 +1777,7 @@ export default function App() {
                 ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
                 hasMapsApiKey={hasMapsApiKey}
+                onOpenNearbyMap={openNearbyEvents}
                 onSelectEvent={(ev) => {
                   setBookingMessageAuthStep(false);
                   setSelectedEventForBooking(ev);
@@ -1789,6 +1818,8 @@ export default function App() {
                 ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
                 hasMapsApiKey={hasMapsApiKey}
+                initialDisplayMode={sessionsDisplayModeRequest.mode}
+                displayModeNonce={sessionsDisplayModeRequest.nonce}
                 onSelectEvent={(ev) => {
                   setBookingMessageAuthStep(false);
                   setSelectedEventForBooking(ev);
@@ -1831,6 +1862,7 @@ export default function App() {
                 }
                 onSelectEvent={(ev) => setSelectedEventForBooking(ev)}
                 onExploreCalendar={() => setActiveSection('calendar')}
+                onExploreNearby={openNearbyEvents}
                 unreadMessagesCount={unreadMessagesCount}
                 recentConversations={conversations}
                 memberNotifications={memberNotifications}

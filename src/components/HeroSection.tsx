@@ -1,4 +1,4 @@
-import { ArrowDownRight } from 'lucide-react';
+import { ArrowDownRight, LocateFixed } from 'lucide-react';
 import { SportEvent } from '../types';
 
 interface HeroSectionProps {
@@ -8,6 +8,7 @@ interface HeroSectionProps {
   coachPhotoUrl?: string | null;
   coachName?: string | null;
   onExploreCalendar: () => void;
+  onExploreNearby?: () => void;
   onOpenCoachSpace: () => void;
   onOpenMemberProfile?: () => void;
 }
@@ -15,6 +16,7 @@ interface HeroSectionProps {
 export function HeroSection({
   isCoach,
   onExploreCalendar,
+  onExploreNearby,
   onOpenCoachSpace,
   onOpenMemberProfile,
 }: HeroSectionProps) {
@@ -34,7 +36,7 @@ export function HeroSection({
               Réservez vos séances sportives et suivez votre progression
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:mt-4 sm:text-base">
-              Consultez le calendrier par ville, région et discipline, visualisez les séances du jour sur la carte et réservez votre place en quelques clics jusqu’au début de la séance.
+              Consultez le calendrier par ville, région et discipline, localisez les séances à proximité sur la carte et réservez votre place en quelques clics jusqu’au début de la séance.
             </p>
           </div>
 
@@ -47,6 +49,16 @@ export function HeroSection({
               Voir le calendrier des séances
               <ArrowDownRight className="h-4 w-4" aria-hidden="true" />
             </button>
+            {onExploreNearby && (
+              <button
+                type="button"
+                onClick={onExploreNearby}
+                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors duration-150 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 whitespace-nowrap shrink-0 cursor-pointer sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+              >
+                <LocateFixed className="h-4 w-4" aria-hidden="true" />
+                Événements autour de moi
+              </button>
+            )}
             <button
               type="button"
               onClick={

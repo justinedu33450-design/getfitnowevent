@@ -7,6 +7,7 @@ import {
   Clock,
   ExternalLink,
   List,
+  LocateFixed,
   Lock,
   Map as MapIcon,
   MapPin,
@@ -63,6 +64,7 @@ interface CalendarViewProps {
   onSelectEvent: (event: SportEvent) => void;
   onCreateEventForDate: (date: Date) => void;
   onMessageCoach?: (event: SportEvent) => void;
+  onOpenNearbyMap?: () => void;
 }
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -81,6 +83,7 @@ export function CalendarView({
   onSelectEvent,
   onCreateEventForDate,
   onMessageCoach,
+  onOpenNearbyMap,
 }: CalendarViewProps) {
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [dayDisplayMode, setDayDisplayMode] = useState<'list' | 'map'>('list');
@@ -378,6 +381,16 @@ export function CalendarView({
             <MapIcon className="h-3.5 w-3.5" aria-hidden="true" />
             Carte du jour
           </button>
+          {onOpenNearbyMap && (
+            <button
+              type="button"
+              onClick={onOpenNearbyMap}
+              className="inline-flex h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+            >
+              <LocateFixed className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+              Autour de moi
+            </button>
+          )}
         </div>
       </div>
 

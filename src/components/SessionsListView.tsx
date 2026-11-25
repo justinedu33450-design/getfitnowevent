@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Clock,
   ExternalLink,
   List,
+  LocateFixed,
   Map as MapIcon,
   MapPin,
   Maximize2,
@@ -37,11 +38,14 @@ import {
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import { DisciplineIcon } from './DisciplineIcon';
 import { EventsOverviewMap } from './EventLocationMap';
+import { NearbyEventsMap } from './NearbyEventsMap';
 import {
   EventRatingInline,
   EventShareButton,
 } from './EventEngagementWidgets';
 import { EventImageLightbox } from './EventImageLightbox';
+
+export type SessionsDisplayMode = 'list' | 'nearby' | 'map';
 
 interface SessionsListViewProps {
   events: SportEvent[];
@@ -54,6 +58,8 @@ interface SessionsListViewProps {
   ratingSummaryByEventId?: Map<string, EventRatingSummary>;
   loading: boolean;
   hasMapsApiKey: boolean;
+  initialDisplayMode?: SessionsDisplayMode;
+  displayModeNonce?: number;
   onSelectEvent: (event: SportEvent) => void;
   onMessageCoach?: (event: SportEvent) => void;
 }
@@ -71,6 +77,8 @@ export function SessionsListView({
   ratingSummaryByEventId,
   loading,
   hasMapsApiKey,
+  initialDisplayMode = 'list',
+  displayModeNonce = 0,
   onSelectEvent,
   onMessageCoach,
 }: SessionsListViewProps) {
@@ -81,11 +89,18 @@ export function SessionsListView({
   const [disciplineFilter, setDisciplineFilter] = useState<'all' | Discipline>(
     'all'
   );
-  const [displayMode, setDisplayMode] = useState<'list' | 'map'>('list');
+  const [displayMode, setDisplayMode] =
+    useState<SessionsDisplayMode>(initialDisplayMode);
   const [lightboxImage, setLightboxImage] = useState<{
     src: string;
     title: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (displayModeNonce > 0) {
+      setDisplayMode(initialDisplayMode);
+    }
+  }, [displayModeNonce, initialDisplayMode]);
 
   const disciplineOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -161,15 +176,49 @@ export function SessionsListView({
     });
   }, [events, search, cityFilter, regionFilter, statusFilter, disciplineFilter, nowMs, isCoach]);
 
+  const nearbyCandidateEvents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const todayDate = new Date(nowMs);
+    return events.filter((ev) => {
+      if (statusFilter !== 'all' && ev.status === 'cancelled') {
+        return false;
+      }
+      if (disciplineFilter !== 'all' && ev.discipline !== disciplineFilter) {
+        return false;
+      }
+      if (q) {
+        const coachesText = getEventCoachNames(ev).join(' ');
+        const hay = `${ev.title} ${ev.discipline} ${ev.location} ${ev.city} ${ev.region || ''} ${ev.coachName} ${coachesText}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      const evalInfo = evaluateEventBooking(ev, nowMs, {
+        hideRegisteredCount: !isCoach,
+      });
+      if (statusFilter === 'upcoming') {
+        return ev.startAt.toMillis() > nowMs;
+      }
+      if (statusFilter === 'today') {
+        return isSameCalendarDay(ev.startAt.toDate(), todayDate);
+      }
+      if (statusFilter === 'open') {
+        return evalInfo.state === 'open';
+      }
+      return true;
+    });
+  }, [events, search, statusFilter, disciplineFilter, nowMs, isCoach]);
+
   return (
-    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <section
+      id="sessions-section"
+      className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
+    >
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
             Toutes les séances sportives
           </h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            Recherchez par ville ou région, localisez sur la carte et réservez votre place jusqu’au début de la séance ou selon la clôture définie par le coach.
+            Recherchez par ville ou région, affichez les séances à proximité selon votre position GPS et réservez votre place jusqu’au début de la séance.
           </p>
         </div>
 
@@ -277,7 +326,7 @@ export function SessionsListView({
 
           <div
             role="group"
-            aria-label="Affichage liste ou carte"
+            aria-label="Affichage liste, proximité ou carte"
             className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
           >
             <button
@@ -291,6 +340,18 @@ export function SessionsListView({
             >
               <List className="h-3.5 w-3.5" aria-hidden="true" />
               Liste
+            </button>
+            <button
+              type="button"
+              onClick={() => setDisplayMode('nearby')}
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                displayMode === 'nearby'
+                  ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-600'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+              }`}
+            >
+              <LocateFixed className="h-3.5 w-3.5" aria-hidden="true" />
+              À proximité
             </button>
             <button
               type="button"
@@ -309,7 +370,7 @@ export function SessionsListView({
       </div>
 
       {/* Quick City Selector */}
-      {availableCities.length > 1 && (
+      {displayMode !== 'nearby' && availableCities.length > 1 && (
         <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0 mr-1">
             Villes :
@@ -355,6 +416,18 @@ export function SessionsListView({
               className="h-52 animate-pulse rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
             />
           ))}
+        </div>
+      ) : displayMode === 'nearby' ? (
+        <div className="mt-6">
+          <NearbyEventsMap
+            events={nearbyCandidateEvents}
+            disciplines={disciplines}
+            nowMs={nowMs}
+            isCoach={isCoach}
+            registeredEventIds={registeredEventIds}
+            hasMapsApiKey={hasMapsApiKey}
+            onSelectEvent={onSelectEvent}
+          />
         </div>
       ) : filtered.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900 sm:p-12">

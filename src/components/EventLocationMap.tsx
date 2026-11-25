@@ -23,9 +23,9 @@ import {
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import { DisciplineIcon } from './DisciplineIcon';
 
-const MAPS_ATTRIBUTION_IDS = ['gmp_mcp_codeassist_v1_aistudio'];
+export const MAPS_ATTRIBUTION_IDS = ['gmp_mcp_codeassist_v1_aistudio'];
 
-function useIsDarkTheme(): boolean {
+export function useIsDarkTheme(): boolean {
   const [isDark, setIsDark] = useState(() =>
     typeof document !== 'undefined'
       ? document.documentElement.classList.contains('dark')
@@ -45,7 +45,7 @@ function useIsDarkTheme(): boolean {
   return isDark;
 }
 
-function useMapRenderError(): {
+export function useMapRenderError(): {
   hasRenderError: boolean;
   containerRef: React.RefObject<HTMLDivElement | null>;
 } {
@@ -81,7 +81,7 @@ function useMapRenderError(): {
   return { hasRenderError, containerRef };
 }
 
-function isQuotaError(err: unknown): boolean {
+export function isQuotaError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return (
     msg.includes('RESOURCE_EXHAUSTED') ||
@@ -90,7 +90,7 @@ function isQuotaError(err: unknown): boolean {
   );
 }
 
-function buildMapsExternalUrl(
+export function buildMapsExternalUrl(
   location: string,
   city: string,
   coords?: { lat: number; lng: number } | null

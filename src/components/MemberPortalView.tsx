@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Clock,
   FileText,
+  LocateFixed,
   LogOut,
   MapPin,
   MessageSquare,
@@ -92,6 +93,7 @@ interface MemberPortalViewProps {
   onCancelRegistration?: (registration: Registration) => Promise<void>;
   onSelectEvent: (event: SportEvent) => void;
   onExploreCalendar: () => void;
+  onExploreNearby?: () => void;
   unreadMessagesCount?: number;
   recentConversations?: Conversation[];
   onOpenMessages?: (conversation?: Conversation) => void;
@@ -121,6 +123,7 @@ export function MemberPortalView({
   onCancelRegistration,
   onSelectEvent,
   onExploreCalendar,
+  onExploreNearby,
   unreadMessagesCount = 0,
   recentConversations = [],
   onOpenMessages,
@@ -663,6 +666,16 @@ export function MemberPortalView({
             <CalendarDays className="h-4 w-4" aria-hidden="true" />
             Voir le calendrier
           </button>
+          {onExploreNearby && (
+            <button
+              type="button"
+              onClick={onExploreNearby}
+              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 whitespace-nowrap cursor-pointer"
+            >
+              <LocateFixed className="h-4 w-4" aria-hidden="true" />
+              Autour de moi
+            </button>
+          )}
           <button
             type="button"
             onClick={onSignOut}
@@ -1347,14 +1360,26 @@ export function MemberPortalView({
                     : 'Vos réservations annulées apparaîtront ici si vous vous désinscrivez d’une séance.'}
               </p>
               {trackingTab === 'upcoming' && (
-                <button
-                  type="button"
-                  onClick={onExploreCalendar}
-                  className="mt-4 inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
-                >
-                  <CalendarDays className="h-4 w-4" aria-hidden="true" />
-                  Explorer le calendrier
-                </button>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onExploreCalendar}
+                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                  >
+                    <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                    Explorer le calendrier
+                  </button>
+                  {onExploreNearby && (
+                    <button
+                      type="button"
+                      onClick={onExploreNearby}
+                      className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 cursor-pointer"
+                    >
+                      <LocateFixed className="h-4 w-4" aria-hidden="true" />
+                      Autour de moi
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ) : (

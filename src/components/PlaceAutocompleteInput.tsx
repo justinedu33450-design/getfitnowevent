@@ -4,7 +4,7 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { MapPin } from 'lucide-react';
 import { VALIDATION_LIMITS } from '../types';
 
-interface PlaceSelection {
+export interface PlaceSelection {
   location: string;
   city: string;
   region: string;
@@ -18,6 +18,11 @@ interface PlaceAutocompleteInputProps {
   hasMapsApiKey: boolean;
   onChangeText: (value: string) => void;
   onSelectPlace: (place: PlaceSelection) => void;
+  inputId?: string;
+  required?: boolean;
+  placeholder?: string;
+  ariaLabel?: string;
+  inputClassName?: string;
 }
 
 export function PlaceAutocompleteInput({
@@ -25,19 +30,30 @@ export function PlaceAutocompleteInput({
   hasMapsApiKey,
   onChangeText,
   onSelectPlace,
+  inputId = 'ev-location',
+  required = true,
+  placeholder = 'Rechercher une adresse ou un lieu...',
+  ariaLabel,
+  inputClassName,
 }: PlaceAutocompleteInputProps) {
+  const defaultClassName =
+    'mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500';
+
   if (!hasMapsApiKey) {
     return (
       <input
-        id="ev-location"
+        id={inputId}
         type="text"
-        required
-        minLength={VALIDATION_LIMITS.LOCATION_MIN}
+        required={required}
+        minLength={required ? VALIDATION_LIMITS.LOCATION_MIN : undefined}
         maxLength={VALIDATION_LIMITS.LOCATION_MAX}
         value={value}
         onChange={(e) => onChangeText(e.target.value)}
-        placeholder="Ex. 12 Rue Oberkampf ou Parc des Buttes-Chaumont"
-        className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+        placeholder={
+          placeholder || 'Ex. 12 Rue Oberkampf ou Parc des Buttes-Chaumont'
+        }
+        aria-label={ariaLabel}
+        className={inputClassName ?? defaultClassName}
       />
     );
   }
@@ -47,6 +63,11 @@ export function PlaceAutocompleteInput({
       value={value}
       onChangeText={onChangeText}
       onSelectPlace={onSelectPlace}
+      inputId={inputId}
+      required={required}
+      placeholder={placeholder}
+      ariaLabel={ariaLabel}
+      inputClassName={inputClassName ?? defaultClassName}
     />
   );
 }
@@ -55,7 +76,17 @@ function PlaceAutocompleteInner({
   value,
   onChangeText,
   onSelectPlace,
-}: Omit<PlaceAutocompleteInputProps, 'hasMapsApiKey'>) {
+  inputId,
+  required,
+  placeholder,
+  ariaLabel,
+  inputClassName,
+}: Omit<PlaceAutocompleteInputProps, 'hasMapsApiKey'> & {
+  inputId: string;
+  required: boolean;
+  placeholder: string;
+  inputClassName: string;
+}) {
   const placesLib = useMapsLibrary('places');
   const sessionTokenRef =
     useRef<google.maps.places.AutocompleteSessionToken | null>(null);
@@ -180,19 +211,20 @@ function PlaceAutocompleteInner({
   return (
     <div className="relative">
       <input
-        id="ev-location"
+        id={inputId}
         type="text"
-        required
-        minLength={VALIDATION_LIMITS.LOCATION_MIN}
+        required={required}
+        minLength={required ? VALIDATION_LIMITS.LOCATION_MIN : undefined}
         maxLength={VALIDATION_LIMITS.LOCATION_MAX}
         value={value}
         onInput={handleInput}
         onBlur={() => {
           window.setTimeout(() => setOpen(false), 180);
         }}
-        placeholder="Rechercher une adresse ou un lieu..."
+        placeholder={placeholder}
+        aria-label={ariaLabel}
         autoComplete="off"
-        className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+        className={inputClassName}
       />
 
       {open && suggestions.length > 0 && (
