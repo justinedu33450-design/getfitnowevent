@@ -40,6 +40,7 @@ import {
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import {
   consumePrimedGeolocation,
+  fetchApproximateNetworkLocation,
   GeolocationAttemptResult,
   isAppleMobileDevice,
   isEmbeddedIframe,
@@ -62,7 +63,7 @@ export interface GeoPoint {
 
 export interface SearchCenter extends GeoPoint {
   label: string;
-  source: 'gps' | 'manual';
+  source: 'gps' | 'network' | 'manual';
 }
 
 export interface NearbyEventEntry {
@@ -191,12 +192,16 @@ export function NearbyEventsMap({
   }, []);
 
   const applyGeolocationResult = useCallback(
-    (result: GeolocationAttemptResult, requestSeq: number, isAuto: boolean) => {
+    async (
+      result: GeolocationAttemptResult,
+      requestSeq: number,
+      isAuto: boolean
+    ) => {
       if (!isMountedRef.current || geoRequestSeqRef.current !== requestSeq) {
         return;
       }
-      setLocating(false);
       if (result.ok) {
+        setLocating(false);
         setSearchCenter({
           lat: result.coords.lat,
           lng: result.coords.lng,
@@ -206,6 +211,36 @@ export function NearbyEventsMap({
         setGeoError(null);
         setShowManualPicker(false);
         setRecenterNonce((n) => n + 1);
+        return;
+      }
+
+      // Automatic fallback to approximate network/IP location when GPS is blocked on iOS/iframe
+      const approx = await fetchApproximateNetworkLocation();
+      if (!isMountedRef.current || geoRequestSeqRef.current !== requestSeq) {
+        return;
+      }
+      setLocating(false);
+
+      if (approx) {
+        setSearchCenter({
+          lat: approx.coords.lat,
+          lng: approx.coords.lng,
+          label: approx.city
+            ? `Position approximative (${approx.city})`
+            : 'Position approximative (réseau)',
+          source: 'network',
+        });
+        setShowManualPicker(false);
+        setRecenterNonce((n) => n + 1);
+        if (result.reason === 'denied' || !isAuto) {
+          setGeoError(
+            isEmbeddedIframe()
+              ? 'GPS exact bloqué dans ce cadre intégré : position approximative activée. Ouvrez dans Safari/un onglet pour le GPS exact, ou touchez la carte pour ajuster.'
+              : 'GPS exact indisponible sur cet appareil : position approximative activée. Touchez la carte ou choisissez une adresse pour affiner.'
+          );
+        } else {
+          setGeoError(null);
+        }
         return;
       }
 
@@ -232,7 +267,7 @@ export function NearbyEventsMap({
       highAccuracyFirst: !isAppleMobileDevice(),
     });
     void promise.then((result) => {
-      applyGeolocationResult(result, requestSeq, false);
+      void applyGeolocationResult(result, requestSeq, false);
     });
   }, [applyGeolocationResult]);
 
@@ -247,7 +282,7 @@ export function NearbyEventsMap({
       const requestSeq = ++geoRequestSeqRef.current;
       setLocating(true);
       void primed.then((result) => {
-        applyGeolocationResult(result, requestSeq, true);
+        void applyGeolocationResult(result, requestSeq, true);
       });
       return;
     }
@@ -258,8 +293,28 @@ export function NearbyEventsMap({
 
     if (isAppleMobileDevice()) {
       // On iOS Safari / standalone PWA, un-gestured getCurrentPosition on mount is blocked by WebKit;
-      // invite a direct tap or offer 1-tap starting cities without a false denial error.
-      setShowManualPicker(true);
+      // center via approximate network location right away and keep GPS / manual selection ready in 1 tap.
+      const requestSeq = ++geoRequestSeqRef.current;
+      setLocating(true);
+      void fetchApproximateNetworkLocation().then((approx) => {
+        if (!isMountedRef.current || geoRequestSeqRef.current !== requestSeq) {
+          return;
+        }
+        setLocating(false);
+        if (approx) {
+          setSearchCenter({
+            lat: approx.coords.lat,
+            lng: approx.coords.lng,
+            label: approx.city
+              ? `Position approximative (${approx.city})`
+              : 'Position approximative (réseau)',
+            source: 'network',
+          });
+          setRecenterNonce((n) => n + 1);
+        } else {
+          setShowManualPicker(true);
+        }
+      });
       return;
     }
 
@@ -267,7 +322,7 @@ export function NearbyEventsMap({
     setLocating(true);
     void requestGeolocationSynchronously({ highAccuracyFirst: false }).then(
       (result) => {
-        applyGeolocationResult(result, requestSeq, true);
+        void applyGeolocationResult(result, requestSeq, true);
       }
     );
   }, [autoLocateOnMount, applyGeolocationResult]);
@@ -524,11 +579,14 @@ export function NearbyEventsMap({
                 <Navigation className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="truncate font-medium">
                   Centre actif : {searchCenter.label}
+                  {searchCenter.source === 'network'
+                    ? ' · Touchez la carte pour affiner'
+                    : ''}
                 </span>
               </p>
             ) : (
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Activez la localisation de votre appareil ou saisissez un lieu pour afficher uniquement les séances dans votre rayon.
+                Activez la localisation de votre appareil, saisissez un lieu ou touchez directement la carte pour filtrer par rayon.
               </p>
             )}
           </div>
@@ -1131,7 +1189,9 @@ function NearbyGoogleMapCanvas({
                     <span className="text-xs font-bold">
                       {searchCenter.source === 'gps'
                         ? 'Votre position'
-                        : 'Point de départ'}
+                        : searchCenter.source === 'network'
+                          ? 'Position approximative'
+                          : 'Point de départ'}
                     </span>
                   }
                 >

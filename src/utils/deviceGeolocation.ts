@@ -263,3 +263,76 @@ export function consumePrimedGeolocation(
   inFlightGeoPromise = null;
   return p;
 }
+
+export interface ApproximateLocationResult {
+  ok: true;
+  coords: GeolocationCoordsResult;
+  city: string;
+}
+
+function isValidCoordPair(lat: unknown, lng: unknown): boolean {
+  return (
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    Math.abs(lat) <= 90 &&
+    Math.abs(lng) <= 180 &&
+    (Math.abs(lat) > 0.001 || Math.abs(lng) > 0.001)
+  );
+}
+
+async function fetchJsonWithTimeout(
+  url: string,
+  timeoutMs = 3500
+): Promise<Record<string, unknown> | null> {
+  if (typeof fetch !== 'function') return null;
+  const controller =
+    typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller
+    ? window.setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      signal: controller?.signal,
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as unknown;
+    return data && typeof data === 'object'
+      ? (data as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  } finally {
+    if (timer !== null) {
+      window.clearTimeout(timer);
+    }
+  }
+}
+
+export async function fetchApproximateNetworkLocation(): Promise<ApproximateLocationResult | null> {
+  const geojs = await fetchJsonWithTimeout('https://get.geojs.io/v1/ip/geo.json');
+  if (geojs) {
+    const lat = Number(geojs.latitude);
+    const lng = Number(geojs.longitude);
+    if (isValidCoordPair(lat, lng)) {
+      const city = typeof geojs.city === 'string' ? geojs.city.trim() : '';
+      return { ok: true, coords: { lat, lng }, city };
+    }
+  }
+
+  const ipwho = await fetchJsonWithTimeout('https://ipwho.is/');
+  if (ipwho && ipwho.success !== false) {
+    const lat = Number(ipwho.latitude);
+    const lng = Number(ipwho.longitude);
+    if (isValidCoordPair(lat, lng)) {
+      const city = typeof ipwho.city === 'string' ? ipwho.city.trim() : '';
+      return { ok: true, coords: { lat, lng }, city };
+    }
+  }
+
+  return null;
+}
+
