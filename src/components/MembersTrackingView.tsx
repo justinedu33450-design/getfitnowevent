@@ -194,6 +194,7 @@ export function MembersTrackingView({
   // Aggregate coach's own members strictly (David Frosio sees his + unassigned registrants;
   // other coaches ONLY see members explicitly attached to their UID)
   const members = useMemo<MemberAggregate[]>(() => {
+    const eventsById = new Map(events.map((ev) => [ev.id, ev]));
     const sourceAllProfiles = allMemberProfiles ?? memberProfiles;
     const reassignedKeys = new Set<string>();
     const reassignedEmails = new Set<string>();
@@ -274,41 +275,39 @@ export function MembersTrackingView({
       const firstName = profile?.firstName || latestReg?.firstName || '';
       const lastName = profile?.lastName || latestReg?.lastName || '';
 
-      const selfCancelledRegs = regs.filter(
-        (r) => r.status === 'cancelled' && r.cancelledBy !== 'admin'
+      const isRegAdminCancelled = (r: Registration) => {
+        const matchedEvent = eventsById.get(r.eventId);
+        return (
+          r.cancelledBy === 'admin' ||
+          Boolean(r.eventCancelled) ||
+          matchedEvent?.status === 'cancelled'
+        );
+      };
+
+      const effectiveRegs = regs.filter(
+        (r) => !isRegAdminCancelled(r) && !r.isArchivedStat
       );
-      const activeConfirmedRegs = regs.filter(
-        (r) => r.status === 'confirmed' && r.cancelledBy !== 'admin'
+      const selfCancelledRegs = effectiveRegs.filter(
+        (r) => r.status === 'cancelled'
       );
-      const adminRemovedPreservedRegs = regs.filter(
-        (r) => r.isArchivedStat && !r.eventCancelled
-      );
-      const adminCancelledAttendedRegs = regs.filter(
-        (r) => r.cancelledBy === 'admin' && !r.isArchivedStat && r.attended
+      const activeConfirmedRegs = effectiveRegs.filter(
+        (r) => r.status === 'confirmed'
       );
 
       const pastConfirmedRegs = activeConfirmedRegs.filter(
         (r) => r.eventStartAt.toMillis() <= nowMs
       );
       const liveUpcomingRegs = activeConfirmedRegs.filter(
-        (r) => !r.isArchivedStat && r.eventStartAt.toMillis() > nowMs
+        (r) => r.eventStartAt.toMillis() > nowMs
       );
-      const attendedCount = regs.filter((r) => r.attended).length;
+      const attendedCount = activeConfirmedRegs.filter((r) => r.attended).length;
 
-      // Self-cancellations count in member stats; admin removals/cancellations leave member stats unchanged
+      // Self-cancellations count in member stats; admin cancellations are excluded from all counters
       const totalRegistrations =
-        activeConfirmedRegs.filter((r) => !r.isArchivedStat).length +
-        selfCancelledRegs.length +
-        adminRemovedPreservedRegs.length +
-        adminCancelledAttendedRegs.length;
+        activeConfirmedRegs.length + selfCancelledRegs.length;
 
       const pastEffectiveCount =
-        pastConfirmedRegs.length +
-        selfCancelledRegs.length +
-        adminRemovedPreservedRegs.filter(
-          (r) => r.eventStartAt.toMillis() <= nowMs
-        ).length +
-        adminCancelledAttendedRegs.length;
+        pastConfirmedRegs.length + selfCancelledRegs.length;
 
       const attendanceRate =
         pastEffectiveCount > 0
@@ -316,14 +315,8 @@ export function MembersTrackingView({
           : null;
 
       const lastSession =
-        [
-          ...pastConfirmedRegs,
-          ...selfCancelledRegs,
-          ...adminRemovedPreservedRegs.filter(
-            (r) => r.eventStartAt.toMillis() <= nowMs
-          ),
-          ...adminCancelledAttendedRegs,
-        ].sort((a, b) => b.eventStartAt.toMillis() - a.eventStartAt.toMillis())[0]
+        [...pastConfirmedRegs, ...selfCancelledRegs]
+          .sort((a, b) => b.eventStartAt.toMillis() - a.eventStartAt.toMillis())[0]
           ?.eventStartAt.toDate() ?? null;
       const nextSession =
         liveUpcomingRegs[liveUpcomingRegs.length - 1]?.eventStartAt.toDate() ??
@@ -354,6 +347,7 @@ export function MembersTrackingView({
     );
   }, [
     statsRegistrations,
+    events,
     memberProfiles,
     allMemberProfiles,
     currentCoachUid,
@@ -2153,40 +2147,51 @@ function MemberDetailDrawer({
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                     <History className="h-4 w-4" aria-hidden="true" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
-                      Historique des séances ({member.registrations.length})
-                    </h3>
-                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                      {(() => {
-                        const historyAttendedCount = member.registrations.filter(
-                          (r) => r.attended
-                        ).length;
-                        const historyUpcomingCount = member.registrations.filter(
-                          (r) =>
-                            r.status === 'confirmed' &&
-                            r.cancelledBy !== 'admin' &&
-                            !r.isArchivedStat &&
-                            r.eventStartAt.toMillis() > nowMs
-                        ).length;
-                        const historyCancelledCount = member.registrations.filter(
-                          (r) => r.status === 'cancelled' || r.cancelledBy === 'admin'
-                        ).length;
-                        const parts = [
-                          `${historyAttendedCount} présence${historyAttendedCount > 1 ? 's' : ''} confirmée${historyAttendedCount > 1 ? 's' : ''}`,
-                        ];
-                        if (historyUpcomingCount > 0) {
-                          parts.push(`${historyUpcomingCount} à venir`);
-                        }
-                        if (historyCancelledCount > 0) {
-                          parts.push(
-                            `${historyCancelledCount} annulée${historyCancelledCount > 1 ? 's' : ''}`
-                          );
-                        }
-                        return parts.join(' · ');
-                      })()}
-                    </p>
-                  </div>
+                  {(() => {
+                    const historyCountedRegs = member.registrations.filter(
+                      (r) => {
+                        const matchedEvent =
+                          events.find((ev) => ev.id === r.eventId) ?? null;
+                        const isAdminCancelled =
+                          r.cancelledBy === 'admin' ||
+                          Boolean(r.eventCancelled) ||
+                          matchedEvent?.status === 'cancelled';
+                        return !isAdminCancelled && !r.isArchivedStat;
+                      }
+                    );
+                    const historyAttendedCount = historyCountedRegs.filter(
+                      (r) => r.status === 'confirmed' && r.attended
+                    ).length;
+                    const historyUpcomingCount = historyCountedRegs.filter(
+                      (r) =>
+                        r.status === 'confirmed' &&
+                        r.eventStartAt.toMillis() > nowMs
+                    ).length;
+                    const historyCancelledCount = historyCountedRegs.filter(
+                      (r) => r.status === 'cancelled'
+                    ).length;
+                    const parts = [
+                      `${historyAttendedCount} présence${historyAttendedCount > 1 ? 's' : ''} confirmée${historyAttendedCount > 1 ? 's' : ''}`,
+                    ];
+                    if (historyUpcomingCount > 0) {
+                      parts.push(`${historyUpcomingCount} à venir`);
+                    }
+                    if (historyCancelledCount > 0) {
+                      parts.push(
+                        `${historyCancelledCount} annulée${historyCancelledCount > 1 ? 's' : ''}`
+                      );
+                    }
+                    return (
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                          Historique des séances ({historyCountedRegs.length})
+                        </h3>
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                          {parts.join(' · ')}
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </button>
 
                 <button
@@ -2224,6 +2229,7 @@ function MemberDetailDrawer({
                           events.find((ev) => ev.id === reg.eventId) ?? null;
                         const isAdminCancelled =
                           reg.cancelledBy === 'admin' ||
+                          Boolean(reg.eventCancelled) ||
                           matchedEvent?.status === 'cancelled';
                         const isMemberCancelled =
                           reg.status === 'cancelled' && !isAdminCancelled;
@@ -2272,11 +2278,6 @@ function MemberDetailDrawer({
                                 {isUpcoming && (
                                   <span className="text-emerald-700 dark:text-emerald-400 font-sans font-semibold normal-case">
                                     · À venir
-                                  </span>
-                                )}
-                                {isAdminCancelled && reg.attended && (
-                                  <span className="text-emerald-700 dark:text-emerald-400 font-sans font-semibold normal-case">
-                                    · Présence conservée
                                   </span>
                                 )}
                               </p>

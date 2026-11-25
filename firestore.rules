@@ -606,6 +606,12 @@ service cloud.firestore {
 
       allow update: if isValidId(eventId) && isValidEvent(incoming()) && (
         (
+          isAdmin() &&
+          incoming().createdBy == existing().createdBy &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time
+        ) ||
+        (
           hasAuthenticatedEmail() &&
           existing().status == 'published' &&
           incoming().diff(existing()).affectedKeys().hasOnly(['registeredCount', 'lastRegId', 'updatedAt']) &&
@@ -651,13 +657,6 @@ service cloud.firestore {
             get(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data,
             getAfter(/databases/$(database)/documents/registrations/$(incoming().lastRegId)).data
           )
-        ) ||
-        (
-          isAdmin() &&
-          incoming().createdBy == existing().createdBy &&
-          incoming().createdAt == existing().createdAt &&
-          incoming().updatedAt == request.time &&
-          !incoming().diff(existing()).affectedKeys().hasAny(['createdBy', 'createdAt'])
         ) ||
         (
           hasAuthenticatedEmail() &&

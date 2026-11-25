@@ -376,15 +376,12 @@ export function MemberPortalView({
     () =>
       statsRegistrations.filter((r) => {
         const matchedEvent = eventsById.get(r.eventId) ?? null;
-        const isEventCancelled =
-          Boolean(r.eventCancelled) || matchedEvent?.status === 'cancelled';
-        if (r.status === 'confirmed' && !isEventCancelled) return true;
-        if (r.status === 'cancelled' && r.cancelledBy !== 'admin' && !isEventCancelled) {
-          return true;
-        }
-        if (r.isArchivedStat && !r.eventCancelled) return true;
-        if (r.attended && r.cancelledBy === 'admin') return true;
-        return false;
+        const isAdminCancelled =
+          r.cancelledBy === 'admin' ||
+          Boolean(r.eventCancelled) ||
+          matchedEvent?.status === 'cancelled';
+        if (isAdminCancelled || r.isArchivedStat) return false;
+        return r.status === 'confirmed' || r.status === 'cancelled';
       }).length,
     [statsRegistrations, eventsById]
   );
@@ -393,12 +390,17 @@ export function MemberPortalView({
     () =>
       statsRegistrations.filter((r) => {
         const matchedEvent = eventsById.get(r.eventId) ?? null;
-        const isEventCancelled =
-          Boolean(r.eventCancelled) || matchedEvent?.status === 'cancelled';
-        if (r.status === 'cancelled' && r.cancelledBy !== 'admin' && !isEventCancelled) {
+        const isAdminCancelled =
+          r.cancelledBy === 'admin' ||
+          Boolean(r.eventCancelled) ||
+          matchedEvent?.status === 'cancelled';
+        if (
+          isAdminCancelled ||
+          r.isArchivedStat ||
+          r.status !== 'confirmed'
+        ) {
           return false;
         }
-        if (isEventCancelled && !r.attended) return false;
         return getRegistrationEndMs(r, matchedEvent) <= nowMs;
       }).length,
     [statsRegistrations, eventsById, nowMs]
@@ -410,13 +412,18 @@ export function MemberPortalView({
         if (!r.attended || r.email.trim().toLowerCase() !== userEmailLower) {
           return false;
         }
-        return (
-          r.status === 'confirmed' ||
+        const matchedEvent = eventsById.get(r.eventId) ?? null;
+        const isAdminCancelled =
           r.cancelledBy === 'admin' ||
-          Boolean(r.isArchivedStat)
+          Boolean(r.eventCancelled) ||
+          matchedEvent?.status === 'cancelled';
+        return (
+          !isAdminCancelled &&
+          !r.isArchivedStat &&
+          r.status === 'confirmed'
         );
       }).length,
-    [statsRegistrations, userEmailLower]
+    [statsRegistrations, eventsById, userEmailLower]
   );
 
   const badgesSummary = useMemo(
@@ -1431,11 +1438,6 @@ export function MemberPortalView({
                                   ? 'Annulé par l’administrateur'
                                   : 'Annulé par vous-même'}
                               </span>
-                              {reg.attended && isAdminCancelled && (
-                                <span className="text-emerald-700 dark:text-emerald-400">
-                                  · Présence conservée
-                                </span>
-                              )}
                             </span>
                           ) : reg.attended ? (
                             <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">

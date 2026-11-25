@@ -154,23 +154,19 @@ export function computeMemberBadges({
   const emailLower = (memberEmail ?? '').trim().toLowerCase();
   const eventsById = new Map(events.map((ev) => [ev.id, ev]));
 
-  // Filter strictly to this member's validated registrations (preserving already-attended
-  // sessions if an admin later cancels/deletes the event or removes the registrant)
+  // Filter strictly to this member's validated registrations (excluding admin-cancelled sessions)
   const validatedRegs = registrations
     .filter((reg) => {
       if (!reg.attended) return false;
-      const isConfirmed = reg.status === 'confirmed';
-      const isPreservedByAdmin =
-        reg.cancelledBy === 'admin' || Boolean(reg.isArchivedStat);
-      if (!isConfirmed && !isPreservedByAdmin) return false;
+      if (reg.status !== 'confirmed' || reg.isArchivedStat) return false;
       if (emailLower && reg.email.trim().toLowerCase() !== emailLower) {
         return false;
       }
       const matchedEvent = eventsById.get(reg.eventId) ?? null;
       if (
-        matchedEvent?.status === 'cancelled' &&
-        !isPreservedByAdmin &&
-        !reg.attended
+        reg.cancelledBy === 'admin' ||
+        Boolean(reg.eventCancelled) ||
+        matchedEvent?.status === 'cancelled'
       ) {
         return false;
       }

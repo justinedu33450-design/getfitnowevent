@@ -1665,138 +1665,209 @@ export async function updateEvent(
 
   let shouldSyncRegistrations = currentRegisteredCount > 0;
 
-  try {
-    const liveSnap = await getDocFromServer(eventRef).catch(() =>
-      getDoc(eventRef).catch(() => null)
-    );
-    const healFields: Record<string, unknown> = {};
-    if (liveSnap?.exists()) {
-      const liveData = liveSnap.data() as Record<string, unknown>;
-      const liveRegisteredCount =
-        typeof liveData.registeredCount === 'number' &&
-        Number.isInteger(liveData.registeredCount) &&
-        liveData.registeredCount >= 0
-          ? liveData.registeredCount
-          : -1;
-      const safeTargetCount = Math.max(0, Math.round(currentRegisteredCount));
+  const liveSnap = await getDocFromServer(eventRef).catch(() =>
+    getDoc(eventRef).catch(() => null)
+  );
+  const healFields: Record<string, unknown> = {};
+  const liveData: Record<string, unknown> | null = liveSnap?.exists()
+    ? (liveSnap.data() as Record<string, unknown>)
+    : null;
 
-      if (
-        liveRegisteredCount < 0 ||
-        (input.isUnlimitedCapacity && liveRegisteredCount > 10000) ||
-        (!input.isUnlimitedCapacity &&
-          liveRegisteredCount > nextMaxCapacity &&
-          safeTargetCount <= nextMaxCapacity)
-      ) {
-        const clampedTarget = Math.min(
-          safeTargetCount,
-          input.isUnlimitedCapacity ? 10000 : nextMaxCapacity
-        );
-        healFields.registeredCount = clampedTarget;
-        if (clampedTarget === 0) {
-          healFields.lastRegId = 'none';
-        }
-      }
+  if (liveData) {
+    const liveRegisteredCount =
+      typeof liveData.registeredCount === 'number' &&
+      Number.isInteger(liveData.registeredCount) &&
+      liveData.registeredCount >= 0
+        ? liveData.registeredCount
+        : -1;
+    const safeTargetCount = Math.max(0, Math.round(currentRegisteredCount));
 
-      const validIdRegex = /^[a-zA-Z0-9_-]{1,128}$/;
-      if (
-        typeof liveData.lastRegId !== 'string' ||
-        !validIdRegex.test(liveData.lastRegId)
-      ) {
+    if (
+      liveRegisteredCount < 0 ||
+      (input.isUnlimitedCapacity && liveRegisteredCount > 10000) ||
+      (!input.isUnlimitedCapacity && liveRegisteredCount > nextMaxCapacity)
+    ) {
+      const clampedTarget = Math.min(
+        safeTargetCount,
+        input.isUnlimitedCapacity ? 10000 : nextMaxCapacity
+      );
+      healFields.registeredCount = clampedTarget;
+      if (clampedTarget === 0) {
         healFields.lastRegId = 'none';
       }
-      if (
-        'likesCount' in liveData &&
-        (typeof liveData.likesCount !== 'number' ||
-          !Number.isInteger(liveData.likesCount) ||
-          liveData.likesCount < 0 ||
-          liveData.likesCount > 100000)
-      ) {
-        healFields.likesCount = 0;
-      }
-      if (
-        'lastLikeId' in liveData &&
-        (typeof liveData.lastLikeId !== 'string' ||
-          !validIdRegex.test(liveData.lastLikeId))
-      ) {
-        healFields.lastLikeId = 'none';
-      }
-      if (
-        'disableAutoClose' in liveData &&
-        typeof liveData.disableAutoClose !== 'boolean'
-      ) {
-        healFields.disableAutoClose = Boolean(liveData.disableAutoClose);
-      }
-
-      Object.keys(liveData).forEach((key) => {
-        if (!ALLOWED_EVENT_DOC_KEYS.has(key)) {
-          healFields[key] = deleteField();
-        }
-      });
-
-      const liveStartAt = liveData.startAt as Timestamp | undefined;
-      const prevStartMs = liveStartAt?.toMillis?.() ?? null;
-      const prevTitle = typeof liveData.title === 'string' ? liveData.title : '';
-      const prevDuration =
-        typeof liveData.durationMinutes === 'number'
-          ? liveData.durationMinutes
-          : null;
-      shouldSyncRegistrations =
-        Math.max(currentRegisteredCount, Math.max(0, liveRegisteredCount)) > 0 &&
-        (prevTitle !== title ||
-          prevStartMs !== startAtTs.toMillis() ||
-          prevDuration !== durationMinutes);
     }
 
-    const rawLat = Number(input.lat);
-    const rawLng = Number(input.lng);
-    const safeHasCoords =
-      Boolean(input.hasCoords) &&
-      Number.isFinite(rawLat) &&
-      rawLat >= -90 &&
-      rawLat <= 90 &&
-      Number.isFinite(rawLng) &&
-      rawLng >= -180 &&
-      rawLng <= 180;
+    const validIdRegex = /^[a-zA-Z0-9_-]{1,128}$/;
+    if (
+      typeof liveData.lastRegId !== 'string' ||
+      !validIdRegex.test(liveData.lastRegId)
+    ) {
+      healFields.lastRegId = 'none';
+    }
+    if (
+      'likesCount' in liveData &&
+      (typeof liveData.likesCount !== 'number' ||
+        !Number.isInteger(liveData.likesCount) ||
+        liveData.likesCount < 0 ||
+        liveData.likesCount > 100000)
+    ) {
+      healFields.likesCount = 0;
+    }
+    if (
+      'lastLikeId' in liveData &&
+      (typeof liveData.lastLikeId !== 'string' ||
+        !validIdRegex.test(liveData.lastLikeId))
+    ) {
+      healFields.lastLikeId = 'none';
+    }
+    if (
+      'disableAutoClose' in liveData &&
+      typeof liveData.disableAutoClose !== 'boolean'
+    ) {
+      healFields.disableAutoClose = Boolean(liveData.disableAutoClose);
+    }
+    if (!externalUrl && !input.hadExternalUrl && 'externalUrl' in liveData) {
+      const rawExt = liveData.externalUrl;
+      if (
+        typeof rawExt !== 'string' ||
+        (rawExt.length > 0 && !getSafeExternalHref(rawExt))
+      ) {
+        healFields.externalUrl = '';
+      }
+    }
+    if (!coverImageUrl && !input.hadCoverImage && 'coverImageUrl' in liveData) {
+      const rawCover = liveData.coverImageUrl;
+      if (
+        typeof rawCover !== 'string' ||
+        (rawCover.length > 0 && !getSafeEventCoverImageSrc(rawCover))
+      ) {
+        healFields.coverImageUrl = '';
+      }
+    }
+    if (
+      !coverImageUrl &&
+      !input.hadCoverImage &&
+      'coverImagePosition' in liveData
+    ) {
+      const rawPos = liveData.coverImagePosition;
+      if (
+        typeof rawPos !== 'string' ||
+        (rawPos.length > 0 && !/^[0-9]{1,3}% [0-9]{1,3}%$/.test(rawPos))
+      ) {
+        healFields.coverImagePosition = '50% 50%';
+      }
+    }
 
-    await updateDoc(eventRef, {
-      title,
-      discipline,
-      description,
-      ...(externalUrl
-        ? { externalUrl }
-        : input.hadExternalUrl
-          ? { externalUrl: '' }
-          : {}),
-      ...(coverImageUrl
-        ? { coverImageUrl, coverImagePosition }
-        : input.hadCoverImage
-          ? { coverImageUrl: '', coverImagePosition: '50% 50%' }
-          : {}),
-      ...healFields,
-      location,
-      city,
-      region,
-      hasCoords: safeHasCoords,
-      lat: safeHasCoords ? rawLat : 0,
-      lng: safeHasCoords ? rawLng : 0,
-      coachName,
-      coachNames,
-      coachUids,
-      startAt: startAtTs,
-      durationMinutes,
-      isUnlimitedCapacity: Boolean(input.isUnlimitedCapacity),
-      maxCapacity: nextMaxCapacity,
-      isPaid: pricing.isPaid,
-      priceCents: pricing.priceCents,
-      currency: pricing.currency,
-      paymentMode: pricing.paymentMode,
-      status: input.status ?? 'published',
-      cancelReason: (input.status ?? 'published') === 'published' ? '' : 'manual',
-      bookingCutoffMinutes: normalizeBookingCutoffMinutes(
-        input.bookingCutoffMinutes
-      ),
-      updatedAt: serverTimestamp(),
+    Object.keys(liveData).forEach((key) => {
+      if (!ALLOWED_EVENT_DOC_KEYS.has(key)) {
+        healFields[key] = deleteField();
+      }
     });
+
+    const liveStartAt = liveData.startAt as Timestamp | undefined;
+    const prevStartMs = liveStartAt?.toMillis?.() ?? null;
+    const prevTitle = typeof liveData.title === 'string' ? liveData.title : '';
+    const prevDuration =
+      typeof liveData.durationMinutes === 'number'
+        ? liveData.durationMinutes
+        : null;
+    shouldSyncRegistrations =
+      Math.max(currentRegisteredCount, Math.max(0, liveRegisteredCount)) > 0 &&
+      (prevTitle !== title ||
+        prevStartMs !== startAtTs.toMillis() ||
+        prevDuration !== durationMinutes);
+  }
+
+  const rawLat = Number(input.lat);
+  const rawLng = Number(input.lng);
+  const safeHasCoords =
+    Boolean(input.hasCoords) &&
+    Number.isFinite(rawLat) &&
+    rawLat >= -90 &&
+    rawLat <= 90 &&
+    Number.isFinite(rawLng) &&
+    rawLng >= -180 &&
+    rawLng <= 180;
+
+  const updatePayload: Record<string, unknown> = {
+    title,
+    discipline,
+    description,
+    ...(externalUrl
+      ? { externalUrl }
+      : input.hadExternalUrl
+        ? { externalUrl: '' }
+        : {}),
+    ...(coverImageUrl
+      ? { coverImageUrl, coverImagePosition }
+      : input.hadCoverImage
+        ? { coverImageUrl: '', coverImagePosition: '50% 50%' }
+        : {}),
+    ...healFields,
+    location,
+    city,
+    region,
+    hasCoords: safeHasCoords,
+    lat: safeHasCoords ? rawLat : 0,
+    lng: safeHasCoords ? rawLng : 0,
+    coachName,
+    coachNames,
+    coachUids,
+    startAt: startAtTs,
+    durationMinutes,
+    isUnlimitedCapacity: Boolean(input.isUnlimitedCapacity),
+    maxCapacity: nextMaxCapacity,
+    isPaid: pricing.isPaid,
+    priceCents: pricing.priceCents,
+    currency: pricing.currency,
+    paymentMode: pricing.paymentMode,
+    status: input.status ?? 'published',
+    cancelReason: (input.status ?? 'published') === 'published' ? '' : 'manual',
+    bookingCutoffMinutes: normalizeBookingCutoffMinutes(
+      input.bookingCutoffMinutes
+    ),
+    updatedAt: serverTimestamp(),
+  };
+
+  if (liveData) {
+    const mergedPreview: Record<string, unknown> = {
+      ...liveData,
+      ...updatePayload,
+    };
+    const mergedRegCount = mergedPreview.registeredCount;
+    if (
+      typeof mergedRegCount !== 'number' ||
+      !Number.isInteger(mergedRegCount) ||
+      mergedRegCount < 0
+    ) {
+      throw new Error('Le compteur d’inscrits de cet événement est invalide.');
+    }
+    if (!input.isUnlimitedCapacity && mergedRegCount > nextMaxCapacity) {
+      throw new Error(
+        `La capacité maximale (${nextMaxCapacity}) ne peut pas être inférieure au nombre d’inscrits (${mergedRegCount}).`
+      );
+    }
+    if (
+      typeof mergedPreview.createdBy !== 'string' ||
+      !/^[a-zA-Z0-9_-]{1,128}$/.test(mergedPreview.createdBy) ||
+      !mergedPreview.createdAt
+    ) {
+      throw new Error(
+        'Métadonnées d’origine (createdBy/createdAt) manquantes sur cet événement.'
+      );
+    }
+    if (
+      typeof coverImageUrl === 'string' &&
+      coverImageUrl.length > VALIDATION_LIMITS.EVENT_COVER_IMAGE_MAX
+    ) {
+      throw new Error(
+        'Le visuel est trop volumineux pour être enregistré. Choisissez une image plus légère.'
+      );
+    }
+  }
+
+  try {
+    await updateDoc(eventRef, updatePayload);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `events/${eventId}`);
   }
@@ -8133,7 +8204,7 @@ export async function createTrainingProgram(params: {
           Math.round(Number(params.priceCents) || tpl.defaultPriceCents)
         )
       )
-    : VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS;
+    : 0;
 
   const memberEmailKey = await hashEmailKey(cleanEmail);
   const memberName = (
@@ -8157,7 +8228,7 @@ export async function createTrainingProgram(params: {
 
   const isPaidAlready = isProgramPaid && Boolean(params.markPaid);
   const paymentRef = !isProgramPaid
-    ? generatePaymentReference('OFFERT')
+    ? ''
     : isPaidAlready
       ? generatePaymentReference('RUN')
       : '';
@@ -8166,15 +8237,14 @@ export async function createTrainingProgram(params: {
 
   const programRef = doc(collection(db, 'trainingPrograms'));
   try {
-    // Live Firestore rules enforce durationWeeks == 12, isPaid == true, priceCents >= 100, and no 'level' field.
-    // Real duration (8-16w), level & desired start date are encoded in notes [GFN:...], and startAt is clamped <= today so Test VMA is allowed any day.
     await setDoc(programRef, {
       memberEmail: cleanEmail,
       memberEmailKey,
       memberName,
       title,
       distance: params.distance,
-      durationWeeks: 12,
+      level,
+      durationWeeks,
       sessionsPerWeek,
       preferredDays,
       targetTimeSeconds,
@@ -8188,16 +8258,24 @@ export async function createTrainingProgram(params: {
       notes: encodedNotes,
       coachUid: params.coachUid,
       coachName,
-      isPaid: true,
+      isPaid: isProgramPaid,
       priceCents,
       currency: 'EUR',
       paymentMode: isProgramPaid ? params.paymentMode : 'both',
-      paymentStatus: !isProgramPaid || isPaidAlready ? 'paid' : 'pending',
-      paymentMethod: !isProgramPaid || isPaidAlready ? 'onsite' : '',
+      paymentStatus: !isProgramPaid
+        ? 'free'
+        : isPaidAlready
+          ? 'paid'
+          : 'pending',
+      paymentMethod: !isProgramPaid
+        ? 'free'
+        : isPaidAlready
+          ? 'onsite'
+          : '',
       paymentReference: paymentRef,
       cardBrand: '',
       cardLast4: '',
-      paidAt: !isProgramPaid || isPaidAlready ? serverTimestamp() : null,
+      paidAt: isPaidAlready ? serverTimestamp() : null,
       status,
       createdByUid: params.createdByUid,
       createdAt: serverTimestamp(),
@@ -8271,7 +8349,7 @@ export async function updateTrainingProgramConfig(
           Math.round(Number(params.priceCents) || 4900)
         )
       )
-    : VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS;
+    : 0;
   const coachName = (params.coachName.trim() || 'Coach').slice(
     0,
     VALIDATION_LIMITS.DISPLAY_NAME_MAX
@@ -8304,14 +8382,15 @@ export async function updateTrainingProgramConfig(
           : 'active'
         : 'awaiting_vma';
     paymentPatch = {
-      priceCents: VALIDATION_LIMITS.PROGRAM_PRICE_MIN_CENTS,
+      isPaid: false,
+      priceCents: 0,
       paymentMode: 'both',
-      paymentStatus: 'paid',
-      paymentMethod: 'onsite',
-      paymentReference: generatePaymentReference('OFFERT'),
+      paymentStatus: 'free',
+      paymentMethod: 'free',
+      paymentReference: '',
       cardBrand: '',
       cardLast4: '',
-      paidAt: serverTimestamp(),
+      paidAt: null,
       status: nextStatus,
     };
   } else if (
@@ -8320,6 +8399,7 @@ export async function updateTrainingProgramConfig(
       params.existingProgram.paymentStatus === 'free')
   ) {
     paymentPatch = {
+      isPaid: true,
       priceCents,
       paymentMode: params.paymentMode,
       paymentStatus: 'pending',
@@ -8332,6 +8412,7 @@ export async function updateTrainingProgramConfig(
     };
   } else {
     paymentPatch = {
+      isPaid: true,
       priceCents,
       paymentMode: params.paymentMode,
     };
@@ -8340,6 +8421,8 @@ export async function updateTrainingProgramConfig(
   try {
     await updateDoc(doc(db, 'trainingPrograms', programId), {
       title,
+      level: effectiveLevel,
+      durationWeeks: effectiveDurationWeeks,
       sessionsPerWeek,
       preferredDays,
       targetTimeSeconds,

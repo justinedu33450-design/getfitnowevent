@@ -221,14 +221,11 @@ export function MemberRegularityChart({
       }
       const matchedEvent = eventsById.get(reg.eventId);
       const isAdminCancelled =
-        reg.cancelledBy === 'admin' || matchedEvent?.status === 'cancelled';
+        reg.cancelledBy === 'admin' ||
+        Boolean(reg.eventCancelled) ||
+        matchedEvent?.status === 'cancelled';
 
-      if (isAdminCancelled) {
-        if (reg.attended) {
-          validatedCount += 1;
-        } else if (reg.isArchivedStat && !reg.eventCancelled) {
-          registeredCount += 1;
-        }
+      if (isAdminCancelled || reg.isArchivedStat) {
         return;
       }
 

@@ -66,7 +66,7 @@ export async function processProfilePhotoFile(file: File): Promise<string> {
   }
 }
 
-const MAX_EVENT_COVER_DATA_URL_LENGTH = 185000;
+const MAX_EVENT_COVER_DATA_URL_LENGTH = 150000;
 
 export async function processEventCoverImageFile(file: File): Promise<string> {
   const isImageByType = Boolean(file.type && file.type.startsWith('image/'));
@@ -116,13 +116,13 @@ export async function processEventCoverImageFile(file: File): Promise<string> {
     };
 
     const attempts: [number, number][] = [
-      [1280, 0.84],
-      [1200, 0.76],
+      [1200, 0.8],
       [1024, 0.74],
       [900, 0.68],
       [760, 0.62],
       [640, 0.56],
       [560, 0.5],
+      [480, 0.45],
     ];
 
     for (const [maxEdge, quality] of attempts) {

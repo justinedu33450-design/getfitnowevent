@@ -32,6 +32,7 @@ import {
 import {
   createExercise,
   deleteExercise,
+  deleteMemberScheduleSession,
   deleteTrainingProgram,
   payTrainingProgram,
   seedStarterExercises,
@@ -186,6 +187,11 @@ export function ExerciseLibraryView({
   const [deletingProgramId, setDeletingProgramId] = useState<string | null>(
     null
   );
+  const [confirmDeleteCustomSessionId, setConfirmDeleteCustomSessionId] =
+    useState<string | null>(null);
+  const [deletingCustomSessionId, setDeletingCustomSessionId] = useState<
+    string | null
+  >(null);
 
   const mergedRows = useMemo<DisplayExerciseRow[]>(() => {
     const dbIds = new Set(exercises.map((e) => e.id));
@@ -526,8 +532,39 @@ export function ExerciseLibraryView({
     }
   };
 
+  const handleDeleteCustomSession = async (session: MemberScheduleSession) => {
+    setFeedback(null);
+    setDeletingCustomSessionId(session.id);
+    try {
+      await deleteMemberScheduleSession(session.id);
+      setConfirmDeleteCustomSessionId(null);
+      setFeedback({
+        type: 'success',
+        text: `Séance sur mesure « ${session.title} » supprimée pour ${session.memberName}.`,
+      });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Impossible de supprimer cette séance sur mesure.',
+      });
+    } finally {
+      setDeletingCustomSessionId(null);
+    }
+  };
+
   const coachCustomSessions = useMemo(
-    () => memberSchedules.filter((s) => s.createdByRole === 'coach'),
+    () =>
+      memberSchedules.filter(
+        (s) =>
+          s.createdByRole === 'coach' &&
+          !(s.objective ?? '').startsWith('GFN_') &&
+          !s.id.startsWith('regstat__') &&
+          !s.id.startsWith('ack__') &&
+          !s.id.startsWith('move__')
+      ),
     [memberSchedules]
   );
 
@@ -1167,43 +1204,81 @@ export function ExerciseLibraryView({
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {coachCustomSessions.map((sess) => {
                   const isPaid = !sess.isPaid || sess.paymentStatus === 'paid';
+                  const isConfirmingDelete =
+                    confirmDeleteCustomSessionId === sess.id;
+                  const isDeleting = deletingCustomSessionId === sess.id;
                   return (
                     <div
                       key={sess.id}
-                      className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40"
+                      className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                            {sess.discipline} · {formatFrenchDateShort(sess.startAt.toDate())}
-                          </p>
-                          <h4 className="mt-0.5 truncate font-display text-sm font-bold text-slate-900 dark:text-white">
-                            {sess.title}
-                          </h4>
-                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                            {sess.memberName} ({sess.memberEmail})
-                          </p>
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                              {sess.discipline} · {formatFrenchDateShort(sess.startAt.toDate())}
+                            </p>
+                            <h4 className="mt-0.5 truncate font-display text-sm font-bold text-slate-900 dark:text-white">
+                              {sess.title}
+                            </h4>
+                            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                              {sess.memberName} ({sess.memberEmail})
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 font-mono text-[11px] font-bold tabular-nums ${
+                              isPaid
+                                ? 'text-emerald-700 dark:text-emerald-400'
+                                : 'text-amber-700 dark:text-amber-400'
+                            }`}
+                          >
+                            {sess.isPaid
+                              ? isPaid
+                                ? `Payé · ${formatPriceEuros(sess.priceCents ?? 900)}`
+                                : `À régler · ${formatPriceEuros(sess.priceCents ?? 900)}`
+                              : 'Offert · Gratuit'}
+                          </span>
                         </div>
-                        <span
-                          className={`shrink-0 font-mono text-[11px] font-bold tabular-nums ${
-                            isPaid
-                              ? 'text-emerald-700 dark:text-emerald-400'
-                              : 'text-amber-700 dark:text-amber-400'
-                          }`}
-                        >
-                          {sess.isPaid
-                            ? isPaid
-                              ? `Payé · ${formatPriceEuros(sess.priceCents ?? 900)}`
-                              : `À régler · ${formatPriceEuros(sess.priceCents ?? 900)}`
-                            : 'Offert · Gratuit'}
-                        </span>
+                        <p className="mt-2 font-mono text-[11px] text-slate-600 dark:text-slate-300 tabular-nums">
+                          {sess.exercises?.length ?? 0} exercice
+                          {(sess.exercises?.length ?? 0) > 1 ? 's' : ''} ·{' '}
+                          {sess.durationMinutes} min
+                          {sess.objective ? ` · ${sess.objective}` : ''}
+                        </p>
                       </div>
-                      <p className="mt-2 font-mono text-[11px] text-slate-600 dark:text-slate-300 tabular-nums">
-                        {sess.exercises?.length ?? 0} exercice
-                        {(sess.exercises?.length ?? 0) > 1 ? 's' : ''} ·{' '}
-                        {sess.durationMinutes} min
-                        {sess.objective ? ` · ${sess.objective}` : ''}
-                      </p>
+
+                      <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-slate-200/70 pt-2.5 dark:border-slate-800">
+                        {isConfirmingDelete ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={isDeleting}
+                              onClick={() => void handleDeleteCustomSession(sess)}
+                              className="min-h-[32px] rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                            >
+                              {isDeleting ? 'Suppr...' : 'Confirmer'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isDeleting}
+                              onClick={() => setConfirmDeleteCustomSessionId(null)}
+                              className="min-h-[32px] rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                              Annuler
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteCustomSessionId(sess.id)}
+                            aria-label={`Supprimer la séance ${sess.title} de ${sess.memberName}`}
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Supprimer</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

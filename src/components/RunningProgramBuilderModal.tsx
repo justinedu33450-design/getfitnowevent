@@ -929,7 +929,7 @@ export function RunningProgramBuilderModal({
                         type="number"
                         min={1}
                         max={2000}
-                        step="0.50"
+                        step="0.01"
                         required
                         value={priceEuros}
                         onChange={(e) => {
@@ -1025,6 +1025,13 @@ export function RunningProgramBuilderModal({
                     {coachName && !coachDirectory.some((c) => c.uid === coachUid) && (
                       <option value={coachUid}>{coachName}</option>
                     )}
+                    {editingProgram?.coachUid &&
+                      editingProgram.coachUid !== coachUid &&
+                      !coachDirectory.some((c) => c.uid === editingProgram.coachUid) && (
+                        <option value={editingProgram.coachUid}>
+                          {editingProgram.coachName || 'Coach référent'}
+                        </option>
+                      )}
                     {coachDirectory.map((c) => (
                       <option key={c.uid} value={c.uid}>
                         {c.displayName}
