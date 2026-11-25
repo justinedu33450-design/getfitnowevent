@@ -24,6 +24,7 @@ import {
   Navigation,
   Plus,
   RefreshCw,
+  Search,
   UserCheck,
   X,
 } from 'lucide-react';
@@ -37,6 +38,13 @@ import {
   formatTimeRange,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import {
+  consumePrimedGeolocation,
+  GeolocationAttemptResult,
+  isAppleMobileDevice,
+  isEmbeddedIframe,
+  requestGeolocationSynchronously,
+} from '../utils/deviceGeolocation';
 import { DisciplineIcon } from './DisciplineIcon';
 import {
   buildMapsExternalUrl,
@@ -125,9 +133,16 @@ function buildDirectionsUrl(
   event: SportEvent
 ): string {
   if (origin) {
-    return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${dest.lat},${dest.lng}`;
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${dest.lat},${dest.lng}&travelmode=driving`;
   }
   return buildMapsExternalUrl(event.location, event.city, dest);
+}
+
+interface QuickStartCity {
+  city: string;
+  lat: number;
+  lng: number;
+  count: number;
 }
 
 interface NearbyEventsMapProps {
@@ -163,67 +178,99 @@ export function NearbyEventsMap({
   const [resolvingPlaces, setResolvingPlaces] = useState(false);
   const hasAutoLocatedRef = useRef(false);
   const userClearedRef = useRef(false);
+  const isMountedRef = useRef(true);
+  const geoRequestSeqRef = useRef(0);
   const mapWrapperRef = useRef<HTMLDivElement | null>(null);
 
-  const requestDeviceLocation = useCallback((isAuto = false) => {
-    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
-      setGeoError(
-        'La géolocalisation de l’appareil n’est pas prise en charge par ce navigateur. Choisissez une adresse de départ ci-dessous.'
-      );
-      setShowManualPicker(true);
-      return;
-    }
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      geoRequestSeqRef.current += 1;
+    };
+  }, []);
 
-    userClearedRef.current = false;
-    setLocating(true);
-    if (!isAuto) {
-      setGeoError(null);
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+  const applyGeolocationResult = useCallback(
+    (result: GeolocationAttemptResult, requestSeq: number, isAuto: boolean) => {
+      if (!isMountedRef.current || geoRequestSeqRef.current !== requestSeq) {
+        return;
+      }
+      setLocating(false);
+      if (result.ok) {
         setSearchCenter({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lat: result.coords.lat,
+          lng: result.coords.lng,
           label: 'Position actuelle de votre appareil',
           source: 'gps',
         });
         setGeoError(null);
-        setLocating(false);
         setShowManualPicker(false);
         setRecenterNonce((n) => n + 1);
-      },
-      (err) => {
-        setLocating(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setGeoError(
-            'L’accès à la localisation de votre appareil a été refusé. Autorisez-le dans votre navigateur ou indiquez une ville/adresse de départ.'
-          );
-        } else if (err.code === err.TIMEOUT) {
-          setGeoError(
-            'La localisation de votre appareil a pris trop de temps. Réessayez ou indiquez une adresse de départ.'
-          );
-        } else {
-          setGeoError(
-            'Impossible d’obtenir votre position GPS pour le moment. Vous pouvez choisir une ville ou adresse de départ.'
-          );
-        }
-        setShowManualPicker(true);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
+        return;
       }
-    );
-  }, []);
+
+      if (isAuto && isAppleMobileDevice() && result.reason !== 'denied') {
+        setGeoError(
+          'Appuyez sur « Me localiser (GPS) » pour autoriser la position sur iPhone/iPad, ou choisissez une ville ci-dessous.'
+        );
+      } else {
+        setGeoError(result.message);
+      }
+      setShowManualPicker(true);
+    },
+    []
+  );
+
+  // IMPORTANT: Must invoke requestGeolocationSynchronously synchronously inside tap handlers for iOS Safari/PWA
+  const requestDeviceLocation = useCallback(() => {
+    const requestSeq = ++geoRequestSeqRef.current;
+    userClearedRef.current = false;
+    setLocating(true);
+    setGeoError(null);
+
+    const promise = requestGeolocationSynchronously({
+      highAccuracyFirst: !isAppleMobileDevice(),
+    });
+    void promise.then((result) => {
+      applyGeolocationResult(result, requestSeq, false);
+    });
+  }, [applyGeolocationResult]);
 
   useEffect(() => {
-    if (autoLocateOnMount && !hasAutoLocatedRef.current && !userClearedRef.current) {
-      hasAutoLocatedRef.current = true;
-      requestDeviceLocation(true);
+    if (hasAutoLocatedRef.current || userClearedRef.current) {
+      return;
     }
-  }, [autoLocateOnMount, requestDeviceLocation]);
+    hasAutoLocatedRef.current = true;
+
+    const primed = consumePrimedGeolocation();
+    if (primed) {
+      const requestSeq = ++geoRequestSeqRef.current;
+      setLocating(true);
+      void primed.then((result) => {
+        applyGeolocationResult(result, requestSeq, true);
+      });
+      return;
+    }
+
+    if (!autoLocateOnMount) {
+      return;
+    }
+
+    if (isAppleMobileDevice()) {
+      // On iOS Safari / standalone PWA, un-gestured getCurrentPosition on mount is blocked by WebKit;
+      // invite a direct tap or offer 1-tap starting cities without a false denial error.
+      setShowManualPicker(true);
+      return;
+    }
+
+    const requestSeq = ++geoRequestSeqRef.current;
+    setLocating(true);
+    void requestGeolocationSynchronously({ highAccuracyFirst: false }).then(
+      (result) => {
+        applyGeolocationResult(result, requestSeq, true);
+      }
+    );
+  }, [autoLocateOnMount, applyGeolocationResult]);
 
   const handleClearLocation = () => {
     userClearedRef.current = true;
@@ -250,6 +297,20 @@ export function NearbyEventsMap({
     }
   };
 
+  const handleSelectQuickCity = (cityItem: QuickStartCity) => {
+    userClearedRef.current = false;
+    setManualAddressText(cityItem.city);
+    setSearchCenter({
+      lat: cityItem.lat,
+      lng: cityItem.lng,
+      label: cityItem.city,
+      source: 'manual',
+    });
+    setGeoError(null);
+    setShowManualPicker(false);
+    setRecenterNonce((n) => n + 1);
+  };
+
   // Resolve coordinates for events that don't have stored lat/lng yet
   const eventsWithPos = useMemo(() => {
     void resolvedVersion;
@@ -274,6 +335,40 @@ export function NearbyEventsMap({
 
     return { mapped, unlocatedCount };
   }, [events, searchCenter, resolvedVersion]);
+
+  const quickStartCities = useMemo<QuickStartCity[]>(() => {
+    const groups = new Map<
+      string,
+      { city: string; sumLat: number; sumLng: number; count: number }
+    >();
+    eventsWithPos.mapped.forEach(({ event, pos }) => {
+      const rawCity = event.city?.trim();
+      if (!rawCity) return;
+      const key = rawCity.toLowerCase();
+      const existing = groups.get(key);
+      if (existing) {
+        existing.sumLat += pos.lat;
+        existing.sumLng += pos.lng;
+        existing.count += 1;
+      } else {
+        groups.set(key, {
+          city: rawCity,
+          sumLat: pos.lat,
+          sumLng: pos.lng,
+          count: 1,
+        });
+      }
+    });
+    return Array.from(groups.values())
+      .map((g) => ({
+        city: g.city,
+        lat: g.sumLat / g.count,
+        lng: g.sumLng / g.count,
+        count: g.count,
+      }))
+      .sort((a, b) => a.city.localeCompare(b.city, 'fr'))
+      .slice(0, 10);
+  }, [eventsWithPos.mapped]);
 
   const { nearbyEvents, closestOutside } = useMemo(() => {
     if (!searchCenter) {
@@ -353,7 +448,7 @@ export function NearbyEventsMap({
     setSelectedEventId(eventId);
     mapWrapperRef.current?.scrollIntoView({
       behavior: 'smooth',
-      block: 'nearest',
+      block: 'start',
     });
   };
 
@@ -375,9 +470,9 @@ export function NearbyEventsMap({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => requestDeviceLocation(false)}
+                onClick={requestDeviceLocation}
                 disabled={locating}
-                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer whitespace-nowrap"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer whitespace-nowrap touch-manipulation"
               >
                 {locating ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -484,7 +579,7 @@ export function NearbyEventsMap({
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </div>
-              <div className="flex items-center gap-2.5 px-1 pb-0.5">
+              <div className="flex items-center gap-2.5 px-1">
                 <input
                   type="range"
                   min={MIN_RADIUS_KM}
@@ -493,7 +588,7 @@ export function NearbyEventsMap({
                   value={radiusKm}
                   onChange={(e) => updateRadiusKm(Number(e.target.value))}
                   aria-label="Ajuster le rayon de recherche pour réduire ou agrandir la carte"
-                  className="h-1.5 flex-1 cursor-pointer accent-emerald-700 dark:accent-emerald-500"
+                  className="min-h-[44px] flex-1 cursor-pointer py-2 touch-pan-y accent-emerald-700 dark:accent-emerald-500"
                 />
                 <span className="min-w-[52px] text-right font-mono text-[11px] font-bold text-emerald-700 tabular-nums dark:text-emerald-400">
                   {radiusKm} km
@@ -503,49 +598,69 @@ export function NearbyEventsMap({
           </div>
         </div>
 
-        {/* Manual starting address fallback */}
+        {/* Manual starting address fallback & 1-tap city chips for iOS/Android */}
         {showManualPicker && (
-          <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-            <label
-              htmlFor="nearby-manual-address"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-200"
-            >
-              Choisir un point de départ (adresse ou ville)
-            </label>
-            <div className="mt-1 max-w-lg">
-              <PlaceAutocompleteInput
-                inputId="nearby-manual-address"
-                required={false}
-                value={manualAddressText}
-                hasMapsApiKey={hasMapsApiKey}
-                onChangeText={setManualAddressText}
-                onSelectPlace={handleSelectManualPlace}
-                placeholder="Ex. Lyon, Paris 11e, Parc de la Tête d’Or..."
-                ariaLabel="Choisir une adresse ou ville de départ"
-              />
-            </div>
-            {!hasMapsApiKey && (
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                La recherche d’adresse nécessite l’activation de Google Maps ; utilisez la localisation GPS de votre appareil.
-              </p>
-            )}
-          </div>
+          <ManualStartingPointPanel
+            value={manualAddressText}
+            hasMapsApiKey={hasMapsApiKey}
+            quickStartCities={quickStartCities}
+            onChangeText={setManualAddressText}
+            onSelectPlace={handleSelectManualPlace}
+            onSelectQuickCity={handleSelectQuickCity}
+          />
         )}
 
         {/* Geolocation Error Banner */}
         {geoError && (
           <div
             role="status"
-            className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/50 dark:text-amber-200"
+            className="mt-3 flex flex-col gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-950 dark:border-amber-800/70 dark:bg-amber-950/50 dark:text-amber-100 sm:flex-row sm:items-start sm:justify-between"
           >
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>{geoError}</span>
+            <div className="flex items-start gap-2 min-w-0">
+              <AlertCircle
+                className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300"
+                aria-hidden="true"
+              />
+              <div className="space-y-2 min-w-0">
+                <p className="leading-relaxed">{geoError}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={requestDeviceLocation}
+                    disabled={locating}
+                    className="inline-flex min-h-[38px] items-center gap-1.5 rounded-md bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-800 disabled:opacity-60 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300 cursor-pointer touch-manipulation"
+                  >
+                    <LocateFixed className="h-3.5 w-3.5" aria-hidden="true" />
+                    Réessayer (GPS)
+                  </button>
+                  {isEmbeddedIframe() && typeof window !== 'undefined' && (
+                    <a
+                      href={window.location.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-[38px] items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-950 transition-colors hover:bg-amber-100/70 dark:border-amber-700 dark:bg-slate-900 dark:text-amber-100 dark:hover:bg-slate-800 touch-manipulation"
+                    >
+                      Ouvrir dans {isAppleMobileDevice() ? 'Safari' : 'un onglet'}
+                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setGeoError(null)}
+              aria-label="Fermer le message de localisation"
+              className="inline-flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center self-end rounded-md text-amber-800 transition-colors hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50 cursor-pointer touch-manipulation sm:self-start"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
         )}
       </div>
 
       {/* Interactive Proximity Map */}
-      <div ref={mapWrapperRef}>
+      <div ref={mapWrapperRef} className="scroll-mt-20">
         {hasMapsApiKey ? (
           <NearbyGoogleMapCanvas
             entries={nearbyEvents}
@@ -556,6 +671,18 @@ export function NearbyEventsMap({
             selectedEventId={selectedEventId}
             onSelectMarker={setSelectedEventId}
             onSelectEvent={onSelectEvent}
+            onPickMapCenter={(coords) => {
+              userClearedRef.current = false;
+              setSearchCenter({
+                lat: coords.lat,
+                lng: coords.lng,
+                label: 'Point choisi sur la carte',
+                source: 'manual',
+              });
+              setGeoError(null);
+              setShowManualPicker(false);
+              setRecenterNonce((n) => n + 1);
+            }}
             resolvingPlaces={resolvingPlaces}
           />
         ) : (
@@ -746,7 +873,7 @@ export function NearbyEventsMap({
                       <button
                         type="button"
                         onClick={() => handleFocusEventOnMap(event.id)}
-                        className="inline-flex min-h-[38px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                        className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer touch-manipulation"
                       >
                         <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
                         Centrer
@@ -756,7 +883,7 @@ export function NearbyEventsMap({
                       href={buildDirectionsUrl(searchCenter, pos, event)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-[38px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                      className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 touch-manipulation"
                     >
                       Itinéraire
                       <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -764,7 +891,7 @@ export function NearbyEventsMap({
                     <button
                       type="button"
                       onClick={() => onSelectEvent(event)}
-                      className={`flex-1 min-h-[38px] rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                      className={`flex-1 min-h-[44px] rounded-lg px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer touch-manipulation ${
                         canBook
                           ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
                           : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
@@ -884,6 +1011,7 @@ function NearbyGoogleMapCanvas({
   selectedEventId,
   onSelectMarker,
   onSelectEvent,
+  onPickMapCenter,
   resolvingPlaces,
 }: {
   entries: NearbyEventEntry[];
@@ -894,6 +1022,7 @@ function NearbyGoogleMapCanvas({
   selectedEventId: string | null;
   onSelectMarker: (eventId: string | null) => void;
   onSelectEvent: (event: SportEvent) => void;
+  onPickMapCenter: (coords: GeoPoint) => void;
   resolvingPlaces: boolean;
 }) {
   const isDark = useIsDarkTheme();
@@ -928,7 +1057,10 @@ function NearbyGoogleMapCanvas({
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-      <div ref={containerRef} className="relative h-[360px] w-full sm:h-[460px]">
+      <div
+        ref={containerRef}
+        className="relative h-[300px] w-full sm:h-[420px] lg:h-[460px]"
+      >
         <GoogleMap
           id="nearby-events-map"
           key={isDark ? 'nearby-dark' : 'nearby-light'}
@@ -941,6 +1073,17 @@ function NearbyGoogleMapCanvas({
           mapTypeControl={false}
           internalUsageAttributionIds={MAPS_ATTRIBUTION_IDS}
           style={{ width: '100%', height: '100%' }}
+          onClick={(e) => {
+            if (selectedEventId || userInfoOpen) {
+              onSelectMarker(null);
+              setUserInfoOpen(false);
+              return;
+            }
+            const latLng = e.detail?.latLng;
+            if (latLng) {
+              onPickMapCenter({ lat: latLng.lat, lng: latLng.lng });
+            }
+          }}
         >
           <NearbyBoundsFitter
             searchCenter={searchCenter}
@@ -1086,7 +1229,7 @@ function NearbyGoogleMapCanvas({
                   <button
                     type="button"
                     onClick={() => onSelectEvent(selectedEntry.event)}
-                    className="flex-1 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 cursor-pointer"
+                    className="min-h-[44px] flex-1 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 cursor-pointer touch-manipulation"
                   >
                     Voir &amp; réserver
                   </button>
@@ -1098,7 +1241,7 @@ function NearbyGoogleMapCanvas({
                     )}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    className="inline-flex min-h-[44px] items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 touch-manipulation"
                   >
                     Itinéraire
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -1144,12 +1287,14 @@ function NearbyBoundsFitter({
   const applyCamera = useCallback(
     (center: GeoPoint, zoom: number) => {
       if (!map) return;
-      if (typeof map.moveCamera === 'function') {
-        map.moveCamera({ center, zoom });
-      } else {
-        map.setCenter(center);
-        map.setZoom(zoom);
-      }
+      const isVector =
+        typeof map.getRenderingType === 'function' &&
+        map.getRenderingType() === 'VECTOR';
+      // iOS Safari / Low Power Mode frequently renders raster tiles where moveCamera fractional zoom can fail
+      const targetZoom =
+        isVector && !isAppleMobileDevice() ? zoom : Math.round(zoom);
+      map.setCenter(center);
+      map.setZoom(targetZoom);
     },
     [map]
   );
@@ -1160,8 +1305,22 @@ function NearbyBoundsFitter({
     prevRadiusRef.current = radiusKm;
 
     const mapDiv = map.getDiv();
-    const widthPx = mapDiv?.offsetWidth ?? 600;
-    const heightPx = mapDiv?.offsetHeight ?? 400;
+    const widthPx = mapDiv?.offsetWidth ?? 0;
+    const heightPx = mapDiv?.offsetHeight ?? 0;
+
+    if (widthPx < 50 || heightPx < 50) {
+      window.setTimeout(() => {
+        const retryW = map.getDiv()?.offsetWidth ?? 360;
+        const retryH = map.getDiv()?.offsetHeight ?? 300;
+        if (searchCenter) {
+          applyCamera(
+            { lat: searchCenter.lat, lng: searchCenter.lng },
+            computeZoomForRadiusKm(radiusKm, searchCenter.lat, retryW, retryH)
+          );
+        }
+      }, 140);
+      return;
+    }
 
     if (searchCenter) {
       const targetZoom = computeZoomForRadiusKm(
@@ -1213,8 +1372,254 @@ function NearbyBoundsFitter({
   ]);
 
   useEffect(() => {
-    fit();
+    const timer = window.setTimeout(() => {
+      fit();
+    }, 35);
+    return () => window.clearTimeout(timer);
   }, [fit]);
 
   return null;
+}
+
+function ManualStartingPointPanel({
+  value,
+  hasMapsApiKey,
+  quickStartCities,
+  onChangeText,
+  onSelectPlace,
+  onSelectQuickCity,
+}: {
+  value: string;
+  hasMapsApiKey: boolean;
+  quickStartCities: QuickStartCity[];
+  onChangeText: (val: string) => void;
+  onSelectPlace: (place: PlaceSelection) => void;
+  onSelectQuickCity: (city: QuickStartCity) => void;
+}) {
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
+  const handleFallbackCitySearch = (rawQuery: string): boolean => {
+    const q = rawQuery.trim().toLowerCase();
+    if (!q) return false;
+    const match =
+      quickStartCities.find((c) => c.city.toLowerCase() === q) ??
+      quickStartCities.find((c) => c.city.toLowerCase().includes(q));
+    if (match) {
+      setLookupError(null);
+      onSelectQuickCity(match);
+      return true;
+    }
+    return false;
+  };
+
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800 space-y-3">
+      <div>
+        <label
+          htmlFor="nearby-manual-address"
+          className="block text-xs font-semibold text-slate-700 dark:text-slate-200"
+        >
+          Choisir un point de départ (adresse ou ville)
+        </label>
+        {hasMapsApiKey ? (
+          <ManualAddressWithPlacesSearch
+            value={value}
+            onChangeText={(next) => {
+              setLookupError(null);
+              onChangeText(next);
+            }}
+            onSelectPlace={(place) => {
+              setLookupError(null);
+              onSelectPlace(place);
+            }}
+            onFallbackMatch={handleFallbackCitySearch}
+            onLookupError={setLookupError}
+          />
+        ) : (
+          <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center max-w-lg">
+            <div className="flex-1">
+              <PlaceAutocompleteInput
+                inputId="nearby-manual-address"
+                required={false}
+                value={value}
+                hasMapsApiKey={false}
+                onChangeText={(next) => {
+                  setLookupError(null);
+                  onChangeText(next);
+                }}
+                onSelectPlace={onSelectPlace}
+                onSubmitText={(txt) => {
+                  if (!handleFallbackCitySearch(txt)) {
+                    setLookupError(
+                      'Sélectionnez une ville ci-dessous ou activez la localisation GPS.'
+                    );
+                  }
+                }}
+                placeholder="Ex. Lyon, Paris..."
+                ariaLabel="Choisir une ville de départ"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!handleFallbackCitySearch(value)) {
+                  setLookupError(
+                    'Sélectionnez une ville ci-dessous ou activez la localisation GPS.'
+                  );
+                }
+              }}
+              className="mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white cursor-pointer touch-manipulation shrink-0"
+            >
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
+              Valider
+            </button>
+          </div>
+        )}
+        {lookupError && (
+          <p className="mt-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+            {lookupError}
+          </p>
+        )}
+      </div>
+
+      {quickStartCities.length > 0 && (
+        <div>
+          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            Villes disponibles en 1 appui :
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {quickStartCities.map((item) => (
+              <button
+                key={item.city}
+                type="button"
+                onClick={() => {
+                  setLookupError(null);
+                  onSelectQuickCity(item);
+                }}
+                className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 cursor-pointer touch-manipulation"
+              >
+                <MapPin className="h-3 w-3 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                <span>{item.city}</span>
+                <span className="font-mono text-[10px] opacity-70">
+                  ({item.count})
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManualAddressWithPlacesSearch({
+  value,
+  onChangeText,
+  onSelectPlace,
+  onFallbackMatch,
+  onLookupError,
+}: {
+  value: string;
+  onChangeText: (val: string) => void;
+  onSelectPlace: (place: PlaceSelection) => void;
+  onFallbackMatch: (query: string) => boolean;
+  onLookupError: (msg: string | null) => void;
+}) {
+  const placesLib = useMapsLibrary('places');
+  const [searching, setSearching] = useState(false);
+
+  const runTextLookup = async (rawQuery: string) => {
+    const trimmed = rawQuery.trim();
+    if (trimmed.length < 2 || searching) return;
+    onLookupError(null);
+
+    if (!placesLib) {
+      if (!onFallbackMatch(trimmed)) {
+        onLookupError(
+          'Service de recherche d’adresse en cours de chargement. Touchez une ville ci-dessous.'
+        );
+      }
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const res = await placesLib.Place.searchByText({
+        textQuery: trimmed,
+        fields: ['displayName', 'formattedAddress', 'addressComponents', 'location'],
+        language: 'fr',
+        region: 'fr',
+        maxResultCount: 1,
+      });
+      const first = res.places?.[0];
+      const loc = first?.location;
+      if (first && loc) {
+        const locality =
+          first.addressComponents?.find((c) => c.types.includes('locality'))
+            ?.longText || '';
+        const regionName =
+          first.addressComponents?.find((c) =>
+            c.types.includes('administrative_area_level_1')
+          )?.longText || '';
+        const label =
+          first.formattedAddress || first.displayName || trimmed;
+        onSelectPlace({
+          location: label,
+          city: locality,
+          region: regionName,
+          hasCoords: true,
+          lat: loc.lat(),
+          lng: loc.lng(),
+        });
+        return;
+      }
+      if (!onFallbackMatch(trimmed)) {
+        onLookupError(
+          'Lieu introuvable. Précisez la ville ou touchez une suggestion.'
+        );
+      }
+    } catch (err: unknown) {
+      if (isQuotaError(err)) {
+        window.dispatchEvent(new CustomEvent('gmp-quota-exceeded'));
+      }
+      if (!onFallbackMatch(trimmed)) {
+        onLookupError(
+          'Impossible de rechercher cette adresse pour le moment. Choisissez une ville ci-dessous.'
+        );
+      }
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  return (
+    <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center max-w-lg">
+      <div className="flex-1">
+        <PlaceAutocompleteInput
+          inputId="nearby-manual-address"
+          required={false}
+          value={value}
+          hasMapsApiKey={true}
+          onChangeText={onChangeText}
+          onSelectPlace={onSelectPlace}
+          onSubmitText={(txt) => void runTextLookup(txt)}
+          placeholder="Ex. Lyon, Paris 11e, Parc de la Tête d’Or..."
+          ariaLabel="Choisir une adresse ou ville de départ"
+        />
+      </div>
+      <button
+        type="button"
+        disabled={searching || value.trim().length < 2}
+        onClick={() => void runTextLookup(value)}
+        className="mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white cursor-pointer touch-manipulation shrink-0"
+      >
+        {searching ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <Search className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
+        Valider
+      </button>
+    </div>
+  );
 }

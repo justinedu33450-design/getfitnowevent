@@ -36,6 +36,7 @@ import {
   normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { primeDeviceLocationFromGesture } from '../utils/deviceGeolocation';
 import { DisciplineIcon } from './DisciplineIcon';
 import { EventsOverviewMap } from './EventLocationMap';
 import { NearbyEventsMap } from './NearbyEventsMap';
@@ -236,7 +237,7 @@ export function SessionsListView({
               placeholder="Ville ou région..."
               aria-label="Rechercher par ville ou région"
               list="sessions-locations-list"
-              className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
             <datalist id="sessions-locations-list">
               {availableLocationSuggestions.map((loc) => (
@@ -257,7 +258,7 @@ export function SessionsListView({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Séance, lieu, animateur..."
               aria-label="Rechercher une séance"
-              className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
           </div>
         </div>
@@ -298,7 +299,7 @@ export function SessionsListView({
             value={regionFilter}
             onChange={(e) => setRegionFilter(e.target.value)}
             aria-label="Filtrer par région"
-            className="min-h-[40px] flex-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:flex-none"
+            className="min-h-[40px] flex-1 rounded-lg border border-slate-200 bg-white px-3 text-base sm:text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:flex-none"
           >
             <option value="">Toutes les régions</option>
             {availableRegions.map((reg) => (
@@ -314,7 +315,7 @@ export function SessionsListView({
               setDisciplineFilter(e.target.value as 'all' | Discipline)
             }
             aria-label="Filtrer par discipline"
-            className="min-h-[40px] flex-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:flex-none"
+            className="min-h-[40px] flex-1 rounded-lg border border-slate-200 bg-white px-3 text-base sm:text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:flex-none"
           >
             <option value="all">Toutes les disciplines</option>
             {disciplineOptions.map((d) => (
@@ -343,8 +344,11 @@ export function SessionsListView({
             </button>
             <button
               type="button"
-              onClick={() => setDisplayMode('nearby')}
-              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+              onClick={() => {
+                primeDeviceLocationFromGesture();
+                setDisplayMode('nearby');
+              }}
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors touch-manipulation ${
                 displayMode === 'nearby'
                   ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-600'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'

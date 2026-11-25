@@ -91,6 +91,7 @@ import {
   getNewlyUnlockedBadges,
   MemberBadgeItem,
 } from './utils/memberBadges';
+import { primeDeviceLocationFromGesture } from './utils/deviceGeolocation';
 import { TopBar } from './components/TopBar';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { CoachNotificationsBar } from './components/CoachNotificationsBar';
@@ -212,6 +213,7 @@ export default function App() {
   >(null);
 
   const openNearbyEvents = () => {
+    primeDeviceLocationFromGesture();
     setSessionsDisplayModeRequest((prev) => ({
       mode: 'nearby',
       nonce: prev.nonce + 1,

@@ -18,6 +18,7 @@ interface PlaceAutocompleteInputProps {
   hasMapsApiKey: boolean;
   onChangeText: (value: string) => void;
   onSelectPlace: (place: PlaceSelection) => void;
+  onSubmitText?: (value: string) => void;
   inputId?: string;
   required?: boolean;
   placeholder?: string;
@@ -30,6 +31,7 @@ export function PlaceAutocompleteInput({
   hasMapsApiKey,
   onChangeText,
   onSelectPlace,
+  onSubmitText,
   inputId = 'ev-location',
   required = true,
   placeholder = 'Rechercher une adresse ou un lieu...',
@@ -37,7 +39,7 @@ export function PlaceAutocompleteInput({
   inputClassName,
 }: PlaceAutocompleteInputProps) {
   const defaultClassName =
-    'mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500';
+    'mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500';
 
   if (!hasMapsApiKey) {
     return (
@@ -49,6 +51,12 @@ export function PlaceAutocompleteInput({
         maxLength={VALIDATION_LIMITS.LOCATION_MAX}
         value={value}
         onChange={(e) => onChangeText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onSubmitText) {
+            e.preventDefault();
+            onSubmitText(value);
+          }
+        }}
         placeholder={
           placeholder || 'Ex. 12 Rue Oberkampf ou Parc des Buttes-Chaumont'
         }
@@ -63,6 +71,7 @@ export function PlaceAutocompleteInput({
       value={value}
       onChangeText={onChangeText}
       onSelectPlace={onSelectPlace}
+      onSubmitText={onSubmitText}
       inputId={inputId}
       required={required}
       placeholder={placeholder}
@@ -76,6 +85,7 @@ function PlaceAutocompleteInner({
   value,
   onChangeText,
   onSelectPlace,
+  onSubmitText,
   inputId,
   required,
   placeholder,
@@ -90,10 +100,20 @@ function PlaceAutocompleteInner({
   const placesLib = useMapsLibrary('places');
   const sessionTokenRef =
     useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const selectingRef = useRef(false);
+  const blurTimerRef = useRef<number | null>(null);
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompleteSuggestion[]
   >([]);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimerRef.current !== null) {
+        window.clearTimeout(blurTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!placesLib) return;
@@ -149,7 +169,14 @@ function PlaceAutocompleteInner({
 
   const handleSuggestionClick = useCallback(
     async (suggestion: google.maps.places.AutocompleteSuggestion) => {
+      if (selectingRef.current) return;
       if (!placesLib || !suggestion.placePrediction) return;
+      selectingRef.current = true;
+      if (blurTimerRef.current !== null) {
+        window.clearTimeout(blurTimerRef.current);
+        blurTimerRef.current = null;
+      }
+
       const place = suggestion.placePrediction.toPlace();
       try {
         await place.fetchFields({
@@ -200,6 +227,7 @@ function PlaceAutocompleteInner({
           window.dispatchEvent(new CustomEvent('gmp-quota-exceeded'));
         }
       } finally {
+        selectingRef.current = false;
         sessionTokenRef.current = null;
         setSuggestions([]);
         setOpen(false);
@@ -218,26 +246,53 @@ function PlaceAutocompleteInner({
         maxLength={VALIDATION_LIMITS.LOCATION_MAX}
         value={value}
         onInput={handleInput}
+        onFocus={() => {
+          if (value.trim().length >= 3) {
+            setOpen(true);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onSubmitText) {
+            e.preventDefault();
+            setOpen(false);
+            onSubmitText(value);
+          }
+        }}
         onBlur={() => {
-          window.setTimeout(() => setOpen(false), 180);
+          if (blurTimerRef.current !== null) {
+            window.clearTimeout(blurTimerRef.current);
+          }
+          blurTimerRef.current = window.setTimeout(() => {
+            if (!selectingRef.current) {
+              setOpen(false);
+            }
+          }, 320);
         }}
         placeholder={placeholder}
         aria-label={ariaLabel}
         autoComplete="off"
+        autoCorrect="off"
+        enterKeyHint={onSubmitText ? 'search' : undefined}
         className={inputClassName}
       />
 
       {open && suggestions.length > 0 && (
-        <ul className="absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <ul className="absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto overscroll-contain rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
           {suggestions.map((s, idx) => (
             <li key={idx}>
               <button
                 type="button"
-                onMouseDown={(e) => {
+                onPointerDown={(e) => {
                   e.preventDefault();
                   void handleSuggestionClick(s);
                 }}
-                className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-xs text-slate-800 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                }}
+                onClick={() => {
+                  void handleSuggestionClick(s);
+                }}
+                className="flex min-h-[44px] w-full items-start gap-2 px-3 py-2.5 text-left text-xs text-slate-800 hover:bg-slate-50 active:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 dark:active:bg-slate-800 cursor-pointer touch-manipulation"
               >
                 <MapPin
                   className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700 dark:text-emerald-400"
