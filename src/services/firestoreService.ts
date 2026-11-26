@@ -1131,7 +1131,10 @@ export function subscribeEvents(
           disableAutoClose: Boolean(raw.disableAutoClose),
         };
       });
-      list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+      list.sort(
+        (a, b) =>
+          (a.startAt?.toMillis?.() ?? 0) - (b.startAt?.toMillis?.() ?? 0)
+      );
       onData(list);
     },
     (error) => {
@@ -1157,7 +1160,12 @@ export function subscribeRegistrations(
         id: d.id,
         ...(d.data() as Omit<Registration, 'id'>),
       }));
-      list.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+      const pendingTimestampFallback = Date.now();
+      list.sort(
+        (a, b) =>
+          (b.createdAt?.toMillis?.() ?? pendingTimestampFallback) -
+          (a.createdAt?.toMillis?.() ?? pendingTimestampFallback)
+      );
       onData(list);
     },
     (error) => {
@@ -1280,7 +1288,11 @@ export function subscribeMyRegistrations(
       }
     });
     const list = Array.from(mergedMap.values());
-    list.sort((a, b) => b.eventStartAt.toMillis() - a.eventStartAt.toMillis());
+    list.sort(
+      (a, b) =>
+        (b.eventStartAt?.toMillis?.() ?? 0) -
+        (a.eventStartAt?.toMillis?.() ?? 0)
+    );
     onData(list);
   };
 
@@ -6205,7 +6217,10 @@ export function subscribeAllMemberSchedules(
           d.data() as Omit<MemberScheduleSession, 'id'>
         )
       );
-      list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+      list.sort(
+        (a, b) =>
+          (a.startAt?.toMillis?.() ?? 0) - (b.startAt?.toMillis?.() ?? 0)
+      );
       onData(list);
     },
     (error) => {
@@ -6241,7 +6256,10 @@ export function subscribeCoachMemberSchedules(params: {
           d.data() as Omit<MemberScheduleSession, 'id'>
         )
       );
-      list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+      list.sort(
+        (a, b) =>
+          (a.startAt?.toMillis?.() ?? 0) - (b.startAt?.toMillis?.() ?? 0)
+      );
       params.onData(list);
     },
     (error) => {
@@ -6275,7 +6293,10 @@ export function subscribeMyMemberSchedule(
           d.data() as Omit<MemberScheduleSession, 'id'>
         )
       );
-      list.sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+      list.sort(
+        (a, b) =>
+          (a.startAt?.toMillis?.() ?? 0) - (b.startAt?.toMillis?.() ?? 0)
+      );
       onData(list);
     },
     (error) => {
@@ -8132,7 +8153,10 @@ export function subscribeAllTrainingPrograms(
           d.data() as Omit<TrainingProgram, 'id'>
         )
       );
-      list.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
+      list.sort(
+        (a, b) =>
+          (b.startAt?.toMillis?.() ?? 0) - (a.startAt?.toMillis?.() ?? 0)
+      );
       onData(list);
     },
     (error) => {
@@ -8168,7 +8192,10 @@ export function subscribeCoachTrainingPrograms(params: {
           d.data() as Omit<TrainingProgram, 'id'>
         )
       );
-      list.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
+      list.sort(
+        (a, b) =>
+          (b.startAt?.toMillis?.() ?? 0) - (a.startAt?.toMillis?.() ?? 0)
+      );
       params.onData(list);
     },
     (error) => {
@@ -8202,7 +8229,10 @@ export function subscribeMyTrainingPrograms(
           d.data() as Omit<TrainingProgram, 'id'>
         )
       );
-      list.sort((a, b) => b.startAt.toMillis() - a.startAt.toMillis());
+      list.sort(
+        (a, b) =>
+          (b.startAt?.toMillis?.() ?? 0) - (a.startAt?.toMillis?.() ?? 0)
+      );
       onData(list);
     },
     (error) => {
