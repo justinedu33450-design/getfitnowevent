@@ -71,8 +71,13 @@ import {
 } from '../utils/paymentHelpers';
 import { getDisciplineStyle } from '../utils/disciplineColors';
 import { DisciplineIcon } from './DisciplineIcon';
-import { EventLocationMap } from './EventLocationMap';
+import {
+  EventLocationMap,
+  buildMapsExternalUrl,
+  getExternalMapLinkProps,
+} from './EventLocationMap';
 import { EmailPasswordAuthForm } from './EmailPasswordAuthForm';
+import { isAppleMobileDevice } from '../utils/deviceGeolocation';
 import {
   EventRatingInline,
   EventReviewsSection,
@@ -453,6 +458,11 @@ export function BookingModal({
         const el = document.getElementById(fieldId);
         if (el) {
           el.focus({ preventScroll: false });
+          el.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+          return;
         }
       }
       errorAlertRef.current?.scrollIntoView({
@@ -548,13 +558,17 @@ export function BookingModal({
     return true;
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const submitBookingRequest = async () => {
     setErrorMsg(null);
 
     const cleanFirst = firstName.trim();
     const cleanLast = lastName.trim();
-    const cleanEmail = email.trim().toLowerCase();
+    const normalizedSignedInEmail = (userEmail ?? '').trim().toLowerCase();
+    const cleanEmail = (
+      !isCoachAdmin && normalizedSignedInEmail ? normalizedSignedInEmail : email
+    )
+      .trim()
+      .toLowerCase();
 
     if (!cleanFirst) {
       showValidationError('Veuillez renseigner votre prénom.', 'booking-first-name');
@@ -634,15 +648,24 @@ export function BookingModal({
         showValidationError(err.message);
         return;
       }
+      const isSameEmailAsAccount =
+        !normalizedSignedInEmail || cleanEmail === normalizedSignedInEmail;
       const message = formatFirestoreActionError(
         err,
         'Une erreur est survenue lors de votre inscription.',
-        'Impossible de confirmer votre inscription (autorisation refusée). Vérifiez que vous utilisez l’email de votre compte connecté.'
+        isSameEmailAsAccount
+          ? 'Impossible de confirmer votre inscription pour le moment (autorisation refusée par le serveur). Vérifiez que la séance est toujours ouverte ou reconnectez-vous et réessayez.'
+          : 'Impossible de confirmer votre inscription (autorisation refusée). Vérifiez que vous utilisez l’email de votre compte connecté.'
       );
       showValidationError(message);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    await submitBookingRequest();
   };
 
   const handleSubmitAdditionalGuests = async (e: FormEvent) => {
@@ -724,7 +747,7 @@ export function BookingModal({
       onClick={onClose}
     >
       <div
-        className="relative max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:rounded-xl"
+        className="relative max-h-[92dvh] w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile sheet drag affordance */}
@@ -822,7 +845,7 @@ export function BookingModal({
         </div>
 
         {/* Body */}
-        <div className="space-y-4 p-4 sm:p-6">
+        <div className="space-y-4 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6">
           <div className="grid grid-cols-1 gap-2.5 rounded-lg border border-slate-200 bg-slate-50 p-3.5 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-200 sm:p-4">
             <div className="flex items-center gap-2.5">
               <Clock className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
@@ -859,12 +882,27 @@ export function BookingModal({
                 {evaluation.statusLabel}
               </span>
             </div>
-            <div className="flex items-center gap-2.5">
-              <MapPin className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
-              <span>
-                {event.location} · <strong className="text-slate-900 dark:text-white">{event.city}</strong>
-                {event.region ? ` (${event.region})` : ''}
-              </span>
+            <div className="flex items-start justify-between gap-2.5">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <MapPin className="mt-0.5 h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                <span className="min-w-0">
+                  {event.location} · <strong className="text-slate-900 dark:text-white">{event.city}</strong>
+                  {event.region ? ` (${event.region})` : ''}
+                </span>
+              </div>
+              <a
+                href={buildMapsExternalUrl(
+                  event.location,
+                  event.city,
+                  event.hasCoords ? { lat: event.lat, lng: event.lng } : null,
+                  event.title
+                )}
+                {...getExternalMapLinkProps()}
+                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-400 dark:hover:bg-slate-800 touch-manipulation"
+              >
+                {isAppleMobileDevice() ? 'Plans' : 'Carte'}
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              </a>
             </div>
             <div className="flex items-center gap-2.5">
               <UserCheck className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
@@ -1521,26 +1559,28 @@ export function BookingModal({
                                 id="additional-card-holder"
                                 type="text"
                                 required
+                                autoComplete="cc-name"
                                 value={cardHolder}
                                 onChange={(e) => {
                                   cardHolderTouchedRef.current = true;
                                   setCardHolder(e.target.value);
                                 }}
                                 placeholder="Titulaire de la carte *"
-                                className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                               />
                               <input
                                 id="additional-card-number"
                                 type="text"
                                 inputMode="numeric"
                                 required
-                                maxLength={19}
+                                autoComplete="cc-number"
+                                maxLength={24}
                                 value={cardNumber}
                                 onChange={(e) =>
                                   setCardNumber(formatCardNumberInput(e.target.value))
                                 }
                                 placeholder="Numéro de carte *"
-                                className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                               />
                               <div className="grid grid-cols-2 gap-2">
                                 <input
@@ -1548,20 +1588,22 @@ export function BookingModal({
                                   type="text"
                                   inputMode="numeric"
                                   required
-                                  maxLength={5}
+                                  autoComplete="cc-exp"
+                                  maxLength={10}
                                   value={cardExpiry}
                                   onChange={(e) =>
                                     setCardExpiry(formatCardExpiryInput(e.target.value))
                                   }
                                   placeholder="MM/AA *"
-                                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                                 />
                                 <input
                                   id="additional-card-cvc"
                                   type="password"
                                   inputMode="numeric"
                                   required
-                                  maxLength={4}
+                                  autoComplete="cc-csc"
+                                  maxLength={6}
                                   value={cardCvc}
                                   onChange={(e) =>
                                     setCardCvc(
@@ -1569,7 +1611,7 @@ export function BookingModal({
                                     )
                                   }
                                   placeholder="CVC *"
-                                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                                 />
                               </div>
                             </div>
@@ -1590,14 +1632,14 @@ export function BookingModal({
                             setAdditionalGuests([]);
                             setErrorMsg(null);
                           }}
-                          className="min-h-[36px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                          className="min-h-[36px] touch-manipulation rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
                         >
                           Fermer
                         </button>
                         <button
                           type="submit"
                           disabled={addingGuests || additionalGuests.length === 0}
-                          className="min-h-[36px] rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                          className="min-h-[36px] touch-manipulation rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
                         >
                           {addingGuests
                             ? 'Enregistrement...'
@@ -1883,7 +1925,7 @@ export function BookingModal({
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Camille"
-                    className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                    className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                   />
                 </div>
                 <div>
@@ -1901,7 +1943,7 @@ export function BookingModal({
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Laurent"
-                    className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                    className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -1922,7 +1964,7 @@ export function BookingModal({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="camille.laurent@exemple.fr"
-                  className={`mt-1 min-h-[44px] w-full rounded-lg border px-3 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 ${
+                  className={`mt-1 min-h-[44px] w-full rounded-lg border px-3 text-base sm:text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 ${
                     !isCoachAdmin && Boolean(userEmail)
                       ? 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
                       : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500'
@@ -2005,7 +2047,7 @@ export function BookingModal({
                             handleUpdateGuestRow(guest.id, 'firstName', e.target.value, false)
                           }
                           placeholder="Prénom de l’invité"
-                          className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                       </div>
                       <div>
@@ -2025,7 +2067,7 @@ export function BookingModal({
                             handleUpdateGuestRow(guest.id, 'lastName', e.target.value, false)
                           }
                           placeholder="Nom de l’invité"
-                          className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                       </div>
                     </div>
@@ -2046,7 +2088,7 @@ export function BookingModal({
                           handleUpdateGuestRow(guest.id, 'email', e.target.value, false)
                         }
                         placeholder="invite@exemple.fr"
-                        className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       />
                     </div>
                   </div>
@@ -2072,7 +2114,7 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={() => setSelectedPayMethod('card')}
-                        className={`flex min-h-[44px] items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                        className={`flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
                           selectedPayMethod === 'card'
                             ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
                             : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
@@ -2084,7 +2126,7 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={() => setSelectedPayMethod('onsite')}
-                        className={`flex min-h-[44px] items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                        className={`flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
                           selectedPayMethod === 'onsite'
                             ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
                             : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
@@ -2130,7 +2172,7 @@ export function BookingModal({
                             setCardHolder(e.target.value);
                           }}
                           placeholder="Camille Laurent"
-                          className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                       </div>
 
@@ -2147,13 +2189,13 @@ export function BookingModal({
                           inputMode="numeric"
                           required
                           autoComplete="cc-number"
-                          maxLength={19}
+                          maxLength={24}
                           value={cardNumber}
                           onChange={(e) =>
                             setCardNumber(formatCardNumberInput(e.target.value))
                           }
                           placeholder="4242 4242 4242 4242"
-                          className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                       </div>
 
@@ -2171,13 +2213,13 @@ export function BookingModal({
                             inputMode="numeric"
                             required
                             autoComplete="cc-exp"
-                            maxLength={5}
+                            maxLength={10}
                             value={cardExpiry}
                             onChange={(e) =>
                               setCardExpiry(formatCardExpiryInput(e.target.value))
                             }
                             placeholder="12/28"
-                            className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                           />
                         </div>
                         <div>
@@ -2193,13 +2235,13 @@ export function BookingModal({
                             inputMode="numeric"
                             required
                             autoComplete="cc-csc"
-                            maxLength={4}
+                            maxLength={6}
                             value={cardCvc}
                             onChange={(e) =>
                               setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))
                             }
                             placeholder="123"
-                            className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                           />
                         </div>
                       </div>
@@ -2234,14 +2276,14 @@ export function BookingModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-[44px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                  className="min-h-[44px] touch-manipulation rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="min-h-[44px] rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                  className="min-h-[44px] touch-manipulation rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
                 >
                   {submitting
                     ? isPaidEvent && selectedPayMethod === 'card'

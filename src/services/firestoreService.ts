@@ -2866,6 +2866,24 @@ function parseLiveSportEventSnapshot(
   };
 }
 
+function isPermissionDeniedFirestoreError(error: unknown): boolean {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code ?? '').toLowerCase()
+      : '';
+  const msg = (
+    error instanceof Error ? error.message : String(error ?? '')
+  ).toLowerCase();
+  return (
+    code === 'permission-denied' ||
+    code.includes('permission-denied') ||
+    msg.includes('permission-denied') ||
+    msg.includes('permission_denied') ||
+    msg.includes('missing or insufficient permissions') ||
+    msg.includes('insufficient permissions')
+  );
+}
+
 async function commitSingleParticipantRegistration(params: {
   event: SportEvent;
   firstName: string;
@@ -2889,6 +2907,8 @@ async function commitSingleParticipantRegistration(params: {
   const email = params.email.trim().toLowerCase().slice(0, VALIDATION_LIMITS.EMAIL_MAX);
   const emailKey = await hashEmailKey(email);
   const registrationId = `${params.event.id}__${emailKey}`;
+
+  let lookupListDenied = false;
 
   const findExistingRegistration = async (): Promise<{
     id: string;
@@ -2921,17 +2941,40 @@ async function commitSingleParticipantRegistration(params: {
         ? { id: matched.id, data: matched.data() as Partial<Registration> }
         : null;
     }
-    const snap = await getDocsFromServer(
-      query(collection(db, 'registrations'), where('email', '==', email))
-    );
-    const matched = snap.docs.find(
-      (d) =>
-        d.id === registrationId ||
-        (d.data() as Partial<Registration>).eventId === params.event.id
-    );
-    return matched
-      ? { id: matched.id, data: matched.data() as Partial<Registration> }
-      : null;
+    try {
+      const snap = await getDocsFromServer(
+        query(collection(db, 'registrations'), where('email', '==', email))
+      );
+      const matched = snap.docs.find(
+        (d) =>
+          d.id === registrationId ||
+          (d.data() as Partial<Registration>).eventId === params.event.id
+      );
+      if (matched) {
+        return { id: matched.id, data: matched.data() as Partial<Registration> };
+      }
+    } catch (listError) {
+      if (isPermissionDeniedFirestoreError(listError)) {
+        lookupListDenied = true;
+      } else {
+        throw listError;
+      }
+    }
+    // Fallback direct read: catches legacy/mixed-case docs whose `email` differs in case
+    // (`allow get` checks `existing().email.lower() == token.email.lower()`, throwing
+    // permission-denied only when the document does not exist).
+    try {
+      const directSnap = await getDocFromServer(regRefDirect);
+      if (directSnap.exists()) {
+        return {
+          id: directSnap.id,
+          data: directSnap.data() as Partial<Registration>,
+        };
+      }
+    } catch {
+      // Document does not exist or cannot be read; proceed as new registration.
+    }
+    return null;
   };
 
   const findExistingPayment = async (
@@ -2965,23 +3008,54 @@ async function commitSingleParticipantRegistration(params: {
     const snap = await getDocsFromServer(
       query(collection(db, 'payments'), where('memberEmail', '==', email))
     );
-    return snap.docs.some(
-      (d) =>
-        d.id === targetRegistrationId ||
-        (d.data() as Partial<PaymentRecord>).registrationId ===
-          targetRegistrationId
-    );
+    if (
+      snap.docs.some(
+        (d) =>
+          d.id === targetRegistrationId ||
+          (d.data() as Partial<PaymentRecord>).registrationId ===
+            targetRegistrationId
+      )
+    ) {
+      return true;
+    }
+    try {
+      const directSnap = await getDocFromServer(payRefDirect);
+      return directSnap.exists();
+    } catch {
+      return false;
+    }
   };
 
-  const formatPermissionDeniedError = (error: unknown): never => {
+  const refreshCurrentUserAuth = async () => {
+    if (!auth.currentUser) return;
+    try {
+      await auth.currentUser.reload();
+    } catch {
+      // Non-blocking reload
+    }
+    try {
+      await auth.currentUser.getIdToken(true);
+    } catch {
+      // Non-blocking token refresh
+    }
+  };
+
+  let existingRegStateTag = 'lookup';
+
+  const formatPermissionDeniedError = (
+    error: unknown,
+    stage: 'lookup_reg' | 'lookup_pay' | 'commit_batch' = 'commit_batch'
+  ): never => {
     const errInfo = buildFirestoreErrorInfo(
       error,
       OperationType.WRITE,
       `registrations/${registrationId}`
     );
-    console.error('Firestore Error: ', JSON.stringify(errInfo));
-    const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes('permission-denied') || msg.includes('PERMISSION_DENIED')) {
+    console.error(
+      `Firestore Error (${stage}, ${existingRegStateTag}): `,
+      JSON.stringify(errInfo)
+    );
+    if (isPermissionDeniedFirestoreError(error)) {
       if (params.isGuest) {
         throw new Error(
           `Impossible d’inscrire l’invité(e) ${params.firstName} ${params.lastName} (${email}) : cette adresse email est peut-être déjà inscrite à cette séance.`
@@ -2993,8 +3067,13 @@ async function commitSingleParticipantRegistration(params: {
           `L’adresse email saisie (${email}) doit correspondre à votre compte connecté (${signedInEmail}).`
         );
       }
+      if (lookupListDenied) {
+        throw new Error(
+          `Autorisation refusée par la base de données pour le compte « ${signedInEmail || email} » (${stage}/${existingRegStateTag}). Les règles de sécurité publiées sur Firebase bloquent encore cet accès : elles doivent être republiées dans la console Firebase.`
+        );
+      }
       throw new Error(
-        'Impossible de valider votre inscription pour le moment (autorisation refusée). Vérifiez votre connexion et réessayez.'
+        `Impossible de confirmer votre inscription pour le moment (autorisation refusée : ${stage}/${existingRegStateTag}). Vérifiez que la séance est toujours ouverte ou reconnectez-vous et réessayez.`
       );
     }
     throw new Error(JSON.stringify(errInfo));
@@ -3004,10 +3083,23 @@ async function commitSingleParticipantRegistration(params: {
   try {
     existingReg = await findExistingRegistration();
   } catch (error) {
-    formatPermissionDeniedError(error);
+    if (isPermissionDeniedFirestoreError(error) && auth.currentUser) {
+      await refreshCurrentUserAuth();
+      try {
+        existingReg = await findExistingRegistration();
+      } catch (retryError) {
+        formatPermissionDeniedError(retryError, 'lookup_reg');
+      }
+    } else {
+      formatPermissionDeniedError(error, 'lookup_reg');
+    }
   }
+  existingRegStateTag = existingReg
+    ? `existing:${existingReg.data.status ?? 'unknown'}`
+    : 'new';
 
   let existingEmail = email;
+  let targetEmailKey = emailKey;
   if (existingReg) {
     if (existingReg.data.status === 'confirmed') {
       throw new Error(
@@ -3019,10 +3111,15 @@ async function commitSingleParticipantRegistration(params: {
     if (typeof existingReg.data.email === 'string' && existingReg.data.email) {
       existingEmail = existingReg.data.email;
     }
+    if (
+      typeof existingReg.data.emailKey === 'string' &&
+      existingReg.data.emailKey
+    ) {
+      targetEmailKey = existingReg.data.emailKey;
+    }
   }
 
   const targetRegistrationId = existingReg?.id ?? registrationId;
-  const batch = writeBatch(db);
   const regRef = doc(db, 'registrations', targetRegistrationId);
   const eventRef = doc(db, 'events', params.event.id);
 
@@ -3051,18 +3148,18 @@ async function commitSingleParticipantRegistration(params: {
         invitedByName: deleteField(),
       };
 
-  const registrationBasePayload = {
+  const trimmedTitle = params.event.title.trim().slice(0, VALIDATION_LIMITS.TITLE_MAX);
+  const safeEventTitle = trimmedTitle.length >= 2 ? trimmedTitle : 'Séance';
+
+  const minimalRegistrationBasePayload = {
     eventId: params.event.id,
-    eventTitle: params.event.title.slice(0, VALIDATION_LIMITS.TITLE_MAX),
+    eventTitle: safeEventTitle,
     eventStartAt: params.event.startAt,
-    eventDurationMinutes: durationMinutes,
-    eventEndAt,
     firstName: params.firstName,
     lastName: params.lastName,
     email: existingEmail,
-    emailKey,
+    emailKey: targetEmailKey,
     attended: false,
-    memberValidated: false,
     status: 'confirmed',
     amountCents: params.amountCents,
     currency: 'EUR',
@@ -3075,32 +3172,35 @@ async function commitSingleParticipantRegistration(params: {
     updatedAt: serverTimestamp(),
   };
 
-  if (existingReg) {
-    batch.update(regRef, {
-      ...registrationBasePayload,
-      ...guestFieldsForUpdate,
-    });
-  } else {
-    batch.set(regRef, {
-      ...registrationBasePayload,
-      ...guestFieldsForCreate,
-      createdAt: serverTimestamp(),
-    });
-  }
+  const registrationBasePayload = {
+    ...minimalRegistrationBasePayload,
+    eventDurationMinutes: durationMinutes,
+    eventEndAt,
+    memberValidated: false,
+  };
 
+  let existingPayExists = false;
+  let paymentPayload: Record<string, unknown> | null = null;
   if (
     params.isPaidEvent &&
     (params.paymentMethod === 'card' || params.paymentMethod === 'onsite')
   ) {
-    const payRef = doc(db, 'payments', targetRegistrationId);
-    let existingPayExists = false;
     try {
       existingPayExists = await findExistingPayment(targetRegistrationId);
     } catch (error) {
-      formatPermissionDeniedError(error);
+      if (isPermissionDeniedFirestoreError(error) && auth.currentUser) {
+        await refreshCurrentUserAuth();
+        try {
+          existingPayExists = await findExistingPayment(targetRegistrationId);
+        } catch (retryError) {
+          formatPermissionDeniedError(retryError, 'lookup_pay');
+        }
+      } else {
+        formatPermissionDeniedError(error, 'lookup_pay');
+      }
     }
-    const paymentPayload = {
-      eventTitle: params.event.title.slice(0, VALIDATION_LIMITS.TITLE_MAX),
+    paymentPayload = {
+      eventTitle: safeEventTitle,
       eventStartAt: params.event.startAt,
       memberName: `${params.firstName} ${params.lastName}`.trim().slice(0, 125),
       amountCents: params.amountCents,
@@ -3112,35 +3212,7 @@ async function commitSingleParticipantRegistration(params: {
       paidAt: params.paymentStatus === 'paid' ? serverTimestamp() : null,
       updatedAt: serverTimestamp(),
     };
-
-    if (existingPayExists) {
-      batch.update(payRef, {
-        ...paymentPayload,
-        ...(params.isGuest
-          ? { isGuest: true, payerEmail: params.invitedByEmail }
-          : { isGuest: false, payerEmail: deleteField() }),
-      });
-    } else {
-      batch.set(payRef, {
-        registrationId: targetRegistrationId,
-        eventId: params.event.id,
-        memberEmail: email,
-        memberEmailKey: emailKey,
-        currency: 'EUR',
-        ...paymentPayload,
-        ...(params.isGuest
-          ? { isGuest: true, payerEmail: params.invitedByEmail }
-          : { isGuest: false }),
-        createdAt: serverTimestamp(),
-      });
-    }
   }
-
-  batch.update(eventRef, {
-    registeredCount: increment(1),
-    lastRegId: targetRegistrationId,
-    updatedAt: serverTimestamp(),
-  });
 
   const rawCoachUids =
     Array.isArray(params.event.coachUids) && params.event.coachUids.length > 0
@@ -3150,39 +3222,215 @@ async function commitSingleParticipantRegistration(params: {
     new Set(rawCoachUids.map((u) => u.trim()).filter(Boolean))
   ).slice(0, VALIDATION_LIMITS.COACHES_PER_EVENT_MAX);
 
-  targetCoachUids.forEach((targetCoachUid) => {
-    const notifRef = doc(collection(db, 'coachNotifications'));
-    batch.set(notifRef, {
-      coachUid: targetCoachUid,
-      type: 'new_registration',
-      eventId: params.event.id,
-      eventTitle: params.event.title.slice(0, VALIDATION_LIMITS.TITLE_MAX),
-      eventStartAt: params.event.startAt,
-      registrationId: targetRegistrationId,
-      memberName: `${params.firstName} ${params.lastName}`.trim().slice(0, 125),
-      memberEmail: email,
-      ...(params.isGuest && params.invitedByName
-        ? { invitedByName: params.invitedByName.slice(0, 125) }
-        : {}),
-      read: false,
-      createdAt: serverTimestamp(),
+  const ultraMinimalFreePayload = {
+    eventId: params.event.id,
+    eventTitle: safeEventTitle,
+    eventStartAt: params.event.startAt,
+    firstName: params.firstName,
+    lastName: params.lastName,
+    email: existingEmail,
+    emailKey: targetEmailKey,
+    attended: false,
+    status: 'confirmed',
+    updatedAt: serverTimestamp(),
+  };
+
+  const buildRegistrationBatch = (opts: {
+    includeNotifications: boolean;
+    payloadMode: 'full' | 'minimal' | 'ultra_minimal_free';
+  }) => {
+    const b = writeBatch(db);
+    const regPayload =
+      opts.payloadMode === 'ultra_minimal_free'
+        ? ultraMinimalFreePayload
+        : opts.payloadMode === 'minimal'
+          ? minimalRegistrationBasePayload
+          : registrationBasePayload;
+
+    if (existingReg) {
+      b.update(
+        regRef,
+        opts.payloadMode === 'ultra_minimal_free'
+          ? regPayload
+          : {
+              ...regPayload,
+              ...guestFieldsForUpdate,
+            }
+      );
+    } else {
+      b.set(
+        regRef,
+        opts.payloadMode === 'ultra_minimal_free'
+          ? {
+              ...regPayload,
+              createdAt: serverTimestamp(),
+            }
+          : {
+              ...regPayload,
+              ...guestFieldsForCreate,
+              createdAt: serverTimestamp(),
+            }
+      );
+    }
+
+    if (paymentPayload) {
+      const payRef = doc(db, 'payments', targetRegistrationId);
+      if (existingPayExists) {
+        b.update(payRef, {
+          ...paymentPayload,
+          ...(params.isGuest
+            ? { isGuest: true, payerEmail: params.invitedByEmail }
+            : { isGuest: false, payerEmail: deleteField() }),
+        });
+      } else {
+        b.set(payRef, {
+          registrationId: targetRegistrationId,
+          eventId: params.event.id,
+          memberEmail: email,
+          memberEmailKey: targetEmailKey,
+          currency: 'EUR',
+          ...paymentPayload,
+          ...(params.isGuest
+            ? { isGuest: true, payerEmail: params.invitedByEmail }
+            : { isGuest: false }),
+          createdAt: serverTimestamp(),
+        });
+      }
+    }
+
+    b.update(eventRef, {
+      registeredCount: increment(1),
+      lastRegId: targetRegistrationId,
       updatedAt: serverTimestamp(),
     });
-  });
+
+    if (opts.includeNotifications) {
+      targetCoachUids.forEach((targetCoachUid) => {
+        const notifRef = doc(collection(db, 'coachNotifications'));
+        b.set(notifRef, {
+          coachUid: targetCoachUid,
+          type: 'new_registration',
+          eventId: params.event.id,
+          eventTitle: safeEventTitle,
+          eventStartAt: params.event.startAt,
+          registrationId: targetRegistrationId,
+          memberName: `${params.firstName} ${params.lastName}`.trim().slice(0, 125),
+          memberEmail: email,
+          ...(params.isGuest && params.invitedByName
+            ? { invitedByName: params.invitedByName.slice(0, 125) }
+            : {}),
+          read: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      });
+    }
+    return b;
+  };
+
+  const sendCoachNotificationsBestEffort = async () => {
+    if (targetCoachUids.length === 0) return;
+    const writeNotifsForUids = async (uids: string[]) => {
+      const notifBatch = writeBatch(db);
+      uids.forEach((targetCoachUid) => {
+        const notifRef = doc(collection(db, 'coachNotifications'));
+        notifBatch.set(notifRef, {
+          coachUid: targetCoachUid,
+          type: 'new_registration',
+          eventId: params.event.id,
+          eventTitle: safeEventTitle,
+          eventStartAt: params.event.startAt,
+          registrationId: targetRegistrationId,
+          memberName: `${params.firstName} ${params.lastName}`.trim().slice(0, 125),
+          memberEmail: email,
+          ...(params.isGuest && params.invitedByName
+            ? { invitedByName: params.invitedByName.slice(0, 125) }
+            : {}),
+          read: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      });
+      await notifBatch.commit();
+    };
+    try {
+      await writeNotifsForUids(targetCoachUids);
+    } catch {
+      const fallbackCreatorUid = params.event.createdBy?.trim();
+      if (
+        fallbackCreatorUid &&
+        (targetCoachUids.length > 1 || targetCoachUids[0] !== fallbackCreatorUid)
+      ) {
+        try {
+          await writeNotifsForUids([fallbackCreatorUid]);
+        } catch (notifErr) {
+          console.warn('Notification animateur non bloquante ignorée:', notifErr);
+        }
+      }
+    }
+  };
+
+  const successResult: RegisterEventResult = {
+    registrationId: targetRegistrationId,
+    emailKey: targetEmailKey,
+    amountCents: params.amountCents,
+    paymentStatus: params.paymentStatus,
+    paymentMethod: params.paymentMethod,
+    paymentReference: params.paymentReference,
+    cardBrand: params.cardBrand,
+    cardLast4: params.cardLast4,
+  };
 
   try {
-    await batch.commit();
-    return {
-      registrationId: targetRegistrationId,
-      emailKey,
-      amountCents: params.amountCents,
-      paymentStatus: params.paymentStatus,
-      paymentMethod: params.paymentMethod,
-      paymentReference: params.paymentReference,
-      cardBrand: params.cardBrand,
-      cardLast4: params.cardLast4,
-    };
+    await buildRegistrationBatch({
+      includeNotifications: true,
+      payloadMode: 'full',
+    }).commit();
+    return successResult;
   } catch (error) {
+    if (isPermissionDeniedFirestoreError(error)) {
+      await refreshCurrentUserAuth();
+
+      // Retry core registration atomically without coachNotifications so a notification
+      // rule mismatch never blocks a valid member booking.
+      try {
+        await buildRegistrationBatch({
+          includeNotifications: false,
+          payloadMode: 'full',
+        }).commit();
+        void sendCoachNotificationsBestEffort();
+        return successResult;
+      } catch (coreError) {
+        if (isPermissionDeniedFirestoreError(coreError)) {
+          try {
+            await buildRegistrationBatch({
+              includeNotifications: false,
+              payloadMode: 'minimal',
+            }).commit();
+            void sendCoachNotificationsBestEffort();
+            return successResult;
+          } catch (minimalError) {
+            if (
+              !params.isPaidEvent &&
+              !params.isGuest &&
+              isPermissionDeniedFirestoreError(minimalError)
+            ) {
+              try {
+                await buildRegistrationBatch({
+                  includeNotifications: false,
+                  payloadMode: 'ultra_minimal_free',
+                }).commit();
+                void sendCoachNotificationsBestEffort();
+                return successResult;
+              } catch {
+                // Fall through to live diagnostic below
+              }
+            }
+          }
+        }
+      }
+    }
+
     try {
       const latestSnap = await getDocFromServer(eventRef);
       if (latestSnap.exists()) {
@@ -3201,12 +3449,21 @@ async function commitSingleParticipantRegistration(params: {
               : 'Inscriptions clôturées : séance annulée.'
           );
         }
-        if (latestEval.state === 'closed' && !params.bypassCutoffAsCoach) {
+        if (
+          (latestEval.state === 'closed' ||
+            ((latestEvent.bookingCutoffMinutes ?? 0) > 0 &&
+              Date.now() + 90_000 >= latestEval.cutoffMs)) &&
+          !params.bypassCutoffAsCoach
+        ) {
           throw new Error(
             'Les inscriptions pour cette séance sont clôturées.'
           );
         }
-        if (latestEval.state === 'past' && !params.bypassCutoffAsCoach) {
+        if (
+          (latestEval.state === 'past' ||
+            Date.now() + 90_000 >= latestEval.startMs) &&
+          !params.bypassCutoffAsCoach
+        ) {
           throw new Error(
             'Les inscriptions sont fermées : cette séance a déjà commencé.'
           );
@@ -3237,7 +3494,7 @@ async function commitSingleParticipantRegistration(params: {
       }
     }
 
-    return formatPermissionDeniedError(error);
+    return formatPermissionDeniedError(error, 'commit_batch');
   }
 }
 
@@ -3276,6 +3533,12 @@ export async function registerEventWithGuests(params: {
   if (!currentUser || !currentUser.email || currentUser.isAnonymous) {
     throw new Error(
       'Veuillez vous connecter avec votre compte pour confirmer votre inscription.'
+    );
+  }
+  const signedInEmail = currentUser.email.trim().toLowerCase();
+  if (!params.bypassCutoffAsCoach && !params.skipSelf && email !== signedInEmail) {
+    throw new Error(
+      `L’adresse email saisie (${email}) doit correspondre à votre compte connecté (${signedInEmail}).`
     );
   }
 
@@ -3433,7 +3696,6 @@ export async function registerEventWithGuests(params: {
     }
   }
 
-  const signedInEmail = currentUser.email.trim().toLowerCase();
   const hostEmailKey =
     normalizedGuests.length > 0 ? await hashEmailKey(signedInEmail) : '';
   const hostDisplayName = `${firstName} ${lastName}`.trim().slice(0, 125);
@@ -3462,22 +3724,42 @@ export async function registerEventWithGuests(params: {
       }
     }
   } else if (normalizedGuests.length > 0 && !params.bypassCutoffAsCoach) {
-    const [invitedRegsSnap, hostPaySnap] = await Promise.all([
-      getDocsFromServer(
-        query(
-          collection(db, 'registrations'),
-          where('invitedByEmail', '==', signedInEmail)
-        )
-      ),
-      isPaidEvent
-        ? getDocsFromServer(
-            query(
-              collection(db, 'payments'),
-              where('payerEmail', '==', signedInEmail)
-            )
+    const fetchHostPrefetch = () =>
+      Promise.all([
+        getDocsFromServer(
+          query(
+            collection(db, 'registrations'),
+            where('invitedByEmail', '==', signedInEmail)
           )
-        : Promise.resolve(null),
-    ]);
+        ),
+        isPaidEvent
+          ? getDocsFromServer(
+              query(
+                collection(db, 'payments'),
+                where('payerEmail', '==', signedInEmail)
+              )
+            )
+          : Promise.resolve(null),
+      ]);
+
+    let invitedRegsSnap;
+    let hostPaySnap;
+    try {
+      [invitedRegsSnap, hostPaySnap] = await fetchHostPrefetch();
+    } catch (prefetchErr) {
+      if (isPermissionDeniedFirestoreError(prefetchErr)) {
+        try {
+          await currentUser.getIdToken(true);
+          [invitedRegsSnap, hostPaySnap] = await fetchHostPrefetch();
+        } catch {
+          throw new Error(
+            'Impossible de vérifier vos invités pour le moment (autorisation refusée). Reconnectez-vous et réessayez.'
+          );
+        }
+      } else {
+        throw prefetchErr;
+      }
+    }
 
     prefetchedHostInvitedRegs = invitedRegsSnap.docs.map((d) => ({
       id: d.id,

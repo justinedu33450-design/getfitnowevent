@@ -3,7 +3,6 @@ import {
   EmailAuthProvider,
   linkWithCredential,
   reauthenticateWithCredential,
-  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   updatePassword,
@@ -92,11 +91,6 @@ export async function registerWithEmailPassword(params: {
       params.password
     );
     await updateProfile(cred.user, { displayName: cleanName });
-    try {
-      await sendEmailVerification(cred.user);
-    } catch {
-      // Non-blocking: user can also resend verification from the gate if needed
-    }
     return cred.user;
   } catch (error) {
     throw new Error(formatFirebaseAuthError(error));

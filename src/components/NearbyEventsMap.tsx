@@ -297,7 +297,8 @@ export function NearbyEventsMap({
 
     if (isAppleMobileDevice()) {
       // On iOS Safari / standalone PWA, un-gestured getCurrentPosition on mount is blocked by WebKit;
-      // center via approximate network location right away and keep GPS / manual selection ready in 1 tap.
+      // only pre-center via approximate IP if at least one known event is nearby (carrier 4G/5G IP
+      // frequently resolves to another city like Paris and would hide all local events).
       const requestSeq = ++geoRequestSeqRef.current;
       setLocating(true);
       void fetchApproximateNetworkLocation().then((approx) => {
@@ -306,15 +307,29 @@ export function NearbyEventsMap({
         }
         setLocating(false);
         if (approx) {
-          setSearchCenter({
-            lat: approx.coords.lat,
-            lng: approx.coords.lng,
-            label: approx.city
-              ? `Position approximative (${approx.city})`
-              : 'Position approximative (réseau)',
-            source: 'network',
-          });
-          setRecenterNonce((n) => n + 1);
+          const locatedEvents = events.filter((ev) => ev.hasCoords);
+          const hasNearbyKnownEvent =
+            locatedEvents.length === 0 ||
+            locatedEvents.some(
+              (ev) =>
+                calculateDistanceKm(approx.coords, {
+                  lat: ev.lat,
+                  lng: ev.lng,
+                }) <= radiusKm
+            );
+          if (hasNearbyKnownEvent) {
+            setSearchCenter({
+              lat: approx.coords.lat,
+              lng: approx.coords.lng,
+              label: approx.city
+                ? `Position approximative (${approx.city})`
+                : 'Position approximative (réseau)',
+              source: 'network',
+            });
+            setRecenterNonce((n) => n + 1);
+          } else {
+            setShowManualPicker(true);
+          }
         } else {
           setShowManualPicker(true);
         }
@@ -805,17 +820,58 @@ export function NearbyEventsMap({
                 Essayez d’élargir le rayon de recherche ou de modifier vos filtres de discipline et de période.
               </p>
             )}
-            {suggestedLargerRadius && (
+            {searchCenter?.source === 'network' && (
+              <p className="mt-2 text-xs text-amber-800 dark:text-amber-300">
+                La localisation réseau sur mobile peut indiquer une ville distante. Activez le GPS ou choisissez une ville disponible ci-dessous.
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setRadiusKm(suggestedLargerRadius);
-                  setRecenterNonce((n) => n + 1);
-                }}
-                className="mt-4 inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                onClick={requestDeviceLocation}
+                disabled={locating}
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer touch-manipulation"
               >
-                Élargir le rayon à {suggestedLargerRadius} km
+                <LocateFixed className="h-3.5 w-3.5" aria-hidden="true" />
+                Me localiser (GPS)
               </button>
+              {suggestedLargerRadius && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRadiusKm(suggestedLargerRadius);
+                    setRecenterNonce((n) => n + 1);
+                  }}
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer touch-manipulation"
+                >
+                  Élargir le rayon à {suggestedLargerRadius} km
+                </button>
+              )}
+              {searchCenter && (
+                <button
+                  type="button"
+                  onClick={handleClearLocation}
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer touch-manipulation"
+                >
+                  Voir toutes les séances
+                </button>
+              )}
+            </div>
+            {quickStartCities.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+                {quickStartCities.map((item) => (
+                  <button
+                    key={item.city}
+                    type="button"
+                    onClick={() => handleSelectQuickCity(item)}
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 cursor-pointer touch-manipulation"
+                  >
+                    <MapPin className="h-3 w-3 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                    <span>{item.city}</span>
+                    <span className="font-mono text-[10px] opacity-70">({item.count})</span>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         ) : (

@@ -40,9 +40,33 @@ export function validateLuhn(digits: string): boolean {
 }
 
 export function formatCardExpiryInput(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  const trimmed = value.trim();
+  const isoMatch = trimmed.match(/^(\d{4})\s*[/\-.]\s*(\d{1,2})$/);
+  if (isoMatch) {
+    const month = isoMatch[2].padStart(2, '0');
+    const year2 = isoMatch[1].slice(-2);
+    return `${month}/${year2}`;
+  }
+
+  const slashMatch = trimmed.match(/^(\d{1,2})\s*[/\-.]\s*(\d{0,4})$/);
+  if (slashMatch) {
+    const rawMonth = slashMatch[1];
+    const rawYear = slashMatch[2];
+    if (!rawYear) {
+      return rawMonth.length === 2 && trimmed.endsWith('/') ? `${rawMonth}/` : rawMonth;
+    }
+    const month = rawMonth.length === 1 ? rawMonth.padStart(2, '0') : rawMonth;
+    const year2 = rawYear.length === 4 ? rawYear.slice(-2) : rawYear.slice(0, 2);
+    return `${month}/${year2}`;
+  }
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length >= 6) {
+    return `${digits.slice(0, 2)}/${digits.slice(4, 6)}`;
+  }
+  const capped = digits.slice(0, 4);
+  if (capped.length <= 2) return capped;
+  return `${capped.slice(0, 2)}/${capped.slice(2)}`;
 }
 
 export function validateCardExpiry(value: string): boolean {
@@ -164,5 +188,5 @@ export function downloadPaymentReceipt(params: {
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 }

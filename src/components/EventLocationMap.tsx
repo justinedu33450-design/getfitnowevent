@@ -98,13 +98,19 @@ export function getExternalMapLinkProps(): {
   target?: '_blank';
   rel?: 'noopener noreferrer';
 } {
-  // On iPhone/iPad Safari & standalone PWA, navigating directly to https://maps.apple.com/
-  // invokes iOS Universal Links and opens the native Plans app without an intermediate sheet.
-  // Inside an embedded iframe, target="_blank" is required so the OS can intercept the URL.
+  // On iPhone/iPad Safari, Chrome iOS, and standalone Home Screen PWAs, native maps:// links
+  // must navigate without target="_blank" to avoid opening a blank browser tab.
+  // Inside an embedded iframe, https://maps.apple.com/ with target="_blank" is handed off cleanly.
   if (isAppleMobileDevice() && !isEmbeddedIframe()) {
     return {};
   }
   return { target: '_blank', rel: 'noopener noreferrer' };
+}
+
+function getApplePlansBaseUrl(): string {
+  // Using maps:// directly on iOS launches the native Apple Plans app instead of
+  // Apple Maps on the Web (maps.apple.com) or an in-app SFSafariViewController sheet in PWAs.
+  return isEmbeddedIframe() ? 'https://maps.apple.com/' : 'maps://';
 }
 
 export function buildGoogleMapsExternalUrl(
@@ -125,16 +131,17 @@ export function buildAppleMapsExternalUrl(
   coords?: { lat: number; lng: number } | null,
   label?: string
 ): string {
+  const baseUrl = getApplePlansBaseUrl();
   const displayLabel =
     label?.trim() || [location, city].filter(Boolean).join(', ');
   if (coords) {
     const qParam = displayLabel
       ? `&q=${encodeURIComponent(displayLabel)}`
       : '';
-    return `https://maps.apple.com/?ll=${coords.lat},${coords.lng}${qParam}`;
+    return `${baseUrl}?ll=${coords.lat},${coords.lng}${qParam}`;
   }
   const query = encodeURIComponent(displayLabel);
-  return `https://maps.apple.com/?q=${query}`;
+  return `${baseUrl}?q=${query}`;
 }
 
 export function buildMapsExternalUrl(
@@ -178,6 +185,7 @@ export function buildAppleMapsDirectionsUrl(params: {
   city: string;
 }): string {
   const { origin, originSource, dest, location, city } = params;
+  const baseUrl = getApplePlansBaseUrl();
   const hasReliableOrigin =
     Boolean(origin) &&
     (originSource === 'gps' || originSource === 'manual');
@@ -187,9 +195,9 @@ export function buildAppleMapsDirectionsUrl(params: {
 
   // When saddr is omitted, Apple Plans automatically routes from the iPhone's native GPS position
   if (hasReliableOrigin && origin) {
-    return `https://maps.apple.com/?saddr=${origin.lat},${origin.lng}&daddr=${daddr}&dirflg=d`;
+    return `${baseUrl}?saddr=${origin.lat},${origin.lng}&daddr=${daddr}&dirflg=d`;
   }
-  return `https://maps.apple.com/?daddr=${daddr}&dirflg=d`;
+  return `${baseUrl}?daddr=${daddr}&dirflg=d`;
 }
 
 export function buildMapsDirectionsUrl(params: {
@@ -257,14 +265,28 @@ function FallbackLocationCard({ event }: { event: SportEvent }) {
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
           </a>
           {isApple && (
-            <a
-              href={buildGoogleMapsExternalUrl(event.location, event.city, coords)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-[38px] items-center justify-center rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-500 underline underline-offset-2 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 touch-manipulation"
-            >
-              Google Maps
-            </a>
+            <>
+              <a
+                href={buildAppleMapsDirectionsUrl({
+                  dest: coords,
+                  location: event.location,
+                  city: event.city,
+                })}
+                {...linkProps}
+                className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 shrink-0 touch-manipulation"
+              >
+                Itinéraire Plans
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              </a>
+              <a
+                href={buildGoogleMapsExternalUrl(event.location, event.city, coords)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[38px] items-center justify-center rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-500 underline underline-offset-2 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 touch-manipulation"
+              >
+                Google Maps
+              </a>
+            </>
           )}
         </div>
       </div>
@@ -307,9 +329,20 @@ function GoogleEventLocationMapInner({
     setResolvedPos(null);
     setLookupCompleted(false);
     setResolving(true);
-
-    if (!placesLib) return;
     let cancelled = false;
+
+    if (!placesLib) {
+      const waitTimer = window.setTimeout(() => {
+        if (!cancelled) {
+          setResolving(false);
+          setLookupCompleted(true);
+        }
+      }, 5000);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(waitTimer);
+      };
+    }
 
     const primaryQuery = [event.location, event.city, event.region]
       .filter(Boolean)
@@ -392,7 +425,7 @@ function GoogleEventLocationMapInner({
             defaultCenter={resolvedPos}
             defaultZoom={15}
             colorScheme={isDark ? 'DARK' : 'LIGHT'}
-            gestureHandling="cooperative"
+            gestureHandling="greedy"
             disableDefaultUI={false}
             streetViewControl={false}
             mapTypeControl={false}
@@ -447,6 +480,21 @@ function GoogleEventLocationMapInner({
           {event.location} · {event.city}
         </span>
         <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {isAppleMobileDevice() && (
+            <a
+              href={buildAppleMapsExternalUrl(
+                event.location,
+                event.city,
+                resolvedPos,
+                event.title
+              )}
+              {...getExternalMapLinkProps()}
+              className="inline-flex min-h-[32px] items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white shrink-0 touch-manipulation"
+            >
+              Ouvrir dans Plans
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
+          )}
           <a
             href={buildMapsDirectionsUrl({
               dest: resolvedPos,
@@ -454,9 +502,9 @@ function GoogleEventLocationMapInner({
               city: event.city,
             })}
             {...getExternalMapLinkProps()}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 shrink-0 touch-manipulation"
+            className="inline-flex min-h-[32px] items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 shrink-0 touch-manipulation"
           >
-            {isAppleMobileDevice() ? 'Itinéraire dans Plans' : 'Itinéraire Google Maps'}
+            {isAppleMobileDevice() ? 'Itinéraire Plans' : 'Itinéraire Google Maps'}
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
           </a>
           {isAppleMobileDevice() && (

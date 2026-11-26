@@ -20,6 +20,15 @@ export function isAppleMobileDevice(): boolean {
   );
 }
 
+export function isStandaloneApplePwa(): boolean {
+  if (typeof window === 'undefined' || !isAppleMobileDevice()) return false;
+  const nav = navigator as Navigator & { standalone?: boolean };
+  return (
+    nav.standalone === true ||
+    window.matchMedia?.('(display-mode: standalone)').matches === true
+  );
+}
+
 export function isAndroidDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
   return /Android/i.test(navigator.userAgent || '');
@@ -130,7 +139,7 @@ export function requestGeolocationSynchronously(options?: {
           message:
             'La localisation de votre appareil a expiré. Réessayez ou choisissez un point de départ.',
         });
-      }, 7500);
+      }, 10000);
 
       try {
         watchId = navigator.geolocation.watchPosition(
@@ -156,7 +165,7 @@ export function requestGeolocationSynchronously(options?: {
           },
           {
             enableHighAccuracy: false,
-            timeout: 7000,
+            timeout: 9000,
             maximumAge: 180000,
           }
         );
@@ -180,11 +189,11 @@ export function requestGeolocationSynchronously(options?: {
       watchdogId = window.setTimeout(() => {
         if (settled) return;
         if (fallbackHighAccuracy !== null) {
-          runAttempt(fallbackHighAccuracy, 6500, 120000, null);
+          runAttempt(fallbackHighAccuracy, 8000, 120000, null);
         } else {
           startWatchRecovery();
         }
-      }, timeoutMs + 1500);
+      }, timeoutMs + 2500);
 
       try {
         navigator.geolocation.getCurrentPosition(
@@ -232,10 +241,10 @@ export function requestGeolocationSynchronously(options?: {
 
     // Call navigator.geolocation.getCurrentPosition synchronously on the first tick!
     if (highAccuracyFirst) {
-      runAttempt(true, 6000, 60000, false);
+      runAttempt(true, 10000, 60000, false);
     } else {
-      // On iOS, Wi-Fi/CoreLocation network mode responds immediately indoors, with GPS & watch recovery outdoors
-      runAttempt(false, 6000, 180000, true);
+      // On iOS, Wi-Fi/CoreLocation network mode responds indoors; allow enough time for iOS permission prompt
+      runAttempt(false, 14000, 180000, true);
     }
   });
 
