@@ -86,7 +86,20 @@ service cloud.firestore {
 
     function hasCapacityForBooking(eventData) {
       return (eventData.get('isUnlimitedCapacity', false) == true) ||
-        (eventData.registeredCount < eventData.maxCapacity);
+        (
+          eventData.registeredCount is int &&
+          eventData.maxCapacity is int &&
+          eventData.registeredCount < eventData.maxCapacity
+        );
+    }
+
+    function getBookingCutoffMinutes(eventData) {
+      return ('bookingCutoffMinutes' in eventData &&
+        eventData.bookingCutoffMinutes is int &&
+        eventData.bookingCutoffMinutes >= 0 &&
+        eventData.bookingCutoffMinutes <= 10080)
+        ? eventData.bookingCutoffMinutes
+        : 0;
     }
 
     // -------------------------------------------------------------------------
@@ -254,7 +267,7 @@ service cloud.firestore {
     }
 
     function isValidRegistrationPaymentForEvent(regData, eventData, regId) {
-      return (eventData.get('isPaid', false) == false || eventData.get('priceCents', 0) == 0)
+      return (eventData.get('isPaid', false) != true || !(eventData.get('priceCents', 0) is int) || eventData.get('priceCents', 0) < 100)
         ? (
             regData.get('amountCents', 0) == 0 &&
             regData.get('paymentStatus', 'free') == 'free' &&
@@ -296,7 +309,7 @@ service cloud.firestore {
         isValidRegistrationPaymentForEvent(regIncoming, eventBefore, regId) &&
         (
           canBypassCutoffForRegistration(regIncoming) ||
-          request.time < eventBefore.startAt - duration.value(eventBefore.get('bookingCutoffMinutes', 0), 'm')
+          request.time < eventBefore.startAt - duration.value(getBookingCutoffMinutes(eventBefore), 'm')
         );
     }
 
@@ -604,9 +617,10 @@ service cloud.firestore {
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time;
 
-      allow update: if isValidId(eventId) && isValidEvent(incoming()) && (
+      allow update: if isValidId(eventId) && (
         (
           isAdmin() &&
+          isValidEvent(incoming()) &&
           incoming().createdBy == existing().createdBy &&
           incoming().createdAt == existing().createdAt &&
           incoming().updatedAt == request.time
@@ -615,12 +629,20 @@ service cloud.firestore {
           hasAuthenticatedEmail() &&
           existing().status == 'published' &&
           incoming().diff(existing()).affectedKeys().hasOnly(['registeredCount', 'lastRegId', 'updatedAt']) &&
+          incoming().registeredCount is int &&
+          existing().registeredCount is int &&
+          existing().registeredCount >= 0 &&
           incoming().registeredCount == existing().registeredCount + 1 &&
           hasCapacityForBooking(existing()) &&
+          (
+            existing().get('isUnlimitedCapacity', false) == true
+              ? incoming().registeredCount <= 10000
+              : (existing().maxCapacity is int && incoming().registeredCount <= existing().maxCapacity)
+          ) &&
           isValidId(incoming().lastRegId) &&
           incoming().updatedAt == request.time &&
           (
-            request.time < existing().startAt - duration.value(existing().get('bookingCutoffMinutes', 0), 'm') ||
+            request.time < existing().startAt - duration.value(getBookingCutoffMinutes(existing()), 'm') ||
             isCoachAdmin() ||
             (
               isCoach() &&
@@ -645,8 +667,10 @@ service cloud.firestore {
         (
           hasAuthenticatedEmail() &&
           existing().status == 'published' &&
+          existing().registeredCount is int &&
           existing().registeredCount >= 1 &&
           incoming().diff(existing()).affectedKeys().hasOnly(['registeredCount', 'lastRegId', 'updatedAt']) &&
+          incoming().registeredCount is int &&
           incoming().registeredCount == existing().registeredCount - 1 &&
           isValidId(incoming().lastRegId) &&
           incoming().updatedAt == request.time &&
@@ -662,7 +686,10 @@ service cloud.firestore {
           hasAuthenticatedEmail() &&
           existing().status == 'published' &&
           incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'lastLikeId', 'updatedAt']) &&
-          incoming().likesCount == existing().get('likesCount', 0) + 1 &&
+          incoming().likesCount is int &&
+          incoming().likesCount >= 1 &&
+          incoming().likesCount <= 100000 &&
+          incoming().likesCount == (existing().get('likesCount', 0) is int ? existing().get('likesCount', 0) : 0) + 1 &&
           isValidId(incoming().lastLikeId) &&
           incoming().lastLikeId == eventId + '__' + request.auth.uid &&
           incoming().updatedAt == request.time &&
@@ -672,8 +699,11 @@ service cloud.firestore {
         (
           hasAuthenticatedEmail() &&
           existing().status == 'published' &&
+          existing().get('likesCount', 0) is int &&
           existing().get('likesCount', 0) >= 1 &&
           incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'lastLikeId', 'updatedAt']) &&
+          incoming().likesCount is int &&
+          incoming().likesCount >= 0 &&
           incoming().likesCount == existing().get('likesCount', 0) - 1 &&
           isValidId(incoming().lastLikeId) &&
           incoming().lastLikeId == eventId + '__' + request.auth.uid &&

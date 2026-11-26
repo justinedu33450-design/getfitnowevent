@@ -26,6 +26,17 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       }
     });
   } else {
+    let activeRegistration: ServiceWorkerRegistration | undefined;
+    let lastUpdateCheckAt = 0;
+
+    const triggerSwUpdateCheck = () => {
+      if (!activeRegistration) return;
+      const now = Date.now();
+      if (now - lastUpdateCheckAt < 30_000) return;
+      lastUpdateCheckAt = now;
+      void activeRegistration.update().catch(() => undefined);
+    };
+
     const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {
@@ -33,22 +44,35 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       },
       onRegisteredSW(_swUrl, registration) {
         if (registration) {
+          activeRegistration = registration;
+          lastUpdateCheckAt = Date.now();
           void registration.update().catch(() => undefined);
         }
       },
     });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        triggerSwUpdateCheck();
+      }
+    });
+    window.addEventListener('pageshow', () => {
+      triggerSwUpdateCheck();
+    });
+
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (refreshing) return;
       refreshing = true;
       try {
         const key = 'gfn-sw-reloaded';
-        if (!window.sessionStorage.getItem(key)) {
-          window.sessionStorage.setItem(key, '1');
+        const lastReload = Number(window.sessionStorage.getItem(key) || '0');
+        if (!lastReload || Date.now() - lastReload > 10_000) {
+          window.sessionStorage.setItem(key, String(Date.now()));
           window.location.reload();
         }
       } catch {
-        // Ignore storage errors
+        window.location.reload();
       }
     });
   }

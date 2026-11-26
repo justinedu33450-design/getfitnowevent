@@ -11,7 +11,7 @@ import {
   useMap,
   useMapsLibrary,
 } from '@vis.gl/react-google-maps';
-import { ExternalLink, MapPin } from 'lucide-react';
+import { ExternalLink, MapPin, RefreshCw } from 'lucide-react';
 import { DisciplineItem, SportEvent } from '../types';
 import {
   evaluateEventBooking,
@@ -21,10 +21,7 @@ import {
   formatFrenchTime,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
-import {
-  isAppleMobileDevice,
-  isEmbeddedIframe,
-} from '../utils/deviceGeolocation';
+import { forceRefreshAppCache } from '../utils/pwaRefresh';
 import { DisciplineIcon } from './DisciplineIcon';
 
 export const MAPS_ATTRIBUTION_IDS = ['gmp_mcp_codeassist_v1_aistudio'];
@@ -94,26 +91,7 @@ export function isQuotaError(err: unknown): boolean {
   );
 }
 
-export function getExternalMapLinkProps(): {
-  target?: '_blank';
-  rel?: 'noopener noreferrer';
-} {
-  // On iPhone/iPad Safari, Chrome iOS, and standalone Home Screen PWAs, native maps:// links
-  // must navigate without target="_blank" to avoid opening a blank browser tab.
-  // Inside an embedded iframe, https://maps.apple.com/ with target="_blank" is handed off cleanly.
-  if (isAppleMobileDevice() && !isEmbeddedIframe()) {
-    return {};
-  }
-  return { target: '_blank', rel: 'noopener noreferrer' };
-}
-
-function getApplePlansBaseUrl(): string {
-  // Using maps:// directly on iOS launches the native Apple Plans app instead of
-  // Apple Maps on the Web (maps.apple.com) or an in-app SFSafariViewController sheet in PWAs.
-  return isEmbeddedIframe() ? 'https://maps.apple.com/' : 'maps://';
-}
-
-export function buildGoogleMapsExternalUrl(
+export function buildMapsExternalUrl(
   location: string,
   city: string,
   coords?: { lat: number; lng: number } | null
@@ -123,94 +101,6 @@ export function buildGoogleMapsExternalUrl(
   }
   const query = encodeURIComponent([location, city].filter(Boolean).join(', '));
   return `https://www.google.com/maps/search/?api=1&query=${query}`;
-}
-
-export function buildAppleMapsExternalUrl(
-  location: string,
-  city: string,
-  coords?: { lat: number; lng: number } | null,
-  label?: string
-): string {
-  const baseUrl = getApplePlansBaseUrl();
-  const displayLabel =
-    label?.trim() || [location, city].filter(Boolean).join(', ');
-  if (coords) {
-    const qParam = displayLabel
-      ? `&q=${encodeURIComponent(displayLabel)}`
-      : '';
-    return `${baseUrl}?ll=${coords.lat},${coords.lng}${qParam}`;
-  }
-  const query = encodeURIComponent(displayLabel);
-  return `${baseUrl}?q=${query}`;
-}
-
-export function buildMapsExternalUrl(
-  location: string,
-  city: string,
-  coords?: { lat: number; lng: number } | null,
-  label?: string
-): string {
-  if (isAppleMobileDevice()) {
-    return buildAppleMapsExternalUrl(location, city, coords, label);
-  }
-  return buildGoogleMapsExternalUrl(location, city, coords);
-}
-
-export function buildGoogleMapsDirectionsUrl(params: {
-  origin?: { lat: number; lng: number } | null;
-  originSource?: 'gps' | 'network' | 'manual';
-  dest?: { lat: number; lng: number } | null;
-  location: string;
-  city: string;
-}): string {
-  const { origin, originSource, dest, location, city } = params;
-  const hasReliableOrigin =
-    Boolean(origin) &&
-    (originSource === 'gps' || originSource === 'manual');
-  const destinationParam = dest
-    ? `${dest.lat},${dest.lng}`
-    : encodeURIComponent([location, city].filter(Boolean).join(', '));
-
-  if (hasReliableOrigin && origin) {
-    return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destinationParam}&travelmode=driving`;
-  }
-  return `https://www.google.com/maps/dir/?api=1&destination=${destinationParam}&travelmode=driving`;
-}
-
-export function buildAppleMapsDirectionsUrl(params: {
-  origin?: { lat: number; lng: number } | null;
-  originSource?: 'gps' | 'network' | 'manual';
-  dest?: { lat: number; lng: number } | null;
-  location: string;
-  city: string;
-}): string {
-  const { origin, originSource, dest, location, city } = params;
-  const baseUrl = getApplePlansBaseUrl();
-  const hasReliableOrigin =
-    Boolean(origin) &&
-    (originSource === 'gps' || originSource === 'manual');
-  const daddr = dest
-    ? `${dest.lat},${dest.lng}`
-    : encodeURIComponent([location, city].filter(Boolean).join(', '));
-
-  // When saddr is omitted, Apple Plans automatically routes from the iPhone's native GPS position
-  if (hasReliableOrigin && origin) {
-    return `${baseUrl}?saddr=${origin.lat},${origin.lng}&daddr=${daddr}&dirflg=d`;
-  }
-  return `${baseUrl}?daddr=${daddr}&dirflg=d`;
-}
-
-export function buildMapsDirectionsUrl(params: {
-  origin?: { lat: number; lng: number } | null;
-  originSource?: 'gps' | 'network' | 'manual';
-  dest?: { lat: number; lng: number } | null;
-  location: string;
-  city: string;
-}): string {
-  if (isAppleMobileDevice()) {
-    return buildAppleMapsDirectionsUrl(params);
-  }
-  return buildGoogleMapsDirectionsUrl(params);
 }
 
 interface EventLocationMapProps {
@@ -235,8 +125,6 @@ export function EventLocationMap({
 
 function FallbackLocationCard({ event }: { event: SportEvent }) {
   const coords = event.hasCoords ? { lat: event.lat, lng: event.lng } : null;
-  const isApple = isAppleMobileDevice();
-  const linkProps = getExternalMapLinkProps();
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -255,40 +143,15 @@ function FallbackLocationCard({ event }: { event: SportEvent }) {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <a
-            href={buildMapsExternalUrl(event.location, event.city, coords, event.title)}
-            {...linkProps}
-            className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 shrink-0 touch-manipulation"
-          >
-            {isApple ? 'Ouvrir dans Plans' : 'Ouvrir sur Google Maps'}
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-          </a>
-          {isApple && (
-            <>
-              <a
-                href={buildAppleMapsDirectionsUrl({
-                  dest: coords,
-                  location: event.location,
-                  city: event.city,
-                })}
-                {...linkProps}
-                className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 shrink-0 touch-manipulation"
-              >
-                Itinéraire Plans
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-              </a>
-              <a
-                href={buildGoogleMapsExternalUrl(event.location, event.city, coords)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-[38px] items-center justify-center rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-500 underline underline-offset-2 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 touch-manipulation"
-              >
-                Google Maps
-              </a>
-            </>
-          )}
-        </div>
+        <a
+          href={buildMapsExternalUrl(event.location, event.city, coords)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 shrink-0"
+        >
+          Ouvrir sur Google Maps
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+        </a>
       </div>
     </div>
   );
@@ -329,20 +192,9 @@ function GoogleEventLocationMapInner({
     setResolvedPos(null);
     setLookupCompleted(false);
     setResolving(true);
-    let cancelled = false;
 
-    if (!placesLib) {
-      const waitTimer = window.setTimeout(() => {
-        if (!cancelled) {
-          setResolving(false);
-          setLookupCompleted(true);
-        }
-      }, 5000);
-      return () => {
-        cancelled = true;
-        window.clearTimeout(waitTimer);
-      };
-    }
+    if (!placesLib) return;
+    let cancelled = false;
 
     const primaryQuery = [event.location, event.city, event.region]
       .filter(Boolean)
@@ -425,7 +277,7 @@ function GoogleEventLocationMapInner({
             defaultCenter={resolvedPos}
             defaultZoom={15}
             colorScheme={isDark ? 'DARK' : 'LIGHT'}
-            gestureHandling="greedy"
+            gestureHandling="cooperative"
             disableDefaultUI={false}
             streetViewControl={false}
             mapTypeControl={false}
@@ -479,49 +331,15 @@ function GoogleEventLocationMapInner({
         <span className="text-xs text-slate-600 dark:text-slate-300 truncate">
           {event.location} · {event.city}
         </span>
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          {isAppleMobileDevice() && (
-            <a
-              href={buildAppleMapsExternalUrl(
-                event.location,
-                event.city,
-                resolvedPos,
-                event.title
-              )}
-              {...getExternalMapLinkProps()}
-              className="inline-flex min-h-[32px] items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white shrink-0 touch-manipulation"
-            >
-              Ouvrir dans Plans
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            </a>
-          )}
-          <a
-            href={buildMapsDirectionsUrl({
-              dest: resolvedPos,
-              location: event.location,
-              city: event.city,
-            })}
-            {...getExternalMapLinkProps()}
-            className="inline-flex min-h-[32px] items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 shrink-0 touch-manipulation"
-          >
-            {isAppleMobileDevice() ? 'Itinéraire Plans' : 'Itinéraire Google Maps'}
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-          </a>
-          {isAppleMobileDevice() && (
-            <a
-              href={buildGoogleMapsDirectionsUrl({
-                dest: resolvedPos,
-                location: event.location,
-                city: event.city,
-              })}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-medium text-slate-500 underline underline-offset-2 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 shrink-0 touch-manipulation"
-            >
-              Google Maps
-            </a>
-          )}
-        </div>
+        <a
+          href={buildMapsExternalUrl(event.location, event.city, resolvedPos)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 shrink-0"
+        >
+          Itinéraire Google Maps
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+        </a>
       </div>
     </div>
   );
@@ -544,9 +362,10 @@ export function EventsOverviewMap({
 }: EventsOverviewMapProps) {
   if (!hasMapsApiKey) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-        La carte interactive s’affichera automatiquement dès que la clé Google Maps sera configurée.
-      </div>
+      <EventsOverviewFallbackCard
+        events={events}
+        onSelectEvent={onSelectEvent}
+      />
     );
   }
 
@@ -557,6 +376,84 @@ export function EventsOverviewMap({
       heightClass={heightClass}
       onSelectEvent={onSelectEvent}
     />
+  );
+}
+
+function EventsOverviewFallbackCard({
+  events,
+  onSelectEvent,
+  subtitle = 'L’aperçu carte interactive n’est pas disponible dans cette session (lien sans clé Google Maps ou version en cache sur mobile/iOS).',
+}: {
+  events: SportEvent[];
+  onSelectEvent: (event: SportEvent) => void;
+  subtitle?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+            Aperçu carte indisponible pour cette session
+          </p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">
+            {subtitle}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void forceRefreshAppCache()}
+          className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+        >
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+          Actualiser l’application
+        </button>
+      </div>
+
+      {events.length > 0 && (
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {events.slice(0, 6).map((ev) => {
+            const coords = ev.hasCoords ? { lat: ev.lat, lng: ev.lng } : null;
+            const start = ev.startAt.toDate();
+            return (
+              <div
+                key={ev.id}
+                className="flex flex-col justify-between gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/50"
+              >
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {ev.title}
+                  </p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                    {formatFrenchDateShort(start)} · {formatFrenchTime(start)} · {ev.city}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {ev.location}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onSelectEvent(ev)}
+                    className="inline-flex min-h-[34px] flex-1 items-center justify-center rounded-md bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                  >
+                    Voir &amp; réserver
+                  </button>
+                  <a
+                    href={buildMapsExternalUrl(ev.location, ev.city, coords)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-[34px] items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Itinéraire
+                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -666,9 +563,11 @@ function EventsOverviewMapInner({
     status === APILoadingStatus.AUTH_FAILURE
   ) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-        Impossible de charger la carte Google Maps pour le moment. Utilisez la vue liste pour consulter et réserver vos séances.
-      </div>
+      <EventsOverviewFallbackCard
+        events={events}
+        onSelectEvent={onSelectEvent}
+        subtitle="Impossible de charger la carte Google Maps pour le moment. Vous pouvez actualiser l’application ou accéder directement aux séances ci-dessous."
+      />
     );
   }
 
