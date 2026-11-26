@@ -1,10 +1,13 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   Check,
+  CheckCircle2,
   CreditCard,
   Download,
+  Loader2,
   MessageSquare,
   RotateCcw,
+  Search,
   Star,
   Trash2,
   UserPlus,
@@ -73,11 +76,14 @@ export function EventRosterDrawer({
 }: EventRosterDrawerProps) {
   const [drawerTab, setDrawerTab] = useState<'roster' | 'reviews'>(initialTab);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [memberSearch, setMemberSearch] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [markPaidAsCoach, setMarkPaidAsCoach] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [quickAddingEmail, setQuickAddingEmail] = useState<string | null>(null);
+  const [quickAddSuccessMsg, setQuickAddSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [paymentActionError, setPaymentActionError] = useState<string | null>(null);
   const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
@@ -138,6 +144,76 @@ export function EventRosterDrawer({
     };
   };
 
+  const confirmedEmailSet = useMemo(() => {
+    const set = new Set<string>();
+    eventRegistrations.forEach((r) => {
+      if (r.email?.trim()) set.add(r.email.trim().toLowerCase());
+    });
+    return set;
+  }, [eventRegistrations]);
+
+  const memberPickerCandidates = useMemo(() => {
+    const byEmail = new Map<
+      string,
+      {
+        email: string;
+        emailLower: string;
+        firstName: string;
+        lastName: string;
+        fitnessLevelLabel: string;
+      }
+    >();
+
+    memberProfiles.forEach((profile) => {
+      const cleanEmail = (profile.email || '').trim();
+      const emailLower = cleanEmail.toLowerCase();
+      if (!cleanEmail || !emailLower || coachEmailSet.has(emailLower)) return;
+      byEmail.set(emailLower, {
+        email: cleanEmail,
+        emailLower,
+        firstName: (profile.firstName || '').trim(),
+        lastName: (profile.lastName || '').trim(),
+        fitnessLevelLabel: formatFitnessLevelLabel(profile.fitnessLevel, true),
+      });
+    });
+
+    registrations.forEach((reg) => {
+      if (reg.status !== 'confirmed' || reg.isGuest) return;
+      const cleanEmail = (reg.email || '').trim();
+      const emailLower = cleanEmail.toLowerCase();
+      if (
+        !cleanEmail ||
+        !emailLower ||
+        coachEmailSet.has(emailLower) ||
+        byEmail.has(emailLower)
+      ) {
+        return;
+      }
+      byEmail.set(emailLower, {
+        email: cleanEmail,
+        emailLower,
+        firstName: (reg.firstName || '').trim(),
+        lastName: (reg.lastName || '').trim(),
+        fitnessLevelLabel: '',
+      });
+    });
+
+    return Array.from(byEmail.values()).sort((a, b) => {
+      const lastCmp = a.lastName.localeCompare(b.lastName, 'fr');
+      if (lastCmp !== 0) return lastCmp;
+      return a.firstName.localeCompare(b.firstName, 'fr');
+    });
+  }, [memberProfiles, registrations, coachEmailSet]);
+
+  const filteredMemberCandidates = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase();
+    if (!q) return memberPickerCandidates;
+    return memberPickerCandidates.filter((m) => {
+      const full = `${m.firstName} ${m.lastName} ${m.lastName} ${m.firstName} ${m.email}`.toLowerCase();
+      return full.includes(q);
+    });
+  }, [memberPickerCandidates, memberSearch]);
+
   const presentCount = eventRegistrations.filter((r) => r.attended).length;
 
   const financialSummary = useMemo(() => {
@@ -158,9 +234,46 @@ export function EventRosterDrawer({
     return { collectedCents, pendingCents, refundedCents };
   }, [eventRegistrations]);
 
+  const handleQuickRegisterMember = async (candidate: {
+    email: string;
+    emailLower: string;
+    firstName: string;
+    lastName: string;
+  }) => {
+    if (isFull || confirmedEmailSet.has(candidate.emailLower)) return;
+    setErrorMsg(null);
+    setQuickAddSuccessMsg(null);
+    setQuickAddingEmail(candidate.emailLower);
+    try {
+      const safeFirst =
+        candidate.firstName || candidate.email.split('@')[0] || 'Adhérent';
+      const safeLast = candidate.lastName || 'GetFitNow';
+      await registerForEvent({
+        event,
+        firstName: safeFirst,
+        lastName: safeLast,
+        email: candidate.email,
+        bypassCutoffAsCoach: true,
+        payment: isPaidEvent
+          ? { method: 'onsite', markPaidAsCoach }
+          : { method: 'free' },
+      });
+      setQuickAddSuccessMsg(
+        `${safeFirst} ${safeLast} a été inscrit(e) à la séance.`
+      );
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Impossible d’inscrire cet adhérent.'
+      );
+    } finally {
+      setQuickAddingEmail(null);
+    }
+  };
+
   const handleManualAdd = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setQuickAddSuccessMsg(null);
     setAdding(true);
     try {
       await registerForEvent({
@@ -420,8 +533,17 @@ export function EventRosterDrawer({
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60 sm:px-6">
             <button
               type="button"
-              onClick={() => setShowAddForm((prev) => !prev)}
-              disabled={isFull}
+              aria-expanded={showAddForm}
+              onClick={() => {
+                setErrorMsg(null);
+                setQuickAddSuccessMsg(null);
+                setShowAddForm((prev) => {
+                  const next = !prev;
+                  if (next) setMemberSearch('');
+                  return next;
+                });
+              }}
+              disabled={isFull && !showAddForm}
               className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-50 cursor-pointer"
             >
               <UserPlus className="h-4 w-4" aria-hidden="true" />
@@ -440,43 +562,21 @@ export function EventRosterDrawer({
           </div>
         )}
 
-        {/* Manual Add Form */}
+        {/* Add Participant Form (Adhérents Picker + Manual Fallback) */}
         {drawerTab === 'roster' && showAddForm && (
           <form
             onSubmit={handleManualAdd}
-            className="space-y-3 border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40 sm:p-6"
+            className="max-h-[58dvh] shrink-0 space-y-3.5 overflow-y-auto border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40 sm:p-6"
           >
-            <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
-              Ajout manuel par l’animateur (si la séance est maintenue)
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <input
-                type="text"
-                required
-                placeholder="Prénom"
-                maxLength={VALIDATION_LIMITS.FIRST_NAME_MAX}
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
-              />
-              <input
-                type="text"
-                required
-                placeholder="Nom"
-                maxLength={VALIDATION_LIMITS.LAST_NAME_MAX}
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
-              />
-              <input
-                type="email"
-                required
-                placeholder="Email"
-                maxLength={VALIDATION_LIMITS.EMAIL_MAX}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
-              />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                Inscrire un adhérent à la séance
+              </p>
+              {isFull && (
+                <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                  Séance complète
+                </span>
+              )}
             </div>
 
             {isPaidEvent && (
@@ -497,6 +597,165 @@ export function EventRosterDrawer({
               </label>
             )}
 
+            {/* Adhérents Directory Picker */}
+            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                  Liste des adhérents ({memberPickerCandidates.length})
+                </span>
+                {memberPickerCandidates.length > 0 && (
+                  <div className="relative w-full sm:w-56">
+                    <Search
+                      className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                      aria-hidden="true"
+                    />
+                    <input
+                      type="search"
+                      value={memberSearch}
+                      onChange={(e) => setMemberSearch(e.target.value)}
+                      placeholder="Rechercher un adhérent..."
+                      aria-label="Rechercher un adhérent"
+                      className="min-h-[36px] w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:text-xs"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {memberPickerCandidates.length === 0 ? (
+                <p className="py-2 text-xs text-slate-500 dark:text-slate-400">
+                  Aucun adhérent enregistré pour le moment. Utilisez la saisie manuelle ci-dessous.
+                </p>
+              ) : filteredMemberCandidates.length === 0 ? (
+                <p className="py-2 text-xs text-slate-500 dark:text-slate-400">
+                  Aucun adhérent ne correspond à « {memberSearch.trim()} ».
+                </p>
+              ) : (
+                <ul className="max-h-48 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-100 dark:divide-slate-800 dark:border-slate-800">
+                  {filteredMemberCandidates.map((candidate) => {
+                    const alreadyRegistered = confirmedEmailSet.has(
+                      candidate.emailLower
+                    );
+                    const isQuickAddingThis =
+                      quickAddingEmail === candidate.emailLower;
+                    const displayName =
+                      `${candidate.firstName} ${candidate.lastName}`.trim() ||
+                      candidate.email;
+                    return (
+                      <li
+                        key={candidate.emailLower}
+                        className="flex items-center justify-between gap-2.5 px-3 py-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (alreadyRegistered) return;
+                            setFirstName(candidate.firstName);
+                            setLastName(candidate.lastName);
+                            setEmail(candidate.email);
+                            setErrorMsg(null);
+                          }}
+                          className="min-w-0 flex-1 text-left cursor-pointer disabled:cursor-default"
+                          disabled={alreadyRegistered}
+                        >
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="truncate text-xs font-semibold text-slate-900 dark:text-white">
+                              {displayName}
+                            </span>
+                            {candidate.fitnessLevelLabel && (
+                              <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                {candidate.fitnessLevelLabel}
+                              </span>
+                            )}
+                          </div>
+                          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                            {candidate.email}
+                          </p>
+                        </button>
+
+                        {alreadyRegistered ? (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                            Déjà inscrit
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={
+                              isFull ||
+                              adding ||
+                              quickAddingEmail !== null
+                            }
+                            onClick={() => void handleQuickRegisterMember(candidate)}
+                            className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md bg-emerald-700 px-3 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                          >
+                            {isQuickAddingThis ? (
+                              <>
+                                <Loader2
+                                  className="h-3 w-3 animate-spin"
+                                  aria-hidden="true"
+                                />
+                                Ajout…
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="h-3 w-3" aria-hidden="true" />
+                                Inscrire
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {quickAddSuccessMsg && (
+              <p
+                role="status"
+                className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {quickAddSuccessMsg}
+              </p>
+            )}
+
+            <div className="space-y-2.5 pt-0.5">
+              <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                Ou saisir manuellement un participant
+              </p>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                <input
+                  type="text"
+                  required
+                  placeholder="Prénom"
+                  maxLength={VALIDATION_LIMITS.FIRST_NAME_MAX}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
+                />
+                <input
+                  type="text"
+                  required
+                  placeholder="Nom"
+                  maxLength={VALIDATION_LIMITS.LAST_NAME_MAX}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
+                />
+                <input
+                  type="email"
+                  required
+                  placeholder="Email"
+                  maxLength={VALIDATION_LIMITS.EMAIL_MAX}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
+                />
+              </div>
+            </div>
+
             {errorMsg && (
               <p className="text-xs font-medium text-rose-700 dark:text-rose-400">
                 {errorMsg}
@@ -505,14 +764,18 @@ export function EventRosterDrawer({
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowAddForm(false)}
+                onClick={() => {
+                  setShowAddForm(false);
+                  setErrorMsg(null);
+                  setQuickAddSuccessMsg(null);
+                }}
                 className="min-h-[40px] rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
               >
-                Annuler
+                Fermer
               </button>
               <button
                 type="submit"
-                disabled={adding}
+                disabled={adding || isFull || quickAddingEmail !== null}
                 className="min-h-[40px] rounded-lg bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
               >
                 {adding ? 'Ajout...' : 'Inscrire'}

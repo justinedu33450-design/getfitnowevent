@@ -77,7 +77,6 @@ import {
   getExternalMapLinkProps,
 } from './EventLocationMap';
 import { EmailPasswordAuthForm } from './EmailPasswordAuthForm';
-import { isAppleMobileDevice } from '../utils/deviceGeolocation';
 import {
   EventRatingInline,
   EventReviewsSection,
@@ -900,7 +899,7 @@ export function BookingModal({
                 {...getExternalMapLinkProps()}
                 className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-400 dark:hover:bg-slate-800 touch-manipulation"
               >
-                {isAppleMobileDevice() ? 'Plans' : 'Carte'}
+                Carte
                 <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             </div>

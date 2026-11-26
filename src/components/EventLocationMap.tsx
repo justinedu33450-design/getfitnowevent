@@ -21,6 +21,7 @@ import {
   formatFrenchTime,
 } from '../utils/dateAndValidation';
 import { getDisciplineStyle } from '../utils/disciplineColors';
+import { isStandaloneApplePwa } from '../utils/deviceGeolocation';
 import { forceRefreshAppCache } from '../utils/pwaRefresh';
 import { DisciplineIcon } from './DisciplineIcon';
 
@@ -91,16 +92,44 @@ export function isQuotaError(err: unknown): boolean {
   );
 }
 
+export function getExternalMapLinkProps(): {
+  target?: string;
+  rel?: string;
+} {
+  if (isStandaloneApplePwa()) {
+    return {};
+  }
+  return {
+    target: '_blank',
+    rel: 'noopener noreferrer',
+  };
+}
+
 export function buildMapsExternalUrl(
   location: string,
   city: string,
-  coords?: { lat: number; lng: number } | null
+  coords?: { lat: number; lng: number } | null,
+  _label?: string
 ): string {
   if (coords) {
     return `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`;
   }
   const query = encodeURIComponent([location, city].filter(Boolean).join(', '));
   return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
+export function buildMapsDirectionsUrl(params: {
+  origin?: { lat: number; lng: number } | null;
+  originSource?: 'gps' | 'network' | 'manual';
+  dest: { lat: number; lng: number };
+  location: string;
+  city: string;
+}): string {
+  const { origin, originSource, dest } = params;
+  if (origin && originSource !== 'network') {
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${dest.lat},${dest.lng}&travelmode=driving`;
+  }
+  return `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving`;
 }
 
 interface EventLocationMapProps {
@@ -144,9 +173,8 @@ function FallbackLocationCard({ event }: { event: SportEvent }) {
           </div>
         </div>
         <a
-          href={buildMapsExternalUrl(event.location, event.city, coords)}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={buildMapsExternalUrl(event.location, event.city, coords, event.title)}
+          {...getExternalMapLinkProps()}
           className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 shrink-0"
         >
           Ouvrir sur Google Maps
@@ -332,9 +360,8 @@ function GoogleEventLocationMapInner({
           {event.location} · {event.city}
         </span>
         <a
-          href={buildMapsExternalUrl(event.location, event.city, resolvedPos)}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={buildMapsExternalUrl(event.location, event.city, resolvedPos, event.title)}
+          {...getExternalMapLinkProps()}
           className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 shrink-0"
         >
           Itinéraire Google Maps
@@ -439,9 +466,8 @@ function EventsOverviewFallbackCard({
                     Voir &amp; réserver
                   </button>
                   <a
-                    href={buildMapsExternalUrl(ev.location, ev.city, coords)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={buildMapsExternalUrl(ev.location, ev.city, coords, ev.title)}
+                    {...getExternalMapLinkProps()}
                     className="inline-flex min-h-[34px] items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     Itinéraire
