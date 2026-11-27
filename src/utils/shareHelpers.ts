@@ -4,6 +4,8 @@ import {
   formatEventPrice,
   formatFrenchDateLong,
   formatTimeRange,
+  getEventDurationMinutes,
+  hasEventDuration,
 } from './dateAndValidation';
 
 export function buildEventShareUrl(eventId: string): string {
@@ -29,7 +31,8 @@ export function buildEventShareContent(event: SportEvent): {
 } {
   const startDate = event.startAt.toDate();
   const dateLabel = formatFrenchDateLong(startDate);
-  const timeLabel = formatTimeRange(startDate, event.durationMinutes);
+  const durationMin = getEventDurationMinutes(event);
+  const timeLabel = formatTimeRange(startDate, durationMin);
   const priceLabel = formatEventPrice(event);
   const coachLabel = formatEventCoachesLabel(event);
   const placeLabel = [event.location, event.city, event.region]
@@ -41,7 +44,9 @@ export function buildEventShareContent(event: SportEvent): {
   const summary = `${event.title} · ${event.discipline} le ${dateLabel} (${timeLabel}) à ${event.city} (${priceLabel})`;
   const fullMessage = [
     `🏋️ ${event.title} (${event.discipline})`,
-    `📅 ${dateLabel} · ${timeLabel} (${event.durationMinutes} min)`,
+    hasEventDuration(event)
+      ? `📅 ${dateLabel} · ${timeLabel} (${durationMin} min)`
+      : `📅 ${dateLabel} · ${timeLabel}`,
     `📍 ${placeLabel}`,
     `👤 ${coachLabel}`,
     `💶 Tarif : ${priceLabel}`,

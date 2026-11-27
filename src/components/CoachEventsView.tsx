@@ -49,8 +49,10 @@ import {
   formatPriceEuros,
   formatTimeRange,
   getEventCoachNames,
+  getEventEndMs,
   getSafeEventCoverImageSrc,
   getSafeExternalHref,
+  hasEventDuration,
   normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
 import {
@@ -278,7 +280,7 @@ export function CoachEventsView({
     const upcoming: SportEvent[] = [];
     const past: SportEvent[] = [];
     events.forEach((ev) => {
-      const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
+      const endMs = getEventEndMs(ev);
       if (endMs <= nowMs) {
         past.push(ev);
       } else {
@@ -362,9 +364,11 @@ export function CoachEventsView({
                 />
                 {ev.discipline}
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                {ev.durationMinutes} min
-              </span>
+              {hasEventDuration(ev) && (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {ev.durationMinutes} min
+                </span>
+              )}
               <span
                 className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
                   ev.isPaid
@@ -591,9 +595,11 @@ export function CoachEventsView({
               />
               {ev.discipline}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              {ev.durationMinutes} min
-            </span>
+            {hasEventDuration(ev) && (
+              <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                {ev.durationMinutes} min
+              </span>
+            )}
             <span
               className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums whitespace-nowrap ${
                 ev.isPaid

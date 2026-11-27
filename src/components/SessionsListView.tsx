@@ -32,6 +32,7 @@ import {
   getEventCoachNames,
   getSafeEventCoverImageSrc,
   getSafeExternalHref,
+  hasEventDuration,
   isSameCalendarDay,
   normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
@@ -541,9 +542,11 @@ export function SessionsListView({
                           Inscrit
                         </span>
                       )}
-                      <span className="font-mono tabular-nums">
-                        {ev.durationMinutes} min
-                      </span>
+                      {hasEventDuration(ev) && (
+                        <span className="font-mono tabular-nums">
+                          {ev.durationMinutes} min
+                        </span>
+                      )}
                     </div>
 
                     <span

@@ -178,6 +178,7 @@ export interface SportEvent {
   coachUids?: string[];
   startAt: Timestamp;
   durationMinutes: number;
+  isDurationDisabled?: boolean;
   isUnlimitedCapacity: boolean;
   maxCapacity: number;
   registeredCount: number;

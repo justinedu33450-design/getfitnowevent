@@ -51,6 +51,7 @@ import {
   formatFrenchTime,
   formatPriceEuros,
   formatTimeRange,
+  getEventDurationMinutes,
   getRegistrationEndMs,
   getRegistrationPaymentBadgeInfo,
   toLocalDateInputValue,
@@ -1389,8 +1390,9 @@ export function MemberPortalView({
                 const startDate = reg.eventStartAt.toDate();
                 const startMs = reg.eventStartAt.toMillis();
                 const endMs = getRegistrationEndMs(reg, matchedEvent);
-                const durationForDisplay =
-                  matchedEvent?.durationMinutes ?? reg.eventDurationMinutes;
+                const durationForDisplay = matchedEvent
+                  ? getEventDurationMinutes(matchedEvent)
+                  : reg.eventDurationMinutes;
                 const discName = matchedEvent?.discipline || reg.discipline;
                 const discStyle = discName
                   ? getDisciplineStyle(discName, disciplines)

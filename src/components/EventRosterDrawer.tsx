@@ -41,6 +41,7 @@ import {
   formatPaymentModeLabel,
   formatPriceEuros,
   formatTimeRange,
+  getEventDurationMinutes,
   getRegistrationPaymentBadgeInfo,
 } from '../utils/dateAndValidation';
 import { EventReviewsSection } from './EventEngagementWidgets';
@@ -331,7 +332,7 @@ export function EventRosterDrawer({
         isCoachAdmin,
         actorUid: currentUserUid ?? undefined,
         eventDiscipline: event.discipline,
-        eventDurationMinutes: event.durationMinutes,
+        eventDurationMinutes: getEventDurationMinutes(event),
         memberReferentCoachUid: matchedProfile?.referentCoachUid,
         isPrimaryBootstrapped,
       });

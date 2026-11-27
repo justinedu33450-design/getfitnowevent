@@ -89,7 +89,11 @@
         },
         "durationMinutes": {
           "type": "integer",
-          "description": "Durée de la séance en minutes (15 à 240)."
+          "description": "Durée de la séance en minutes (0 si désactivée, sinon 15 à 240)."
+        },
+        "isDurationDisabled": {
+          "type": "boolean",
+          "description": "Indique si la durée de la séance est désactivée (seule l'heure de début est affichée)."
         },
         "isUnlimitedCapacity": {
           "type": "boolean",
@@ -219,7 +223,7 @@
         },
         "eventDurationMinutes": {
           "type": "integer",
-          "description": "Durée prévue de la séance en minutes."
+          "description": "Durée prévue de la séance en minutes (0 si désactivée)."
         },
         "eventEndAt": {
           "type": "string",

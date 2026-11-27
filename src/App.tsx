@@ -83,6 +83,7 @@ import {
 import { buildDisciplineCatalog } from './utils/disciplineColors';
 import {
   evaluateEventBooking,
+  getEventEndMs,
   getRegistrationEndMs,
   isRegistrationAckMessage,
 } from './utils/dateAndValidation';
@@ -304,7 +305,7 @@ export default function App() {
   useEffect(() => {
     if (authLoading || !isVerifiedUser || eventsLoading || !isCoach) return;
     events.forEach((ev) => {
-      const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
+      const endMs = getEventEndMs(ev);
       const deleteAfterMs = endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS;
 
       if (nowMs >= deleteAfterMs) {
@@ -746,7 +747,7 @@ export default function App() {
   useEffect(() => {
     if (!isCoach || !isVerifiedUser || !registrationsLoaded) return;
     events.forEach((ev) => {
-      const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
+      const endMs = getEventEndMs(ev);
       if (nowMs >= endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS) return;
       const meta = confirmedRegMetaByEventId.get(ev.id);
       const liveCount = meta?.count ?? 0;
@@ -776,7 +777,7 @@ export default function App() {
   const activeEvents = useMemo(
     () =>
       reconciledEvents.filter((ev) => {
-        const endMs = ev.startAt.toMillis() + ev.durationMinutes * 60 * 1000;
+        const endMs = getEventEndMs(ev);
         return nowMs < endMs + VALIDATION_LIMITS.ENDED_EVENT_RETENTION_MS;
       }),
     [reconciledEvents, nowMs]
@@ -932,9 +933,7 @@ export default function App() {
         return rev.eventStartAt.toMillis() <= nowMs;
       }
       if (matchedEvent.status === 'cancelled') return false;
-      const endMs =
-        matchedEvent.startAt.toMillis() +
-        matchedEvent.durationMinutes * 60 * 1000;
+      const endMs = getEventEndMs(matchedEvent);
       return nowMs >= endMs;
     });
   }, [publishedReviews, events, nowMs]);

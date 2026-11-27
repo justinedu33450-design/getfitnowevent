@@ -56,6 +56,7 @@ import {
   formatPriceEuros,
   formatTimeRange,
   getEventCoachNames,
+  getEventDurationMinutes,
   getWeekDays,
   isSameCalendarDay,
   toLocalDateInputValue,
@@ -306,8 +307,9 @@ export function MemberWeeklyScheduleCard({
       }
 
       const startDate = reg.eventStartAt.toDate();
-      const durationMinutes =
-        matchedEvent?.durationMinutes ?? reg.eventDurationMinutes ?? 60;
+      const durationMinutes = matchedEvent
+        ? getEventDurationMinutes(matchedEvent)
+        : (reg.eventDurationMinutes ?? 60);
       const endMs = startDate.getTime() + durationMinutes * 60 * 1000;
 
       list.push({

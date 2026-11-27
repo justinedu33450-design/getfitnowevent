@@ -56,6 +56,7 @@ import {
   formatFrenchDateShort,
   formatPriceEuros,
   formatTimeRange,
+  getEventDurationMinutes,
   getRegistrationPaymentBadgeInfo,
 } from '../utils/dateAndValidation';
 import { downloadPaymentReceipt } from '../utils/paymentHelpers';
@@ -778,9 +779,9 @@ export function CoachesAdminView({
                                 {formatFrenchDateShort(startDate)} ·{' '}
                                 {formatTimeRange(
                                   startDate,
-                                  reg.eventDurationMinutes ||
-                                    matchedEvent?.durationMinutes ||
-                                    60
+                                  matchedEvent
+                                    ? getEventDurationMinutes(matchedEvent)
+                                    : (reg.eventDurationMinutes ?? 60)
                                 )}
                                 {matchedEvent?.city ? ` · ${matchedEvent.city}` : ''}
                               </p>

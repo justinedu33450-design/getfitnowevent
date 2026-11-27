@@ -75,15 +75,36 @@ export function isRegistrationAckMessage(text?: string | null): boolean {
   return text.toLowerCase().includes("a bien pris en compte l'inscription");
 }
 
+export function hasEventDuration(
+  event: Pick<SportEvent, 'durationMinutes' | 'isDurationDisabled'> | null | undefined
+): boolean {
+  return Boolean(
+    event &&
+      !event.isDurationDisabled &&
+      typeof event.durationMinutes === 'number' &&
+      Number.isFinite(event.durationMinutes) &&
+      event.durationMinutes > 0
+  );
+}
+
+export function getEventDurationMinutes(
+  event: Pick<SportEvent, 'durationMinutes' | 'isDurationDisabled'> | null | undefined
+): number {
+  return hasEventDuration(event) ? Math.round(event!.durationMinutes) : 0;
+}
+
+export function getEventEndMs(
+  event: Pick<SportEvent, 'startAt' | 'durationMinutes' | 'isDurationDisabled'>
+): number {
+  return event.startAt.toMillis() + getEventDurationMinutes(event) * 60 * 1000;
+}
+
 export function getRegistrationEndMs(
   reg: Registration,
   matchedEvent?: SportEvent | null
 ): number {
   if (matchedEvent) {
-    return (
-      matchedEvent.startAt.toMillis() +
-      matchedEvent.durationMinutes * 60 * 1000
-    );
+    return getEventEndMs(matchedEvent);
   }
   if (reg.eventEndAt) {
     return reg.eventEndAt.toMillis();
@@ -144,7 +165,8 @@ export function evaluateEventBooking(
 ): BookingEvaluation {
   const hideRegisteredCount = Boolean(options?.hideRegisteredCount);
   const startMs = event.startAt.toMillis();
-  const endMs = startMs + event.durationMinutes * 60 * 1000;
+  const effectiveDuration = getEventDurationMinutes(event);
+  const endMs = startMs + effectiveDuration * 60 * 1000;
   const cutoffMinutes = normalizeBookingCutoffMinutes(event.bookingCutoffMinutes);
   const cutoffMs = startMs - cutoffMinutes * 60 * 1000;
   const msUntilCutoff = cutoffMs - nowMs;
@@ -222,6 +244,7 @@ export function evaluateEventBooking(
   }
 
   if (nowMs >= startMs) {
+    const isOngoing = effectiveDuration > 0 && nowMs < endMs;
     return {
       state: 'past',
       isAutoCancelledNoRegistrants: false,
@@ -233,11 +256,10 @@ export function evaluateEventBooking(
       cutoffMs,
       msUntilCutoff,
       msUntilStart,
-      statusLabel: nowMs < endMs ? 'En cours' : 'Terminée',
-      helperText:
-        nowMs < endMs
-          ? 'Inscriptions fermées — la séance est actuellement en cours.'
-          : 'Inscriptions fermées — cette séance est terminée.',
+      statusLabel: isOngoing ? 'En cours' : 'Terminée',
+      helperText: isOngoing
+        ? 'Inscriptions fermées — la séance est actuellement en cours.'
+        : 'Inscriptions fermées — cette séance est terminée.',
       capacityLabel,
     };
   }
@@ -367,6 +389,9 @@ export function formatFrenchDateLong(date: Date): string {
 }
 
 export function formatTimeRange(start: Date, durationMinutes: number): string {
+  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+    return formatFrenchTime(start);
+  }
   const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
   return `${formatFrenchTime(start)} – ${formatFrenchTime(end)}`;
 }
@@ -512,7 +537,11 @@ export async function hashEmailKey(email: string): Promise<string> {
 
 export function downloadEventIcs(event: SportEvent): void {
   const start = event.startAt.toDate();
-  const end = new Date(start.getTime() + event.durationMinutes * 60 * 1000);
+  const effectiveDuration = getEventDurationMinutes(event);
+  const end =
+    effectiveDuration > 0
+      ? new Date(start.getTime() + effectiveDuration * 60 * 1000)
+      : null;
   const fmt = (d: Date) =>
     d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
@@ -536,7 +565,7 @@ export function downloadEventIcs(event: SportEvent): void {
     `UID:${event.id}@getfitnow-event`,
     `DTSTAMP:${fmt(new Date())}`,
     `DTSTART:${fmt(start)}`,
-    `DTEND:${fmt(end)}`,
+    ...(end ? [`DTEND:${fmt(end)}`] : []),
     `SUMMARY:${escapeIcs(`${event.title} (${event.discipline})`)}`,
     `LOCATION:${escapeIcs(fullLocation)}`,
     `DESCRIPTION:${escapeIcs(fullDescription)}`,

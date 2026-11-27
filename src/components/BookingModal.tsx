@@ -54,9 +54,11 @@ import {
   formatPaymentModeLabel,
   formatPriceEuros,
   formatTimeRange,
+  getEventDurationMinutes,
   getRegistrationPaymentBadgeInfo,
   getSafeEventCoverImageSrc,
   getSafeExternalHref,
+  hasEventDuration,
   normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
 import {
@@ -853,7 +855,8 @@ export function BookingModal({
               </span>
             </div>
             <div className="pl-6 font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums">
-              Horaire : {formatTimeRange(startDate, event.durationMinutes)} ({event.durationMinutes} min) ·{' '}
+              Horaire : {formatTimeRange(startDate, getEventDurationMinutes(event))}
+              {hasEventDuration(event) ? ` (${event.durationMinutes} min)` : ''} ·{' '}
               {evaluation.state === 'cancelled'
                 ? evaluation.isAutoCancelledNoRegistrants
                   ? 'Inscriptions clôturées — pas d’inscrit à cette séance, séance annulée'
@@ -1031,7 +1034,7 @@ export function BookingModal({
                       eventId: event.id,
                       eventTitle: event.title,
                       eventStartAt: event.startAt,
-                      eventDurationMinutes: event.durationMinutes,
+                      eventDurationMinutes: getEventDurationMinutes(event),
                       firstName: confirmedMember.firstName,
                       lastName: confirmedMember.lastName,
                       email: confirmedMember.email,

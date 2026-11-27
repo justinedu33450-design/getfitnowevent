@@ -100,6 +100,7 @@ import {
   formatPriceEuros,
   formatPublicAuthorName,
   getEventCoachFirstName,
+  getEventDurationMinutes,
   getRegistrationEndMs,
   getSafeEventCoverImageSrc,
   getSafeExternalHref,
@@ -1101,9 +1102,19 @@ export function subscribeEvents(
           raw.paymentMode === 'onsite' || raw.paymentMode === 'both'
             ? raw.paymentMode
             : 'online';
+        const isDurationDisabled =
+          Boolean(raw.isDurationDisabled) || raw.durationMinutes === 0;
+        const durationMinutes = isDurationDisabled
+          ? 0
+          : typeof raw.durationMinutes === 'number' &&
+              raw.durationMinutes >= VALIDATION_LIMITS.DURATION_MIN
+            ? Math.round(raw.durationMinutes)
+            : 60;
         return {
           ...(raw as Omit<SportEvent, 'id'>),
           id: d.id,
+          durationMinutes,
+          isDurationDisabled,
           externalUrl: getSafeExternalHref(raw.externalUrl) ?? '',
           coverImageUrl: getSafeEventCoverImageSrc(raw.coverImageUrl) ?? '',
           coverImagePosition: normalizeCoverImagePosition(raw.coverImagePosition),
@@ -1365,6 +1376,7 @@ export interface EventFormInput {
   coachUids?: string[];
   startDate: Date;
   durationMinutes: number;
+  isDurationDisabled?: boolean;
   isUnlimitedCapacity: boolean;
   maxCapacity: number;
   isPaid?: boolean;
@@ -1488,9 +1500,15 @@ export async function createEvent(
   if (coachNames.length === 0 || coachName.length < VALIDATION_LIMITS.COACH_NAME_MIN) {
     throw new Error('Veuillez sélectionner ou ajouter au moins un animateur (2 caractères minimum).');
   }
+  const isDurationDisabled = Boolean(input.isDurationDisabled);
+  const normalizedDurationMinutes = isDurationDisabled
+    ? 0
+    : Math.round(Number(input.durationMinutes));
   if (
-    input.durationMinutes < VALIDATION_LIMITS.DURATION_MIN ||
-    input.durationMinutes > VALIDATION_LIMITS.DURATION_MAX
+    !isDurationDisabled &&
+    (!Number.isFinite(normalizedDurationMinutes) ||
+      normalizedDurationMinutes < VALIDATION_LIMITS.DURATION_MIN ||
+      normalizedDurationMinutes > VALIDATION_LIMITS.DURATION_MAX)
   ) {
     throw new Error('La durée doit être comprise entre 15 et 240 minutes.');
   }
@@ -1536,7 +1554,8 @@ export async function createEvent(
       coachNames,
       coachUids,
       startAt: Timestamp.fromDate(input.startDate),
-      durationMinutes: Math.round(input.durationMinutes),
+      durationMinutes: normalizedDurationMinutes,
+      isDurationDisabled,
       isUnlimitedCapacity: Boolean(input.isUnlimitedCapacity),
       maxCapacity: input.isUnlimitedCapacity ? 0 : Math.round(input.maxCapacity),
       registeredCount: 0,
@@ -1580,6 +1599,7 @@ const ALLOWED_EVENT_DOC_KEYS = new Set([
   'coachUids',
   'startAt',
   'durationMinutes',
+  'isDurationDisabled',
   'isUnlimitedCapacity',
   'maxCapacity',
   'registeredCount',
@@ -1623,7 +1643,10 @@ export async function updateEvent(
   const region = (input.region ?? '').trim().slice(0, VALIDATION_LIMITS.REGION_MAX);
   const { coachName, coachNames, coachUids } = normalizeEventCoaches(input);
 
-  const durationMinutes = Math.round(Number(input.durationMinutes));
+  const isDurationDisabled = Boolean(input.isDurationDisabled);
+  const durationMinutes = isDurationDisabled
+    ? 0
+    : Math.round(Number(input.durationMinutes));
   const nextMaxCapacity = input.isUnlimitedCapacity
     ? 0
     : Math.round(Number(input.maxCapacity));
@@ -1644,9 +1667,10 @@ export async function updateEvent(
     throw new Error('Veuillez sélectionner ou ajouter au moins un animateur (2 caractères minimum).');
   }
   if (
-    !Number.isFinite(durationMinutes) ||
-    durationMinutes < VALIDATION_LIMITS.DURATION_MIN ||
-    durationMinutes > VALIDATION_LIMITS.DURATION_MAX
+    !isDurationDisabled &&
+    (!Number.isFinite(durationMinutes) ||
+      durationMinutes < VALIDATION_LIMITS.DURATION_MIN ||
+      durationMinutes > VALIDATION_LIMITS.DURATION_MAX)
   ) {
     throw new Error('La durée doit être comprise entre 15 et 240 minutes.');
   }
@@ -1783,11 +1807,13 @@ export async function updateEvent(
       typeof liveData.durationMinutes === 'number'
         ? liveData.durationMinutes
         : null;
+    const prevDisabled = Boolean(liveData.isDurationDisabled);
     shouldSyncRegistrations =
       Math.max(currentRegisteredCount, Math.max(0, liveRegisteredCount)) > 0 &&
       (prevTitle !== title ||
         prevStartMs !== startAtTs.toMillis() ||
-        prevDuration !== durationMinutes);
+        prevDuration !== durationMinutes ||
+        prevDisabled !== isDurationDisabled);
   }
 
   const rawLat = Number(input.lat);
@@ -1827,6 +1853,7 @@ export async function updateEvent(
     coachUids,
     startAt: startAtTs,
     durationMinutes,
+    isDurationDisabled,
     isUnlimitedCapacity: Boolean(input.isUnlimitedCapacity),
     maxCapacity: nextMaxCapacity,
     isPaid: pricing.isPaid,
@@ -1924,9 +1951,13 @@ async function notifyMembersOfCancelledEvent(params: {
   const coachName = (params.eventData?.coachName || '')
     .trim()
     .slice(0, VALIDATION_LIMITS.COACH_NAME_MAX);
-  const fallbackDuration =
-    typeof params.eventData?.durationMinutes === 'number' &&
-    params.eventData.durationMinutes >= VALIDATION_LIMITS.DURATION_MIN
+  const isEventDurationDisabled =
+    Boolean(params.eventData?.isDurationDisabled) ||
+    params.eventData?.durationMinutes === 0;
+  const fallbackDuration = isEventDurationDisabled
+    ? 0
+    : typeof params.eventData?.durationMinutes === 'number' &&
+        params.eventData.durationMinutes >= VALIDATION_LIMITS.DURATION_MIN
       ? Math.round(params.eventData.durationMinutes)
       : 60;
 
@@ -1957,7 +1988,7 @@ async function notifyMembersOfCancelledEvent(params: {
   for (const reg of params.confirmedRegs) {
     const startAt = params.eventData?.startAt ?? reg.eventStartAt;
     const durationMin =
-      typeof reg.eventDurationMinutes === 'number' && reg.eventDurationMinutes > 0
+      typeof reg.eventDurationMinutes === 'number' && reg.eventDurationMinutes >= 0
         ? reg.eventDurationMinutes
         : fallbackDuration;
     const computedEndAt =
@@ -2383,7 +2414,7 @@ export async function notifyMembersOfEndedEvent(
       }> = [];
 
       const fallbackEndAt = Timestamp.fromMillis(
-        event.startAt.toMillis() + event.durationMinutes * 60 * 1000
+        event.startAt.toMillis() + getEventDurationMinutes(event) * 60 * 1000
       );
 
       for (const regDoc of regSnap.docs) {
@@ -2844,9 +2875,19 @@ function parseLiveSportEventSnapshot(
       : 0;
   const isPaid =
     Boolean(raw.isPaid) && priceCents >= VALIDATION_LIMITS.PRICE_MIN_CENTS;
+  const isDurationDisabled =
+    Boolean(raw.isDurationDisabled) || raw.durationMinutes === 0;
+  const durationMinutes = isDurationDisabled
+    ? 0
+    : typeof raw.durationMinutes === 'number' &&
+        raw.durationMinutes >= VALIDATION_LIMITS.DURATION_MIN
+      ? Math.round(raw.durationMinutes)
+      : 60;
   return {
     ...(raw as Omit<SportEvent, 'id'>),
     id,
+    durationMinutes,
+    isDurationDisabled,
     externalUrl: getSafeExternalHref(raw.externalUrl) ?? '',
     coverImageUrl: getSafeEventCoverImageSrc(raw.coverImageUrl) ?? '',
     coverImagePosition: normalizeCoverImagePosition(raw.coverImagePosition),
@@ -3025,13 +3066,18 @@ async function commitSingleParticipantRegistration(params: {
     trimmedTitle.length >= VALIDATION_LIMITS.TITLE_MIN
       ? trimmedTitle
       : 'Séance sportive';
-  const durationMinutes = Math.min(
-    VALIDATION_LIMITS.DURATION_MAX,
-    Math.max(
-      VALIDATION_LIMITS.DURATION_MIN,
-      Math.round(Number(params.event.durationMinutes) || 60)
-    )
-  );
+  const isEventDurationDisabled =
+    Boolean(params.event.isDurationDisabled) ||
+    params.event.durationMinutes === 0;
+  const durationMinutes = isEventDurationDisabled
+    ? 0
+    : Math.min(
+        VALIDATION_LIMITS.DURATION_MAX,
+        Math.max(
+          VALIDATION_LIMITS.DURATION_MIN,
+          Math.round(Number(params.event.durationMinutes) || 60)
+        )
+      );
   const eventEndAt = Timestamp.fromMillis(
     params.event.startAt.toMillis() + durationMinutes * 60 * 1000
   );

@@ -34,10 +34,12 @@ import {
   formatFrenchTime,
   formatPaymentModeLabel,
   formatTimeRange,
+  getEventDurationMinutes,
   getMonthDaysGrid,
   getSafeEventCoverImageSrc,
   getSafeExternalHref,
   getWeekDays,
+  hasEventDuration,
   isSameCalendarDay,
   normalizeCoverImagePosition,
 } from '../utils/dateAndValidation';
@@ -1204,7 +1206,13 @@ export function CalendarView({
                         <div className="flex items-center gap-2 font-mono tabular-nums">
                           <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
                           <span>
-                            {formatTimeRange(ev.startAt.toDate(), ev.durationMinutes)} ({ev.durationMinutes} min)
+                            {formatTimeRange(
+                              ev.startAt.toDate(),
+                              getEventDurationMinutes(ev)
+                            )}
+                            {hasEventDuration(ev)
+                              ? ` (${ev.durationMinutes} min)`
+                              : ''}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">

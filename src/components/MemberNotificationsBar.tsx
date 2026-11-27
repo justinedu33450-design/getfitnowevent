@@ -512,8 +512,9 @@ export function MemberNotificationsBar({
                           aria-hidden="true"
                         />
                         {formatFrenchDateShort(startDate)} ·{' '}
-                        {formatFrenchTime(startDate)} –{' '}
-                        {formatFrenchTime(endDate)}
+                        {endDate.getTime() > startDate.getTime()
+                          ? `${formatFrenchTime(startDate)} – ${formatFrenchTime(endDate)}`
+                          : formatFrenchTime(startDate)}
                       </span>
                       {isCancelledNotif ? (
                         <span className="text-rose-800 dark:text-rose-300 font-medium">

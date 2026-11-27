@@ -115,7 +115,7 @@ service cloud.firestore {
       data.keys().hasOnly([
         'title', 'discipline', 'description', 'externalUrl', 'coverImageUrl', 'coverImagePosition', 'location', 'city', 'region',
         'hasCoords', 'lat', 'lng', 'coachName', 'coachNames', 'coachUids',
-        'startAt', 'durationMinutes', 'isUnlimitedCapacity', 'maxCapacity', 'registeredCount',
+        'startAt', 'durationMinutes', 'isDurationDisabled', 'isUnlimitedCapacity', 'maxCapacity', 'registeredCount',
         'lastRegId', 'likesCount', 'lastLikeId', 'status', 'cancelReason', 'bookingCutoffMinutes', 'disableAutoClose',
         'isPaid', 'priceCents', 'currency', 'paymentMode',
         'createdBy', 'createdAt', 'updatedAt'
@@ -161,7 +161,13 @@ service cloud.firestore {
         (data.coachUids.size() == 0 || isValidId(data.coachUids[0]))
       )) &&
       data.startAt is timestamp &&
-      data.durationMinutes is int && data.durationMinutes >= 15 && data.durationMinutes <= 240 &&
+      (!('isDurationDisabled' in data) || data.isDurationDisabled is bool) &&
+      data.durationMinutes is int &&
+      (
+        data.get('isDurationDisabled', false) == true
+          ? data.durationMinutes == 0
+          : (data.durationMinutes >= 15 && data.durationMinutes <= 240)
+      ) &&
       data.isUnlimitedCapacity is bool &&
       data.maxCapacity is int &&
       data.registeredCount is int &&
@@ -213,7 +219,7 @@ service cloud.firestore {
       isValidId(data.eventId) &&
       data.eventTitle is string && data.eventTitle.size() >= 2 && data.eventTitle.size() <= 100 &&
       data.eventStartAt is timestamp &&
-      (!('eventDurationMinutes' in data) || (data.eventDurationMinutes is int && data.eventDurationMinutes >= 15 && data.eventDurationMinutes <= 240)) &&
+      (!('eventDurationMinutes' in data) || (data.eventDurationMinutes is int && (data.eventDurationMinutes == 0 || (data.eventDurationMinutes >= 15 && data.eventDurationMinutes <= 240)))) &&
       (!('eventEndAt' in data) || data.eventEndAt is timestamp) &&
       data.firstName is string && data.firstName.size() >= 1 && data.firstName.size() <= 60 &&
       data.lastName is string && data.lastName.size() >= 1 && data.lastName.size() <= 60 &&

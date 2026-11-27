@@ -145,8 +145,13 @@ export function EventFormModal({
     }
     return String(initialCutoffMinutes);
   });
+  const [isDurationDisabled, setIsDurationDisabled] = useState(
+    Boolean(sourceEvent?.isDurationDisabled || sourceEvent?.durationMinutes === 0)
+  );
   const [durationMinutes, setDurationMinutes] = useState(
-    sourceEvent?.durationMinutes ?? 60
+    sourceEvent && sourceEvent.durationMinutes > 0
+      ? sourceEvent.durationMinutes
+      : 60
   );
   const [isUnlimitedCapacity, setIsUnlimitedCapacity] = useState(
     sourceEvent?.isUnlimitedCapacity ?? false
@@ -547,9 +552,10 @@ export function EventFormModal({
 
     const parsedDuration = Number(durationMinutes);
     if (
-      !Number.isFinite(parsedDuration) ||
-      parsedDuration < VALIDATION_LIMITS.DURATION_MIN ||
-      parsedDuration > VALIDATION_LIMITS.DURATION_MAX
+      !isDurationDisabled &&
+      (!Number.isFinite(parsedDuration) ||
+        parsedDuration < VALIDATION_LIMITS.DURATION_MIN ||
+        parsedDuration > VALIDATION_LIMITS.DURATION_MAX)
     ) {
       setErrorMsg('La durée doit être comprise entre 15 et 240 minutes.');
       return;
@@ -642,7 +648,8 @@ export function EventFormModal({
         coachNames,
         coachUids,
         startDate,
-        durationMinutes: Number(durationMinutes),
+        durationMinutes: isDurationDisabled ? 0 : Number(durationMinutes),
+        isDurationDisabled,
         isUnlimitedCapacity,
         maxCapacity: isUnlimitedCapacity ? 0 : Number(maxCapacity),
         isPaid,
@@ -1288,18 +1295,24 @@ export function EventFormModal({
                 htmlFor="ev-duration"
                 className="block text-xs font-medium text-slate-700 dark:text-slate-300"
               >
-                Durée (min) *
+                Durée (min) {!isDurationDisabled && '*'}
               </label>
-              <input
-                id="ev-duration"
-                type="number"
-                required
-                min={VALIDATION_LIMITS.DURATION_MIN}
-                max={VALIDATION_LIMITS.DURATION_MAX}
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-mono tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-              />
+              {isDurationDisabled ? (
+                <div className="mt-1 flex min-h-[44px] items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  Désactivée
+                </div>
+              ) : (
+                <input
+                  id="ev-duration"
+                  type="number"
+                  required={!isDurationDisabled}
+                  min={VALIDATION_LIMITS.DURATION_MIN}
+                  max={VALIDATION_LIMITS.DURATION_MAX}
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-mono tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                />
+              )}
             </div>
 
             <div>
@@ -1335,18 +1348,32 @@ export function EventFormModal({
             </div>
           </div>
 
-          {/* Unlimited capacity toggle */}
-          <label className="flex min-h-[44px] items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 dark:border-slate-800 dark:bg-slate-800/60 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isUnlimitedCapacity}
-              onChange={(e) => setIsUnlimitedCapacity(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-slate-600 dark:bg-slate-900"
-            />
-            <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
-              Nombre de places illimité (aucune limite de participants)
-            </span>
-          </label>
+          {/* Disable duration & Unlimited capacity toggles */}
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <label className="flex min-h-[44px] items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 dark:border-slate-800 dark:bg-slate-800/60 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isDurationDisabled}
+                onChange={(e) => setIsDurationDisabled(e.target.checked)}
+                className="h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-slate-600 dark:bg-slate-900"
+              />
+              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
+                Désactiver la durée (heure de début uniquement)
+              </span>
+            </label>
+
+            <label className="flex min-h-[44px] items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 dark:border-slate-800 dark:bg-slate-800/60 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isUnlimitedCapacity}
+                onChange={(e) => setIsUnlimitedCapacity(e.target.checked)}
+                className="h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-slate-600 dark:bg-slate-900"
+              />
+              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
+                Nombre de places illimité (aucune limite de participants)
+              </span>
+            </label>
+          </div>
 
           {/* Configurable booking closure offset before session start */}
           <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/50">
