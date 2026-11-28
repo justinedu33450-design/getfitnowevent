@@ -538,7 +538,7 @@ export function NearbyEventsMap({
       )}
 
       {/* Location & Radius Control Card */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+      <div className="rounded-[16px] border border-slate-200 bg-white p-4 dark:border-[#262626] dark:bg-[#161616] sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           {/* Device Geolocation Controls */}
           <div className="flex flex-col gap-2 min-w-0">
@@ -547,7 +547,7 @@ export function NearbyEventsMap({
                 type="button"
                 onClick={requestDeviceLocation}
                 disabled={locating}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer whitespace-nowrap touch-manipulation"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer whitespace-nowrap touch-manipulation"
               >
                 {locating ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -564,9 +564,9 @@ export function NearbyEventsMap({
               <button
                 type="button"
                 onClick={() => setShowManualPicker((prev) => !prev)}
-                className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer whitespace-nowrap"
+                className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer whitespace-nowrap"
               >
-                <MapPin className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+                <MapPin className="h-3.5 w-3.5 text-slate-500 dark:text-[#8E8E8E]" aria-hidden="true" />
                 {showManualPicker ? 'Fermer la saisie' : 'Autre adresse de départ'}
               </button>
 
@@ -575,7 +575,7 @@ export function NearbyEventsMap({
                   <button
                     type="button"
                     onClick={() => setRecenterNonce((n) => n + 1)}
-                    className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer whitespace-nowrap"
+                    className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer whitespace-nowrap"
                     title="Recentrer la carte sur le rayon"
                   >
                     <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
@@ -584,7 +584,7 @@ export function NearbyEventsMap({
                   <button
                     type="button"
                     onClick={handleClearLocation}
-                    className="inline-flex min-h-[42px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer whitespace-nowrap"
+                    className="inline-flex min-h-[42px] items-center justify-center gap-1 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-white cursor-pointer whitespace-nowrap"
                     title="Effacer la position utilisée"
                   >
                     <X className="h-3.5 w-3.5" aria-hidden="true" />
@@ -595,7 +595,7 @@ export function NearbyEventsMap({
             </div>
 
             {searchCenter ? (
-              <p className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+              <p className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-[#4ADE80]">
                 <Navigation className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="truncate font-medium">
                   Centre actif : {searchCenter.label}
@@ -605,7 +605,7 @@ export function NearbyEventsMap({
                 </span>
               </p>
             ) : (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Activez la localisation de votre appareil, saisissez un lieu ou touchez directement la carte pour filtrer par rayon.
               </p>
             )}
@@ -613,13 +613,13 @@ export function NearbyEventsMap({
 
           {/* Radius Selector */}
           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">
+            <span className="text-xs font-semibold text-slate-700 dark:text-[#E5E5E5] whitespace-nowrap">
               Rayon de recherche :
             </span>
             <div
               role="group"
               aria-label="Choisir le rayon en kilomètres"
-              className="flex flex-col gap-2 rounded-lg bg-slate-100 p-1.5 dark:bg-slate-800"
+              className="flex flex-col gap-2 rounded-[10px] bg-slate-100 p-1.5 dark:border dark:border-[#262626] dark:bg-[#1F1F1F]"
             >
               <div className="flex flex-wrap items-center gap-1">
                 <button
@@ -628,7 +628,7 @@ export function NearbyEventsMap({
                   disabled={radiusKm <= MIN_RADIUS_KM}
                   aria-label="Réduire le rayon et agrandir le zoom sur la carte"
                   title="Réduire le rayon (zoom avant)"
-                  className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                  className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                 >
                   <Minus className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
@@ -637,10 +637,10 @@ export function NearbyEventsMap({
                     key={km}
                     type="button"
                     onClick={() => updateRadiusKm(km)}
-                    className={`min-h-[34px] rounded-md px-2.5 py-1 font-mono text-xs font-semibold tabular-nums whitespace-nowrap cursor-pointer transition-colors ${
+                    className={`min-h-[34px] rounded-[8px] px-2.5 py-1 text-xs font-semibold tabular-nums whitespace-nowrap cursor-pointer transition-colors ${
                       radiusKm === km
-                        ? 'bg-emerald-700 text-white shadow-xs dark:bg-emerald-600'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                        ? 'bg-emerald-700 text-white shadow-xs dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     {km} km
@@ -652,7 +652,7 @@ export function NearbyEventsMap({
                   disabled={radiusKm >= MAX_RADIUS_KM}
                   aria-label="Agrandir le rayon et réduire le zoom sur la carte"
                   title="Agrandir le rayon (zoom arrière)"
-                  className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                  className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
@@ -666,9 +666,9 @@ export function NearbyEventsMap({
                   value={radiusKm}
                   onChange={(e) => updateRadiusKm(Number(e.target.value))}
                   aria-label="Ajuster le rayon de recherche pour réduire ou agrandir la carte"
-                  className="min-h-[44px] flex-1 cursor-pointer py-2 touch-pan-y accent-emerald-700 dark:accent-emerald-500"
+                  className="min-h-[44px] flex-1 cursor-pointer py-2 touch-pan-y accent-emerald-700 dark:accent-[#4ADE80]"
                 />
-                <span className="min-w-[52px] text-right font-mono text-[11px] font-bold text-emerald-700 tabular-nums dark:text-emerald-400">
+                <span className="min-w-[52px] text-right text-[11px] font-bold text-emerald-700 tabular-nums dark:text-[#4ADE80]">
                   {radiusKm} km
                 </span>
               </div>
@@ -692,7 +692,7 @@ export function NearbyEventsMap({
         {geoError && (
           <div
             role="status"
-            className="mt-3 flex flex-col gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-950 dark:border-amber-800/70 dark:bg-amber-950/50 dark:text-amber-100 sm:flex-row sm:items-start sm:justify-between"
+            className="mt-3 flex flex-col gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100 sm:flex-row sm:items-start sm:justify-between"
           >
             <div className="flex items-start gap-2 min-w-0">
               <AlertCircle
@@ -706,7 +706,7 @@ export function NearbyEventsMap({
                     type="button"
                     onClick={requestDeviceLocation}
                     disabled={locating}
-                    className="inline-flex min-h-[38px] items-center gap-1.5 rounded-md bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-800 disabled:opacity-60 dark:bg-amber-400 dark:text-slate-950 dark:hover:bg-amber-300 cursor-pointer touch-manipulation"
+                    className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[8px] bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-800 disabled:opacity-60 dark:bg-amber-400 dark:text-[#0A0A0A] dark:hover:bg-amber-300 cursor-pointer touch-manipulation"
                   >
                     <LocateFixed className="h-3.5 w-3.5" aria-hidden="true" />
                     Réessayer (GPS)
@@ -716,7 +716,7 @@ export function NearbyEventsMap({
                       href={window.location.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-[38px] items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-950 transition-colors hover:bg-amber-100/70 dark:border-amber-700 dark:bg-slate-900 dark:text-amber-100 dark:hover:bg-slate-800 touch-manipulation"
+                      className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[8px] border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-950 transition-colors hover:bg-amber-100/70 dark:border-[#262626] dark:bg-[#161616] dark:text-amber-200 dark:hover:bg-[#262626] touch-manipulation"
                     >
                       Ouvrir dans {isAppleMobileDevice() ? 'Safari' : 'un onglet'}
                       <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -729,7 +729,7 @@ export function NearbyEventsMap({
               type="button"
               onClick={() => setGeoError(null)}
               aria-label="Fermer le message de localisation"
-              className="inline-flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center self-end rounded-md text-amber-800 transition-colors hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50 cursor-pointer touch-manipulation sm:self-start"
+              className="inline-flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center self-end rounded-[8px] text-amber-800 transition-colors hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50 cursor-pointer touch-manipulation sm:self-start"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -764,14 +764,14 @@ export function NearbyEventsMap({
             resolvingPlaces={resolvingPlaces}
           />
         ) : (
-          <div className="rounded-xl border border-slate-200 bg-white p-5 text-center text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 space-y-3">
+          <div className="rounded-[16px] border border-slate-200 bg-white p-5 text-center text-xs text-slate-600 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] space-y-3">
             <p>
-              L’aperçu carte interactive n’est pas chargé dans cette session (lien sans clé Google Maps ou cache PWA iOS/mobile ancien). La localisation de votre appareil, le rayon en kilomètres et le classement des séances par distance restent actifs ci-dessous.
+              L’aperçu carte interactive n’est pas disponible dans cette session (lien sans clé Google Maps ou cache PWA iOS/mobile ancien). La localisation de votre appareil, le rayon en kilomètres et le classement des séances par distance restent actifs ci-dessous.
             </p>
             <button
               type="button"
               onClick={() => void forceRefreshAppCache()}
-              className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+              className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-300 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
             >
               <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
               Actualiser l’application
@@ -784,12 +784,12 @@ export function NearbyEventsMap({
       <div className="space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
               {searchCenter
                 ? `${nearbyEvents.length} séance${nearbyEvents.length > 1 ? 's' : ''} dans un rayon de ${radiusKm} km`
                 : `${nearbyEvents.length} séance${nearbyEvents.length > 1 ? 's' : ''} géolocalisée${nearbyEvents.length > 1 ? 's' : ''}`}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
               {searchCenter
                 ? 'Classées de la plus proche à la plus éloignée autour de votre position.'
                 : 'Activez votre position GPS pour filtrer et trier par distance.'}
@@ -799,7 +799,7 @@ export function NearbyEventsMap({
             </p>
           </div>
           {resolvingPlaces && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               Localisation des lieux en cours...
             </span>
@@ -807,27 +807,27 @@ export function NearbyEventsMap({
         </div>
 
         {nearbyEvents.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+          <div className="rounded-[16px] border border-dashed border-slate-300 bg-white p-8 text-center dark:border-[#262626] dark:bg-[#161616]">
             <Compass
-              className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600"
+              className="mx-auto h-8 w-8 text-slate-300 dark:text-[#525252]"
               aria-hidden="true"
             />
-            <p className="mt-2 font-display text-sm font-bold text-slate-900 dark:text-white">
+            <p className="mt-2 font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
               {searchCenter
                 ? `Aucune séance dans un rayon de ${radiusKm} km`
                 : 'Aucune séance géolocalisée disponible'}
             </p>
             {searchCenter && closestOutside && closestOutside.distanceKm !== null ? (
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 La séance la plus proche (« {closestOutside.event.title} » à{' '}
                 {closestOutside.event.city}) se situe à{' '}
-                <strong className="font-mono text-slate-800 dark:text-slate-200">
+                <strong className="text-slate-800 dark:text-[#E5E5E5] tabular-nums">
                   {formatDistanceKm(closestOutside.distanceKm)}
                 </strong>
                 .
               </p>
             ) : (
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Essayez d’élargir le rayon de recherche ou de modifier vos filtres de discipline et de période.
               </p>
             )}
@@ -841,7 +841,7 @@ export function NearbyEventsMap({
                 type="button"
                 onClick={requestDeviceLocation}
                 disabled={locating}
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer touch-manipulation"
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer touch-manipulation"
               >
                 <LocateFixed className="h-3.5 w-3.5" aria-hidden="true" />
                 Me localiser (GPS)
@@ -853,7 +853,7 @@ export function NearbyEventsMap({
                     setRadiusKm(suggestedLargerRadius);
                     setRecenterNonce((n) => n + 1);
                   }}
-                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer touch-manipulation"
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer touch-manipulation"
                 >
                   Élargir le rayon à {suggestedLargerRadius} km
                 </button>
@@ -862,7 +862,7 @@ export function NearbyEventsMap({
                 <button
                   type="button"
                   onClick={handleClearLocation}
-                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer touch-manipulation"
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer touch-manipulation"
                 >
                   Voir toutes les séances
                 </button>
@@ -875,11 +875,11 @@ export function NearbyEventsMap({
                     key={item.city}
                     type="button"
                     onClick={() => handleSelectQuickCity(item)}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 cursor-pointer touch-manipulation"
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:border-[#4ADE80]/40 dark:hover:bg-[#4ADE80]/10 dark:hover:text-[#4ADE80] cursor-pointer touch-manipulation"
                   >
-                    <MapPin className="h-3 w-3 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                    <MapPin className="h-3 w-3 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                     <span>{item.city}</span>
-                    <span className="font-mono text-[10px] opacity-70">({item.count})</span>
+                    <span className="text-[10px] opacity-70 tabular-nums">({item.count})</span>
                   </button>
                 ))}
               </div>
@@ -901,23 +901,23 @@ export function NearbyEventsMap({
               return (
                 <article
                   key={event.id}
-                  className={`flex flex-col justify-between rounded-xl border border-l-4 ${discStyle.leftBorder} bg-white p-4 transition-colors dark:bg-slate-900 ${
+                  className={`flex flex-col justify-between rounded-[16px] border border-l-4 ${discStyle.leftBorder} bg-white p-4 transition-colors dark:bg-[#161616] ${
                     isSelected
-                      ? 'border-emerald-500 ring-2 ring-emerald-500/20 dark:border-emerald-500'
-                      : 'border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700'
+                      ? 'border-emerald-500 ring-2 ring-emerald-500/20 dark:border-[#4ADE80] dark:ring-[#4ADE80]/20'
+                      : 'border-slate-200 hover:border-slate-300 dark:border-[#262626] dark:hover:border-[#333333]'
                   }`}
                 >
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {distanceKm !== null && (
-                          <span className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-800 tabular-nums dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          <span className="inline-flex items-center gap-1 rounded-[6px] border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800 tabular-nums dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                             <Navigation className="h-3 w-3" aria-hidden="true" />
                             À {formatDistanceKm(distanceKm)}
                           </span>
                         )}
                         <span
-                          className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+                          className={`inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                         >
                           <DisciplineIcon
                             disciplineName={event.discipline}
@@ -927,16 +927,16 @@ export function NearbyEventsMap({
                           {event.discipline}
                         </span>
                         <span
-                          className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
+                          className={`inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
                             event.isPaid
-                              ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                              : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                              ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]'
                           }`}
                         >
                           {formatEventPrice(event)}
                         </span>
                         {registeredEventIds?.has(event.id) && (
-                          <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          <span className="inline-flex items-center rounded-[6px] border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                             Inscrit
                           </span>
                         )}
@@ -945,27 +945,27 @@ export function NearbyEventsMap({
                       <span
                         className={`text-xs font-semibold ${
                           evalInfo.state === 'open'
-                            ? 'text-emerald-700 dark:text-emerald-400'
+                            ? 'text-emerald-700 dark:text-[#4ADE80]'
                             : evalInfo.state === 'closed'
                               ? 'text-amber-700 dark:text-amber-400'
                               : evalInfo.state === 'full' ||
                                   evalInfo.state === 'cancelled'
                                 ? 'text-rose-700 dark:text-rose-400'
-                                : 'text-slate-500 dark:text-slate-400'
+                                : 'text-slate-500 dark:text-[#8E8E8E]'
                         }`}
                       >
                         {evalInfo.statusLabel}
                       </span>
                     </div>
 
-                    <h4 className="mt-2 font-display text-base font-bold text-slate-900 dark:text-white">
+                    <h4 className="mt-2 font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                       {event.title}
                     </h4>
 
-                    <div className="mt-2.5 space-y-1 text-xs text-slate-600 dark:text-slate-300">
-                      <p className="flex items-center gap-1.5 font-mono tabular-nums">
+                    <div className="mt-2.5 space-y-1 text-xs text-slate-600 dark:text-[#A3A3A3]">
+                      <p className="flex items-center gap-1.5 tabular-nums">
                         <Clock
-                          className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0"
+                          className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E] shrink-0"
                           aria-hidden="true"
                         />
                         <span className="capitalize">
@@ -975,19 +975,19 @@ export function NearbyEventsMap({
                       </p>
                       <p className="flex items-center gap-1.5">
                         <MapPin
-                          className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0"
+                          className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E] shrink-0"
                           aria-hidden="true"
                         />
                         <span className="truncate">
                           {event.location} ·{' '}
-                          <strong className="text-slate-900 dark:text-white">
+                          <strong className="text-slate-900 dark:text-[#E5E5E5]">
                             {event.city}
                           </strong>
                         </span>
                       </p>
                       <p className="flex items-center gap-1.5">
                         <UserCheck
-                          className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0"
+                          className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E] shrink-0"
                           aria-hidden="true"
                         />
                         <span className="truncate">
@@ -997,12 +997,12 @@ export function NearbyEventsMap({
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-[#262626]">
                     {hasMapsApiKey && (
                       <button
                         type="button"
                         onClick={() => handleFocusEventOnMap(event.id)}
-                        className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer touch-manipulation"
+                        className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer touch-manipulation"
                       >
                         <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
                         Centrer
@@ -1011,7 +1011,7 @@ export function NearbyEventsMap({
                     <a
                       href={buildDirectionsUrl(searchCenter, pos, event)}
                       {...getExternalMapLinkProps()}
-                      className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 touch-manipulation"
+                      className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] touch-manipulation"
                     >
                       Itinéraire
                       <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -1019,10 +1019,10 @@ export function NearbyEventsMap({
                     <button
                       type="button"
                       onClick={() => onSelectEvent(event)}
-                      className={`flex-1 min-h-[44px] rounded-lg px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer touch-manipulation ${
+                      className={`flex-1 min-h-[44px] rounded-[10px] px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer touch-manipulation ${
                         canBook
-                          ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                          : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                          ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E]'
+                          : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                       }`}
                     >
                       {canBook ? 'Voir & réserver' : 'Voir détails'}
@@ -1173,7 +1173,7 @@ function NearbyGoogleMapCanvas({
     status === APILoadingStatus.AUTH_FAILURE
   ) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+      <div className="rounded-[16px] border border-amber-200 bg-amber-50 p-5 text-center text-xs text-amber-900 dark:border-amber-800/60 dark:bg-[#161616] dark:text-amber-200">
         Impossible d’afficher la carte interactive Google Maps pour le moment. Les séances situées dans votre rayon restent listées et triées par distance ci-dessous.
       </div>
     );
@@ -1184,7 +1184,7 @@ function NearbyGoogleMapCanvas({
   const initialZoom = searchCenter ? 11 : entries.length > 1 ? 6 : 5;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616]">
       <div
         ref={containerRef}
         className="relative h-[300px] w-full sm:h-[420px] lg:h-[460px]"
@@ -1225,10 +1225,10 @@ function NearbyGoogleMapCanvas({
               <Circle
                 center={{ lat: searchCenter.lat, lng: searchCenter.lng }}
                 radius={radiusKm * 1000}
-                strokeColor={isDark ? '#34d399' : '#059669'}
+                strokeColor={isDark ? '#4ADE80' : '#059669'}
                 strokeOpacity={0.85}
                 strokeWeight={2}
-                fillColor="#10b981"
+                fillColor={isDark ? '#4ADE80' : '#10b981'}
                 fillOpacity={isDark ? 0.14 : 0.1}
                 clickable={false}
               />
@@ -1243,9 +1243,9 @@ function NearbyGoogleMapCanvas({
                 }}
               >
                 <div className="relative flex items-center justify-center">
-                  <span className="absolute h-7 w-7 animate-ping rounded-full bg-sky-500/35" />
-                  <span className="relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-sky-600 shadow-md dark:border-slate-900">
-                    <span className="h-2 w-2 rounded-full bg-white" />
+                  <span className="absolute h-7 w-7 animate-ping rounded-full bg-emerald-500/35 dark:bg-[#4ADE80]/35" />
+                  <span className="relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-emerald-600 shadow-md dark:border-[#161616] dark:bg-[#4ADE80]">
+                    <span className="h-2 w-2 rounded-full bg-white dark:bg-[#0A0A0A]" />
                   </span>
                 </div>
               </AdvancedMarker>
@@ -1265,7 +1265,7 @@ function NearbyGoogleMapCanvas({
                     </span>
                   }
                 >
-                  <p className="text-[11px] opacity-85">
+                  <p className="text-[11px] opacity-85 tabular-nums">
                     {searchCenter.label} · Rayon {radiusKm} km
                   </p>
                 </InfoWindow>
@@ -1292,8 +1292,8 @@ function NearbyGoogleMapCanvas({
                 }}
               >
                 <Pin
-                  background={isSelected ? '#0f172a' : discStyle.hex}
-                  borderColor={isSelected ? '#020617' : discStyle.borderHex}
+                  background={isSelected ? '#161616' : discStyle.hex}
+                  borderColor={isSelected ? '#4ADE80' : discStyle.borderHex}
                   glyphColor="#ffffff"
                   scale={isSelected ? 1.18 : 1}
                 >
@@ -1321,7 +1321,7 @@ function NearbyGoogleMapCanvas({
               <div className="space-y-1.5 pt-0.5">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {selectedEntry.distanceKm !== null && (
-                    <span className="inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-[11px] font-bold text-emerald-800">
+                    <span className="inline-flex items-center rounded-[6px] bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold text-emerald-800 tabular-nums">
                       À {formatDistanceKm(selectedEntry.distanceKm)}
                     </span>
                   )}
@@ -1342,7 +1342,7 @@ function NearbyGoogleMapCanvas({
                     {selectedEntry.event.discipline}
                   </span>
                 </div>
-                <p className="text-xs capitalize opacity-90">
+                <p className="text-xs capitalize opacity-90 tabular-nums">
                   {formatFrenchDateShort(selectedEntry.event.startAt.toDate())} à{' '}
                   {formatFrenchTime(selectedEntry.event.startAt.toDate())}
                 </p>
@@ -1351,7 +1351,7 @@ function NearbyGoogleMapCanvas({
                 </p>
                 <p className="text-[11px] font-medium opacity-90">
                   {formatEventCoachesLabel(selectedEntry.event)} ·{' '}
-                  <span className="font-mono font-semibold text-emerald-700">
+                  <span className="font-semibold text-emerald-700 tabular-nums">
                     {formatEventPrice(selectedEntry.event)}
                   </span>
                 </p>
@@ -1359,7 +1359,7 @@ function NearbyGoogleMapCanvas({
                   <button
                     type="button"
                     onClick={() => onSelectEvent(selectedEntry.event)}
-                    className="min-h-[44px] flex-1 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 cursor-pointer touch-manipulation"
+                    className="min-h-[44px] flex-1 rounded-[8px] bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 cursor-pointer touch-manipulation"
                   >
                     Voir &amp; réserver
                   </button>
@@ -1370,7 +1370,7 @@ function NearbyGoogleMapCanvas({
                       selectedEntry.event
                     )}
                     {...getExternalMapLinkProps()}
-                    className="inline-flex min-h-[44px] items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 touch-manipulation"
+                    className="inline-flex min-h-[44px] items-center gap-1 rounded-[8px] border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 touch-manipulation"
                   >
                     Itinéraire
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -1382,7 +1382,7 @@ function NearbyGoogleMapCanvas({
         </GoogleMap>
 
         {resolvingPlaces && (
-          <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white/95 px-2.5 py-1.5 text-[11px] font-medium text-slate-700 shadow-xs dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-200">
+          <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white/95 px-2.5 py-1.5 text-[11px] font-medium text-slate-700 shadow-xs dark:border-[#262626] dark:bg-[#161616]/95 dark:text-[#E5E5E5]">
             <RefreshCw className="h-3 w-3 animate-spin" aria-hidden="true" />
             Géolocalisation des lieux...
           </div>
@@ -1542,11 +1542,11 @@ function ManualStartingPointPanel({
   };
 
   return (
-    <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800 space-y-3">
+    <div className="mt-3 border-t border-slate-100 pt-3 dark:border-[#262626] space-y-3">
       <div>
         <label
           htmlFor="nearby-manual-address"
-          className="block text-xs font-semibold text-slate-700 dark:text-slate-200"
+          className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
         >
           Choisir un point de départ (adresse ou ville)
         </label>
@@ -1597,7 +1597,7 @@ function ManualStartingPointPanel({
                   );
                 }
               }}
-              className="mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white cursor-pointer touch-manipulation shrink-0"
+              className="mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer touch-manipulation shrink-0"
             >
               <Search className="h-3.5 w-3.5" aria-hidden="true" />
               Valider
@@ -1613,7 +1613,7 @@ function ManualStartingPointPanel({
 
       {quickStartCities.length > 0 && (
         <div>
-          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
             Villes disponibles en 1 appui :
           </p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -1625,11 +1625,11 @@ function ManualStartingPointPanel({
                   setLookupError(null);
                   onSelectQuickCity(item);
                 }}
-                className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/60 dark:hover:text-emerald-300 cursor-pointer touch-manipulation"
+                className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:border-[#4ADE80]/40 dark:hover:bg-[#4ADE80]/10 dark:hover:text-[#4ADE80] cursor-pointer touch-manipulation"
               >
-                <MapPin className="h-3 w-3 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                <MapPin className="h-3 w-3 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                 <span>{item.city}</span>
-                <span className="font-mono text-[10px] opacity-70">
+                <span className="text-[10px] opacity-70 tabular-nums">
                   ({item.count})
                 </span>
               </button>
@@ -1740,7 +1740,7 @@ function ManualAddressWithPlacesSearch({
         type="button"
         disabled={searching || value.trim().length < 2}
         onClick={() => void runTextLookup(value)}
-        className="mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white cursor-pointer touch-manipulation shrink-0"
+        className="mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer touch-manipulation shrink-0"
       >
         {searching ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />

@@ -63,7 +63,7 @@ export function CancelledEventsNotifier({
       <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-700 dark:bg-rose-900/70 dark:text-rose-300">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-rose-100 text-rose-700 dark:bg-rose-900/70 dark:text-rose-300">
               <BellRing className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
@@ -84,7 +84,7 @@ export function CancelledEventsNotifier({
               onClick={() =>
                 onDismissAll(visibleNotifications.map((ev) => ev.id))
               }
-              className="self-start rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-800 hover:bg-rose-100/60 dark:border-rose-800 dark:bg-slate-900 dark:text-rose-200 dark:hover:bg-rose-900/40 whitespace-nowrap shrink-0 cursor-pointer"
+              className="self-start rounded-[10px] border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-800 hover:bg-rose-100/60 dark:border-rose-800 dark:bg-[#161616] dark:text-rose-200 dark:hover:bg-rose-900/40 whitespace-nowrap shrink-0 cursor-pointer"
             >
               Tout masquer
             </button>
@@ -98,15 +98,15 @@ export function CancelledEventsNotifier({
             return (
               <div
                 key={ev.id}
-                className="flex flex-col gap-2.5 rounded-lg border border-rose-200 bg-white px-3.5 py-2.5 dark:border-rose-900/70 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2.5 rounded-[12px] border border-rose-200 bg-white px-3.5 py-2.5 dark:border-rose-900/70 dark:bg-[#161616] sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                    <span className="inline-flex items-center rounded-[6px] border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
                       Inscriptions clôturées · Séance annulée
                     </span>
                     <span
-                      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+                      className={`inline-flex items-center gap-1 rounded-[6px] border px-1.5 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                     >
                       <DisciplineIcon
                         disciplineName={ev.discipline}
@@ -115,19 +115,19 @@ export function CancelledEventsNotifier({
                       />
                       {ev.discipline}
                     </span>
-                    <span className="font-display text-sm font-bold text-slate-900 dark:text-white truncate">
+                    <span className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5] truncate">
                       {ev.title}
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
-                    <span className="inline-flex items-center gap-1 font-mono tabular-nums capitalize">
-                      <CalendarClock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-[#A3A3A3]">
+                    <span className="inline-flex items-center gap-1 tabular-nums capitalize">
+                      <CalendarClock className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                       {formatFrenchDateShort(startDate)} ·{' '}
                       {formatTimeRange(startDate, ev.durationMinutes)}
                     </span>
                     <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                      <MapPin className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                       {ev.city} — {ev.location}
                     </span>
                   </div>
@@ -138,7 +138,7 @@ export function CancelledEventsNotifier({
                     <button
                       type="button"
                       onClick={() => onSelectEvent(ev)}
-                      className="min-h-[36px] rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/60 whitespace-nowrap cursor-pointer"
+                      className="min-h-[36px] rounded-[10px] border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/60 whitespace-nowrap cursor-pointer"
                     >
                       Voir la séance
                     </button>
@@ -147,7 +147,7 @@ export function CancelledEventsNotifier({
                     type="button"
                     onClick={() => onDismiss(ev.id)}
                     aria-label={`Fermer la notification pour ${ev.title}`}
-                    className="flex h-[36px] w-[36px] items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                    className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#8E8E8E] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
                   >
                     <X className="h-4 w-4" aria-hidden="true" />
                   </button>

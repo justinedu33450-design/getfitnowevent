@@ -14,6 +14,19 @@
 
   :root.dark {
     color-scheme: dark;
+    --color-slate-950: #0e0e0e;
+    --color-slate-900: #161616;
+    --color-slate-800: #1f1f1f;
+    --color-slate-700: #262626;
+    --color-slate-600: #333333;
+    --color-slate-500: #737373;
+    --color-slate-400: #8e8e8e;
+    --color-slate-300: #a3a3a3;
+    --color-slate-200: #d4d4d4;
+    --color-slate-100: #e5e5e5;
+    --color-slate-50: #f5f5f5;
+    --color-emerald-400: #4ade80;
+    --color-emerald-500: #22c55e;
   }
 
   html {
@@ -38,6 +51,66 @@
 
 .gm-style img {
   max-width: none;
+}
+
+.glass-pill-nav {
+  background: rgba(255, 255, 255, 0.52);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow:
+    0 12px 32px -8px rgba(15, 23, 42, 0.16),
+    0 2px 8px -2px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+:root.dark .glass-pill-nav {
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    0 16px 36px -8px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.glass-pill-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  padding: 1px;
+  background: linear-gradient(
+    225deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(148, 163, 184, 0.35) 50%,
+    rgba(15, 23, 42, 0.12) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+:root.dark .glass-pill-nav::before {
+  background: linear-gradient(
+    225deg,
+    rgba(255, 255, 255, 0.48) 0%,
+    rgba(255, 255, 255, 0.18) 45%,
+    rgba(255, 255, 255, 0.07) 100%
+  );
+}
+
+.calendar-dot-backdrop {
+  background-color: #f8fafc;
+  background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+:root.dark .calendar-dot-backdrop {
+  background-color: #0e0e0e;
+  background-image: radial-gradient(#262626 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 @media (prefers-reduced-motion: reduce) {

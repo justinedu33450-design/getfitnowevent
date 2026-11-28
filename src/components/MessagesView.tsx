@@ -853,19 +853,19 @@ export function MessagesView({
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 dark:border-[#262626] sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+            <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-2xl">
               Messagerie directe
             </h2>
             {totalUnreadCount > 0 && (
-              <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-rose-600 px-2 font-mono text-xs font-bold text-white tabular-nums">
+              <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-rose-600 px-2 text-xs font-bold text-white tabular-nums">
                 {totalUnreadCount}
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-[#8E8E8E]">
             {isCoach
               ? 'Échangez en direct avec vos adhérents pour assurer un suivi personnalisé.'
               : 'Discutez en direct avec vos coachs pour poser vos questions et suivre votre progression.'}
@@ -875,7 +875,7 @@ export function MessagesView({
         <button
           type="button"
           onClick={() => setShowNewConversationPicker((prev) => !prev)}
-          className="inline-flex min-h-[42px] items-center gap-1.5 self-start rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 sm:self-auto cursor-pointer"
+          className="inline-flex min-h-[42px] items-center gap-1.5 self-start rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] sm:self-auto cursor-pointer"
         >
           {showNewConversationPicker ? (
             <>
@@ -892,18 +892,18 @@ export function MessagesView({
       </div>
 
       {/* Master-Detail Messaging Workspace */}
-      <div className="mt-6 grid h-[calc(100dvh-250px)] min-h-[520px] max-h-[760px] grid-cols-1 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:grid-cols-12">
+      <div className="mt-6 grid h-[calc(100dvh-250px)] min-h-[520px] max-h-[760px] grid-cols-1 overflow-hidden rounded-[16px] border border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616] md:grid-cols-12">
         {/* Left Sidebar: Conversations & Contacts */}
         <aside
-          className={`flex flex-col border-slate-200 dark:border-slate-800 md:col-span-4 md:border-r lg:col-span-4 ${
+          className={`flex flex-col border-slate-200 dark:border-[#262626] md:col-span-4 md:border-r lg:col-span-4 ${
             mobileShowThread ? 'hidden md:flex' : 'flex'
           } min-h-0`}
         >
           {/* Search + Tabs */}
-          <div className="border-b border-slate-200 p-3.5 dark:border-slate-800 space-y-2.5">
+          <div className="border-b border-slate-200 p-3.5 dark:border-[#262626] space-y-2.5">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#8E8E8E]"
                 aria-hidden="true"
               />
               <input
@@ -918,18 +918,18 @@ export function MessagesView({
                     : 'Rechercher une discussion...'
                 }
                 aria-label="Rechercher dans la messagerie"
-                className="min-h-[40px] w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+                className="min-h-[40px] w-full rounded-[10px] border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 dark:focus:bg-[#1F1F1F]"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="grid grid-cols-2 gap-1 rounded-[10px] bg-slate-100 p-1 dark:bg-[#1F1F1F]">
               <button
                 type="button"
                 onClick={() => setShowNewConversationPicker(false)}
-                className={`min-h-[32px] rounded-md px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                className={`min-h-[32px] rounded-[8px] px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                   !showNewConversationPicker
-                    ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-2xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                 }`}
               >
                 Discussions ({visibleConversations.length})
@@ -937,10 +937,10 @@ export function MessagesView({
               <button
                 type="button"
                 onClick={() => setShowNewConversationPicker(true)}
-                className={`min-h-[32px] rounded-md px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                className={`min-h-[32px] rounded-[8px] px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                   showNewConversationPicker
-                    ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-2xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                 }`}
               >
                 {isCoach
@@ -951,11 +951,11 @@ export function MessagesView({
           </div>
 
           {/* List Area */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-[#262626]">
             {showNewConversationPicker ? (
               isCoach ? (
                 filteredMemberContacts.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                  <div className="p-6 text-center text-xs text-slate-500 dark:text-[#8E8E8E]">
                     Aucun adhérent disponible pour démarrer une discussion.
                   </div>
                 ) : (
@@ -971,7 +971,7 @@ export function MessagesView({
                         key={member.emailKey}
                         type="button"
                         onClick={() => openContactForCoach(member)}
-                        className="flex w-full items-center gap-3 p-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
+                        className="flex w-full items-center gap-3 p-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1F1F1F] cursor-pointer"
                       >
                         <ProfileAvatar
                           name={member.name}
@@ -980,11 +980,11 @@ export function MessagesView({
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-[#E5E5E5]">
                               {member.name}
                             </p>
                             {unread > 0 ? (
-                              <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 font-mono text-[10px] font-bold text-white tabular-nums">
+                              <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-bold text-white tabular-nums">
                                 {unread}
                               </span>
                             ) : (
@@ -992,18 +992,18 @@ export function MessagesView({
                                 className={`text-[11px] font-medium ${
                                   member.followUpStatus === 'to_follow_up'
                                     ? 'text-amber-700 dark:text-amber-400'
-                                    : 'text-slate-400 dark:text-slate-500'
+                                    : 'text-slate-400 dark:text-[#525252]'
                                 }`}
                               >
                                 {FOLLOW_UP_LABELS[member.followUpStatus]}
                               </span>
                             )}
                           </div>
-                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                          <p className="truncate text-xs text-slate-500 dark:text-[#8E8E8E]">
                             {member.email}
                           </p>
                           {member.goal && (
-                            <p className="mt-0.5 truncate text-[11px] text-emerald-700 dark:text-emerald-400">
+                            <p className="mt-0.5 truncate text-[11px] text-emerald-700 dark:text-[#4ADE80]">
                               Objectif : {member.goal}
                             </p>
                           )}
@@ -1013,7 +1013,7 @@ export function MessagesView({
                   })
                 )
               ) : filteredCoachContacts.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                <div className="p-6 text-center text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Aucun coach actif disponible pour le moment.
                 </div>
               ) : (
@@ -1023,148 +1023,148 @@ export function MessagesView({
                   );
                   const unread = existingConv?.memberUnreadCount ?? 0;
                   return (
-                    <button
-                      key={coach.uid}
-                      type="button"
-                      onClick={() => void openContactForMember(coach)}
-                      className="flex w-full items-center gap-3 p-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
-                    >
-                      <ProfileAvatar
-                        name={coach.name}
-                        photoUrl={coach.photoUrl}
-                        size="md"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                            {coach.name}
-                          </p>
-                          {unread > 0 && (
-                            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 font-mono text-[10px] font-bold text-white tabular-nums">
-                              {unread}
-                            </span>
-                          )}
-                        </div>
-                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                          {[coach.specialty, coach.city]
-                            .filter(Boolean)
-                            .join(' · ') || 'Coach sportif GetFitNow'}
-                        </p>
-                        {getCoachPricingItems(coach.pricing).length > 0 && (
-                          <p className="mt-0.5 truncate font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                            {getCoachPricingItems(coach.pricing)
-                              .slice(0, 3)
-                              .map((p) => `${p.shortLabel} ${p.formattedPrice}`)
-                              .join(' · ')}
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
-              )
-            ) : filteredConversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center">
-                <MessageSquare
-                  className="h-8 w-8 text-slate-300 dark:text-slate-600"
-                  aria-hidden="true"
-                />
-                <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  {visibleConversations.length === 0
-                    ? 'Aucune discussion pour le moment'
-                    : 'Aucun résultat'}
-                </p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {visibleConversations.length === 0
-                    ? isCoach
-                      ? 'Sélectionnez un adhérent pour démarrer un échange de suivi.'
-                      : 'Choisissez un coach pour lui poser une question.'
-                    : 'Essayez avec un autre nom ou mot-clé.'}
-                </p>
-                {visibleConversations.length === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowNewConversationPicker(true)}
-                    className="mt-4 inline-flex min-h-[38px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
-                  >
-                    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                    {isCoach ? 'Écrire à un adhérent' : 'Écrire à un coach'}
-                  </button>
-                )}
-              </div>
-            ) : (
-              filteredConversations.map((conv) => {
-                const contactName = isCoach ? conv.memberName : conv.coachName;
-                const contactPhoto = isCoach
-                  ? conv.memberPhotoUrl ||
-                    memberContactByEmailKey.get(conv.memberEmailKey)?.photoUrl
-                  : conv.coachPhotoUrl ||
-                    coachContactByUid.get(conv.coachUid)?.photoUrl;
-                const unread = isCoach
-                  ? conv.coachUnreadCount
-                  : conv.memberUnreadCount;
-                const isSelected = activeConversation?.id === conv.id;
-                const sentByMe =
-                  conv.lastMessageSenderRole === (isCoach ? 'coach' : 'member');
-                const lastDate = conv.lastMessageAt?.toDate?.() ?? null;
-                const isConfirmingRowDelete = confirmDeleteConvId === conv.id;
-                const isDeletingRow = deletingConvId === conv.id;
-
-                return (
-                  <div
-                    key={conv.id}
-                    className={`group relative transition-colors ${
-                      isSelected
-                        ? 'bg-emerald-50/75 dark:bg-emerald-950/35'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2 p-3.5">
                       <button
+                        key={coach.uid}
                         type="button"
-                        onClick={() => openConversation(conv)}
-                        className="flex min-w-0 flex-1 items-start gap-3 text-left cursor-pointer"
+                        onClick={() => void openContactForMember(coach)}
+                        className="flex w-full items-center gap-3 p-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1F1F1F] cursor-pointer"
                       >
                         <ProfileAvatar
-                          name={contactName}
-                          photoUrl={contactPhoto}
+                          name={coach.name}
+                          photoUrl={coach.photoUrl}
                           size="md"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <p
-                              className={`truncate text-sm ${
-                                unread > 0
-                                  ? 'font-bold text-slate-900 dark:text-white'
-                                  : 'font-semibold text-slate-900 dark:text-white'
-                              }`}
-                            >
-                              {contactName}
-                            </p>
-                            <span className="shrink-0 font-mono text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
-                              {formatConversationListTime(lastDate)}
-                            </span>
-                          </div>
-                          <div className="mt-1 flex items-center justify-between gap-2">
-                            <p
-                              className={`truncate text-xs ${
-                                unread > 0
-                                  ? 'font-semibold text-slate-800 dark:text-slate-200'
-                                  : 'text-slate-500 dark:text-slate-400'
-                              }`}
-                            >
-                              {sentByMe
-                                ? `Vous : ${conv.lastMessageText}`
-                                : conv.lastMessageText}
+                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-[#E5E5E5]">
+                              {coach.name}
                             </p>
                             {unread > 0 && (
-                              <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-rose-600 px-1.5 font-mono text-[10px] font-bold text-white tabular-nums">
+                              <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-bold text-white tabular-nums">
                                 {unread}
                               </span>
                             )}
                           </div>
+                          <p className="truncate text-xs text-slate-500 dark:text-[#8E8E8E]">
+                            {[coach.specialty, coach.city]
+                              .filter(Boolean)
+                              .join(' · ') || 'Coach sportif GetFitNow'}
+                          </p>
+                          {getCoachPricingItems(coach.pricing).length > 0 && (
+                            <p className="mt-0.5 truncate text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
+                              {getCoachPricingItems(coach.pricing)
+                                .slice(0, 3)
+                                .map((p) => `${p.shortLabel} ${p.formattedPrice}`)
+                                .join(' · ')}
+                            </p>
+                          )}
                         </div>
                       </button>
+                    );
+                  })
+                )
+              ) : filteredConversations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center">
+                  <MessageSquare
+                    className="h-8 w-8 text-slate-300 dark:text-[#525252]"
+                    aria-hidden="true"
+                  />
+                  <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-[#E5E5E5]">
+                    {visibleConversations.length === 0
+                      ? 'Aucune discussion pour le moment'
+                      : 'Aucun résultat'}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
+                    {visibleConversations.length === 0
+                      ? isCoach
+                        ? 'Sélectionnez un adhérent pour démarrer un échange de suivi.'
+                        : 'Choisissez un coach pour lui poser une question.'
+                      : 'Essayez avec un autre nom ou mot-clé.'}
+                  </p>
+                  {visibleConversations.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowNewConversationPicker(true)}
+                      className="mt-4 inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                      {isCoach ? 'Écrire à un adhérent' : 'Écrire à un coach'}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                filteredConversations.map((conv) => {
+                  const contactName = isCoach ? conv.memberName : conv.coachName;
+                  const contactPhoto = isCoach
+                    ? conv.memberPhotoUrl ||
+                      memberContactByEmailKey.get(conv.memberEmailKey)?.photoUrl
+                    : conv.coachPhotoUrl ||
+                      coachContactByUid.get(conv.coachUid)?.photoUrl;
+                  const unread = isCoach
+                    ? conv.coachUnreadCount
+                    : conv.memberUnreadCount;
+                  const isSelected = activeConversation?.id === conv.id;
+                  const sentByMe =
+                    conv.lastMessageSenderRole === (isCoach ? 'coach' : 'member');
+                  const lastDate = conv.lastMessageAt?.toDate?.() ?? null;
+                  const isConfirmingRowDelete = confirmDeleteConvId === conv.id;
+                  const isDeletingRow = deletingConvId === conv.id;
+
+                  return (
+                    <div
+                      key={conv.id}
+                      className={`group relative transition-colors ${
+                        isSelected
+                          ? 'bg-emerald-50/75 dark:bg-[#4ADE80]/10'
+                          : 'hover:bg-slate-50 dark:hover:bg-[#1F1F1F]'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2 p-3.5">
+                        <button
+                          type="button"
+                          onClick={() => openConversation(conv)}
+                          className="flex min-w-0 flex-1 items-start gap-3 text-left cursor-pointer"
+                        >
+                          <ProfileAvatar
+                            name={contactName}
+                            photoUrl={contactPhoto}
+                            size="md"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <p
+                                className={`truncate text-sm ${
+                                  unread > 0
+                                    ? 'font-bold text-slate-900 dark:text-[#E5E5E5]'
+                                    : 'font-semibold text-slate-900 dark:text-[#E5E5E5]'
+                                }`}
+                              >
+                                {contactName}
+                              </p>
+                              <span className="shrink-0 text-[11px] text-slate-400 dark:text-[#8E8E8E] tabular-nums">
+                                {formatConversationListTime(lastDate)}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex items-center justify-between gap-2">
+                              <p
+                                className={`truncate text-xs ${
+                                  unread > 0
+                                    ? 'font-semibold text-slate-800 dark:text-[#E5E5E5]'
+                                    : 'text-slate-500 dark:text-[#8E8E8E]'
+                                }`}
+                              >
+                                {sentByMe
+                                  ? `Vous : ${conv.lastMessageText}`
+                                  : conv.lastMessageText}
+                              </p>
+                              {unread > 0 && (
+                                <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-bold text-white tabular-nums">
+                                  {unread}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
 
                       {!isConfirmingRowDelete && (
                         <button
@@ -1176,7 +1176,7 @@ export function MessagesView({
                           }}
                           aria-label={`Supprimer la discussion avec ${contactName}`}
                           title="Supprimer la discussion"
-                          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 opacity-80 transition-opacity hover:bg-rose-50 hover:text-rose-600 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 dark:text-slate-500 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+                          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-slate-400 opacity-80 transition-opacity hover:bg-rose-50 hover:text-rose-600 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 dark:text-[#8E8E8E] dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
@@ -1193,7 +1193,7 @@ export function MessagesView({
                             type="button"
                             disabled={isDeletingRow}
                             onClick={() => void handleDeleteConversation(conv)}
-                            className="rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
+                            className="rounded-[8px] bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
                           >
                             {isDeletingRow ? 'Suppression...' : 'Supprimer'}
                           </button>
@@ -1201,7 +1201,7 @@ export function MessagesView({
                             type="button"
                             disabled={isDeletingRow}
                             onClick={() => setConfirmDeleteConvId(null)}
-                            className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                            className="rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                           >
                             Annuler
                           </button>
@@ -1217,19 +1217,19 @@ export function MessagesView({
 
         {/* Right Pane: Active Thread */}
         <div
-          className={`flex min-h-0 flex-col bg-slate-50/50 dark:bg-slate-950/40 md:col-span-8 ${
+          className={`flex min-h-0 flex-col bg-slate-50/50 dark:bg-[#0E0E0E]/60 md:col-span-8 ${
             mobileShowThread ? 'flex' : 'hidden md:flex'
           }`}
         >
           {!selectedThread ? (
             <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+              <div className="flex h-14 w-14 items-center justify-center rounded-[16px] bg-emerald-50 text-emerald-700 dark:border dark:border-[#4ADE80]/25 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                 <MessageSquare className="h-7 w-7" aria-hidden="true" />
               </div>
-              <h3 className="mt-4 font-display text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="mt-4 font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                 Sélectionnez ou démarrez une discussion
               </h3>
-              <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-[#8E8E8E]">
                 {isCoach
                   ? 'Retrouvez vos échanges avec les adhérents pour ajuster leurs objectifs, répondre à leurs questions ou préparer la prochaine séance.'
                   : 'Échangez directement avec votre coach pour poser vos questions sur une séance ou faire le point sur votre suivi.'}
@@ -1237,7 +1237,7 @@ export function MessagesView({
               <button
                 type="button"
                 onClick={() => setShowNewConversationPicker(true)}
-                className="mt-5 inline-flex min-h-[42px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                className="mt-5 inline-flex min-h-[42px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
                 Nouvelle discussion
@@ -1246,13 +1246,13 @@ export function MessagesView({
           ) : (
             <>
               {/* Thread Header */}
-              <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 sm:px-5">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-[#262626] dark:bg-[#161616] sm:px-5">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     type="button"
                     onClick={() => setMobileShowThread(false)}
                     aria-label="Retour à la liste des discussions"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden cursor-pointer"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F] md:hidden cursor-pointer"
                   >
                     <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -1263,24 +1263,24 @@ export function MessagesView({
                   />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="truncate font-display text-sm font-bold text-slate-900 dark:text-white sm:text-base">
+                      <h3 className="truncate font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5] sm:text-base">
                         {activeRecipientName}
                       </h3>
                       {isCoach && selectedThread.followUpStatus && (
                         <span
-                          className={`hidden sm:inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                          className={`hidden sm:inline-flex items-center rounded-[6px] border px-1.5 py-0.5 text-[10px] font-semibold ${
                             selectedThread.followUpStatus === 'to_follow_up'
                               ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                               : selectedThread.followUpStatus === 'active'
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]'
+                                : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3]'
                           }`}
                         >
                           {FOLLOW_UP_LABELS[selectedThread.followUpStatus]}
                         </span>
                       )}
                     </div>
-                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                    <p className="truncate text-xs text-slate-500 dark:text-[#8E8E8E]">
                       {selectedThread.subtitle ||
                         (isCoach ? selectedThread.memberEmail : 'Coach sportif')}
                     </p>
@@ -1294,7 +1294,7 @@ export function MessagesView({
                       onClick={() =>
                         onOpenMemberProfile(selectedThread.memberEmailKey)
                       }
-                      className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                     >
                       <UserCheck className="h-3.5 w-3.5" aria-hidden="true" />
                       <span className="hidden sm:inline">Voir fiche suivi</span>
@@ -1315,10 +1315,10 @@ export function MessagesView({
                       }}
                       aria-label="Supprimer cette discussion"
                       title="Supprimer cette discussion"
-                      className={`inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                      className={`inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-[10px] border px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                         confirmDeleteConvId === activeConversation.id
                           ? 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/40 dark:hover:text-rose-300'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:border-rose-800 dark:hover:bg-rose-950/40 dark:hover:text-rose-300'
                       }`}
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1339,7 +1339,7 @@ export function MessagesView({
                       type="button"
                       disabled={deletingConvId === activeConversation.id}
                       onClick={() => void handleDeleteConversation(activeConversation)}
-                      className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
+                      className="rounded-[10px] bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
                     >
                       {deletingConvId === activeConversation.id
                         ? 'Suppression...'
@@ -1349,7 +1349,7 @@ export function MessagesView({
                       type="button"
                       disabled={deletingConvId === activeConversation.id}
                       onClick={() => setConfirmDeleteConvId(null)}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      className="rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                     >
                       Annuler
                     </button>
@@ -1380,15 +1380,15 @@ export function MessagesView({
               {/* Messages Stream */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 sm:p-5">
                 {messagesLoading && messages.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-xs text-slate-500 dark:text-slate-400">
+                  <div className="flex h-full items-center justify-center text-xs text-slate-500 dark:text-[#8E8E8E]">
                     Chargement de la conversation...
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center text-center">
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-[#E5E5E5]">
                       Démarrer l’échange avec {activeRecipientName}
                     </p>
-                    <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-[#8E8E8E]">
                       Envoyez un message ci-dessous ou cliquez sur une suggestion rapide :
                     </p>
                     <div className="mt-4 flex flex-col gap-2 max-w-md w-full">
@@ -1400,7 +1400,7 @@ export function MessagesView({
                             setDraftText(suggestion);
                             composerInputRef.current?.focus();
                           }}
-                          className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-left text-xs text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 cursor-pointer"
+                          className="rounded-[12px] border border-slate-200 bg-white px-3.5 py-2.5 text-left text-xs text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:border-[#4ADE80]/40 dark:hover:bg-[#1F1F1F] cursor-pointer"
                         >
                           « {suggestion} »
                         </button>
@@ -1446,7 +1446,7 @@ export function MessagesView({
                       <div key={msg.id} className="space-y-3">
                         {showDaySeparator && (
                           <div className="flex items-center justify-center">
-                            <span className="rounded-full border border-slate-200 bg-white px-3 py-0.5 text-[11px] font-medium text-slate-500 capitalize dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                            <span className="rounded-full border border-slate-200 bg-white px-3 py-0.5 text-[11px] font-medium text-slate-500 capitalize dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E]">
                               {formatMessageDayHeader(msgDate)}
                             </span>
                           </div>
@@ -1458,14 +1458,14 @@ export function MessagesView({
                           }`}
                         >
                           <div
-                            className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm shadow-2xs ${
+                            className={`max-w-[85%] sm:max-w-[75%] rounded-[16px] px-3.5 py-2.5 text-sm shadow-2xs ${
                               isMine
-                                ? 'rounded-br-sm bg-emerald-700 text-white dark:bg-emerald-600'
-                                : 'rounded-bl-sm border border-slate-200 bg-white text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100'
+                                ? 'rounded-br-sm bg-emerald-700 text-white dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                                : 'rounded-bl-sm border border-slate-200 bg-white text-slate-800 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5]'
                             }`}
                           >
                             {!isMine && (
-                              <p className="mb-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                              <p className="mb-1 text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80]">
                                 {msg.senderName}
                               </p>
                             )}
@@ -1476,10 +1476,10 @@ export function MessagesView({
                                   <button
                                     type="button"
                                     onClick={() => onSelectEvent(linkedEvent)}
-                                    className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium underline underline-offset-2 cursor-pointer ${
+                                    className={`inline-flex items-center gap-1 rounded-[6px] px-2 py-0.5 text-[11px] font-medium underline underline-offset-2 cursor-pointer ${
                                       isMine
-                                        ? 'bg-emerald-800/70 text-emerald-50 hover:bg-emerald-800'
-                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                                        ? 'bg-emerald-800/70 text-emerald-50 hover:bg-emerald-800 dark:bg-[#0A0A0A]/15 dark:text-[#0A0A0A] dark:hover:bg-[#0A0A0A]/25'
+                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                                     }`}
                                   >
                                     <CalendarDays
@@ -1490,10 +1490,10 @@ export function MessagesView({
                                   </button>
                                 ) : (
                                   <span
-                                    className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium ${
+                                    className={`inline-flex items-center gap-1 rounded-[6px] px-2 py-0.5 text-[11px] font-medium ${
                                       isMine
-                                        ? 'bg-emerald-800/70 text-emerald-50'
-                                        : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                                        ? 'bg-emerald-800/70 text-emerald-50 dark:bg-[#0A0A0A]/15 dark:text-[#0A0A0A]'
+                                        : 'bg-slate-100 text-slate-700 dark:bg-[#1F1F1F] dark:text-[#E5E5E5]'
                                     }`}
                                   >
                                     <CalendarDays
@@ -1511,10 +1511,10 @@ export function MessagesView({
                             </p>
 
                             <div
-                              className={`mt-1 flex items-center justify-end gap-1 font-mono text-[10px] tabular-nums ${
+                              className={`mt-1 flex items-center justify-end gap-1 text-[10px] tabular-nums ${
                                 isMine
-                                  ? 'text-emerald-100/90'
-                                  : 'text-slate-400 dark:text-slate-500'
+                                  ? 'text-emerald-100/90 dark:text-[#0A0A0A]/75'
+                                  : 'text-slate-400 dark:text-[#8E8E8E]'
                               }`}
                             >
                               <span>{formatFrenchTime(msgDate)}</span>
@@ -1539,12 +1539,12 @@ export function MessagesView({
                               aria-pressed={likedByMe}
                               aria-label={likeTitle}
                               title={likeTitle}
-                              className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-60 cursor-pointer ${
+                              className={`inline-flex items-center gap-1 rounded-[8px] border px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-60 cursor-pointer ${
                                 likedByMe
                                   ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800/80 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/50'
                                   : likeCount > 0
-                                    ? 'border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:text-rose-300'
-                                    : 'border-transparent bg-transparent text-slate-400 hover:border-slate-200 hover:bg-white hover:text-rose-600 dark:text-slate-500 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-rose-300'
+                                    ? 'border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:text-rose-600 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:border-rose-800 dark:hover:text-rose-300'
+                                    : 'border-transparent bg-transparent text-slate-400 hover:border-slate-200 hover:bg-white hover:text-rose-600 dark:text-[#8E8E8E] dark:hover:border-[#262626] dark:hover:bg-[#161616] dark:hover:text-rose-300'
                               }`}
                             >
                               <Heart
@@ -1556,13 +1556,13 @@ export function MessagesView({
                                 aria-hidden="true"
                               />
                               {likeCount > 0 && (
-                                <span className="font-mono text-[10px] font-semibold tabular-nums">
+                                <span className="text-[10px] font-semibold tabular-nums">
                                   {likeCount}
                                 </span>
                               )}
                             </button>
                             {likedByOther && (
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                              <span className="text-[10px] text-slate-400 dark:text-[#8E8E8E]">
                                 Aimé par {activeRecipientName}
                               </span>
                             )}
@@ -1578,12 +1578,12 @@ export function MessagesView({
               {/* Composer */}
               <form
                 onSubmit={handleFormSubmit}
-                className="border-t border-slate-200 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900 sm:p-4 space-y-2.5"
+                className="border-t border-slate-200 bg-white p-3.5 dark:border-[#262626] dark:bg-[#161616] sm:p-4 space-y-2.5"
               >
                 {sendError && (
                   <div
                     role="alert"
-                    className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
+                    className="rounded-[10px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
                   >
                     {sendError}
                   </div>
@@ -1592,7 +1592,7 @@ export function MessagesView({
                 {/* Optional Context Event Selector */}
                 <div className="flex flex-wrap items-center gap-2">
                   {contextEventId && contextEventTitle ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                    <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                       <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
                       <span>Séance : {contextEventTitle}</span>
                       <button
@@ -1602,7 +1602,7 @@ export function MessagesView({
                           setContextEventTitle('');
                         }}
                         aria-label="Retirer la séance associée"
-                        className="ml-0.5 rounded p-0.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer"
+                        className="ml-0.5 rounded p-0.5 hover:bg-emerald-100 dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                       >
                         <X className="h-3 w-3" aria-hidden="true" />
                       </button>
@@ -1619,7 +1619,7 @@ export function MessagesView({
                         setContextEventId(matched ? matched.id : '');
                         setContextEventTitle(matched ? matched.title : '');
                       }}
-                      className="min-h-[34px] max-w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-600 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      className="min-h-[34px] max-w-full rounded-[10px] border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-600 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:focus:border-[#4ADE80]"
                     >
                       <option value="">
                         Associer une séance (optionnel)...
@@ -1644,13 +1644,13 @@ export function MessagesView({
                       onKeyDown={handleComposerKeyDown}
                       placeholder={`Écrire un message à ${activeRecipientName}...`}
                       aria-label={`Message pour ${activeRecipientName}`}
-                      className="w-full resize-none rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                      className="w-full resize-none rounded-[12px] border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={sending || draftText.trim().length === 0}
-                    className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+                    className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-[12px] bg-emerald-700 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-50 cursor-pointer"
                   >
                     <Send className="h-4 w-4" aria-hidden="true" />
                     <span className="hidden sm:inline">
@@ -1659,9 +1659,9 @@ export function MessagesView({
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
+                <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-[#8E8E8E]">
                   <span>Entrée pour envoyer · Maj + Entrée pour saut de ligne</span>
-                  <span className="font-mono tabular-nums">
+                  <span className="tabular-nums">
                     {draftText.length}/{VALIDATION_LIMITS.MESSAGE_TEXT_MAX}
                   </span>
                 </div>

@@ -546,27 +546,27 @@ export function RunningSessionEditorModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="running-session-editor-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/65 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-black/75 p-0 backdrop-blur-xs sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[94dvh] w-full max-w-6xl flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[94dvh] w-full max-w-6xl flex-col overflow-hidden rounded-t-[16px] border border-slate-200 bg-white shadow-2xl sm:rounded-[16px] dark:border-[#262626] dark:bg-[#161616]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-3.5 dark:border-slate-800">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-3.5 dark:border-[#262626]">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/70 dark:text-sky-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
               <Footprints className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h2
                 id="running-session-editor-title"
-                className="font-display text-base font-bold text-slate-900 dark:text-white truncate sm:text-lg"
+                className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5] truncate sm:text-lg"
               >
                 Personnaliser les séances · {program.memberName}
               </h2>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E] truncate tabular-nums">
                 {program.title} · {tpl.shortLabel} ({totalWeeks} sem. ·{' '}
                 {program.sessionsPerWeek} séances/sem.)
                 {customizedCount > 0
@@ -580,16 +580,16 @@ export function RunningSessionEditorModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Week & Session Navigator */}
-        <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-2.5 dark:border-slate-800 dark:bg-slate-950/60 space-y-2">
+        <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-2.5 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-2">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mr-1">
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E] mr-1">
               Semaines :
             </span>
             {Array.from({ length: totalWeeks }, (_, i) => i + 1).map((wk) => {
@@ -602,17 +602,17 @@ export function RunningSessionEditorModal({
                   key={wk}
                   type="button"
                   onClick={() => handleSelectWeek(wk)}
-                  className={`relative inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 font-mono text-[11px] font-bold transition-colors cursor-pointer ${
+                  className={`relative inline-flex shrink-0 items-center gap-1 rounded-[8px] border px-2.5 py-1 text-[11px] font-bold tabular-nums transition-colors cursor-pointer ${
                     isSelected
-                      ? 'border-slate-900 bg-slate-900 text-white dark:border-emerald-500 dark:bg-emerald-600'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                      ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                   }`}
                 >
                   <span>S{wk}</span>
                   {hasCustomInWeek && (
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${
-                        isSelected ? 'bg-amber-300' : 'bg-amber-500'
+                        isSelected ? 'bg-amber-300 dark:bg-[#0A0A0A]' : 'bg-amber-500 dark:bg-[#4ADE80]'
                       }`}
                       title="Contient au moins une séance personnalisée"
                     />
@@ -623,7 +623,7 @@ export function RunningSessionEditorModal({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mr-1">
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E] mr-1">
               Séances S{selectedWeek} :
             </span>
             {sessionsInWeek.map((sess) => {
@@ -633,28 +633,28 @@ export function RunningSessionEditorModal({
                   key={sess.key}
                   type="button"
                   onClick={() => handleRequestSessionSwitch(sess.key)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-left text-[11px] transition-colors cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 rounded-[8px] border px-2.5 py-1 text-left text-[11px] transition-colors cursor-pointer ${
                     active
-                      ? 'border-sky-600 bg-sky-600 font-semibold text-white'
-                      : 'border-slate-200 bg-white font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                      ? 'border-emerald-700 bg-emerald-700 font-semibold text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                      : 'border-slate-200 bg-white font-medium text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                   }`}
                 >
-                  <span className="font-mono font-bold">
+                  <span className="font-bold tabular-nums">
                     #{sess.sessionIndexInWeek}
                   </span>
                   <span className="max-w-[170px] truncate">{sess.title}</span>
                   <span
-                    className={`font-mono text-[10px] ${
-                      active ? 'text-sky-100' : 'text-slate-400'
+                    className={`text-[10px] tabular-nums ${
+                      active ? 'text-emerald-100 dark:text-[#0A0A0A]/80' : 'text-slate-400 dark:text-[#8E8E8E]'
                     }`}
                   >
                     ({sess.exercises.length} ex.)
                   </span>
                   {sess.isCustomized && (
                     <span
-                      className={`rounded px-1 py-0.5 text-[9px] font-bold uppercase ${
+                      className={`rounded-[6px] px-1 py-0.5 text-[9px] font-bold uppercase ${
                         active
-                          ? 'bg-amber-400/25 text-amber-100'
+                          ? 'bg-white/20 text-white dark:bg-[#0A0A0A]/15 dark:text-[#0A0A0A]'
                           : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                       }`}
                     >
@@ -667,7 +667,7 @@ export function RunningSessionEditorModal({
           </div>
 
           {pendingSwitchKey && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100">
               <span className="font-medium">
                 Vous avez des modifications non enregistrées sur la séance actuelle.
               </span>
@@ -682,7 +682,7 @@ export function RunningSessionEditorModal({
                       setPendingSwitchKey(null);
                     }
                   }}
-                  className="rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 cursor-pointer"
+                  className="rounded-[8px] bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                 >
                   Enregistrer et changer
                 </button>
@@ -693,14 +693,14 @@ export function RunningSessionEditorModal({
                     setPendingSwitchKey(null);
                     if (nextKey) setSelectedSessionKey(nextKey);
                   }}
-                  className="rounded-md border border-amber-400 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-slate-900 dark:text-amber-200 cursor-pointer"
+                  className="rounded-[8px] border border-amber-400 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-[#161616] dark:text-amber-200 cursor-pointer"
                 >
                   Ignorer
                 </button>
                 <button
                   type="button"
                   onClick={() => setPendingSwitchKey(null)}
-                  className="rounded-md px-2 py-1 text-[11px] text-slate-600 hover:text-slate-900 dark:text-slate-300 cursor-pointer"
+                  className="rounded-[8px] px-2 py-1 text-[11px] text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5] cursor-pointer"
                 >
                   Rester
                 </button>
@@ -710,15 +710,15 @@ export function RunningSessionEditorModal({
         </div>
 
         {/* Mobile pane switcher */}
-        <div className="flex border-b border-slate-200 bg-white px-5 py-2 lg:hidden dark:border-slate-800 dark:bg-slate-900">
-          <div className="grid w-full grid-cols-2 gap-1.5 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="flex border-b border-slate-200 bg-white px-5 py-2 lg:hidden dark:border-[#262626] dark:bg-[#161616]">
+          <div className="grid w-full grid-cols-2 gap-1.5 rounded-[12px] border border-slate-200 bg-slate-100 p-1 dark:border-[#262626] dark:bg-[#1F1F1F]">
             <button
               type="button"
               onClick={() => setMobilePane('session')}
-              className={`min-h-[34px] rounded-md px-3 text-xs font-semibold cursor-pointer ${
+              className={`min-h-[34px] rounded-[8px] px-3 text-xs font-semibold tabular-nums cursor-pointer ${
                 mobilePane === 'session'
-                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 dark:text-slate-300'
+                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-[#161616] dark:text-[#4ADE80]'
+                  : 'text-slate-600 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
               }`}
             >
               Séance ({sessionExercises.length} ex.)
@@ -726,10 +726,10 @@ export function RunningSessionEditorModal({
             <button
               type="button"
               onClick={() => setMobilePane('library')}
-              className={`min-h-[34px] rounded-md px-3 text-xs font-semibold cursor-pointer ${
+              className={`min-h-[34px] rounded-[8px] px-3 text-xs font-semibold cursor-pointer ${
                 mobilePane === 'library'
-                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 dark:text-slate-300'
+                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-[#161616] dark:text-[#4ADE80]'
+                  : 'text-slate-600 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
               }`}
             >
               {replacingIndex !== null
@@ -747,13 +747,13 @@ export function RunningSessionEditorModal({
           <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-12">
             {/* LEFT PANE: Exercise Library + Quick Custom */}
             <aside
-              className={`flex min-h-0 flex-col border-b border-slate-200 bg-slate-50/70 lg:col-span-5 lg:border-b-0 lg:border-r dark:border-slate-800 dark:bg-slate-950/50 ${
+              className={`flex min-h-0 flex-col border-b border-slate-200 bg-slate-50/70 lg:col-span-5 lg:border-b-0 lg:border-r dark:border-[#262626] dark:bg-[#0E0E0E] ${
                 mobilePane === 'library' ? 'flex' : 'hidden lg:flex'
               }`}
             >
-              <div className="border-b border-slate-200 p-4 space-y-2.5 dark:border-slate-800">
+              <div className="border-b border-slate-200 p-4 space-y-2.5 dark:border-[#262626]">
                 {replacingIndex !== null && sessionExercises[replacingIndex] && (
-                  <div className="rounded-lg border border-sky-300 bg-sky-50 p-2.5 text-xs text-sky-950 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-100 space-y-2">
+                  <div className="rounded-[12px] border border-sky-300 bg-sky-50 p-2.5 text-xs text-sky-950 dark:border-sky-800/60 dark:bg-sky-950/40 dark:text-sky-100 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold leading-snug">
                         Remplacer l’exercice #{replacingIndex + 1} : «{' '}
@@ -762,7 +762,7 @@ export function RunningSessionEditorModal({
                       <button
                         type="button"
                         onClick={() => setReplacingIndex(null)}
-                        className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold text-sky-700 hover:bg-sky-100 dark:text-sky-300 dark:hover:bg-sky-900/60 cursor-pointer"
+                        className="shrink-0 rounded-[6px] px-1.5 py-0.5 text-[11px] font-semibold text-sky-700 hover:bg-sky-100 dark:text-sky-300 dark:hover:bg-sky-900/60 cursor-pointer"
                       >
                         Annuler
                       </button>
@@ -772,7 +772,7 @@ export function RunningSessionEditorModal({
                         type="checkbox"
                         checked={keepReplacedParams}
                         onChange={(e) => setKeepReplacedParams(e.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-sky-400 text-sky-600 focus:ring-sky-600"
+                        className="h-3.5 w-3.5 rounded border-sky-400 text-sky-600 focus:ring-sky-600 dark:accent-[#4ADE80]"
                       />
                       <span>
                         Conserver les paramètres actuels (rép., durée, tours, pause, repos)
@@ -782,13 +782,13 @@ export function RunningSessionEditorModal({
                 )}
 
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5]">
                     Bibliothèque d’exercices
                   </span>
                   <button
                     type="button"
                     onClick={() => setCustomFormOpen((v) => !v)}
-                    className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-[8px] border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                   >
                     <Sparkles className="h-3 w-3" aria-hidden="true" />
                     <span>{customFormOpen ? 'Fermer libre' : 'Exercice libre'}</span>
@@ -796,8 +796,8 @@ export function RunningSessionEditorModal({
                 </div>
 
                 {customFormOpen && (
-                  <div className="rounded-xl border border-emerald-200 bg-white p-3 space-y-2 dark:border-emerald-900 dark:bg-slate-900">
-                    <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                  <div className="rounded-[12px] border border-emerald-200 bg-white p-3 space-y-2 dark:border-[#262626] dark:bg-[#161616]">
+                    <p className="text-[11px] font-bold text-emerald-800 dark:text-[#4ADE80]">
                       {replacingIndex !== null
                         ? `Remplacer #${replacingIndex + 1} par un exercice sur mesure`
                         : 'Créer et ajouter un exercice sur mesure'}
@@ -809,14 +809,14 @@ export function RunningSessionEditorModal({
                         value={customName}
                         onChange={(e) => setCustomName(e.target.value)}
                         placeholder="Nom de l'exercice..."
-                        className="sm:col-span-2 min-h-[34px] rounded-md border border-slate-300 bg-slate-50 px-2.5 text-xs text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="sm:col-span-2 min-h-[34px] rounded-[8px] border border-slate-300 bg-slate-50 px-2.5 text-xs text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                       />
                       <select
                         value={customCategory}
                         onChange={(e) =>
                           setCustomCategory(e.target.value as ExerciseCategory)
                         }
-                        className="min-h-[34px] rounded-md border border-slate-300 bg-slate-50 px-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="min-h-[34px] rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                       >
                         <option value="running">Running</option>
                         <option value="strength">Renforcement</option>
@@ -825,7 +825,7 @@ export function RunningSessionEditorModal({
                     </div>
                     <div className="grid grid-cols-5 gap-1.5">
                       <div>
-                        <label className="block text-[9px] font-semibold uppercase text-slate-500">
+                        <label className="block text-[9px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]">
                           Rép.
                         </label>
                         <input
@@ -836,11 +836,11 @@ export function RunningSessionEditorModal({
                           onChange={(e) =>
                             setCustomReps(Math.max(0, Number(e.target.value) || 0))
                           }
-                          className="mt-0.5 min-h-[30px] w-full rounded border border-slate-300 bg-white px-1.5 font-mono text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-800"
+                          className="mt-0.5 min-h-[30px] w-full rounded-[6px] border border-slate-300 bg-white px-1.5 text-[11px] font-semibold tabular-nums dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                         />
                       </div>
                       <div>
-                        <label className="block text-[9px] font-semibold uppercase text-slate-500">
+                        <label className="block text-[9px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]">
                           Durée(s)
                         </label>
                         <input
@@ -853,11 +853,11 @@ export function RunningSessionEditorModal({
                               Math.max(0, Number(e.target.value) || 0)
                             )
                           }
-                          className="mt-0.5 min-h-[30px] w-full rounded border border-slate-300 bg-white px-1.5 font-mono text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-800"
+                          className="mt-0.5 min-h-[30px] w-full rounded-[6px] border border-slate-300 bg-white px-1.5 text-[11px] font-semibold tabular-nums dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                         />
                       </div>
                       <div>
-                        <label className="block text-[9px] font-semibold uppercase text-slate-500">
+                        <label className="block text-[9px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]">
                           Tours
                         </label>
                         <input
@@ -870,11 +870,11 @@ export function RunningSessionEditorModal({
                               Math.max(1, Number(e.target.value) || 1)
                             )
                           }
-                          className="mt-0.5 min-h-[30px] w-full rounded border border-slate-300 bg-white px-1.5 font-mono text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-800"
+                          className="mt-0.5 min-h-[30px] w-full rounded-[6px] border border-slate-300 bg-white px-1.5 text-[11px] font-semibold tabular-nums dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                         />
                       </div>
                       <div>
-                        <label className="block text-[9px] font-semibold uppercase text-slate-500">
+                        <label className="block text-[9px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]">
                           Pause(s)
                         </label>
                         <input
@@ -887,11 +887,11 @@ export function RunningSessionEditorModal({
                               Math.max(0, Number(e.target.value) || 0)
                             )
                           }
-                          className="mt-0.5 min-h-[30px] w-full rounded border border-slate-300 bg-white px-1.5 font-mono text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-800"
+                          className="mt-0.5 min-h-[30px] w-full rounded-[6px] border border-slate-300 bg-white px-1.5 text-[11px] font-semibold tabular-nums dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                         />
                       </div>
                       <div>
-                        <label className="block text-[9px] font-semibold uppercase text-slate-500">
+                        <label className="block text-[9px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]">
                           Repos(s)
                         </label>
                         <input
@@ -904,7 +904,7 @@ export function RunningSessionEditorModal({
                               Math.max(0, Number(e.target.value) || 0)
                             )
                           }
-                          className="mt-0.5 min-h-[30px] w-full rounded border border-slate-300 bg-white px-1.5 font-mono text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-800"
+                          className="mt-0.5 min-h-[30px] w-full rounded-[6px] border border-slate-300 bg-white px-1.5 text-[11px] font-semibold tabular-nums dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                         />
                       </div>
                     </div>
@@ -915,12 +915,12 @@ export function RunningSessionEditorModal({
                         value={customNotes}
                         onChange={(e) => setCustomNotes(e.target.value)}
                         placeholder="Consigne / allure (optionnel)..."
-                        className="min-h-[32px] flex-1 rounded-md border border-slate-300 bg-slate-50 px-2 text-xs dark:border-slate-700 dark:bg-slate-800"
+                        className="min-h-[32px] flex-1 rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252]"
                       />
                       <button
                         type="button"
                         onClick={handleAddOrReplaceCustomExercise}
-                        className="inline-flex min-h-[32px] items-center gap-1 rounded-md bg-emerald-700 px-3 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 cursor-pointer"
+                        className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] bg-emerald-700 px-3 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                       >
                         <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                         <span>
@@ -933,7 +933,7 @@ export function RunningSessionEditorModal({
 
                 <div className="relative">
                   <Search
-                    className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 dark:text-[#8E8E8E]"
                     aria-hidden="true"
                   />
                   <input
@@ -941,7 +941,7 @@ export function RunningSessionEditorModal({
                     value={libSearch}
                     onChange={(e) => setLibSearch(e.target.value)}
                     placeholder="Rechercher un exercice (VMA, squat, gainage...)"
-                    className="min-h-[36px] w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="min-h-[36px] w-full rounded-[10px] border border-slate-300 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                   />
                 </div>
 
@@ -958,10 +958,10 @@ export function RunningSessionEditorModal({
                       key={cat.key}
                       type="button"
                       onClick={() => setLibCategory(cat.key)}
-                      className={`min-h-[28px] rounded-md border px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer ${
+                      className={`min-h-[28px] rounded-[8px] border px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer ${
                         libCategory === cat.key
-                          ? 'border-slate-900 bg-slate-900 text-white dark:border-emerald-500 dark:bg-emerald-600'
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                          ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       {cat.label}
@@ -972,7 +972,7 @@ export function RunningSessionEditorModal({
 
               <div className="flex-1 space-y-2 overflow-y-auto p-3.5">
                 {filteredLibrary.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  <p className="rounded-[12px] border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500 dark:border-[#262626] dark:text-[#8E8E8E]">
                     Aucun exercice trouvé pour ce filtre.
                   </p>
                 ) : (
@@ -981,24 +981,24 @@ export function RunningSessionEditorModal({
                     return (
                       <div
                         key={opt.id}
-                        className="flex items-start justify-between gap-2.5 rounded-xl border border-slate-200 bg-white p-2.5 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                        className="flex items-start justify-between gap-2.5 rounded-[12px] border border-slate-200 bg-white p-2.5 transition-colors hover:border-slate-300 dark:border-[#262626] dark:bg-[#161616] dark:hover:border-[#363636]"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span
-                              className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
+                              className={`inline-flex items-center rounded-[6px] border px-1.5 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
                             >
                               {meta.shortLabel}
                             </span>
-                            <p className="font-display text-xs font-bold text-slate-900 dark:text-white truncate">
+                            <p className="font-display text-xs font-bold text-slate-900 dark:text-[#E5E5E5] truncate">
                               {opt.name}
                             </p>
                           </div>
-                          <p className="mt-1 font-mono text-[10px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+                          <p className="mt-1 text-[10px] text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                             {formatExerciseParamsSummary(opt.defaultParams)}
                           </p>
                           {opt.intensityHint && (
-                            <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                            <p className="mt-0.5 text-[10px] text-slate-500 dark:text-[#8E8E8E] truncate">
                               {opt.intensityHint}
                             </p>
                           )}
@@ -1007,10 +1007,10 @@ export function RunningSessionEditorModal({
                         <button
                           type="button"
                           onClick={() => handlePickFromLibrary(opt)}
-                          className={`inline-flex min-h-[30px] shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold text-white cursor-pointer ${
+                          className={`inline-flex min-h-[30px] shrink-0 items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11px] font-semibold cursor-pointer ${
                             replacingIndex !== null
-                              ? 'bg-sky-600 hover:bg-sky-700'
-                              : 'bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                              ? 'bg-sky-600 text-white hover:bg-sky-700'
+                              : 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E]'
                           }`}
                         >
                           {replacingIndex !== null ? (
@@ -1039,25 +1039,25 @@ export function RunningSessionEditorModal({
               }`}
             >
               {activeSession && (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-950/50">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
                   <div className="space-y-0.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-sky-700 dark:text-sky-400 tabular-nums">
+                      <span className="text-xs font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                         Semaine {activeSession.weekNumber} · Séance{' '}
                         {activeSession.sessionIndexInWeek} ·{' '}
                         {formatFrenchDateShort(activeSession.scheduledDate)}
                       </span>
-                      <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      <span className="rounded-[6px] bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-[#161616] dark:text-[#A3A3A3]">
                         {activeSession.focusLabel}
                       </span>
                       {activeSession.isCustomized && (
-                        <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                        <span className="inline-flex items-center gap-1 rounded-[6px] bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                           <Check className="h-3 w-3" aria-hidden="true" />
                           Personnalisée
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                    <p className="text-[11px] text-slate-600 dark:text-[#A3A3A3]">
                       {activeSession.targetPaceLabel}
                     </p>
                   </div>
@@ -1067,7 +1067,7 @@ export function RunningSessionEditorModal({
                       type="button"
                       disabled={resetting || saving}
                       onClick={() => void handleResetToDefault()}
-                      className="inline-flex min-h-[30px] items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                      className="inline-flex min-h-[30px] items-center gap-1 rounded-[8px] border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                     >
                       <RotateCcw className="h-3 w-3" aria-hidden="true" />
                       <span>
@@ -1085,7 +1085,7 @@ export function RunningSessionEditorModal({
                 <div className="sm:col-span-3">
                   <label
                     htmlFor="rse-title"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Titre de la séance *
                   </label>
@@ -1097,7 +1097,7 @@ export function RunningSessionEditorModal({
                     maxLength={VALIDATION_LIMITS.TITLE_MAX}
                     value={sessionTitle}
                     onChange={(e) => setSessionTitle(e.target.value)}
-                    className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                   />
                 </div>
 
@@ -1105,7 +1105,7 @@ export function RunningSessionEditorModal({
                   <div className="flex items-center justify-between gap-1">
                     <label
                       htmlFor="rse-duration"
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Durée (min)
                     </label>
@@ -1113,7 +1113,7 @@ export function RunningSessionEditorModal({
                       <button
                         type="button"
                         onClick={() => setDurationMinutes(estimatedMinutes)}
-                        className="text-[10px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                        className="text-[10px] font-semibold text-emerald-700 hover:underline dark:text-[#4ADE80] tabular-nums cursor-pointer"
                       >
                         ~{estimatedMinutes}m
                       </button>
@@ -1136,7 +1136,7 @@ export function RunningSessionEditorModal({
                         )
                       )
                     }
-                    className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-sm font-bold text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-sm font-bold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   />
                 </div>
               </div>
@@ -1144,15 +1144,15 @@ export function RunningSessionEditorModal({
               {/* Exercises List */}
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="flex items-center gap-1.5 font-display text-sm font-bold text-slate-900 dark:text-white">
-                    <Dumbbell className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-                    <span>
+                  <h3 className="flex items-center gap-1.5 font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
+                    <Dumbbell className="h-4 w-4 text-emerald-600 dark:text-[#4ADE80]" aria-hidden="true" />
+                    <span className="tabular-nums">
                       Exercices de la séance ({sessionExercises.length}/
                       {VALIDATION_LIMITS.SESSION_EXERCISES_MAX})
                     </span>
                   </h3>
                   {sessionExercises.length > 0 && (
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                       <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                       Charge estimée : ~{estimatedMinutes} min
                     </span>
@@ -1160,7 +1160,7 @@ export function RunningSessionEditorModal({
                 </div>
 
                 {sessionExercises.length === 0 ? (
-                  <div className="mt-2.5 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950/30 dark:text-slate-400">
+                  <div className="mt-2.5 rounded-[12px] border border-dashed border-slate-300 bg-slate-50/50 p-6 text-center text-xs text-slate-500 dark:border-[#262626] dark:bg-[#1F1F1F]/50 dark:text-[#8E8E8E]">
                     Aucun exercice dans cette séance. Utilisez{' '}
                     <strong>+ Ajouter</strong> ou <strong>Exercice libre</strong>{' '}
                     dans la bibliothèque pour composer les exercices.
@@ -1172,15 +1172,15 @@ export function RunningSessionEditorModal({
                       return (
                         <div
                           key={`${item.exerciseId}-${idx}`}
-                          className={`rounded-xl border p-3.5 transition-colors ${
+                          className={`rounded-[12px] border p-3.5 transition-colors ${
                             isBeingReplaced
-                              ? 'border-sky-500 bg-sky-50/40 ring-2 ring-sky-500/20 dark:border-sky-500 dark:bg-sky-950/25'
-                              : 'border-slate-200 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900'
+                              ? 'border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20 dark:border-[#4ADE80] dark:bg-[#4ADE80]/10 dark:ring-[#4ADE80]/20'
+                              : 'border-slate-200 bg-white dark:border-[#262626] dark:bg-[#1F1F1F]'
                           }`}
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex min-w-0 flex-1 items-center gap-2">
-                              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-900 font-mono text-[11px] font-bold text-white dark:bg-slate-100 dark:text-slate-900">
+                              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-emerald-700 text-[11px] font-bold text-white tabular-nums dark:bg-[#4ADE80] dark:text-[#0A0A0A]">
                                 {idx + 1}
                               </span>
                               <select
@@ -1193,7 +1193,7 @@ export function RunningSessionEditorModal({
                                     e.target.value as ExerciseCategory
                                   )
                                 }
-                                className="min-h-[30px] rounded-md border border-slate-200 bg-slate-50 px-2 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                className="min-h-[30px] rounded-[8px] border border-slate-200 bg-slate-50 px-2 text-[11px] font-semibold text-slate-700 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               >
                                 <option value="running">Running</option>
                                 <option value="strength">Renforcement</option>
@@ -1212,7 +1212,7 @@ export function RunningSessionEditorModal({
                                     e.target.value
                                   )
                                 }
-                                className="min-h-[32px] min-w-[140px] flex-1 rounded-md border border-slate-200 bg-slate-50/70 px-2.5 font-display text-xs font-bold text-slate-900 focus:border-sky-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="min-h-[32px] min-w-[140px] flex-1 rounded-[8px] border border-slate-200 bg-slate-50/70 px-2.5 font-display text-xs font-bold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
@@ -1223,7 +1223,7 @@ export function RunningSessionEditorModal({
                                 onClick={() => handleMoveExercise(idx, -1)}
                                 aria-label="Monter l’exercice"
                                 title="Monter"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-35 dark:border-slate-700 dark:text-slate-400 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-35 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
                               >
                                 <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -1233,7 +1233,7 @@ export function RunningSessionEditorModal({
                                 onClick={() => handleMoveExercise(idx, 1)}
                                 aria-label="Descendre l’exercice"
                                 title="Descendre"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-35 dark:border-slate-700 dark:text-slate-400 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-35 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
                               >
                                 <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -1245,10 +1245,10 @@ export function RunningSessionEditorModal({
                                     ? 'Annuler le remplacement'
                                     : 'Remplacer par un autre exercice'
                                 }
-                                className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px] font-semibold cursor-pointer ${
+                                className={`inline-flex h-7 items-center gap-1 rounded-[6px] border px-2 text-[11px] font-semibold cursor-pointer ${
                                   isBeingReplaced
-                                    ? 'border-sky-600 bg-sky-600 text-white'
-                                    : 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300'
+                                    ? 'border-emerald-600 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                                    : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]'
                                 }`}
                               >
                                 <RefreshCw className="h-3 w-3" aria-hidden="true" />
@@ -1261,7 +1261,7 @@ export function RunningSessionEditorModal({
                                 onClick={() => handleDuplicateExercise(idx)}
                                 aria-label="Dupliquer l’exercice"
                                 title="Dupliquer"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
                               >
                                 <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -1270,7 +1270,7 @@ export function RunningSessionEditorModal({
                                 onClick={() => handleRemoveExercise(idx)}
                                 aria-label="Supprimer l’exercice"
                                 title="Supprimer"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
                               >
                                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -1280,7 +1280,7 @@ export function RunningSessionEditorModal({
                           {/* 5 Parameters: reps, duration, rounds/tours, pause, rest */}
                           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Répétitions
                               </label>
                               <input
@@ -1301,12 +1301,12 @@ export function RunningSessionEditorModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Durée (sec)
                               </label>
                               <input
@@ -1327,12 +1327,12 @@ export function RunningSessionEditorModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Nb tours
                               </label>
                               <input
@@ -1353,12 +1353,12 @@ export function RunningSessionEditorModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Pause (sec)
                               </label>
                               <input
@@ -1379,12 +1379,12 @@ export function RunningSessionEditorModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Repos (sec)
                               </label>
                               <input
@@ -1405,7 +1405,7 @@ export function RunningSessionEditorModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
                           </div>
@@ -1425,9 +1425,9 @@ export function RunningSessionEditorModal({
                                 )
                               }
                               placeholder="Consigne / allure / charge (ex. 95% VMA, récupération active...)"
-                              className="min-h-[32px] flex-1 rounded-md border border-slate-200 bg-slate-50/70 px-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200"
+                              className="min-h-[32px] flex-1 rounded-[8px] border border-slate-200 bg-slate-50/70 px-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                             />
-                            <span className="shrink-0 font-mono text-[11px] text-emerald-700 dark:text-emerald-400">
+                            <span className="shrink-0 text-[11px] font-medium text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                               {formatExerciseParamsSummary(item)}
                             </span>
                           </div>
@@ -1442,7 +1442,7 @@ export function RunningSessionEditorModal({
               <div>
                 <label
                   htmlFor="rse-notes"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Consignes générales de la séance
                 </label>
@@ -1453,16 +1453,16 @@ export function RunningSessionEditorModal({
                   value={coachNotes}
                   onChange={(e) => setCoachNotes(e.target.value)}
                   placeholder="Échauffement, sensations recherchées, retour au calme..."
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 w-full rounded-[10px] border border-slate-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                 />
               </div>
 
               {feedback && (
                 <div
-                  className={`rounded-lg border p-3 text-xs font-medium ${
+                  className={`rounded-[10px] border p-3 text-xs font-medium ${
                     feedback.type === 'success'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-                      : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+                      : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
                   }`}
                 >
                   {feedback.text}
@@ -1472,8 +1472,8 @@ export function RunningSessionEditorModal({
           </div>
 
           {/* Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/70 px-5 py-3 dark:border-slate-800 dark:bg-slate-950/60">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/70 px-5 py-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
+            <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
               {isDirty
                 ? 'Modifications en cours non enregistrées.'
                 : 'Les changements sont immédiatement visibles dans le planning de l’adhérent.'}
@@ -1482,14 +1482,14 @@ export function RunningSessionEditorModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="min-h-[38px] rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                className="min-h-[38px] rounded-[10px] border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
               >
                 Fermer
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
               >
                 <Check className="h-4 w-4" aria-hidden="true" />
                 {saving ? 'Enregistrement...' : 'Enregistrer la séance'}

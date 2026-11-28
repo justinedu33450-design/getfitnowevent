@@ -90,11 +90,11 @@ export function PasswordSettingsCard({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616]">
       <div
         className={`flex items-start justify-between gap-3 ${
           isBodyVisible
-            ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+            ? 'border-b border-slate-100 pb-3.5 dark:border-[#262626]'
             : ''
         }`}
       >
@@ -105,16 +105,16 @@ export function PasswordSettingsCard({
             aria-expanded={expanded}
             className="flex flex-1 items-start gap-3 text-left cursor-pointer"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-700 dark:bg-[#1F1F1F] dark:text-[#E5E5E5]">
               <KeyRound className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                 {hasPassword
                   ? 'Modifier mon mot de passe'
                   : 'Définir mon mot de passe de connexion'}
               </h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 {hasPassword
                   ? 'Mettez à jour le mot de passe associé à votre compte.'
                   : 'Définissez un mot de passe personnel pour sécuriser votre connexion par email.'}
@@ -123,16 +123,16 @@ export function PasswordSettingsCard({
           </button>
         ) : (
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-700 dark:bg-[#1F1F1F] dark:text-[#E5E5E5]">
               <KeyRound className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                 {hasPassword
                   ? 'Modifier mon mot de passe'
                   : 'Définir mon mot de passe de connexion'}
               </h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 {hasPassword
                   ? 'Mettez à jour le mot de passe associé à votre compte.'
                   : 'Définissez un mot de passe personnel pour sécuriser votre connexion par email.'}
@@ -147,7 +147,7 @@ export function PasswordSettingsCard({
             onClick={() => setExpanded((prev) => !prev)}
             aria-expanded={expanded}
             aria-label={expanded ? 'Replier la section mot de passe' : 'Déplier la section mot de passe'}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
@@ -169,7 +169,7 @@ export function PasswordSettingsCard({
           <div>
             <label
               htmlFor="pwd-current"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
             >
               Mot de passe actuel *
             </label>
@@ -181,7 +181,7 @@ export function PasswordSettingsCard({
                 autoComplete="off"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
               <button
                 type="button"
@@ -192,7 +192,7 @@ export function PasswordSettingsCard({
                     : 'Afficher le mot de passe actuel'
                 }
                 aria-pressed={showCurrentPassword}
-                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 cursor-pointer"
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-[10px] text-slate-400 hover:text-slate-700 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 {showCurrentPassword ? (
                   <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -214,7 +214,7 @@ export function PasswordSettingsCard({
           <div>
             <label
               htmlFor="pwd-new"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
             >
               Nouveau mot de passe *
             </label>
@@ -228,7 +228,7 @@ export function PasswordSettingsCard({
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="6 caractères minimum"
-                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
               <button
                 type="button"
@@ -239,7 +239,7 @@ export function PasswordSettingsCard({
                     : 'Afficher le nouveau mot de passe'
                 }
                 aria-pressed={showNewPassword}
-                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 cursor-pointer"
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-[10px] text-slate-400 hover:text-slate-700 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 {showNewPassword ? (
                   <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -253,7 +253,7 @@ export function PasswordSettingsCard({
           <div>
             <label
               htmlFor="pwd-confirm"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
             >
               Confirmer le mot de passe *
             </label>
@@ -267,7 +267,7 @@ export function PasswordSettingsCard({
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Répétez le mot de passe"
-                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
               <button
                 type="button"
@@ -278,7 +278,7 @@ export function PasswordSettingsCard({
                     : 'Afficher la confirmation du mot de passe'
                 }
                 aria-pressed={showConfirmPassword}
-                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 cursor-pointer"
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-[10px] text-slate-400 hover:text-slate-700 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -292,10 +292,10 @@ export function PasswordSettingsCard({
 
         {feedback && (
           <div
-            className={`rounded-lg border p-3 text-xs ${
+            className={`rounded-[10px] border p-3 text-xs ${
               feedback.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-                : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+                : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
             }`}
           >
             {feedback.text}
@@ -306,7 +306,7 @@ export function PasswordSettingsCard({
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-60 cursor-pointer"
+            className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
           >
             <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
             {saving

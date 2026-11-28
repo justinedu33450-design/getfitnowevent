@@ -121,26 +121,38 @@ const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 const MAPS_LIBRARIES = ['places', 'marker'];
 const THEME_STORAGE_KEY = 'getfitnow-theme';
 
-function getInitialTheme(): 'light' | 'dark' {
+export type ThemePreference = 'auto' | 'light' | 'dark';
+
+function getInitialTheme(): ThemePreference {
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored === 'dark' || stored === 'light') {
+    if (stored === 'dark' || stored === 'light' || stored === 'auto') {
       return stored;
-    }
-    if (
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    ) {
-      return 'dark';
     }
   } catch {
     // Ignore storage access errors
   }
-  return 'light';
+  return 'auto';
+}
+
+function getSystemPrefersDark(): boolean {
+  try {
+    return Boolean(
+      window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+    );
+  } catch {
+    return false;
+  }
 }
 
 export default function App() {
-  const [theme, setTheme] = useState<'light' | 'dark'>(getInitialTheme);
+  const [theme, setTheme] = useState<ThemePreference>(getInitialTheme);
+  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(
+    getSystemPrefersDark
+  );
+  const resolvedTheme: 'light' | 'dark' =
+    theme === 'auto' ? (systemPrefersDark ? 'dark' : 'light') : theme;
   const [activeSection, setActiveSection] = useState<AppSection>('calendar');
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -275,13 +287,33 @@ export default function App() {
   const isVerifiedUser = Boolean(user && user.email);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    if (!window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (event: MediaQueryListEvent) => {
+      setSystemPrefersDark(event.matches);
+    };
+    setSystemPrefersDark(mediaQuery.matches);
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    const isDark = resolvedTheme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      themeMeta.setAttribute('content', isDark ? '#0e0e0e' : '#f8fafc');
+    }
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
       // Ignore storage access errors
     }
-  }, [theme]);
+  }, [theme, resolvedTheme]);
 
   useEffect(() => {
     const handleQuotaExceeded = () => {
@@ -1376,7 +1408,7 @@ export default function App() {
   ]);
 
   const appShell = (
-    <div className="flex min-h-screen flex-col bg-slate-50 pb-16 text-slate-900 transition-colors duration-150 dark:bg-slate-950 dark:text-slate-100 md:pb-0">
+    <div className="calendar-dot-backdrop flex min-h-screen flex-col pb-28 text-slate-900 transition-colors duration-150 dark:text-[#E5E5E5] md:pb-0">
       {mapsQuotaExceeded && (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-900 dark:bg-amber-950/80 dark:border-amber-800 dark:text-amber-200 px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-50 shadow-sm">
           <span>
@@ -1396,8 +1428,11 @@ export default function App() {
 
       <TopBar
         theme={theme}
+        resolvedTheme={resolvedTheme}
         onToggleTheme={() =>
-          setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
+          setTheme((prev) =>
+            prev === 'auto' ? 'light' : prev === 'light' ? 'dark' : 'auto'
+          )
         }
         activeSection={activeSection}
         onNavigate={(section) => {
@@ -1941,17 +1976,17 @@ export default function App() {
                     <div
                       role="tablist"
                       aria-label="Sous-sections de gestion coach"
-                      className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-100/90 p-1 dark:border-slate-800 dark:bg-slate-900"
+                      className="inline-flex flex-wrap items-center gap-1 rounded-[12px] border border-slate-200 bg-slate-100/90 p-1 dark:border-[#262626] dark:bg-[#1F1F1F]"
                     >
                       <button
                         type="button"
                         role="tab"
                         aria-selected={manageTab === 'events'}
                         onClick={() => setManageTab('events')}
-                        className={`inline-flex min-h-[38px] items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                        className={`inline-flex min-h-[38px] items-center gap-2 rounded-[8px] px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
                           manageTab === 'events'
-                            ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
-                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                            ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                            : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                         }`}
                       >
                         <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1962,10 +1997,10 @@ export default function App() {
                         role="tab"
                         aria-selected={manageTab === 'exercises'}
                         onClick={() => setManageTab('exercises')}
-                        className={`inline-flex min-h-[38px] items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                        className={`inline-flex min-h-[38px] items-center gap-2 rounded-[8px] px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
                           manageTab === 'exercises'
-                            ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
-                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                            ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                            : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                         }`}
                       >
                         <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
@@ -2157,21 +2192,21 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+      <footer className="border-t border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-xs text-slate-500 dark:text-[#8E8E8E] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>© {new Date().getFullYear()} GetFitNow Event · Réservations sportives en ligne</p>
           <div className="flex flex-wrap items-center gap-5">
             <button
               type="button"
               onClick={() => setActiveSection('calendar')}
-              className="hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
+              className="hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
             >
               Calendrier
             </button>
             <button
               type="button"
               onClick={() => setActiveSection('sessions')}
-              className="hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
+              className="hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
             >
               Séances
             </button>
@@ -2179,7 +2214,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveSection('messages')}
-                className="hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
+                className="hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 Messagerie
               </button>
@@ -2191,7 +2226,7 @@ export default function App() {
                   setMemberAuthReturnToCalendar(false);
                   setActiveSection('member-profile');
                 }}
-                className="hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
+                className="hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 Mon suivi
               </button>
@@ -2200,7 +2235,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveSection('manage')}
-                className="hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
+                className="hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 Espace coach
               </button>
@@ -2212,7 +2247,7 @@ export default function App() {
                   setMemberAuthReturnToCalendar(false);
                   setActiveSection('manage');
                 }}
-                className="hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
+                className="hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 Espace coach
               </button>
@@ -2373,10 +2408,10 @@ export default function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-20 left-4 z-50 flex max-w-sm items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-950 shadow-lg dark:border-emerald-800 dark:bg-emerald-950/95 dark:text-emerald-100 md:bottom-5"
+          className="fixed bottom-24 left-4 z-50 flex max-w-sm items-start gap-2.5 rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-950 shadow-lg dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] md:bottom-5"
         >
           <Sparkles
-            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
             aria-hidden="true"
           />
           <div className="min-w-0 flex-1">
@@ -2385,7 +2420,7 @@ export default function App() {
                 ? `Nouveau badge débloqué : ${badgeToast.badges[0].title}`
                 : `${badgeToast.badges.length} nouveaux badges débloqués`}
             </p>
-            <p className="mt-0.5 text-emerald-800 dark:text-emerald-200">
+            <p className="mt-0.5 text-emerald-800 dark:text-[#A3A3A3]">
               {badgeToast.badges.map((b) => b.title).join(' · ')}
             </p>
             <button
@@ -2403,7 +2438,7 @@ export default function App() {
                     ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }, 100);
               }}
-              className="mt-2 inline-flex min-h-[30px] items-center rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+              className="mt-2 inline-flex min-h-[30px] items-center rounded-[8px] bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
             >
               Voir mes badges
             </button>
@@ -2412,7 +2447,7 @@ export default function App() {
             type="button"
             onClick={() => setBadgeToast(null)}
             aria-label="Fermer la notification de badge"
-            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-900/60 cursor-pointer"
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] text-emerald-700 hover:bg-emerald-100 dark:text-[#8E8E8E] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-3.5 w-3.5" aria-hidden="true" />
           </button>

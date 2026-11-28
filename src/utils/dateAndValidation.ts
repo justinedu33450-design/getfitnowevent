@@ -421,9 +421,11 @@ export function getMonthDaysGrid(year: number, monthIndex: number): Date[] {
   const firstOfMonth = new Date(year, monthIndex, 1);
   const startDayOffset = (firstOfMonth.getDay() + 6) % 7;
   const gridStart = new Date(year, monthIndex, 1 - startDayOffset);
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const totalCells = Math.ceil((startDayOffset + daysInMonth) / 7) * 7;
 
   const days: Date[] = [];
-  for (let i = 0; i < 42; i++) {
+  for (let i = 0; i < totalCells; i++) {
     days.push(
       new Date(
         gridStart.getFullYear(),

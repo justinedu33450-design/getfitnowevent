@@ -517,25 +517,25 @@ export function ProgramBuilderModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="program-builder-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-3 sm:p-5 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 dark:bg-black/75 p-3 sm:p-5 backdrop-blur-xs"
     >
-      <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-2xl dark:border-[#262626] dark:bg-[#161616]">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/60">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-5 py-4 dark:border-[#262626] dark:bg-[#1F1F1F]">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-emerald-100 text-emerald-700 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]">
               <Dumbbell className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h2
                 id="program-builder-title"
-                className="font-display text-lg font-bold text-slate-900 dark:text-white"
+                className="font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]"
               >
                 {editingSession
                   ? 'Modifier le programme personnalisé'
                   : 'Préparer un programme personnalisé'}
               </h2>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Sélectionnez les exercices selon les objectifs de l’adhérent et
                 ajustez répétitions, durée, tours, pause et repos.
               </p>
@@ -545,7 +545,7 @@ export function ProgramBuilderModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer le constructeur de programme"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -556,18 +556,18 @@ export function ProgramBuilderModal({
           onSubmit={handleSubmit}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <div className="grid min-h-0 flex-1 grid-cols-1 divide-y divide-slate-200 overflow-y-auto lg:grid-cols-12 lg:divide-x lg:divide-y-0 dark:divide-slate-800">
+          <div className="grid min-h-0 flex-1 grid-cols-1 divide-y divide-slate-200 overflow-y-auto lg:grid-cols-12 lg:divide-x lg:divide-y-0 dark:divide-[#262626]">
             {/* Left Column: Exercise Library Picker (5 cols) */}
-            <div className="flex flex-col bg-slate-50/40 p-4 sm:p-5 lg:col-span-5 lg:overflow-y-auto dark:bg-slate-950/30">
+            <div className="flex flex-col bg-slate-50/40 p-4 sm:p-5 lg:col-span-5 lg:overflow-y-auto dark:bg-[#0E0E0E]">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="flex items-center gap-1.5 font-display text-sm font-bold text-slate-900 dark:text-white">
+                <h3 className="flex items-center gap-1.5 font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                   <BookOpen
-                    className="h-4 w-4 text-emerald-700 dark:text-emerald-400"
+                    className="h-4 w-4 text-emerald-700 dark:text-[#4ADE80]"
                     aria-hidden="true"
                   />
                   <span>Bibliothèque d’exercices</span>
                 </h3>
-                <span className="font-mono text-[11px] font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                <span className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                   {filteredLibrary.length} exercice
                   {filteredLibrary.length > 1 ? 's' : ''}
                 </span>
@@ -576,7 +576,7 @@ export function ProgramBuilderModal({
               {/* Search */}
               <div className="relative mt-3">
                 <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#8E8E8E]"
                   aria-hidden="true"
                 />
                 <input
@@ -584,7 +584,7 @@ export function ProgramBuilderModal({
                   value={librarySearch}
                   onChange={(e) => setLibrarySearch(e.target.value)}
                   placeholder="Rechercher squat, VMA, gainage..."
-                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                 />
               </div>
 
@@ -602,10 +602,10 @@ export function ProgramBuilderModal({
                     key={cat.id}
                     type="button"
                     onClick={() => setLibraryCategory(cat.id)}
-                    className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer ${
+                    className={`rounded-[8px] border px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer ${
                       libraryCategory === cat.id
-                        ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                        ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     {cat.label}
@@ -618,22 +618,22 @@ export function ProgramBuilderModal({
                 <button
                   type="button"
                   onClick={() => setMatchGoalOnly((prev) => !prev)}
-                  className={`mt-2.5 inline-flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors cursor-pointer ${
+                  className={`mt-2.5 inline-flex w-full items-center justify-between gap-2 rounded-[10px] border px-3 py-2 text-left text-xs transition-colors cursor-pointer ${
                     matchGoalOnly
-                      ? 'border-emerald-400 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                      ? 'border-emerald-400 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/40 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                   }`}
                 >
                   <span className="flex min-w-0 items-center gap-1.5">
                     <Sparkles
-                      className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                      className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-[#4ADE80]"
                       aria-hidden="true"
                     />
                     <span className="truncate font-medium">
                       Adapter à l’objectif : {effectiveGoalText}
                     </span>
                   </span>
-                  <span className="shrink-0 font-mono text-[10px] font-bold uppercase">
+                  <span className="shrink-0 text-[10px] font-bold uppercase">
                     {matchGoalOnly ? 'Actif' : 'Filtrer'}
                   </span>
                 </button>
@@ -642,7 +642,7 @@ export function ProgramBuilderModal({
               {/* Library cards list */}
               <div className="mt-3 space-y-2.5 lg:flex-1 lg:overflow-y-auto lg:pr-1">
                 {filteredLibrary.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  <div className="rounded-[12px] border border-dashed border-slate-300 p-5 text-center text-xs text-slate-500 dark:border-[#262626] dark:text-[#8E8E8E]">
                     Aucun exercice ne correspond à ce filtre.
                   </div>
                 ) : (
@@ -658,17 +658,17 @@ export function ProgramBuilderModal({
                     return (
                       <div
                         key={ex.id}
-                        className={`rounded-xl border bg-white p-3 transition-colors dark:bg-slate-900 ${
+                        className={`rounded-[12px] border bg-white p-3 transition-colors dark:bg-[#161616] ${
                           isRecommended
-                            ? 'border-emerald-200 dark:border-emerald-900/70'
-                            : 'border-slate-200 dark:border-slate-800'
+                            ? 'border-emerald-200 dark:border-[#4ADE80]/30'
+                            : 'border-slate-200 dark:border-[#262626]'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span
-                                className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
+                                className={`inline-flex items-center gap-1 rounded-[6px] border px-1.5 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
                               >
                                 {ex.category === 'running' ? (
                                   <Footprints
@@ -684,7 +684,7 @@ export function ProgramBuilderModal({
                                 {meta.shortLabel}
                               </span>
                               {isRecommended && (
-                                <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                <span className="inline-flex items-center gap-0.5 rounded-[6px] bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]">
                                   <Target
                                     className="h-2.5 w-2.5"
                                     aria-hidden="true"
@@ -693,7 +693,7 @@ export function ProgramBuilderModal({
                                 </span>
                               )}
                             </div>
-                            <p className="mt-1 font-display text-xs font-bold text-slate-900 dark:text-white">
+                            <p className="mt-1 font-display text-xs font-bold text-slate-900 dark:text-[#E5E5E5]">
                               {ex.name}
                             </p>
                           </div>
@@ -701,7 +701,7 @@ export function ProgramBuilderModal({
                           <button
                             type="button"
                             onClick={() => handleAddExercise(ex)}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-[8px] bg-emerald-700 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] tabular-nums cursor-pointer"
                           >
                             {addedCount > 0 ? (
                               <>
@@ -717,12 +717,12 @@ export function ProgramBuilderModal({
                           </button>
                         </div>
 
-                        <p className="mt-1.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                        <p className="mt-1.5 text-[11px] tabular-nums text-slate-600 dark:text-[#A3A3A3]">
                           {formatExerciseParamsSummary(ex.defaultParams)}
                         </p>
 
                         {ex.targetObjectives.length > 0 && (
-                          <p className="mt-1 truncate text-[10px] text-slate-500 dark:text-slate-400">
+                          <p className="mt-1 truncate text-[10px] text-slate-500 dark:text-[#8E8E8E]">
                             Objectifs : {ex.targetObjectives.join(' · ')}
                           </p>
                         )}
@@ -736,19 +736,19 @@ export function ProgramBuilderModal({
             {/* Right Column: Member + Session Metadata + Configurable Exercises (7 cols) */}
             <div className="space-y-4 p-4 sm:p-5 lg:col-span-7 lg:overflow-y-auto">
               {/* Member & Objective Section */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-950/50 space-y-3">
+              <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label
                       htmlFor="pb-member"
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Adhérent destinataire *
                     </label>
                     {editingSession || initialMember ? (
-                      <div className="mt-1 flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                      <div className="mt-1 flex min-h-[40px] items-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5]">
                         <UserCheck
-                          className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                          className="h-4 w-4 shrink-0 text-emerald-600 dark:text-[#4ADE80]"
                           aria-hidden="true"
                         />
                         <span className="truncate">
@@ -763,7 +763,7 @@ export function ProgramBuilderModal({
                         value={selectedMemberEmail}
                         onChange={(e) => handleSelectMember(e.target.value)}
                         required
-                        className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                        className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                       >
                         <option value="">Sélectionner un adhérent...</option>
                         {memberCandidates.map((m) => (
@@ -782,7 +782,7 @@ export function ProgramBuilderModal({
                           value={selectedMemberEmail}
                           onChange={(e) => setSelectedMemberEmail(e.target.value)}
                           placeholder="email.adherent@exemple.fr"
-                          className="min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                          className="min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                         />
                         <p className="text-[11px] text-amber-700 dark:text-amber-400">
                           Aucun adhérent répertorié pour l’instant : saisissez directement l’adresse email de l’adhérent ou créez sa fiche dans l’onglet Adhérents.
@@ -790,7 +790,7 @@ export function ProgramBuilderModal({
                       </div>
                     )}
                     {selectedMember && (selectedMember.goal || selectedMember.fitnessLevel) && (
-                      <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-400">
+                      <p className="mt-1 text-[11px] text-emerald-700 dark:text-[#4ADE80]">
                         {selectedMember.goal
                           ? `Objectif profil : ${selectedMember.goal}`
                           : ''}
@@ -807,7 +807,7 @@ export function ProgramBuilderModal({
                   <div>
                     <label
                       htmlFor="pb-objective"
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Objectif du programme
                     </label>
@@ -818,7 +818,7 @@ export function ProgramBuilderModal({
                       value={objective}
                       onChange={(e) => setObjective(e.target.value)}
                       placeholder="Ex. 10 km sous 45 min, Renforcement dos..."
-                      className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                     />
                   </div>
                 </div>
@@ -827,7 +827,7 @@ export function ProgramBuilderModal({
                   <div>
                     <label
                       htmlFor="pb-title"
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Titre de la séance *
                     </label>
@@ -840,14 +840,14 @@ export function ProgramBuilderModal({
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Ex. Séance Renforcement + VMA"
-                      className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="pb-discipline"
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Discipline *
                     </label>
@@ -855,7 +855,7 @@ export function ProgramBuilderModal({
                       id="pb-discipline"
                       value={discipline}
                       onChange={(e) => setDiscipline(e.target.value)}
-                      className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                     >
                       {disciplineOptions.map((d) => (
                         <option key={d} value={d}>
@@ -870,7 +870,7 @@ export function ProgramBuilderModal({
                   <div>
                     <label
                       htmlFor="pb-date"
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Date *
                     </label>
@@ -880,13 +880,13 @@ export function ProgramBuilderModal({
                       required
                       value={sessionDate}
                       onChange={(e) => setSessionDate(e.target.value)}
-                      className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="pb-time"
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Heure de début *
                     </label>
@@ -896,14 +896,14 @@ export function ProgramBuilderModal({
                       required
                       value={sessionTime}
                       onChange={(e) => setSessionTime(e.target.value)}
-                      className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-1">
                       <label
                         htmlFor="pb-duration"
-                        className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                        className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                       >
                         Durée (min) *
                       </label>
@@ -911,7 +911,7 @@ export function ProgramBuilderModal({
                         <button
                           type="button"
                           onClick={() => setDurationMinutes(estimatedMinutes)}
-                          className="text-[10px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                          className="text-[10px] font-semibold tabular-nums text-emerald-700 hover:underline dark:text-[#4ADE80] cursor-pointer"
                         >
                           Est. ~{estimatedMinutes} min
                         </button>
@@ -921,7 +921,7 @@ export function ProgramBuilderModal({
                       id="pb-duration"
                       value={durationMinutes}
                       onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                      className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                     >
                       {!DURATION_PRESETS.includes(durationMinutes) && (
                         <option value={durationMinutes}>
@@ -941,12 +941,12 @@ export function ProgramBuilderModal({
               {/* Exercises in Program */}
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="font-display text-sm font-bold tabular-nums text-slate-900 dark:text-[#E5E5E5]">
                     Exercices du programme ({programExercises.length}/
                     {VALIDATION_LIMITS.SESSION_EXERCISES_MAX})
                   </h3>
                   {programExercises.length > 0 && (
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-slate-600 dark:text-slate-300 tabular-nums">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3] tabular-nums">
                       <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                       Charge estimée : ~{estimatedMinutes} min
                     </span>
@@ -954,7 +954,7 @@ export function ProgramBuilderModal({
                 </div>
 
                 {programExercises.length === 0 ? (
-                  <div className="mt-2.5 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950/30 dark:text-slate-400">
+                  <div className="mt-2.5 rounded-[12px] border border-dashed border-slate-300 bg-slate-50/50 p-6 text-center text-xs text-slate-500 dark:border-[#262626] dark:bg-[#1F1F1F]/50 dark:text-[#8E8E8E]">
                     Cliquez sur <strong>+ Ajouter</strong> dans la bibliothèque à
                     gauche pour intégrer et paramétrer vos exercices de
                     renforcement ou de running.
@@ -966,19 +966,19 @@ export function ProgramBuilderModal({
                       return (
                         <div
                           key={`${item.exerciseId}-${idx}`}
-                          className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900"
+                          className="rounded-[12px] border border-slate-200 bg-white p-3.5 shadow-2xs dark:border-[#262626] dark:bg-[#1F1F1F]"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex min-w-0 items-center gap-2">
-                              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-900 font-mono text-[11px] font-bold text-white dark:bg-slate-100 dark:text-slate-900">
+                              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-slate-900 text-[11px] font-bold tabular-nums text-white dark:bg-[#4ADE80] dark:text-[#0A0A0A]">
                                 {idx + 1}
                               </span>
                               <span
-                                className={`inline-flex shrink-0 items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
+                                className={`inline-flex shrink-0 items-center rounded-[6px] border px-1.5 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
                               >
                                 {meta.shortLabel}
                               </span>
-                              <span className="truncate font-display text-sm font-bold text-slate-900 dark:text-white">
+                              <span className="truncate font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                                 {item.name}
                               </span>
                             </div>
@@ -989,7 +989,7 @@ export function ProgramBuilderModal({
                                 disabled={idx === 0}
                                 onClick={() => handleMoveItem(idx, -1)}
                                 aria-label="Monter l’exercice"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-35 dark:border-slate-700 dark:text-slate-400 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-35 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5] cursor-pointer"
                               >
                                 <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -998,7 +998,7 @@ export function ProgramBuilderModal({
                                 disabled={idx === programExercises.length - 1}
                                 onClick={() => handleMoveItem(idx, 1)}
                                 aria-label="Descendre l’exercice"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-35 dark:border-slate-700 dark:text-slate-400 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-35 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5] cursor-pointer"
                               >
                                 <ArrowDown
                                   className="h-3.5 w-3.5"
@@ -1010,7 +1010,7 @@ export function ProgramBuilderModal({
                                 onClick={() => handleDuplicateItem(idx)}
                                 aria-label="Dupliquer l’exercice"
                                 title="Dupliquer"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5] cursor-pointer"
                               >
                                 <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -1019,7 +1019,7 @@ export function ProgramBuilderModal({
                                 onClick={() => handleRemoveItem(idx)}
                                 aria-label="Retirer l’exercice"
                                 title="Retirer"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer"
                               >
                                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -1029,7 +1029,7 @@ export function ProgramBuilderModal({
                           {/* 5 Numeric Parameters */}
                           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Répétitions
                               </label>
                               <input
@@ -1050,12 +1050,12 @@ export function ProgramBuilderModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Durée (sec)
                               </label>
                               <input
@@ -1076,12 +1076,12 @@ export function ProgramBuilderModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Nb tours
                               </label>
                               <input
@@ -1102,12 +1102,12 @@ export function ProgramBuilderModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Pause (sec)
                               </label>
                               <input
@@ -1128,12 +1128,12 @@ export function ProgramBuilderModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                                 Repos (sec)
                               </label>
                               <input
@@ -1154,7 +1154,7 @@ export function ProgramBuilderModal({
                                     )
                                   )
                                 }
-                                className="mt-1 min-h-[34px] w-full rounded-md border border-slate-300 bg-slate-50 px-2 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="mt-1 min-h-[34px] w-full rounded-[8px] border border-slate-300 bg-slate-50 px-2 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                               />
                             </div>
                           </div>
@@ -1170,9 +1170,9 @@ export function ProgramBuilderModal({
                                 handleUpdateItemField(idx, 'notes', e.target.value)
                               }
                               placeholder="Consigne / charge / allure (ex. 12 kg, 90% VMA...)"
-                              className="min-h-[34px] flex-1 rounded-md border border-slate-200 bg-slate-50/70 px-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200"
+                              className="min-h-[34px] flex-1 rounded-[8px] border border-slate-200 bg-slate-50/70 px-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                             />
-                            <span className="shrink-0 font-mono text-[11px] text-emerald-700 dark:text-emerald-400">
+                            <span className="shrink-0 text-[11px] font-medium text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                               {formatExerciseParamsSummary(item)}
                             </span>
                           </div>
@@ -1188,7 +1188,7 @@ export function ProgramBuilderModal({
                 <div>
                   <label
                     htmlFor="pb-coach"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Coach référent
                   </label>
@@ -1197,7 +1197,7 @@ export function ProgramBuilderModal({
                       id="pb-coach"
                       value={coachRefUid}
                       onChange={(e) => handleCoachRefChange(e.target.value)}
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                     >
                       {coachName &&
                         !coachDirectory.some((c) => c.uid === coachUid) && (
@@ -1212,7 +1212,7 @@ export function ProgramBuilderModal({
                   ) : (
                     <div
                       id="pb-coach"
-                      className="mt-1 flex min-h-[38px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+                      className="mt-1 flex min-h-[38px] items-center rounded-[10px] border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                     >
                       {coachName || editingSession?.coachName || 'Coach'}
                     </div>
@@ -1222,7 +1222,7 @@ export function ProgramBuilderModal({
                 <div>
                   <label
                     htmlFor="pb-location"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Lieu (optionnel)
                   </label>
@@ -1233,7 +1233,7 @@ export function ProgramBuilderModal({
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="Ex. Piste, Salle, Domicile..."
-                    className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                   />
                 </div>
               </div>
@@ -1241,7 +1241,7 @@ export function ProgramBuilderModal({
               <div>
                 <label
                   htmlFor="pb-notes"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Consignes générales de la séance (échauffement / retour au calme)
                 </label>
@@ -1252,34 +1252,34 @@ export function ProgramBuilderModal({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ex. 10 min d’échauffement progressif avant le bloc principal..."
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="mt-1 w-full rounded-[10px] border border-slate-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                 />
               </div>
 
               {/* Pricing: Free (offert) or Paid */}
-              <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-3.5 dark:border-emerald-900/60 dark:bg-emerald-950/20 space-y-3">
+              <div className="rounded-[12px] border border-emerald-200/80 bg-emerald-50/40 p-3.5 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <CreditCard
-                      className="h-4 w-4 text-emerald-700 dark:text-emerald-400"
+                      className="h-4 w-4 text-emerald-700 dark:text-[#4ADE80]"
                       aria-hidden="true"
                     />
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                    <span className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5]">
                       Tarification du programme personnalisé
                     </span>
                   </div>
                   <div
                     role="group"
                     aria-label="Programme gratuit ou payant"
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-200/80 p-1 dark:bg-slate-900"
+                    className="inline-flex items-center gap-1 rounded-[10px] border border-slate-200 bg-slate-100 p-1 dark:border-[#262626] dark:bg-[#1F1F1F]"
                   >
                     <button
                       type="button"
                       onClick={() => setIsPaid(false)}
-                      className={`min-h-[28px] rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                      className={`min-h-[28px] rounded-[8px] px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors ${
                         !isPaid
-                          ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                          ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#4ADE80]'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       Offert (gratuit)
@@ -1287,10 +1287,10 @@ export function ProgramBuilderModal({
                     <button
                       type="button"
                       onClick={() => setIsPaid(true)}
-                      className={`min-h-[28px] rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                      className={`min-h-[28px] rounded-[8px] px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors ${
                         isPaid
-                          ? 'bg-emerald-700 text-white shadow-xs dark:bg-emerald-600'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                          ? 'bg-emerald-700 text-white shadow-xs dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       Payant
@@ -1304,7 +1304,7 @@ export function ProgramBuilderModal({
                       <div>
                         <label
                           htmlFor="pb-price"
-                          className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                          className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                         >
                           Tarif (€) *
                         </label>
@@ -1320,7 +1320,7 @@ export function ProgramBuilderModal({
                             setPriceTouched(true);
                             setPriceEuros(e.target.value);
                           }}
-                          className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-xs font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs font-bold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                         />
                         {hasCoachCustomSessionPrice(selectedCoachEntry?.pricing) && (
                           <button
@@ -1335,7 +1335,7 @@ export function ProgramBuilderModal({
                               );
                               setPriceTouched(false);
                             }}
-                            className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                            className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-[#4ADE80] tabular-nums cursor-pointer"
                           >
                             Tarif de {selectedCoachEntry?.displayName || coachName} :{' '}
                             {formatPriceEuros(
@@ -1349,7 +1349,7 @@ export function ProgramBuilderModal({
                       <div>
                         <label
                           htmlFor="pb-pay-mode"
-                          className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                          className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                         >
                           Mode de règlement *
                         </label>
@@ -1359,7 +1359,7 @@ export function ProgramBuilderModal({
                           onChange={(e) =>
                             setPaymentMode(e.target.value as EventPaymentMode)
                           }
-                          className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                         >
                           <option value="both">Carte en ligne ou sur place</option>
                           <option value="online">Carte en ligne uniquement</option>
@@ -1368,26 +1368,26 @@ export function ProgramBuilderModal({
                       </div>
                     </div>
                     {!editingSession && (
-                      <label className="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                      <label className="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-[#E5E5E5] cursor-pointer">
                         <input
                           type="checkbox"
                           checked={markPaid}
                           onChange={(e) => setMarkPaid(e.target.checked)}
-                          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 dark:border-[#262626] dark:bg-[#161616] dark:accent-[#4ADE80]"
                         />
                         <span>L’adhérent a déjà réglé sur place (débloquer immédiatement)</span>
                       </label>
                     )}
                   </>
                 ) : (
-                  <p className="rounded-lg border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-800/60 dark:bg-slate-900/60 dark:text-emerald-200">
+                  <p className="rounded-[10px] border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#161616] dark:text-[#E5E5E5]">
                     Programme offert : aucun paiement demandé à l’adhérent (accès immédiat aux exercices).
                   </p>
                 )}
               </div>
 
               {error && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+                <div className="rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200">
                   {error}
                 </div>
               )}
@@ -1395,10 +1395,10 @@ export function ProgramBuilderModal({
           </div>
 
           {/* Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/60">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
+            <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
               Le programme apparaîtra automatiquement dans l’espace{' '}
-              <strong className="text-slate-700 dark:text-slate-200">
+              <strong className="text-slate-700 dark:text-[#E5E5E5]">
                 Mon suivi → Planning de la semaine
               </strong>{' '}
               de l’adhérent.
@@ -1407,14 +1407,14 @@ export function ProgramBuilderModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="min-h-[40px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                className="min-h-[40px] rounded-[10px] border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
               >
                 <CalendarPlus className="h-4 w-4" aria-hidden="true" />
                 {saving

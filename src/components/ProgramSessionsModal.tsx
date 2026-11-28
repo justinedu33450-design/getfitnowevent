@@ -422,23 +422,23 @@ export function ProgramSessionsModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="program-sessions-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-3 sm:p-5 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 dark:bg-black/75 p-3 sm:p-5 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-2xl dark:border-[#262626] dark:bg-[#161616]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50/75 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/60">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50/75 px-5 py-4 dark:border-[#262626] dark:bg-[#1F1F1F]">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/70 dark:text-sky-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
               <Footprints className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h2
                 id="program-sessions-modal-title"
-                className="truncate font-display text-lg font-bold text-slate-900 dark:text-white"
+                className="truncate font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]"
               >
                 {editingSession
                   ? editingSession.isVmaTest
@@ -446,7 +446,7 @@ export function ProgramSessionsModal({
                     : `Modifier · Sem. ${editingSession.weekNumber} Séance ${editingSession.sessionIndexInWeek}`
                   : `Toutes les séances · ${program.title}`}
               </h2>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                 {program.memberName} ({program.memberEmail}) · {tpl.shortLabel} ·{' '}
                 {getProgramRunnerLevelLabel(program.level ?? 'regular')} ·{' '}
                 {effectiveSessions.filter((s) => !s.isVmaTest).length} séances sur{' '}
@@ -464,7 +464,7 @@ export function ProgramSessionsModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -473,10 +473,10 @@ export function ProgramSessionsModal({
         {feedback && (
           <div
             role="status"
-            className={`mx-5 mt-3 rounded-lg border p-3 text-xs ${
+            className={`mx-5 mt-3 rounded-[10px] border p-3 text-xs ${
               feedback.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-                : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+                : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
             }`}
           >
             {feedback.text}
@@ -490,14 +490,14 @@ export function ProgramSessionsModal({
             className="flex min-h-0 flex-1 flex-col overflow-hidden"
           >
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50/70 px-3.5 py-2.5 text-xs dark:border-sky-800/70 dark:bg-sky-950/35">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs dark:border-[#262626] dark:bg-[#1F1F1F]">
                 <div className="min-w-0">
-                  <p className="font-mono text-[11px] font-bold text-sky-800 dark:text-sky-300">
+                  <p className="text-[11px] font-bold tabular-nums text-emerald-700 dark:text-[#4ADE80]">
                     {editingSession.isVmaTest
                       ? 'Séance préalable · Test VMA (Effectuable n’importe quel jour)'
                       : `Semaine ${editingSession.weekNumber}/${program.durationWeeks} · Séance ${editingSession.sessionIndexInWeek} · ${editingSession.phaseLabel}`}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
+                  <p className="mt-0.5 text-[11px] text-slate-600 dark:text-[#A3A3A3]">
                     Date initiale du plan : {formatFrenchDateLong(editingSession.originalScheduledDate)}
                   </p>
                   {editingSession.isMovedByMember && (
@@ -514,7 +514,7 @@ export function ProgramSessionsModal({
                 <button
                   type="button"
                   onClick={cancelEditing}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 cursor-pointer"
+                  className="rounded-[10px] border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                 >
                   Retour à la liste
                 </button>
@@ -524,7 +524,7 @@ export function ProgramSessionsModal({
                 <div>
                   <label
                     htmlFor="ps-edit-title"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Titre de la séance *
                   </label>
@@ -536,14 +536,14 @@ export function ProgramSessionsModal({
                     maxLength={VALIDATION_LIMITS.TITLE_MAX}
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="ps-edit-pace"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Allure / Zone cible
                   </label>
@@ -554,7 +554,7 @@ export function ProgramSessionsModal({
                     value={editPaceLabel}
                     onChange={(e) => setEditPaceLabel(e.target.value)}
                     placeholder="Ex. EF 64–72% VMA : 5'45 – 6'10/km"
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                   />
                 </div>
               </div>
@@ -563,7 +563,7 @@ export function ProgramSessionsModal({
                 <div>
                   <label
                     htmlFor="ps-edit-date"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Date prévue *
                   </label>
@@ -573,14 +573,14 @@ export function ProgramSessionsModal({
                     required
                     value={editDateStr}
                     onChange={(e) => setEditDateStr(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="ps-edit-time"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Heure *
                   </label>
@@ -590,14 +590,14 @@ export function ProgramSessionsModal({
                     required
                     value={editTimeStr}
                     onChange={(e) => setEditTimeStr(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="ps-edit-duration"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Durée (minutes) *
                   </label>
@@ -614,7 +614,7 @@ export function ProgramSessionsModal({
                           )
                     }
                     onChange={(e) => setEditDuration(Number(e.target.value))}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   >
                     {DURATION_PRESETS.map((min) => (
                       <option key={min} value={min}>
@@ -628,7 +628,7 @@ export function ProgramSessionsModal({
               <div>
                 <label
                   htmlFor="ps-edit-notes"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Consignes personnalisées du coach
                 </label>
@@ -639,14 +639,14 @@ export function ProgramSessionsModal({
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                   placeholder="Consignes spécifiques, sensations ciblées, hydratation..."
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="mt-1 w-full rounded-[10px] border border-slate-300 bg-white p-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                 />
               </div>
 
               {/* Exercises block editor */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-950/40 space-y-3">
+              <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="text-xs font-bold tabular-nums text-slate-900 dark:text-[#E5E5E5]">
                     Contenu & exercices de la séance ({editExercises.length}/
                     {VALIDATION_LIMITS.SESSION_EXERCISES_MAX})
                   </span>
@@ -655,7 +655,7 @@ export function ProgramSessionsModal({
                       aria-label="Ajouter un exercice depuis la bibliothèque"
                       value={libraryPickId}
                       onChange={(e) => handleAddExerciseFromLibrary(e.target.value)}
-                      className="min-h-[34px] rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      className="min-h-[34px] rounded-[8px] border border-slate-300 bg-white px-2.5 text-xs text-slate-800 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5]"
                     >
                       <option value="">+ Ajouter depuis la bibliothèque...</option>
                       {libraryOptions.map((opt) => (
@@ -667,7 +667,7 @@ export function ProgramSessionsModal({
                     <button
                       type="button"
                       onClick={handleAddBlankExercise}
-                      className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 cursor-pointer"
+                      className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                     >
                       <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                       <span>Bloc libre</span>
@@ -676,7 +676,7 @@ export function ProgramSessionsModal({
                 </div>
 
                 {editExercises.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  <p className="rounded-[10px] border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500 dark:border-[#262626] dark:text-[#8E8E8E]">
                     Aucun exercice détaillé dans cette séance. Ajoutez un bloc libre ou sélectionnez un exercice dans la bibliothèque.
                   </p>
                 ) : (
@@ -684,11 +684,11 @@ export function ProgramSessionsModal({
                     {editExercises.map((ex, idx) => (
                       <div
                         key={`${ex.exerciseId}-${idx}`}
-                        className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 space-y-2.5"
+                        className="rounded-[10px] border border-slate-200 bg-white p-3 dark:border-[#262626] dark:bg-[#161616] space-y-2.5"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-slate-400">
+                            <span className="text-xs font-bold tabular-nums text-slate-400 dark:text-[#8E8E8E]">
                               #{idx + 1}
                             </span>
                             <input
@@ -701,7 +701,7 @@ export function ProgramSessionsModal({
                                 handleUpdateExercise(idx, { name: e.target.value })
                               }
                               aria-label={`Nom de l'exercice ${idx + 1}`}
-                              className="min-h-[34px] min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                              className="min-h-[34px] min-w-0 flex-1 rounded-[8px] border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                             />
                             <select
                               value={ex.category}
@@ -711,7 +711,7 @@ export function ProgramSessionsModal({
                                 })
                               }
                               aria-label={`Catégorie de l'exercice ${idx + 1}`}
-                              className="min-h-[34px] rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="min-h-[34px] rounded-[8px] border border-slate-300 bg-white px-2 text-xs text-slate-800 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                             >
                               <option value="running">Course</option>
                               <option value="strength">Renfo</option>
@@ -725,7 +725,7 @@ export function ProgramSessionsModal({
                               disabled={idx === 0}
                               onClick={() => handleMoveExercise(idx, -1)}
                               aria-label="Monter l'exercice"
-                              className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-[#262626] dark:text-[#A3A3A3] dark:hover:bg-[#262626] cursor-pointer"
                             >
                               <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
                             </button>
@@ -734,7 +734,7 @@ export function ProgramSessionsModal({
                               disabled={idx === editExercises.length - 1}
                               onClick={() => handleMoveExercise(idx, 1)}
                               aria-label="Descendre l'exercice"
-                              className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-[#262626] dark:text-[#A3A3A3] dark:hover:bg-[#262626] cursor-pointer"
                             >
                               <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
                             </button>
@@ -742,7 +742,7 @@ export function ProgramSessionsModal({
                               type="button"
                               onClick={() => handleRemoveExercise(idx)}
                               aria-label="Supprimer l'exercice"
-                              className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:text-[#8E8E8E] dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer"
                             >
                               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                             </button>
@@ -751,7 +751,7 @@ export function ProgramSessionsModal({
 
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                           <div>
-                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-[#8E8E8E]">
                               Séries / Tours
                             </label>
                             <input
@@ -767,11 +767,11 @@ export function ProgramSessionsModal({
                                   ),
                                 })
                               }
-                              className="mt-0.5 min-h-[32px] w-full rounded border border-slate-300 bg-white px-2 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                              className="mt-0.5 min-h-[32px] w-full rounded-[6px] border border-slate-300 bg-white px-2 text-xs tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-[#8E8E8E]">
                               Répétitions
                             </label>
                             <input
@@ -787,11 +787,11 @@ export function ProgramSessionsModal({
                                   ),
                                 })
                               }
-                              className="mt-0.5 min-h-[32px] w-full rounded border border-slate-300 bg-white px-2 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                              className="mt-0.5 min-h-[32px] w-full rounded-[6px] border border-slate-300 bg-white px-2 text-xs tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-[#8E8E8E]">
                               Durée (sec)
                             </label>
                             <input
@@ -807,11 +807,11 @@ export function ProgramSessionsModal({
                                   ),
                                 })
                               }
-                              className="mt-0.5 min-h-[32px] w-full rounded border border-slate-300 bg-white px-2 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                              className="mt-0.5 min-h-[32px] w-full rounded-[6px] border border-slate-300 bg-white px-2 text-xs tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-[#8E8E8E]">
                               Récup bloc (sec)
                             </label>
                             <input
@@ -827,11 +827,11 @@ export function ProgramSessionsModal({
                                   ),
                                 })
                               }
-                              className="mt-0.5 min-h-[32px] w-full rounded border border-slate-300 bg-white px-2 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                              className="mt-0.5 min-h-[32px] w-full rounded-[6px] border border-slate-300 bg-white px-2 text-xs tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                            <label className="block text-[10px] font-semibold text-slate-500 dark:text-[#8E8E8E]">
                               Repos tour (sec)
                             </label>
                             <input
@@ -847,7 +847,7 @@ export function ProgramSessionsModal({
                                   ),
                                 })
                               }
-                              className="mt-0.5 min-h-[32px] w-full rounded border border-slate-300 bg-white px-2 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                              className="mt-0.5 min-h-[32px] w-full rounded-[6px] border border-slate-300 bg-white px-2 text-xs tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                             />
                           </div>
                         </div>
@@ -860,7 +860,7 @@ export function ProgramSessionsModal({
                             handleUpdateExercise(idx, { notes: e.target.value })
                           }
                           placeholder="Allure ou consigne de l’exercice (optionnel)..."
-                          className="min-h-[32px] w-full rounded border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200"
+                          className="min-h-[32px] w-full rounded-[6px] border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252]"
                         />
                       </div>
                     ))}
@@ -869,20 +869,20 @@ export function ProgramSessionsModal({
               </div>
 
               {formError && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+                <div className="rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200">
                   {formError}
                 </div>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/75 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/60">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/75 px-5 py-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
               <div>
                 {editingSession.isEditedByCoach && (
                   <button
                     type="button"
                     disabled={resettingKey === editingSession.key}
                     onClick={() => void handleResetSession(editingSession)}
-                    className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-200 disabled:opacity-60 cursor-pointer"
+                    className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200 disabled:opacity-60 cursor-pointer"
                   >
                     <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>
@@ -898,14 +898,14 @@ export function ProgramSessionsModal({
                 <button
                   type="button"
                   onClick={cancelEditing}
-                  className="min-h-[38px] rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                  className="min-h-[38px] rounded-[10px] border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="min-h-[38px] rounded-lg bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                  className="min-h-[38px] rounded-[10px] bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
                 >
                   {saving ? 'Enregistrement...' : 'Enregistrer la séance'}
                 </button>
@@ -916,11 +916,11 @@ export function ProgramSessionsModal({
           /* All Weeks & All Sessions Overview */
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {/* Filter toolbar */}
-            <div className="border-b border-slate-200 px-5 py-3 dark:border-slate-800 space-y-2.5">
+            <div className="border-b border-slate-200 px-5 py-3 dark:border-[#262626] space-y-2.5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative flex-1">
                   <Search
-                    className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 dark:text-[#8E8E8E]"
                     aria-hidden="true"
                   />
                   <input
@@ -928,10 +928,10 @@ export function ProgramSessionsModal({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Rechercher une séance, un exercice, une phase..."
-                    className="min-h-[36px] w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-xs text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="min-h-[36px] w-full rounded-[10px] border border-slate-300 bg-white pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                   />
                 </div>
-                <span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                   {program.sessionsPerWeek} séances/sem. · {program.durationWeeks} semaines
                 </span>
               </div>
@@ -940,10 +940,10 @@ export function ProgramSessionsModal({
                 <button
                   type="button"
                   onClick={() => setSelectedWeekFilter('all')}
-                  className={`min-h-[28px] shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold cursor-pointer ${
+                  className={`min-h-[28px] shrink-0 rounded-[8px] border px-2.5 py-1 text-[11px] font-semibold tabular-nums cursor-pointer ${
                     selectedWeekFilter === 'all'
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                      : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                      ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                   }`}
                 >
                   Toutes ({effectiveSessions.length})
@@ -953,10 +953,10 @@ export function ProgramSessionsModal({
                     key={wk}
                     type="button"
                     onClick={() => setSelectedWeekFilter(wk)}
-                    className={`min-h-[28px] shrink-0 rounded-md px-2.5 py-1 font-mono text-[11px] font-semibold tabular-nums cursor-pointer ${
+                    className={`min-h-[28px] shrink-0 rounded-[8px] border px-2.5 py-1 text-[11px] font-semibold tabular-nums cursor-pointer ${
                       selectedWeekFilter === wk
-                        ? 'bg-sky-700 text-white dark:bg-sky-600'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     {wk === 0 ? 'Test VMA' : `Sem. ${wk}`}
@@ -968,7 +968,7 @@ export function ProgramSessionsModal({
             {/* Weeks & Sessions list */}
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {visibleWeeks.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                <div className="rounded-[12px] border border-dashed border-slate-300 p-8 text-center text-xs text-slate-500 dark:border-[#262626] dark:text-[#8E8E8E]">
                   Aucune séance ne correspond à ce filtre.
                 </div>
               ) : (
@@ -981,11 +981,11 @@ export function ProgramSessionsModal({
                   return (
                     <div
                       key={weekNum}
-                      className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/35 space-y-3"
+                      className="rounded-[12px] border border-slate-200 bg-slate-50/50 p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-3"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2 dark:border-slate-800">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2 dark:border-[#262626]">
                         <div>
-                          <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                          <h3 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                             {isVmaGroup
                               ? 'Séance préalable · Test VMA (Effectuable n’importe quel jour)'
                               : `Semaine ${weekNum}/${program.durationWeeks}${
@@ -995,12 +995,12 @@ export function ProgramSessionsModal({
                         </div>
                         {isVmaGroup ? (
                           <span
-                            className={`font-mono text-[11px] font-semibold tabular-nums ${
+                            className={`text-[11px] font-semibold tabular-nums ${
                               !delivery.hasAccess
                                 ? 'text-amber-700 dark:text-amber-400'
                                 : program.vmaTestStatus === 'completed'
-                                  ? 'text-emerald-700 dark:text-emerald-400'
-                                  : 'text-sky-700 dark:text-sky-400'
+                                  ? 'text-emerald-700 dark:text-[#4ADE80]'
+                                  : 'text-emerald-700 dark:text-[#4ADE80]'
                             }`}
                           >
                             {!delivery.hasAccess
@@ -1012,14 +1012,14 @@ export function ProgramSessionsModal({
                         ) : (
                           weekWindow && (
                             <span
-                              className={`font-mono text-[11px] font-semibold tabular-nums ${
+                              className={`text-[11px] font-semibold tabular-nums ${
                                 !delivery.hasAccess
                                   ? 'text-amber-700 dark:text-amber-400'
                                   : delivery.awaitingVma
                                     ? 'text-amber-700 dark:text-amber-400'
                                     : weekWindow.unlocked
-                                      ? 'text-emerald-700 dark:text-emerald-400'
-                                      : 'text-slate-500 dark:text-slate-400'
+                                      ? 'text-emerald-700 dark:text-[#4ADE80]'
+                                      : 'text-slate-500 dark:text-[#8E8E8E]'
                               }`}
                             >
                               {!delivery.hasAccess
@@ -1040,21 +1040,21 @@ export function ProgramSessionsModal({
                         {weekSessions.map((sess) => (
                           <div
                             key={sess.key}
-                            className={`flex flex-col justify-between gap-2.5 rounded-xl border bg-white p-3.5 text-xs dark:bg-slate-900 ${
+                            className={`flex flex-col justify-between gap-2.5 rounded-[12px] border bg-white p-3.5 text-xs dark:bg-[#161616] ${
                               sess.isEditedByCoach
-                                ? 'border-sky-300 dark:border-sky-700'
-                                : 'border-slate-200 dark:border-slate-800'
+                                ? 'border-emerald-300 dark:border-[#4ADE80]/40'
+                                : 'border-slate-200 dark:border-[#262626]'
                             }`}
                           >
                             <div className="space-y-1.5">
                               <div className="flex flex-wrap items-center justify-between gap-1.5">
                                 <div className="flex flex-wrap items-center gap-1.5">
-                                  <span className="rounded bg-sky-100 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sky-900 dark:bg-sky-950 dark:text-sky-200 tabular-nums">
+                                  <span className="rounded-[6px] bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80] tabular-nums">
                                     {sess.isVmaTest
                                       ? 'VMA'
                                       : `S${sess.weekNumber}·${sess.sessionIndexInWeek}`}
                                   </span>
-                                  <span className="font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
+                                  <span className="text-[11px] font-semibold text-slate-600 dark:text-[#A3A3A3] tabular-nums">
                                     {formatFrenchDateShort(sess.scheduledDate)} ·{' '}
                                     {formatTimeRange(
                                       sess.scheduledDate,
@@ -1064,10 +1064,10 @@ export function ProgramSessionsModal({
                                 </div>
 
                                 <span
-                                  className={`inline-flex items-center gap-1 font-mono text-[10px] font-semibold ${
+                                  className={`inline-flex items-center gap-1 text-[10px] font-semibold ${
                                     sess.completed
-                                      ? 'text-emerald-700 dark:text-emerald-400'
-                                      : 'text-slate-500 dark:text-slate-400'
+                                      ? 'text-emerald-700 dark:text-[#4ADE80]'
+                                      : 'text-slate-500 dark:text-[#8E8E8E]'
                                   }`}
                                 >
                                   {sess.completed ? (
@@ -1084,58 +1084,58 @@ export function ProgramSessionsModal({
 
                               <div className="flex flex-wrap items-center gap-1.5">
                                 {sess.isVmaTest && (
-                                  <span className="inline-flex items-center gap-1 rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                                  <span className="inline-flex items-center gap-1 rounded-[6px] bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                                     <Gauge className="h-3 w-3" aria-hidden="true" />
                                     Test VMA
                                   </span>
                                 )}
                                 {sess.isEditedByCoach && (
-                                  <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                  <span className="inline-flex items-center gap-1 rounded-[6px] bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                                     <Sparkles className="h-3 w-3" aria-hidden="true" />
                                     Modifiée par le coach
                                   </span>
                                 )}
                                 {sess.isMovedByMember && (
-                                  <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                  <span className="inline-flex items-center gap-1 rounded-[6px] bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                                     <ArrowRightLeft className="h-3 w-3" aria-hidden="true" />
                                     Déplacée par {program.memberName}
                                   </span>
                                 )}
                               </div>
 
-                              <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                              <p className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                                 {sess.title}
                               </p>
 
                               {sess.targetPaceLabel && (
-                                <p className="text-[11px] font-medium text-sky-800 dark:text-sky-300">
+                                <p className="text-[11px] font-medium text-emerald-700 dark:text-[#4ADE80]">
                                   {sess.targetPaceLabel}
                                 </p>
                               )}
 
-                              <p className="flex items-center gap-1 font-mono text-[10px] text-slate-500 dark:text-slate-400 tabular-nums">
+                              <p className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                                 <Clock className="h-3 w-3" aria-hidden="true" />
                                 <span>{sess.durationMinutes} min</span>
                                 <span>· {sess.focusLabel}</span>
                               </p>
 
                               {sess.exercises.length > 0 && (
-                                <div className="space-y-1 rounded-lg border border-slate-100 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-800/40">
+                                <div className="space-y-1 rounded-[10px] border border-slate-100 bg-slate-50/80 p-2 dark:border-[#262626] dark:bg-[#1F1F1F]">
                                   {sess.exercises.map((ex, idx) => {
                                     const meta = getExerciseCategoryMeta(ex.category);
                                     return (
                                       <div key={`${ex.exerciseId}-${idx}`} className="text-[11px]">
                                         <div className="flex items-center justify-between gap-1.5">
-                                          <span className="font-semibold text-slate-800 dark:text-slate-100">
+                                          <span className="font-semibold text-slate-800 dark:text-[#E5E5E5]">
                                             {idx + 1}. {ex.name}
                                           </span>
                                           <span
-                                            className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold ${meta.badgeClass}`}
+                                            className={`shrink-0 rounded-[6px] px-1 py-0.5 text-[9px] font-semibold ${meta.badgeClass}`}
                                           >
                                             {meta.shortLabel}
                                           </span>
                                         </div>
-                                        <p className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+                                        <p className="text-[10px] font-medium text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                                           {formatExerciseParamsSummary(ex)}
                                         </p>
                                       </div>
@@ -1145,14 +1145,14 @@ export function ProgramSessionsModal({
                               )}
 
                               {sess.coachNotes && (
-                                <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
+                                <p className="rounded-[8px] bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
                                   {sess.coachNotes}
                                 </p>
                               )}
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-1.5 border-t border-slate-100 pt-2 dark:border-slate-800">
-                              <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                            <div className="flex flex-wrap items-center justify-between gap-1.5 border-t border-slate-100 pt-2 dark:border-[#262626]">
+                              <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-[#8E8E8E]">
                                 <UserCheck className="h-3 w-3" aria-hidden="true" />
                                 {program.coachName}
                               </span>
@@ -1162,7 +1162,7 @@ export function ProgramSessionsModal({
                                     type="button"
                                     disabled={resettingKey === sess.key}
                                     onClick={() => void handleResetSession(sess)}
-                                    className="inline-flex min-h-[28px] items-center gap-1 rounded-md border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-60 cursor-pointer"
+                                    className="inline-flex min-h-[28px] items-center gap-1 rounded-[8px] border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] disabled:opacity-60 cursor-pointer"
                                   >
                                     <RotateCcw className="h-3 w-3" aria-hidden="true" />
                                     <span>Rétablir</span>
@@ -1171,7 +1171,7 @@ export function ProgramSessionsModal({
                                 <button
                                   type="button"
                                   onClick={() => startEditingSession(sess)}
-                                  className="inline-flex min-h-[28px] items-center gap-1 rounded-md bg-slate-900 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white cursor-pointer"
+                                  className="inline-flex min-h-[28px] items-center gap-1 rounded-[8px] bg-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                                 >
                                   <Pencil className="h-3 w-3" aria-hidden="true" />
                                   <span>Modifier</span>
@@ -1187,11 +1187,11 @@ export function ProgramSessionsModal({
               )}
             </div>
 
-            <div className="flex items-center justify-end border-t border-slate-200 bg-slate-50/75 px-5 py-3 dark:border-slate-800 dark:bg-slate-950/60">
+            <div className="flex items-center justify-end border-t border-slate-200 bg-slate-50/75 px-5 py-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
               <button
                 type="button"
                 onClick={onClose}
-                className="min-h-[38px] rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                className="min-h-[38px] rounded-[10px] border border-slate-300 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
               >
                 Fermer
               </button>

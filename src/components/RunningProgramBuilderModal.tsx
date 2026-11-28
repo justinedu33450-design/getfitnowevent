@@ -482,29 +482,29 @@ export function RunningProgramBuilderModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="running-program-builder-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-3 sm:p-5 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 dark:bg-black/75 p-3 sm:p-5 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-2xl dark:border-[#262626] dark:bg-[#161616]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/60">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-5 py-4 dark:border-[#262626] dark:bg-[#1F1F1F]">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/70 dark:text-sky-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300">
               <Footprints className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h2
                 id="running-program-builder-title"
-                className="font-display text-lg font-bold text-slate-900 dark:text-white"
+                className="font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]"
               >
                 {editingProgram
                   ? `Modifier le programme ${tpl.shortLabel} (${durationWeeks} sem.)`
                   : `Créer un programme running (${durationWeeks} semaines)`}
               </h2>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Plan spécifique 5 km, 10 km, 21 km ou 42 km · Durée adaptée au niveau · Test VMA effectuable n’importe quel jour
               </p>
             </div>
@@ -513,7 +513,7 @@ export function RunningProgramBuilderModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -526,7 +526,7 @@ export function RunningProgramBuilderModal({
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
             {/* Distance selector (5km, 10km, 21km, 42km) */}
             <div>
-              <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]">
                 Distance cible *
               </span>
               <div className="mt-2 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -539,18 +539,18 @@ export function RunningProgramBuilderModal({
                       type="button"
                       disabled={Boolean(editingProgram)}
                       onClick={() => handleDistanceChange(item.key)}
-                      className={`rounded-xl border p-3 text-left transition-colors ${
+                      className={`rounded-[12px] border p-3 text-left transition-colors ${
                         editingProgram ? 'opacity-80 cursor-default' : 'cursor-pointer'
                       } ${
                         active
-                          ? 'border-sky-600 bg-sky-50/80 text-sky-950 dark:border-sky-500 dark:bg-sky-950/60 dark:text-sky-100'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
+                          ? 'border-emerald-600 bg-emerald-50/80 text-emerald-950 dark:border-[#4ADE80] dark:bg-[#4ADE80]/15 dark:text-[#E5E5E5]'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
-                      <p className="font-mono text-base font-bold tabular-nums">
+                      <p className={`text-base font-bold tabular-nums ${active ? 'dark:text-[#4ADE80]' : 'dark:text-[#E5E5E5]'}`}>
                         {item.shortLabel}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 text-[11px] tabular-nums text-slate-500 dark:text-[#8E8E8E]">
                         {itemWeeks} sem. · {formatPriceEuros(item.defaultPriceCents)}
                       </p>
                     </button>
@@ -562,10 +562,10 @@ export function RunningProgramBuilderModal({
             {/* Runner level selector (Débutant / Régulier / Expérimenté) */}
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <span className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]">
                   Niveau du coureur (adapte la durée du cycle) *
                 </span>
-                <span className="font-mono text-xs font-bold text-sky-700 dark:text-sky-400 tabular-nums">
+                <span className="text-xs font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                   Durée retenue : {durationWeeks} semaines
                 </span>
               </div>
@@ -578,19 +578,19 @@ export function RunningProgramBuilderModal({
                       key={opt.value}
                       type="button"
                       onClick={() => handleLevelChange(opt.value)}
-                      className={`rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer ${
+                      className={`rounded-[12px] border px-3 py-2.5 text-left transition-colors cursor-pointer ${
                         active
-                          ? 'border-emerald-600 bg-emerald-50/80 text-emerald-950 dark:border-emerald-500 dark:bg-emerald-950/55 dark:text-emerald-100'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
+                          ? 'border-emerald-600 bg-emerald-50/80 text-emerald-950 dark:border-[#4ADE80] dark:bg-[#4ADE80]/15 dark:text-[#E5E5E5]'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold">{opt.label}</span>
-                        <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                        <span className="text-[11px] font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                           {optWeeks} sem.
                         </span>
                       </div>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                         {opt.description}
                       </p>
                     </button>
@@ -604,14 +604,14 @@ export function RunningProgramBuilderModal({
               <div>
                 <label
                   htmlFor="rp-member"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Adhérent destinataire *
                 </label>
                 {editingProgram || initialMember ? (
-                  <div className="mt-1 flex min-h-[42px] items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                  <div className="mt-1 flex min-h-[42px] items-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]">
                     <UserCheck
-                      className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                      className="h-4 w-4 shrink-0 text-emerald-600 dark:text-[#4ADE80]"
                       aria-hidden="true"
                     />
                     <span className="truncate">
@@ -624,7 +624,7 @@ export function RunningProgramBuilderModal({
                     required
                     value={selectedMemberEmail}
                     onChange={(e) => setSelectedMemberEmail(e.target.value)}
-                    className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   >
                     <option value="">Sélectionner un adhérent...</option>
                     {memberCandidates.map((m) => (
@@ -642,7 +642,7 @@ export function RunningProgramBuilderModal({
                       value={selectedMemberEmail}
                       onChange={(e) => setSelectedMemberEmail(e.target.value)}
                       placeholder="email.adherent@exemple.fr"
-                      className="min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      className="min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                     />
                     <p className="text-[11px] text-amber-700 dark:text-amber-400">
                       Aucun adhérent répertorié pour l’instant : saisissez directement son email ou ajoutez-le dans Adhérents.
@@ -654,7 +654,7 @@ export function RunningProgramBuilderModal({
               <div>
                 <label
                   htmlFor="rp-title"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Intitulé du programme *
                 </label>
@@ -669,23 +669,23 @@ export function RunningProgramBuilderModal({
                     setTitle(e.target.value);
                     setTitleTouched(true);
                   }}
-                  className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                 />
               </div>
             </div>
 
             {/* Objectif temps + Start date (Day 1 VMA) */}
-            <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 rounded-[12px] border border-slate-200 bg-slate-50/70 p-4 dark:border-[#262626] dark:bg-[#1F1F1F] sm:grid-cols-2">
               <div>
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  <Timer className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
+                  <Timer className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                   Objectif temps de l’adhérent ({tpl.shortLabel}) *
                 </span>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   <div>
                     <label
                       htmlFor="rp-hours"
-                      className="block text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400"
+                      className="block text-[10px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]"
                     >
                       Heures
                     </label>
@@ -698,13 +698,13 @@ export function RunningProgramBuilderModal({
                       onChange={(e) =>
                         setTargetHours(Math.max(0, Math.min(9, Math.round(Number(e.target.value) || 0))))
                       }
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="mt-1 min-h-[38px] w-full rounded-[8px] border border-slate-300 bg-white px-2.5 text-sm font-bold tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5]"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="rp-mins"
-                      className="block text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400"
+                      className="block text-[10px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]"
                     >
                       Minutes
                     </label>
@@ -717,13 +717,13 @@ export function RunningProgramBuilderModal({
                       onChange={(e) =>
                         setTargetMinutes(Math.max(0, Math.min(59, Math.round(Number(e.target.value) || 0))))
                       }
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="mt-1 min-h-[38px] w-full rounded-[8px] border border-slate-300 bg-white px-2.5 text-sm font-bold tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5]"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="rp-secs"
-                      className="block text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400"
+                      className="block text-[10px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]"
                     >
                       Sec.
                     </label>
@@ -736,11 +736,11 @@ export function RunningProgramBuilderModal({
                       onChange={(e) =>
                         setTargetSeconds(Math.max(0, Math.min(59, Math.round(Number(e.target.value) || 0))))
                       }
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-sm font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="mt-1 min-h-[38px] w-full rounded-[8px] border border-slate-300 bg-white px-2.5 text-sm font-bold tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5]"
                     />
                   </div>
                 </div>
-                <p className="mt-2 font-mono text-xs font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
+                <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                   Objectif : {formatDurationHMS(targetTotalSeconds)} · Allure cible :{' '}
                   {formatPaceMinPerKm(targetPaceSecPerKm)}
                 </p>
@@ -749,9 +749,9 @@ export function RunningProgramBuilderModal({
               <div>
                 <label
                   htmlFor="rp-start-date"
-                  className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]"
                 >
-                  <Gauge className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                  <Gauge className="h-3.5 w-3.5 text-emerald-600 dark:text-[#4ADE80]" aria-hidden="true" />
                   Démarrage souhaité du programme *
                 </label>
                 <input
@@ -760,22 +760,22 @@ export function RunningProgramBuilderModal({
                   required
                   value={startDateStr}
                   onChange={(e) => setStartDateStr(e.target.value)}
-                  className="mt-2 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="mt-2 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                 />
-                <p className="mt-2 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+                <p className="mt-2 text-[11px] leading-relaxed text-slate-600 dark:text-[#A3A3A3]">
                   Tant que le Test VMA n’est pas validé, l’envoi du programme reste en attente. Dès validation du test, la Semaine 1 est envoyée immédiatement sur les jours choisis ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}), puis les semaines suivantes chaque {autoSendLabel}.
                 </p>
               </div>
             </div>
 
             {/* Automatic Weekly Send Schedule (default: Sunday 18:00) */}
-            <div className="rounded-xl border border-sky-200/80 bg-sky-50/40 p-4 dark:border-sky-900/60 dark:bg-sky-950/20 space-y-2.5">
+            <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-4 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
-                  <Clock className="h-3.5 w-3.5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-[#E5E5E5]">
+                  <Clock className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                   Envoi automatique des semaines suivantes (Sem. 2 à {durationWeeks})
                 </span>
-                <span className="font-mono text-[11px] font-semibold text-sky-700 dark:text-sky-400">
+                <span className="text-[11px] font-semibold tabular-nums text-emerald-700 dark:text-[#4ADE80]">
                   Chaque {autoSendLabel}
                 </span>
               </div>
@@ -783,7 +783,7 @@ export function RunningProgramBuilderModal({
                 <div>
                   <label
                     htmlFor="rp-autosend-day"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Jour d’envoi hebdomadaire
                   </label>
@@ -791,7 +791,7 @@ export function RunningProgramBuilderModal({
                     id="rp-autosend-day"
                     value={autoSendDay}
                     onChange={(e) => setAutoSendDay(Number(e.target.value))}
-                    className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   >
                     {AUTO_SEND_WEEKDAY_OPTIONS.map((opt) => (
                       <option key={opt.day} value={opt.day}>
@@ -803,7 +803,7 @@ export function RunningProgramBuilderModal({
                 <div>
                   <label
                     htmlFor="rp-autosend-time"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Heure d’envoi (18h00 par défaut)
                   </label>
@@ -815,19 +815,19 @@ export function RunningProgramBuilderModal({
                     onChange={(e) =>
                       setAutoSendTime(e.target.value || DEFAULT_AUTO_SEND_TIME)
                     }
-                    className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-semibold text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm font-semibold tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   />
                 </div>
               </div>
             </div>
 
             {/* Configurable Frequency (2..6 sessions/week, default 3) + Days */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/30 space-y-3">
+            <div className="rounded-[12px] border border-slate-200 bg-white p-4 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                <span className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                   Fréquence hebdomadaire sur {durationWeeks} semaines *
                 </span>
-                <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                <span className="text-xs font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                   {durationWeeks * sessionsPerWeek} séances au total
                 </span>
               </div>
@@ -838,10 +838,10 @@ export function RunningProgramBuilderModal({
                     key={n}
                     type="button"
                     onClick={() => handleSessionsPerWeekChange(n)}
-                    className={`min-h-[36px] rounded-lg border px-3.5 py-1.5 font-mono text-xs font-bold cursor-pointer ${
+                    className={`min-h-[36px] rounded-[8px] border px-3.5 py-1.5 text-xs font-bold tabular-nums cursor-pointer ${
                       sessionsPerWeek === n
-                        ? 'border-slate-900 bg-slate-900 text-white dark:border-emerald-500 dark:bg-emerald-600 dark:text-white'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     {n} séances / sem.
@@ -850,7 +850,7 @@ export function RunningProgramBuilderModal({
               </div>
 
               <div>
-                <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                <span className="block text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                   Jours d’entraînement préférés ({preferredDays.length}/{sessionsPerWeek} sélectionnés)
                 </span>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -861,10 +861,10 @@ export function RunningProgramBuilderModal({
                         key={w.day}
                         type="button"
                         onClick={() => togglePreferredDay(w.day)}
-                        className={`rounded-md border px-2.5 py-1 text-xs font-semibold cursor-pointer ${
+                        className={`rounded-[8px] border px-2.5 py-1 text-xs font-semibold cursor-pointer ${
                           selected
-                            ? 'border-sky-600 bg-sky-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                         }`}
                       >
                         {w.short}
@@ -876,26 +876,26 @@ export function RunningProgramBuilderModal({
             </div>
 
             {/* Pricing: Free (offert) or Paid */}
-            <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20 space-y-3">
+            <div className="rounded-[12px] border border-emerald-200/80 bg-emerald-50/40 p-4 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  <CreditCard className="h-4 w-4 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
+                  <span className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5]">
                     Tarification du programme personnalisé
                   </span>
                 </div>
                 <div
                   role="group"
                   aria-label="Programme gratuit ou payant"
-                  className="inline-flex items-center gap-1 rounded-lg bg-slate-200/80 p-1 dark:bg-slate-900"
+                  className="inline-flex items-center gap-1 rounded-[10px] bg-slate-200/80 p-1 dark:border dark:border-[#262626] dark:bg-[#161616]"
                 >
                   <button
                     type="button"
                     onClick={() => setIsPaid(false)}
-                    className={`min-h-[30px] rounded-md px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                    className={`min-h-[30px] rounded-[8px] px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
                       !isPaid
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-[#1F1F1F] dark:text-[#E5E5E5]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     Offert (gratuit)
@@ -903,10 +903,10 @@ export function RunningProgramBuilderModal({
                   <button
                     type="button"
                     onClick={() => setIsPaid(true)}
-                    className={`min-h-[30px] rounded-md px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                    className={`min-h-[30px] rounded-[8px] px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
                       isPaid
-                        ? 'bg-emerald-700 text-white shadow-xs dark:bg-emerald-600'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                        ? 'bg-emerald-700 text-white shadow-xs dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     Payant
@@ -920,7 +920,7 @@ export function RunningProgramBuilderModal({
                     <div>
                       <label
                         htmlFor="rp-price"
-                        className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                        className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                       >
                         Tarif du programme (€) *
                       </label>
@@ -936,7 +936,7 @@ export function RunningProgramBuilderModal({
                           setPriceTouched(true);
                           setPriceEuros(e.target.value);
                         }}
-                        className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm font-bold tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                       />
                       {hasCoachCustomRunningPrice(
                         selectedCoachEntry?.pricing,
@@ -952,7 +952,7 @@ export function RunningProgramBuilderModal({
                             setPriceEuros((customCents / 100).toFixed(2));
                             setPriceTouched(false);
                           }}
-                          className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                          className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-[#4ADE80] cursor-pointer"
                         >
                           Tarif de {selectedCoachEntry?.displayName || coachName} ({tpl.shortLabel}) :{' '}
                           {formatPriceEuros(
@@ -968,7 +968,7 @@ export function RunningProgramBuilderModal({
                     <div>
                       <label
                         htmlFor="rp-pay-mode"
-                        className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                        className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                       >
                         Mode de règlement autorisé *
                       </label>
@@ -978,7 +978,7 @@ export function RunningProgramBuilderModal({
                         onChange={(e) =>
                           setPaymentMode(e.target.value as EventPaymentMode)
                         }
-                        className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                       >
                         <option value="both">Carte en ligne ou sur place</option>
                         <option value="online">Carte en ligne uniquement</option>
@@ -988,19 +988,19 @@ export function RunningProgramBuilderModal({
                   </div>
 
                   {!editingProgram && (
-                    <label className="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <label className="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-[#A3A3A3] cursor-pointer">
                       <input
                         type="checkbox"
                         checked={markPaid}
                         onChange={(e) => setMarkPaid(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                        className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 dark:accent-[#4ADE80]"
                       />
                       <span>L’adhérent a déjà réglé sur place (débloquer immédiatement)</span>
                     </label>
                   )}
                 </>
               ) : (
-                <p className="rounded-lg border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-800/60 dark:bg-slate-900/60 dark:text-emerald-200">
+                <p className="rounded-[10px] border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]">
                   Programme offert : aucun paiement demandé. Seule la séance Test VMA est disponible immédiatement ; l’envoi du programme reste en attente jusqu’à validation du test, puis la Semaine 1 est envoyée immédiatement et les suivantes chaque {autoSendLabel} ({formatPreferredDaysShort(preferredDays, sessionsPerWeek)}).
                 </p>
               )}
@@ -1011,7 +1011,7 @@ export function RunningProgramBuilderModal({
               <div>
                 <label
                   htmlFor="rp-coach"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Coach référent
                 </label>
@@ -1020,7 +1020,7 @@ export function RunningProgramBuilderModal({
                     id="rp-coach"
                     value={coachRefUid}
                     onChange={(e) => handleCoachChange(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                   >
                     {coachName && !coachDirectory.some((c) => c.uid === coachUid) && (
                       <option value={coachUid}>{coachName}</option>
@@ -1041,7 +1041,7 @@ export function RunningProgramBuilderModal({
                 ) : (
                   <div
                     id="rp-coach"
-                    className="mt-1 flex min-h-[40px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+                    className="mt-1 flex min-h-[40px] items-center rounded-[10px] border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                   >
                     {coachName || editingProgram?.coachName || 'Coach'}
                   </div>
@@ -1050,7 +1050,7 @@ export function RunningProgramBuilderModal({
               <div>
                 <label
                   htmlFor="rp-notes"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Consignes personnalisées du coach
                 </label>
@@ -1061,14 +1061,14 @@ export function RunningProgramBuilderModal({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ex. Bien respecter l’échauffement avant le test VMA..."
-                  className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80]"
                 />
               </div>
             </div>
 
             {/* 4-Phase dynamic structure preview */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-950/50">
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+            <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
+              <p className="text-xs font-bold text-slate-800 dark:text-[#E5E5E5] tabular-nums">
                 Structure générée sur {durationWeeks} semaines ({tpl.shortLabel} ·{' '}
                 {getProgramRunnerLevelLabel(runnerLevel)})
               </p>
@@ -1076,7 +1076,7 @@ export function RunningProgramBuilderModal({
                 {phasesPreview.map((p) => (
                   <p
                     key={p}
-                    className="rounded-md border border-slate-200/80 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                    className="rounded-[8px] border border-slate-200/80 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3]"
                   >
                     {p}
                   </p>
@@ -1085,14 +1085,14 @@ export function RunningProgramBuilderModal({
             </div>
 
             {error && (
-              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+              <div className="rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200">
                 {error}
               </div>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/60">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
+            <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
               {isPaid
                 ? `Après paiement : Test VMA disponible. Tant qu’il n’est pas validé, l’envoi reste en attente ; dès validation, Semaine 1 envoyée puis chaque semaine suivante le ${autoSendLabel} (${durationWeeks} sem.).`
                 : `Programme offert : Test VMA disponible. Envoi du programme en attente jusqu’à validation du test, puis Semaine 1 immédiate et semaines suivantes chaque ${autoSendLabel} (${durationWeeks} sem.).`}
@@ -1101,14 +1101,14 @@ export function RunningProgramBuilderModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="min-h-[40px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                className="min-h-[40px] rounded-[10px] border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
               >
                 <CalendarPlus className="h-4 w-4" aria-hidden="true" />
                 {saving

@@ -37,14 +37,14 @@ export function EventLikeButton({
         e.stopPropagation();
         onToggle();
       }}
-      className={`inline-flex items-center gap-1.5 rounded-lg border transition-colors cursor-pointer disabled:opacity-60 ${
+      className={`inline-flex items-center gap-1.5 rounded-[10px] border transition-colors cursor-pointer disabled:opacity-60 ${
         compact
           ? 'min-h-[32px] px-2.5 py-1 text-xs font-medium'
           : 'min-h-[38px] px-3 py-1.5 text-xs font-semibold'
       } ${
         isLiked
-          ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/60'
-          : 'border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:bg-rose-50/60 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/40 dark:hover:text-rose-300'
+          ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800/70 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50'
+          : 'border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:bg-rose-50/60 hover:text-rose-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:border-rose-800/70 dark:hover:bg-rose-950/40 dark:hover:text-rose-300'
       }`}
     >
       <Heart
@@ -54,7 +54,7 @@ export function EventLikeButton({
         aria-hidden="true"
       />
       {!compact && <span>{isLiked ? 'Aimé' : 'J’aime'}</span>}
-      <span className="font-mono tabular-nums">{likesCount}</span>
+      <span className="tabular-nums">{likesCount}</span>
     </button>
   );
 }
@@ -71,7 +71,7 @@ export function EventRatingSummaryBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 ${
+      className={`inline-flex items-center gap-1 rounded-[6px] border border-amber-200 bg-amber-50 font-medium text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300 ${
         compact ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-xs'
       }`}
       title={`Note moyenne ${avg.toFixed(1)}/5 sur ${reviews.length} avis`}
@@ -80,10 +80,10 @@ export function EventRatingSummaryBadge({
         className="h-3 w-3 fill-amber-500 text-amber-500 shrink-0"
         aria-hidden="true"
       />
-      <span className="font-mono font-semibold tabular-nums">
+      <span className="font-semibold tabular-nums">
         {avg.toFixed(1)}
       </span>
-      <span className="text-amber-800/80 dark:text-amber-300/80">
+      <span className="text-amber-800/80 dark:text-amber-300/80 tabular-nums">
         ({reviews.length})
       </span>
     </span>
@@ -161,10 +161,10 @@ export function EventReviewForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3.5 dark:border-emerald-800/80 dark:bg-emerald-950/30"
+      className="space-y-3 rounded-[12px] border border-emerald-200 bg-emerald-50/50 p-3.5 dark:border-[#4ADE80]/30 dark:bg-[#1F1F1F]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-slate-900 dark:text-white">
+        <span className="text-xs font-semibold text-slate-900 dark:text-[#E5E5E5]">
           {existingReview ? 'Modifier mon avis' : 'Donner mon avis sur la séance'}
         </span>
         <div className="flex items-center gap-1" role="group" aria-label="Note de la séance">
@@ -177,20 +177,20 @@ export function EventReviewForm({
                 onClick={() => setRating(star)}
                 aria-label={`${star} étoile${star > 1 ? 's' : ''}`}
                 aria-pressed={rating === star}
-                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-amber-100/70 dark:hover:bg-amber-900/40 cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-[8px] hover:bg-amber-100/70 dark:hover:bg-amber-900/40 cursor-pointer"
               >
                 <Star
                   className={`h-4 w-4 ${
                     active
                       ? 'fill-amber-400 text-amber-500'
-                      : 'text-slate-300 dark:text-slate-600'
+                      : 'text-slate-300 dark:text-[#525252]'
                   }`}
                   aria-hidden="true"
                 />
               </button>
             );
           })}
-          <span className="ml-1 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+          <span className="ml-1 text-xs font-semibold text-slate-700 dark:text-[#E5E5E5] tabular-nums">
             {rating}/5
           </span>
         </div>
@@ -206,11 +206,11 @@ export function EventReviewForm({
           onChange={(e) => setComment(e.target.value)}
           placeholder="Partagez votre ressenti sur l’ambiance, l’intensité, l’organisation ou l’animateur..."
           aria-label="Votre commentaire sur l’événement"
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+          className="w-full rounded-[10px] border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
         />
-        <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-[#8E8E8E]">
           <span>Minimum {VALIDATION_LIMITS.REVIEW_COMMENT_MIN} caractères</span>
-          <span className="font-mono tabular-nums">
+          <span className="tabular-nums">
             {comment.length}/{VALIDATION_LIMITS.REVIEW_COMMENT_MAX}
           </span>
         </div>
@@ -229,7 +229,7 @@ export function EventReviewForm({
               type="button"
               disabled={submitting || deleting}
               onClick={() => setConfirmDelete(true)}
-              className="inline-flex min-h-[34px] items-center gap-1 rounded-md border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
+              className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-800/60 dark:bg-[#161616] dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               Supprimer
@@ -241,7 +241,7 @@ export function EventReviewForm({
                 type="button"
                 disabled={deleting}
                 onClick={() => void onDelete()}
-                className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                className="min-h-[34px] rounded-[8px] bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
               >
                 {deleting ? 'Suppression...' : 'Confirmer'}
               </button>
@@ -249,7 +249,7 @@ export function EventReviewForm({
                 type="button"
                 disabled={deleting}
                 onClick={() => setConfirmDelete(false)}
-                className="min-h-[34px] rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 cursor-pointer"
+                className="min-h-[34px] rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-600 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] cursor-pointer"
               >
                 Non
               </button>
@@ -263,7 +263,7 @@ export function EventReviewForm({
               type="button"
               disabled={submitting || deleting}
               onClick={onCancel}
-              className="min-h-[36px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+              className="min-h-[36px] rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
             >
               Annuler
             </button>
@@ -271,7 +271,7 @@ export function EventReviewForm({
           <button
             type="submit"
             disabled={submitting || deleting}
-            className="min-h-[36px] rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+            className="min-h-[36px] rounded-[10px] bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
           >
             {submitting
               ? 'Enregistrement...'
@@ -335,11 +335,11 @@ export function EventReviewsSection({
   };
 
   return (
-    <div className="space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+    <div className="space-y-3 border-t border-slate-100 pt-4 dark:border-[#262626]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-          <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <MessageSquare className="h-4 w-4 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
+          <h3 className="text-xs font-semibold text-slate-700 dark:text-[#E5E5E5] tabular-nums">
             Avis & commentaires des participants ({reviews.length})
           </h3>
         </div>
@@ -362,14 +362,14 @@ export function EventReviewsSection({
       )}
 
       {canWriteReview && myReview && !editing && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2 text-xs dark:border-emerald-800/80 dark:bg-emerald-950/30">
-          <span className="font-medium text-emerald-900 dark:text-emerald-200">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-emerald-200 bg-emerald-50/50 px-3 py-2 text-xs dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10">
+          <span className="font-medium text-emerald-900 dark:text-[#E5E5E5]">
             Vous avez déjà laissé un avis sur cette séance.
           </span>
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1 font-semibold text-emerald-800 underline underline-offset-2 hover:text-emerald-950 dark:text-emerald-300 dark:hover:text-white cursor-pointer"
+            className="inline-flex items-center gap-1 font-semibold text-emerald-800 underline underline-offset-2 hover:text-emerald-950 dark:text-[#4ADE80] dark:hover:text-white cursor-pointer"
           >
             <Pencil className="h-3 w-3" aria-hidden="true" />
             Modifier mon avis
@@ -378,7 +378,7 @@ export function EventReviewsSection({
       )}
 
       {reviews.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 px-3.5 py-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+        <p className="rounded-[12px] border border-dashed border-slate-200 bg-slate-50/60 px-3.5 py-3 text-xs text-slate-500 dark:border-[#262626] dark:bg-[#1F1F1F]/60 dark:text-[#8E8E8E]">
           {canWriteReview
             ? 'Aucun avis pour le moment. Soyez le premier participant à partager votre ressenti !'
             : 'Aucun avis publié pour cette séance pour le moment.'}
@@ -392,15 +392,15 @@ export function EventReviewsSection({
             return (
               <li
                 key={rev.id}
-                className="rounded-lg border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40"
+                className="rounded-[12px] border border-slate-200 bg-slate-50/60 p-3 dark:border-[#262626] dark:bg-[#1F1F1F]"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
-                    <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                    <span className="text-xs font-semibold text-slate-900 dark:text-[#E5E5E5]">
                       {rev.authorName}
                     </span>
                     {isMine && (
-                      <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300">
+                      <span className="rounded-[6px] bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]">
                         Votre avis
                       </span>
                     )}
@@ -414,7 +414,7 @@ export function EventReviewsSection({
                           className={`h-3 w-3 ${
                             s <= rev.rating
                               ? 'fill-amber-400 text-amber-500'
-                              : 'text-slate-300 dark:text-slate-600'
+                              : 'text-slate-300 dark:text-[#525252]'
                           }`}
                           aria-hidden="true"
                         />
@@ -423,7 +423,7 @@ export function EventReviewsSection({
                   </div>
                   <div className="flex items-center gap-2">
                     {dateObj && (
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                         {new Intl.DateTimeFormat('fr-FR', {
                           day: 'numeric',
                           month: 'short',
@@ -436,26 +436,26 @@ export function EventReviewsSection({
                         type="button"
                         onClick={() => setConfirmDeleteId(rev.id)}
                         aria-label={`Supprimer l’avis de ${rev.authorName}`}
-                        className="text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 cursor-pointer"
+                        className="text-slate-400 hover:text-rose-600 dark:text-[#8E8E8E] dark:hover:text-rose-400 cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
                     )}
                   </div>
                 </div>
-                <p className="mt-1.5 whitespace-pre-line text-xs leading-relaxed text-slate-700 dark:text-slate-200">
+                <p className="mt-1.5 whitespace-pre-line text-xs leading-relaxed text-slate-700 dark:text-[#A3A3A3]">
                   {rev.comment}
                 </p>
                 {canRemove && confirmDeleteId === rev.id && (
-                  <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-slate-200 pt-2 dark:border-slate-700">
-                    <span className="text-[11px] text-slate-600 dark:text-slate-300">
+                  <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-slate-200 pt-2 dark:border-[#262626]">
+                    <span className="text-[11px] text-slate-600 dark:text-[#A3A3A3]">
                       Supprimer cet avis ?
                     </span>
                     <button
                       type="button"
                       disabled={deletingId === rev.id}
                       onClick={() => void handleDelete(rev.id)}
-                      className="min-h-[28px] rounded bg-rose-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                      className="min-h-[28px] rounded-[6px] bg-rose-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                     >
                       {deletingId === rev.id ? '...' : 'Oui'}
                     </button>
@@ -463,7 +463,7 @@ export function EventReviewsSection({
                       type="button"
                       disabled={deletingId === rev.id}
                       onClick={() => setConfirmDeleteId(null)}
-                      className="min-h-[28px] rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 cursor-pointer"
+                      className="min-h-[28px] rounded-[6px] border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-600 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] cursor-pointer"
                     >
                       Non
                     </button>

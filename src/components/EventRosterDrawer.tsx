@@ -391,27 +391,27 @@ export function EventRosterDrawer({
     const info = getRegistrationPaymentBadgeInfo(reg);
     if (info.status === 'free') {
       return (
-        <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <span className="inline-flex items-center rounded-[6px] border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
           Gratuit
         </span>
       );
     }
     if (info.status === 'paid') {
       return (
-        <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-emerald-800 tabular-nums dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+        <span className="inline-flex items-center rounded-[6px] border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 tabular-nums dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
           {info.shortLabel}
         </span>
       );
     }
     if (info.status === 'refunded') {
       return (
-        <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-rose-800 tabular-nums dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+        <span className="inline-flex items-center rounded-[6px] border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-800 tabular-nums dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300">
           {info.shortLabel}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center rounded border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-800 tabular-nums dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+      <span className="inline-flex items-center rounded-[6px] border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 tabular-nums dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300">
         {info.shortLabel}
       </span>
     );
@@ -422,27 +422,27 @@ export function EventRosterDrawer({
       role="dialog"
       aria-modal="true"
       aria-labelledby="roster-drawer-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-slate-950/75 backdrop-blur-xs sm:items-stretch sm:justify-end"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-black/75 backdrop-blur-xs sm:items-stretch sm:justify-end"
       onClick={onClose}
     >
       <div
-        className="flex h-[92dvh] w-full max-w-2xl flex-col rounded-t-2xl border-t border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:h-full sm:rounded-none sm:border-t-0 sm:border-l"
+        className="flex h-[92dvh] w-full max-w-2xl flex-col rounded-t-[16px] border-t border-slate-200 bg-white shadow-2xl dark:border-[#262626] dark:bg-[#161616] sm:h-full sm:rounded-none sm:border-t-0 sm:border-l"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-slate-800 sm:p-6">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-[#262626] sm:p-6">
           <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 capitalize">
+            <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] capitalize">
               {formatFrenchDateLong(event.startAt.toDate())} ·{' '}
               {formatTimeRange(event.startAt.toDate(), event.durationMinutes)}
             </p>
             <h2
               id="roster-drawer-title"
-              className="mt-1 font-display text-lg font-bold text-slate-900 dark:text-white sm:text-xl"
+              className="mt-1 font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5] sm:text-xl"
             >
               {event.title}
             </h2>
-            <p className="mt-1 font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums">
+            <p className="mt-1 text-xs font-medium text-slate-600 dark:text-[#A3A3A3] tabular-nums">
               {event.isUnlimitedCapacity
                 ? `${eventRegistrations.length} inscrit${eventRegistrations.length > 1 ? 's' : ''} · Places illimitées`
                 : `${eventRegistrations.length}/${event.maxCapacity} inscrits`}{' '}
@@ -455,28 +455,28 @@ export function EventRosterDrawer({
             type="button"
             onClick={onClose}
             aria-label="Fermer la liste des participants"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Drawer Tab Switch */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-[#262626] dark:bg-[#161616] sm:px-6">
           <div
             role="tablist"
             aria-label="Sections de la séance"
-            className="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+            className="inline-flex items-center gap-1 rounded-[12px] border border-slate-200 bg-slate-100 p-1 dark:border-[#262626] dark:bg-[#1F1F1F]"
           >
             <button
               type="button"
               role="tab"
               aria-selected={drawerTab === 'roster'}
               onClick={() => setDrawerTab('roster')}
-              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] px-3 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
                 drawerTab === 'roster'
-                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-[#161616] dark:text-[#4ADE80]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
               }`}
             >
               <Users className="h-3.5 w-3.5" aria-hidden="true" />
@@ -487,10 +487,10 @@ export function EventRosterDrawer({
               role="tab"
               aria-selected={drawerTab === 'reviews'}
               onClick={() => setDrawerTab('reviews')}
-              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] px-3 py-1 text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors ${
                 drawerTab === 'reviews'
-                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-2xs dark:bg-[#161616] dark:text-[#4ADE80]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
               }`}
             >
               <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
@@ -501,28 +501,28 @@ export function EventRosterDrawer({
 
         {/* Paid Event Financial Summary Bar */}
         {drawerTab === 'roster' && isPaidEvent && (
-          <div className="grid grid-cols-3 divide-x divide-slate-200 border-b border-slate-200 bg-slate-50/80 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-800/40">
+          <div className="grid grid-cols-3 divide-x divide-slate-200 border-b border-slate-200 bg-slate-50/80 dark:divide-[#262626] dark:border-[#262626] dark:bg-[#1F1F1F]">
             <div className="px-4 py-2.5 sm:px-6">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                 Tarif ({formatPaymentModeLabel(event.paymentMode)})
               </p>
-              <p className="mt-0.5 font-mono text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+              <p className="mt-0.5 text-sm font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                 {formatEventPrice(event)}
               </p>
             </div>
             <div className="px-4 py-2.5 sm:px-6">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                 Encaissé
               </p>
-              <p className="mt-0.5 font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+              <p className="mt-0.5 text-sm font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                 {formatPriceEuros(financialSummary.collectedCents)}
               </p>
             </div>
             <div className="px-4 py-2.5 sm:px-6">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                 À encaisser sur place
               </p>
-              <p className="mt-0.5 font-mono text-sm font-bold text-amber-700 dark:text-amber-400 tabular-nums">
+              <p className="mt-0.5 text-sm font-bold text-amber-700 dark:text-amber-400 tabular-nums">
                 {formatPriceEuros(financialSummary.pendingCents)}
               </p>
             </div>
@@ -531,7 +531,7 @@ export function EventRosterDrawer({
 
         {/* Actions Bar */}
         {drawerTab === 'roster' && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-[#262626] dark:bg-[#1F1F1F] sm:px-6">
             <button
               type="button"
               aria-expanded={showAddForm}
@@ -545,7 +545,7 @@ export function EventRosterDrawer({
                 });
               }}
               disabled={isFull && !showAddForm}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-50 cursor-pointer"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-50 cursor-pointer"
             >
               <UserPlus className="h-4 w-4" aria-hidden="true" />
               Ajouter un participant
@@ -555,7 +555,7 @@ export function EventRosterDrawer({
               type="button"
               onClick={handleExportCsv}
               disabled={eventRegistrations.length === 0}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] disabled:opacity-50 cursor-pointer"
             >
               <Download className="h-4 w-4" aria-hidden="true" />
               Exporter CSV
@@ -567,30 +567,30 @@ export function EventRosterDrawer({
         {drawerTab === 'roster' && showAddForm && (
           <form
             onSubmit={handleManualAdd}
-            className="max-h-[58dvh] shrink-0 space-y-3.5 overflow-y-auto border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40 sm:p-6"
+            className="max-h-[58dvh] shrink-0 space-y-3.5 overflow-y-auto border-b border-slate-200 bg-slate-50/70 p-4 dark:border-[#262626] dark:bg-[#1F1F1F] sm:p-6"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+              <p className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                 Inscrire un adhérent à la séance
               </p>
               {isFull && (
-                <span className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                <span className="inline-flex items-center rounded-[6px] border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300">
                   Séance complète
                 </span>
               )}
             </div>
 
             {isPaidEvent && (
-              <label className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 cursor-pointer">
+              <label className="flex items-center gap-2.5 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={markPaidAsCoach}
                   onChange={(e) => setMarkPaidAsCoach(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600"
+                  className="h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-[#262626] dark:bg-[#1F1F1F]"
                 />
                 <span>
                   Déjà réglé sur place / espèces (
-                  <strong className="font-mono tabular-nums">
+                  <strong className="tabular-nums">
                     {formatEventPrice(event)}
                   </strong>
                   )
@@ -599,15 +599,15 @@ export function EventRosterDrawer({
             )}
 
             {/* Adhérents Directory Picker */}
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+            <div className="space-y-2 rounded-[12px] border border-slate-200 bg-white p-3 dark:border-[#262626] dark:bg-[#161616]">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-[#E5E5E5]">
                   Liste des adhérents ({memberPickerCandidates.length})
                 </span>
                 {memberPickerCandidates.length > 0 && (
                   <div className="relative w-full sm:w-56">
                     <Search
-                      className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                      className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 dark:text-[#525252]"
                       aria-hidden="true"
                     />
                     <input
@@ -616,22 +616,22 @@ export function EventRosterDrawer({
                       onChange={(e) => setMemberSearch(e.target.value)}
                       placeholder="Rechercher un adhérent..."
                       aria-label="Rechercher un adhérent"
-                      className="min-h-[36px] w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:text-xs"
+                      className="min-h-[36px] w-full rounded-[10px] border border-slate-200 bg-slate-50 pl-8 pr-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 sm:text-xs"
                     />
                   </div>
                 )}
               </div>
 
               {memberPickerCandidates.length === 0 ? (
-                <p className="py-2 text-xs text-slate-500 dark:text-slate-400">
+                <p className="py-2 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Aucun adhérent enregistré pour le moment. Utilisez la saisie manuelle ci-dessous.
                 </p>
               ) : filteredMemberCandidates.length === 0 ? (
-                <p className="py-2 text-xs text-slate-500 dark:text-slate-400">
+                <p className="py-2 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Aucun adhérent ne correspond à « {memberSearch.trim()} ».
                 </p>
               ) : (
-                <ul className="max-h-48 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-100 dark:divide-slate-800 dark:border-slate-800">
+                <ul className="max-h-48 divide-y divide-slate-100 overflow-y-auto rounded-[10px] border border-slate-100 dark:divide-[#262626] dark:border-[#262626]">
                   {filteredMemberCandidates.map((candidate) => {
                     const alreadyRegistered = confirmedEmailSet.has(
                       candidate.emailLower
@@ -644,7 +644,7 @@ export function EventRosterDrawer({
                     return (
                       <li
                         key={candidate.emailLower}
-                        className="flex items-center justify-between gap-2.5 px-3 py-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                        className="flex items-center justify-between gap-2.5 px-3 py-2 hover:bg-slate-50/80 dark:hover:bg-[#1F1F1F]"
                       >
                         <button
                           type="button"
@@ -659,22 +659,22 @@ export function EventRosterDrawer({
                           disabled={alreadyRegistered}
                         >
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="truncate text-xs font-semibold text-slate-900 dark:text-white">
+                            <span className="truncate text-xs font-semibold text-slate-900 dark:text-[#E5E5E5]">
                               {displayName}
                             </span>
                             {candidate.fitnessLevelLabel && (
-                              <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                              <span className="inline-flex items-center rounded-[6px] border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                                 {candidate.fitnessLevelLabel}
                               </span>
                             )}
                           </div>
-                          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                          <p className="truncate text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                             {candidate.email}
                           </p>
                         </button>
 
                         {alreadyRegistered ? (
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-[6px] border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                             <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                             Déjà inscrit
                           </span>
@@ -687,7 +687,7 @@ export function EventRosterDrawer({
                               quickAddingEmail !== null
                             }
                             onClick={() => void handleQuickRegisterMember(candidate)}
-                            className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md bg-emerald-700 px-3 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                            className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-[8px] bg-emerald-700 px-3 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                           >
                             {isQuickAddingThis ? (
                               <>
@@ -715,7 +715,7 @@ export function EventRosterDrawer({
             {quickAddSuccessMsg && (
               <p
                 role="status"
-                className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
+                className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-[#4ADE80]"
               >
                 <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {quickAddSuccessMsg}
@@ -723,7 +723,7 @@ export function EventRosterDrawer({
             )}
 
             <div className="space-y-2.5 pt-0.5">
-              <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+              <p className="text-[11px] font-semibold text-slate-600 dark:text-[#A3A3A3]">
                 Ou saisir manuellement un participant
               </p>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
@@ -734,7 +734,7 @@ export function EventRosterDrawer({
                   maxLength={VALIDATION_LIMITS.FIRST_NAME_MAX}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
+                  className="min-h-[44px] rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 sm:text-xs"
                 />
                 <input
                   type="text"
@@ -743,7 +743,7 @@ export function EventRosterDrawer({
                   maxLength={VALIDATION_LIMITS.LAST_NAME_MAX}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
+                  className="min-h-[44px] rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 sm:text-xs"
                 />
                 <input
                   type="email"
@@ -752,7 +752,7 @@ export function EventRosterDrawer({
                   maxLength={VALIDATION_LIMITS.EMAIL_MAX}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 sm:text-xs"
+                  className="min-h-[44px] rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 sm:text-xs"
                 />
               </div>
             </div>
@@ -770,14 +770,14 @@ export function EventRosterDrawer({
                   setErrorMsg(null);
                   setQuickAddSuccessMsg(null);
                 }}
-                className="min-h-[40px] rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                className="min-h-[40px] rounded-[10px] border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
               >
                 Fermer
               </button>
               <button
                 type="submit"
                 disabled={adding || isFull || quickAddingEmail !== null}
-                className="min-h-[40px] rounded-lg bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                className="min-h-[40px] rounded-[10px] bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
               >
                 {adding ? 'Ajout...' : 'Inscrire'}
               </button>
@@ -788,12 +788,12 @@ export function EventRosterDrawer({
         {/* Roster or Reviews Content */}
         {drawerTab === 'reviews' ? (
           <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
-            <div className="grid grid-cols-2 divide-x divide-slate-200 rounded-xl border border-slate-200 bg-slate-50/70 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-800/40">
+            <div className="grid grid-cols-2 divide-x divide-slate-200 rounded-[12px] border border-slate-200 bg-slate-50/70 dark:divide-[#262626] dark:border-[#262626] dark:bg-[#1F1F1F]">
               <div className="px-4 py-3">
-                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                   Note moyenne
                 </p>
-                <p className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-base font-bold text-slate-900 dark:text-white tabular-nums">
+                <p className="mt-0.5 inline-flex items-center gap-1.5 text-base font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-hidden="true" />
                   {ratingSummary && ratingSummary.count > 0
                     ? `${ratingSummary.averageRating.toFixed(1)}/5`
@@ -801,10 +801,10 @@ export function EventRosterDrawer({
                 </p>
               </div>
               <div className="px-4 py-3">
-                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                   Commentaires
                 </p>
-                <p className="mt-0.5 font-mono text-base font-bold text-slate-900 dark:text-white tabular-nums">
+                <p className="mt-0.5 text-base font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                   {eventReviews.length}
                 </p>
               </div>
@@ -822,17 +822,17 @@ export function EventRosterDrawer({
         ) : (
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {paymentActionError && (
-              <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+              <div className="mb-3 rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200">
                 {paymentActionError}
               </div>
             )}
 
           {eventRegistrations.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center dark:border-slate-700">
-              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <div className="rounded-[12px] border border-dashed border-slate-200 p-10 text-center dark:border-[#262626]">
+              <p className="text-sm font-semibold text-slate-800 dark:text-[#E5E5E5]">
                 Aucun participant inscrit pour le moment
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Les réservations effectuées depuis le calendrier apparaîtront ici en temps réel.
               </p>
             </div>
@@ -848,25 +848,25 @@ export function EventRosterDrawer({
                   return (
                     <div
                       key={reg.id}
-                      className="rounded-xl border border-slate-200 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-800/40"
+                      className="rounded-[12px] border border-slate-200 bg-white p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <p className="font-semibold text-slate-900 dark:text-white">
+                            <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                               {reg.firstName} {reg.lastName}
                             </p>
                             {participantIsCoach && (
-                              <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                              <span className="inline-flex items-center rounded-[6px] border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                                 Coach
                               </span>
                             )}
                           </div>
-                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                          <p className="truncate text-xs text-slate-500 dark:text-[#8E8E8E]">
                             {reg.email}
                           </p>
                           {(profileInfo.ageLabel || profileInfo.levelShortLabel) && (
-                            <p className="mt-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                            <p className="mt-0.5 text-[11px] font-medium tabular-nums text-emerald-700 dark:text-[#4ADE80]">
                               {[profileInfo.ageLabel, profileInfo.levelShortLabel]
                                 .filter(Boolean)
                                 .join(' · ')}
@@ -878,7 +878,7 @@ export function EventRosterDrawer({
                             </p>
                           )}
                         </div>
-                        <span className="shrink-0 font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                        <span className="shrink-0 text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                           {reg.createdAt
                             ? formatFrenchTime(reg.createdAt.toDate())
                             : '—'}
@@ -888,7 +888,7 @@ export function EventRosterDrawer({
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {renderPaymentBadge(reg)}
                         {reg.paymentReference && (
-                          <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                          <span className="text-[11px] tabular-nums text-slate-500 dark:text-[#8E8E8E]">
                             {reg.paymentReference}
                           </span>
                         )}
@@ -902,7 +902,7 @@ export function EventRosterDrawer({
                               type="button"
                               disabled={isUpdatingPay}
                               onClick={() => void handleUpdatePayment(reg, 'paid')}
-                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 disabled:opacity-60 cursor-pointer"
+                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[8px] border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 disabled:opacity-60 cursor-pointer"
                             >
                               <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
                               Marquer payé
@@ -913,7 +913,7 @@ export function EventRosterDrawer({
                               type="button"
                               disabled={isUpdatingPay}
                               onClick={() => void handleUpdatePayment(reg, 'refunded')}
-                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 disabled:opacity-60 cursor-pointer"
+                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[8px] border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] disabled:opacity-60 cursor-pointer"
                             >
                               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                               Rembourser
@@ -928,10 +928,10 @@ export function EventRosterDrawer({
                           onClick={() =>
                             void toggleRegistrationAttendance(reg.id, !reg.attended)
                           }
-                          className={`inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                          className={`inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                             reg.attended
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60'
-                              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/25'
+                              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                           }`}
                         >
                           <Check className="h-4 w-4" aria-hidden="true" />
@@ -944,7 +944,7 @@ export function EventRosterDrawer({
                             onClick={() => onMessageParticipant(reg, event)}
                             title={`Envoyer un message à ${reg.firstName} ${reg.lastName}`}
                             aria-label={`Envoyer un message à ${reg.firstName} ${reg.lastName}`}
-                            className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300 cursor-pointer"
+                            className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:border-[#4ADE80]/40 dark:hover:bg-[#4ADE80]/10 dark:hover:text-[#4ADE80] cursor-pointer"
                           >
                             <MessageSquare className="h-4 w-4" aria-hidden="true" />
                           </button>
@@ -957,7 +957,7 @@ export function EventRosterDrawer({
                                 type="button"
                                 disabled={removingRegId === reg.id}
                                 onClick={() => void handleRemoveRegistration(reg)}
-                                className="min-h-[44px] rounded-lg bg-rose-600 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                className="min-h-[44px] rounded-[10px] bg-rose-600 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                               >
                                 {removingRegId === reg.id ? 'Suppression…' : 'Confirmer'}
                               </button>
@@ -965,7 +965,7 @@ export function EventRosterDrawer({
                                 type="button"
                                 disabled={removingRegId === reg.id}
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="min-h-[44px] rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-60 cursor-pointer"
+                                className="min-h-[44px] rounded-[10px] border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:text-[#A3A3A3] dark:hover:bg-[#262626] disabled:opacity-60 cursor-pointer"
                               >
                                 Non
                               </button>
@@ -975,7 +975,7 @@ export function EventRosterDrawer({
                               type="button"
                               onClick={() => setConfirmDeleteId(reg.id)}
                               aria-label={`Désinscrire ${reg.firstName} ${reg.lastName}`}
-                              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+                              className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:border-rose-800/60 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer"
                             >
                               <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </button>
@@ -988,9 +988,9 @@ export function EventRosterDrawer({
               </div>
 
               {/* Desktop Participant Table (>= sm) */}
-              <div className="hidden overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 sm:block">
+              <div className="hidden overflow-hidden rounded-[12px] border border-slate-200 dark:border-[#262626] sm:block">
                 <table className="w-full border-collapse text-left text-sm">
-                  <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
                     <tr>
                       <th className="px-4 py-3">Participant</th>
                       <th className="px-4 py-3">Paiement</th>
@@ -998,7 +998,7 @@ export function EventRosterDrawer({
                       <th className="px-4 py-3 text-right">Présence & Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-200 dark:divide-[#262626]">
                     {eventRegistrations.map((reg) => {
                       const payInfo = getRegistrationPaymentBadgeInfo(reg);
                       const profileInfo = getParticipantProfileSummary(reg);
@@ -1007,24 +1007,24 @@ export function EventRosterDrawer({
                       return (
                         <tr
                           key={reg.id}
-                          className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                          className="hover:bg-slate-50/70 dark:hover:bg-[#1F1F1F]/60"
                         >
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <p className="font-semibold text-slate-900 dark:text-white">
+                              <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                                 {reg.firstName} {reg.lastName}
                               </p>
                               {participantIsCoach && (
-                                <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                <span className="inline-flex items-center rounded-[6px] border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                                   Coach
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                            <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
                               {reg.email}
                             </p>
                             {(profileInfo.ageLabel || profileInfo.levelShortLabel) && (
-                              <p className="mt-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                              <p className="mt-0.5 text-[11px] font-medium tabular-nums text-emerald-700 dark:text-[#4ADE80]">
                                 {[profileInfo.ageLabel, profileInfo.levelShortLabel]
                                   .filter(Boolean)
                                   .join(' · ')}
@@ -1040,7 +1040,7 @@ export function EventRosterDrawer({
                             <div className="flex flex-col items-start gap-1">
                               {renderPaymentBadge(reg)}
                               {reg.paymentReference && (
-                                <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                                <span className="text-[10px] tabular-nums text-slate-500 dark:text-[#8E8E8E]">
                                   {reg.paymentReference}
                                 </span>
                               )}
@@ -1054,7 +1054,7 @@ export function EventRosterDrawer({
                                       onClick={() =>
                                         void handleUpdatePayment(reg, 'paid')
                                       }
-                                      className="text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 disabled:opacity-60 cursor-pointer"
+                                      className="text-[11px] font-semibold text-emerald-700 hover:underline dark:text-[#4ADE80] disabled:opacity-60 cursor-pointer"
                                     >
                                       Marquer payé
                                     </button>
@@ -1066,7 +1066,7 @@ export function EventRosterDrawer({
                                       onClick={() =>
                                         void handleUpdatePayment(reg, 'refunded')
                                       }
-                                      className="text-[11px] font-medium text-slate-600 hover:text-rose-700 hover:underline dark:text-slate-300 dark:hover:text-rose-400 disabled:opacity-60 cursor-pointer"
+                                      className="text-[11px] font-medium text-slate-600 hover:text-rose-700 hover:underline dark:text-[#A3A3A3] dark:hover:text-rose-400 disabled:opacity-60 cursor-pointer"
                                     >
                                       Rembourser
                                     </button>
@@ -1075,7 +1075,7 @@ export function EventRosterDrawer({
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                          <td className="px-4 py-3 text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                             {reg.createdAt
                               ? formatFrenchTime(reg.createdAt.toDate())
                               : '—'}
@@ -1090,10 +1090,10 @@ export function EventRosterDrawer({
                                     !reg.attended
                                   )
                                 }
-                                className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                                className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                                   reg.attended
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60'
-                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/25'
+                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                                 }`}
                               >
                                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1106,7 +1106,7 @@ export function EventRosterDrawer({
                                   onClick={() => onMessageParticipant(reg, event)}
                                   title={`Envoyer un message à ${reg.firstName} ${reg.lastName}`}
                                   aria-label={`Envoyer un message à ${reg.firstName} ${reg.lastName}`}
-                                  className="flex h-[34px] w-[34px] items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300 cursor-pointer"
+                                  className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] border border-slate-200 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:border-[#4ADE80]/40 dark:hover:bg-[#4ADE80]/10 dark:hover:text-[#4ADE80] cursor-pointer"
                                 >
                                   <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>
@@ -1119,7 +1119,7 @@ export function EventRosterDrawer({
                                       type="button"
                                       disabled={removingRegId === reg.id}
                                       onClick={() => void handleRemoveRegistration(reg)}
-                                      className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                      className="min-h-[34px] rounded-[8px] bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                                     >
                                       {removingRegId === reg.id ? 'Suppression…' : 'Confirmer'}
                                     </button>
@@ -1127,7 +1127,7 @@ export function EventRosterDrawer({
                                       type="button"
                                       disabled={removingRegId === reg.id}
                                       onClick={() => setConfirmDeleteId(null)}
-                                      className="min-h-[34px] rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-60 cursor-pointer"
+                                      className="min-h-[34px] rounded-[8px] border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:text-[#A3A3A3] dark:hover:bg-[#262626] disabled:opacity-60 cursor-pointer"
                                     >
                                       Non
                                     </button>
@@ -1138,7 +1138,7 @@ export function EventRosterDrawer({
                                     onClick={() => setConfirmDeleteId(reg.id)}
                                     title="Désinscrire"
                                     aria-label={`Désinscrire ${reg.firstName} ${reg.lastName}`}
-                                    className="flex h-[34px] w-[34px] items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+                                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#8E8E8E] dark:hover:border-rose-800/60 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                                   </button>

@@ -905,10 +905,10 @@ export function MemberWeeklyScheduleCard({
       return (
         <div
           key={entry.id}
-          className={`rounded-lg border p-2.5 text-xs transition-colors ${
+          className={`rounded-[10px] border p-2.5 text-xs transition-colors ${
             progSession.isVmaTest
-              ? 'border-sky-300 bg-sky-50/60 dark:border-sky-800 dark:bg-sky-950/30'
-              : 'border-sky-200/90 bg-white dark:border-sky-900/60 dark:bg-slate-900/90'
+              ? 'border-sky-300 bg-sky-50/60 dark:border-sky-500/40 dark:bg-sky-500/10'
+              : 'border-sky-200/90 bg-white dark:border-[#262626] dark:bg-[#161616]'
           } ${entry.attendedOrCompleted ? 'opacity-85' : ''}`}
         >
           <div className="flex items-start justify-between gap-2">
@@ -917,7 +917,7 @@ export function MemberWeeklyScheduleCard({
                 className="h-3.5 w-3.5 shrink-0 text-sky-700 dark:text-sky-400"
                 aria-hidden="true"
               />
-              <span className="truncate font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+              <span className="truncate text-[11px] font-semibold text-slate-700 dark:text-[#E5E5E5] tabular-nums">
                 {formatTimeRange(entry.startDate, entry.durationMinutes)}
               </span>
             </div>
@@ -943,10 +943,10 @@ export function MemberWeeklyScheduleCard({
                     ? `Marquer ${progSession.title} comme à faire`
                     : `Marquer ${progSession.title} comme terminée`
                 }
-                className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap cursor-pointer ${
+                className={`inline-flex shrink-0 items-center gap-1 rounded-[8px] px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap cursor-pointer ${
                   progSession.completed
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5]'
                 }`}
               >
                 {progSession.completed ? (
@@ -959,7 +959,7 @@ export function MemberWeeklyScheduleCard({
                 )}
               </button>
             ) : (
-              <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
+              <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
                 <Lock className="h-3 w-3" aria-hidden="true" />
                 {formatPriceEuros(prog.priceCents)}
               </span>
@@ -967,7 +967,7 @@ export function MemberWeeklyScheduleCard({
           </div>
 
           <div className="mt-1 flex flex-wrap items-center justify-between gap-1.5">
-            <p className="font-mono text-[10px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
+            <p className="text-[10px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
               Plan {tpl.shortLabel} ·{' '}
               {progSession.isVmaTest
                 ? 'Test VMA'
@@ -982,7 +982,7 @@ export function MemberWeeklyScheduleCard({
                   : undefined;
               if (!hasAccess) {
                 return (
-                  <span className="font-mono text-[9px] font-semibold text-amber-700 dark:text-amber-400">
+                  <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400">
                     Paiement requis
                   </span>
                 );
@@ -990,9 +990,9 @@ export function MemberWeeklyScheduleCard({
               if (progSession.isVmaTest) {
                 return (
                   <span
-                    className={`font-mono text-[9px] font-semibold ${
+                    className={`text-[9px] font-semibold ${
                       prog.vmaTestStatus === 'completed'
-                        ? 'text-emerald-700 dark:text-emerald-400'
+                        ? 'text-emerald-700 dark:text-[#4ADE80]'
                         : 'text-sky-700 dark:text-sky-400'
                     }`}
                   >
@@ -1004,21 +1004,21 @@ export function MemberWeeklyScheduleCard({
               }
               if (delivery?.awaitingVma) {
                 return (
-                  <span className="font-mono text-[9px] font-semibold text-amber-700 dark:text-amber-400">
+                  <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400">
                     En attente du Test VMA
                   </span>
                 );
               }
               if (weekWindow?.unlocked) {
                 return (
-                  <span className="font-mono text-[9px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  <span className="text-[9px] font-semibold text-emerald-700 dark:text-[#4ADE80]">
                     {isFreeProgram ? 'Envoyée · Offert' : 'Envoyée'}
                   </span>
                 );
               }
               if (weekWindow) {
                 return (
-                  <span className="font-mono text-[9px] font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                  <span className="text-[9px] font-medium text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                     Envoi le {formatFrenchDateShort(new Date(weekWindow.unlockAtMs))} à {formatFrenchTime(new Date(weekWindow.unlockAtMs))}
                   </span>
                 );
@@ -1029,32 +1029,32 @@ export function MemberWeeklyScheduleCard({
 
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
             <p
-              className={`font-display text-xs font-bold leading-snug text-slate-900 dark:text-white ${
-                entry.attendedOrCompleted ? 'line-through decoration-slate-400' : ''
+              className={`font-display text-xs font-bold leading-snug text-slate-900 dark:text-[#E5E5E5] ${
+                entry.attendedOrCompleted ? 'line-through decoration-slate-400 dark:decoration-[#525252]' : ''
               }`}
             >
               {progSession.title}
             </p>
             {progSession.isCustomized && (
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+              <span className="rounded-[6px] bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                 Personnalisée
               </span>
             )}
           </div>
 
-          <p className="mt-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+          <p className="mt-0.5 text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
             {progSession.targetPaceLabel}
           </p>
 
           {prog.coachName && (
-            <p className="mt-1 flex items-center gap-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="mt-1 flex items-center gap-1 truncate text-[11px] text-slate-500 dark:text-[#8E8E8E]">
               <UserCheck className="h-3 w-3 shrink-0" aria-hidden="true" />
               <span className="truncate">Coach : {prog.coachName}</span>
             </p>
           )}
 
           {isLockedForMember ? (
-            <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 dark:border-amber-800/70 dark:bg-amber-950/35">
+            <div className="mt-2 space-y-2 rounded-[10px] border border-amber-200 bg-amber-50/70 p-2.5 dark:border-amber-800/70 dark:bg-amber-950/35">
               <p className="flex items-start gap-1.5 text-[11px] font-medium text-amber-950 dark:text-amber-100">
                 <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
                 <span>
@@ -1064,7 +1064,7 @@ export function MemberWeeklyScheduleCard({
               <button
                 type="button"
                 onClick={() => setPaymentTarget({ kind: 'program', program: prog })}
-                className="inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                className="inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-[8px] bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
               >
                 <CreditCard className="h-3 w-3" aria-hidden="true" />
                 <span>Régler {formatPriceEuros(prog.priceCents)}</span>
@@ -1073,15 +1073,15 @@ export function MemberWeeklyScheduleCard({
           ) : (
             <>
               {!hasAccess && mode === 'coach' && (
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35">
-                  <span className="font-mono text-[10px] font-semibold text-amber-900 dark:text-amber-200 tabular-nums">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-[8px] border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35">
+                  <span className="text-[10px] font-semibold text-amber-900 dark:text-amber-200 tabular-nums">
                     Paiement en attente · {formatPriceEuros(prog.priceCents)}
                   </span>
                   <button
                     type="button"
                     disabled={payingItemId === `program-${prog.id}`}
                     onClick={() => void handleCoachMarkProgramPaid(prog)}
-                    className="rounded bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                    className="rounded-[8px] bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 whitespace-nowrap cursor-pointer"
                   >
                     {payingItemId === `program-${prog.id}`
                       ? 'Validation...'
@@ -1091,14 +1091,14 @@ export function MemberWeeklyScheduleCard({
               )}
 
               {hasAccess && progSession.isVmaTest && prog.vmaTestStatus === 'pending' && (
-                <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50/80 p-2.5 dark:border-sky-800 dark:bg-sky-950/50">
+                <div className="mt-2 rounded-[10px] border border-sky-200 bg-sky-50/80 p-2.5 dark:border-sky-800 dark:bg-sky-950/50">
                   <p className="text-[11px] font-semibold text-sky-950 dark:text-sky-100">
                     Test VMA requis : l’envoi du programme ({prog.durationWeeks || 12} sem.) reste en attente jusqu’à validation. Dès validation, la Semaine 1 est envoyée immédiatement, puis la semaine suivante chaque {deliveryByProgramId.get(prog.id)?.autoSendLabel ?? 'dimanche à 18h00'}.
                   </p>
                   <button
                     type="button"
                     onClick={() => setVmaTestProgram(prog)}
-                    className="mt-1.5 inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-sky-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-sky-800 dark:bg-sky-600 dark:hover:bg-sky-500 whitespace-nowrap cursor-pointer"
+                    className="mt-1.5 inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-[8px] bg-sky-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-sky-800 dark:bg-sky-600 dark:hover:bg-sky-500 whitespace-nowrap cursor-pointer"
                   >
                     <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>
@@ -1111,23 +1111,23 @@ export function MemberWeeklyScheduleCard({
               )}
 
               {progSession.exercises.length > 0 && (
-                <div className="mt-2 space-y-1.5 rounded-lg border border-slate-100 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-800/40">
+                <div className="mt-2 space-y-1.5 rounded-[10px] border border-slate-100 bg-slate-50/80 p-2 dark:border-[#262626] dark:bg-[#1F1F1F]">
                   {progSession.exercises.map((ex, idx) => (
                     <div
                       key={`${ex.exerciseId}-${idx}`}
-                      className="rounded-md border border-slate-200/80 bg-white px-2 py-1.5 dark:border-slate-700/70 dark:bg-slate-900/90"
+                      className="rounded-[8px] border border-slate-200/80 bg-white px-2 py-1.5 dark:border-[#262626] dark:bg-[#161616]"
                     >
-                      <p className="font-semibold text-[11px] leading-snug text-slate-900 dark:text-white">
-                        <span className="mr-1 font-mono text-[10px] text-slate-400">
+                      <p className="font-semibold text-[11px] leading-snug text-slate-900 dark:text-[#E5E5E5]">
+                        <span className="mr-1 text-[10px] text-slate-400 dark:text-[#8E8E8E] tabular-nums">
                           {idx + 1}.
                         </span>
                         {ex.name}
                       </p>
-                      <p className="mt-0.5 font-mono text-[10px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+                      <p className="mt-0.5 text-[10px] font-medium text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                         {formatExerciseParamsSummary(ex)}
                       </p>
                       {ex.notes && (
-                        <p className="mt-0.5 text-[10px] italic text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 text-[10px] italic text-slate-500 dark:text-[#8E8E8E]">
                           {ex.notes}
                         </p>
                       )}
@@ -1137,17 +1137,17 @@ export function MemberWeeklyScheduleCard({
               )}
 
               {progSession.coachNotes && (
-                <p className="mt-1.5 rounded-md bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
+                <p className="mt-1.5 rounded-[8px] bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
                   {progSession.coachNotes}
                 </p>
               )}
 
               {isPaid && !isFreeProgram && mode === 'member' && (
-                <div className="mt-2 flex items-center justify-end border-t border-slate-100 pt-1.5 dark:border-slate-800">
+                <div className="mt-2 flex items-center justify-end border-t border-slate-100 pt-1.5 dark:border-[#262626]">
                   <button
                     type="button"
                     onClick={() => setPaymentTarget({ kind: 'program', program: prog })}
-                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white whitespace-nowrap cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] whitespace-nowrap cursor-pointer"
                   >
                     <Receipt className="h-3 w-3" aria-hidden="true" />
                     <span>Reçu ({formatPriceEuros(prog.priceCents)})</span>
@@ -1156,7 +1156,7 @@ export function MemberWeeklyScheduleCard({
               )}
 
               {mode === 'coach' && (
-                <div className="mt-2 flex items-center justify-end border-t border-slate-100 pt-2 dark:border-slate-800">
+                <div className="mt-2 flex items-center justify-end border-t border-slate-100 pt-2 dark:border-[#262626]">
                   <button
                     type="button"
                     onClick={() =>
@@ -1165,7 +1165,7 @@ export function MemberWeeklyScheduleCard({
                         sessionKey: progSession.key,
                       })
                     }
-                    className="inline-flex min-h-[28px] items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 dark:hover:bg-sky-900/60 whitespace-nowrap cursor-pointer"
+                    className="inline-flex min-h-[28px] items-center gap-1 rounded-[8px] border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 dark:hover:bg-sky-900/60 whitespace-nowrap cursor-pointer"
                   >
                     <SlidersHorizontal className="h-3 w-3" aria-hidden="true" />
                     <span>Modifier les exercices</span>
@@ -1190,10 +1190,10 @@ export function MemberWeeklyScheduleCard({
     return (
       <div
         key={entry.id}
-        className={`rounded-lg border p-2.5 text-xs transition-colors ${
+        className={`rounded-[10px] border p-2.5 text-xs transition-colors ${
           isEvent
-            ? 'border-emerald-200/90 bg-emerald-50/50 dark:border-emerald-900/70 dark:bg-emerald-950/25'
-            : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/90'
+            ? 'border-emerald-200/90 bg-emerald-50/50 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10'
+            : 'border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616]'
         } ${entry.attendedOrCompleted ? 'opacity-85' : ''}`}
       >
         <div className="flex items-start justify-between gap-2">
@@ -1204,7 +1204,7 @@ export function MemberWeeklyScheduleCard({
                 className="h-3.5 w-3.5"
               />
             </span>
-            <span className="truncate font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+            <span className="truncate text-[11px] font-semibold text-slate-700 dark:text-[#E5E5E5] tabular-nums">
               {formatTimeRange(entry.startDate, entry.durationMinutes)}
             </span>
           </div>
@@ -1224,10 +1224,10 @@ export function MemberWeeklyScheduleCard({
                   ? `Marquer ${session.title} comme à faire`
                   : `Marquer ${session.title} comme terminée`
               }
-              className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap cursor-pointer ${
+              className={`inline-flex shrink-0 items-center gap-1 rounded-[8px] px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap cursor-pointer ${
                 session.completed
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5]'
               }`}
             >
               {session.completed ? (
@@ -1242,28 +1242,28 @@ export function MemberWeeklyScheduleCard({
           )}
 
           {!isEvent && session && isLockedCustomForMember && (
-            <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
+            <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
               <Lock className="h-3 w-3" aria-hidden="true" />
               {formatPriceEuros(session.priceCents ?? 900)}
             </span>
           )}
 
           {isEvent && (
-            <span className="shrink-0 font-mono text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+            <span className="shrink-0 text-[10px] font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
               {entry.attendedOrCompleted ? 'Validée' : 'Inscrit'}
             </span>
           )}
         </div>
 
         <p
-          className={`mt-1 font-display text-xs font-bold leading-snug text-slate-900 dark:text-white ${
-            entry.attendedOrCompleted ? 'line-through decoration-slate-400' : ''
+          className={`mt-1 font-display text-xs font-bold leading-snug text-slate-900 dark:text-[#E5E5E5] ${
+            entry.attendedOrCompleted ? 'line-through decoration-slate-400 dark:decoration-[#525252]' : ''
           }`}
         >
           {entry.title}
         </p>
 
-        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">
+        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
           {entry.discipline}
           {isEvent
             ? ' · Événement inscrit'
@@ -1281,7 +1281,7 @@ export function MemberWeeklyScheduleCard({
         </p>
 
         {(entry.coachName || entry.location) && (
-          <div className="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
             {entry.coachName && (
               <p className="flex items-center gap-1 truncate">
                 <UserCheck className="h-3 w-3 shrink-0" aria-hidden="true" />
@@ -1298,14 +1298,14 @@ export function MemberWeeklyScheduleCard({
         )}
 
         {!isEvent && session?.objective && (
-          <p className="mt-1 inline-flex max-w-full items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+          <p className="mt-1 inline-flex max-w-full items-center gap-1 rounded-[8px] bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]">
             <Target className="h-3 w-3 shrink-0" aria-hidden="true" />
             <span className="truncate">{session.objective}</span>
           </p>
         )}
 
         {isLockedCustomForMember && session ? (
-          <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 dark:border-amber-800/70 dark:bg-amber-950/35">
+          <div className="mt-2 space-y-2 rounded-[10px] border border-amber-200 bg-amber-50/70 p-2.5 dark:border-amber-800/70 dark:bg-amber-950/35">
             <p className="flex items-start gap-1.5 text-[11px] font-medium text-amber-950 dark:text-amber-100">
               <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
               <span>
@@ -1315,7 +1315,7 @@ export function MemberWeeklyScheduleCard({
             <button
               type="button"
               onClick={() => setPaymentTarget({ kind: 'session', session })}
-              className="inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+              className="inline-flex min-h-[30px] w-full items-center justify-center gap-1.5 rounded-[8px] bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
             >
               <CreditCard className="h-3 w-3" aria-hidden="true" />
               <span>Régler {formatPriceEuros(session.priceCents ?? 900)}</span>
@@ -1327,15 +1327,15 @@ export function MemberWeeklyScheduleCard({
               session &&
               mode === 'coach' &&
               isUnpaidCoachSession && (
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35">
-                  <span className="font-mono text-[10px] font-semibold text-amber-900 dark:text-amber-200 tabular-nums">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-[8px] border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 dark:border-amber-800/70 dark:bg-amber-950/35">
+                  <span className="text-[10px] font-semibold text-amber-900 dark:text-amber-200 tabular-nums">
                     À régler · {formatPriceEuros(session.priceCents ?? 900)}
                   </span>
                   <button
                     type="button"
                     disabled={payingItemId === `custom-${session.id}`}
                     onClick={() => void handleCoachMarkSessionPaid(session)}
-                    className="rounded bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                    className="rounded-[8px] bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 whitespace-nowrap cursor-pointer"
                   >
                     {payingItemId === `custom-${session.id}`
                       ? 'Confirmation...'
@@ -1345,8 +1345,8 @@ export function MemberWeeklyScheduleCard({
               )}
 
             {!isEvent && session?.exercises && session.exercises.length > 0 && (
-              <div className="mt-2 space-y-1.5 rounded-lg border border-slate-100 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-800/40">
-                <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 tabular-nums">
+              <div className="mt-2 space-y-1.5 rounded-[10px] border border-slate-100 bg-slate-50/80 p-2 dark:border-[#262626] dark:bg-[#1F1F1F]">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                   {session.exercises.length} exercice
                   {session.exercises.length > 1 ? 's' : ''}
                 </p>
@@ -1356,26 +1356,26 @@ export function MemberWeeklyScheduleCard({
                     return (
                       <div
                         key={`${ex.exerciseId || ex.name}-${idx}`}
-                        className="rounded-md border border-slate-200/80 bg-white px-2 py-1.5 dark:border-slate-700/70 dark:bg-slate-900/90"
+                        className="rounded-[8px] border border-slate-200/80 bg-white px-2 py-1.5 dark:border-[#262626] dark:bg-[#161616]"
                       >
                         <div className="flex items-start justify-between gap-1.5">
-                          <p className="min-w-0 font-semibold text-[11px] leading-snug text-slate-900 dark:text-white">
-                            <span className="mr-1 font-mono text-[10px] text-slate-400">
+                          <p className="min-w-0 font-semibold text-[11px] leading-snug text-slate-900 dark:text-[#E5E5E5]">
+                            <span className="mr-1 text-[10px] text-slate-400 dark:text-[#8E8E8E] tabular-nums">
                               {idx + 1}.
                             </span>
                             {ex.name}
                           </p>
                           <span
-                            className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold ${catMeta.badgeClass}`}
+                            className={`shrink-0 rounded-[6px] px-1 py-0.5 text-[9px] font-semibold ${catMeta.badgeClass}`}
                           >
                             {catMeta.shortLabel}
                           </span>
                         </div>
-                        <p className="mt-0.5 font-mono text-[10px] leading-relaxed text-emerald-700 dark:text-emerald-400 tabular-nums">
+                        <p className="mt-0.5 text-[10px] font-medium leading-relaxed text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                           {formatExerciseParamsSummary(ex)}
                         </p>
                         {ex.notes && (
-                          <p className="mt-0.5 text-[10px] italic text-slate-500 dark:text-slate-400">
+                          <p className="mt-0.5 text-[10px] italic text-slate-500 dark:text-[#8E8E8E]">
                             {ex.notes}
                           </p>
                         )}
@@ -1387,7 +1387,7 @@ export function MemberWeeklyScheduleCard({
             )}
 
             {!isEvent && entry.notes && (
-              <p className="mt-1.5 line-clamp-3 whitespace-pre-line rounded-md bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
+              <p className="mt-1.5 line-clamp-3 whitespace-pre-line rounded-[8px] bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600 dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
                 {entry.notes}
               </p>
             )}
@@ -1396,11 +1396,11 @@ export function MemberWeeklyScheduleCard({
 
         {/* Footer actions */}
         {isEvent && entry.matchedEvent && onSelectEvent && (
-          <div className="mt-2 flex items-center justify-end border-t border-emerald-200/60 pt-1.5 dark:border-emerald-900/50">
+          <div className="mt-2 flex items-center justify-end border-t border-emerald-200/60 pt-1.5 dark:border-[#4ADE80]/20">
             <button
               type="button"
               onClick={() => onSelectEvent(entry.matchedEvent!)}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 whitespace-nowrap cursor-pointer"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 dark:text-[#4ADE80] dark:hover:text-[#22C55E] whitespace-nowrap cursor-pointer"
             >
               <span>Voir la séance</span>
               <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -1412,12 +1412,12 @@ export function MemberWeeklyScheduleCard({
           session &&
           (mode === 'coach' ||
             (isCoachPaidSession && session.paymentStatus === 'paid')) && (
-            <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5 border-t border-slate-100 pt-1.5 dark:border-slate-800">
+            <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5 border-t border-slate-100 pt-1.5 dark:border-[#262626]">
               {isCoachPaidSession && session.paymentStatus === 'paid' && (
                 <button
                   type="button"
                   onClick={() => setPaymentTarget({ kind: 'session', session })}
-                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40 whitespace-nowrap cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-[8px] px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 whitespace-nowrap cursor-pointer"
                 >
                   <Receipt className="h-3 w-3" aria-hidden="true" />
                   <span>Reçu</span>
@@ -1431,14 +1431,14 @@ export function MemberWeeklyScheduleCard({
                       type="button"
                       disabled={deletingId === session.id}
                       onClick={() => void handleDeleteSession(session.id)}
-                      className="rounded-md bg-rose-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                      className="rounded-[8px] bg-rose-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 whitespace-nowrap cursor-pointer"
                     >
                       {deletingId === session.id ? 'Suppr...' : 'Confirmer'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteId(null)}
-                      className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap cursor-pointer"
+                      className="rounded-[8px] border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] whitespace-nowrap cursor-pointer"
                     >
                       Annuler
                     </button>
@@ -1449,7 +1449,7 @@ export function MemberWeeklyScheduleCard({
                       type="button"
                       onClick={() => openEditForm(session)}
                       aria-label={`Modifier ${session.title}`}
-                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white whitespace-nowrap cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-[8px] px-1.5 py-0.5 text-[11px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] whitespace-nowrap cursor-pointer"
                     >
                       <Pencil className="h-3 w-3" aria-hidden="true" />
                       <span>Modifier</span>
@@ -1458,7 +1458,7 @@ export function MemberWeeklyScheduleCard({
                       type="button"
                       onClick={() => setConfirmDeleteId(session.id)}
                       aria-label={`Supprimer ${session.title}`}
-                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 whitespace-nowrap cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-[8px] px-1.5 py-0.5 text-[11px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:text-[#8E8E8E] dark:hover:bg-rose-950/60 dark:hover:text-rose-300 whitespace-nowrap cursor-pointer"
                     >
                       <Trash2 className="h-3 w-3" aria-hidden="true" />
                       <span>Suppr.</span>
@@ -1479,29 +1479,29 @@ export function MemberWeeklyScheduleCard({
   }, [weekDays, compactSelectedDayIso]);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+    <div className="rounded-[16px] border border-slate-200 bg-white p-4 dark:border-[#262626] dark:bg-[#161616] sm:p-5">
       {/* Header */}
       <div
         className={`flex items-start justify-between gap-3 ${
-          expanded ? 'border-b border-slate-100 pb-4 dark:border-slate-800' : ''
+          expanded ? 'border-b border-slate-100 pb-4 dark:border-[#262626]' : ''
         }`}
       >
         <div className="flex min-w-0 items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-emerald-50 text-emerald-700 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
             <CalendarCheck2 className="h-4 w-4" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
               {mode === 'coach'
                 ? 'Planning hebdomadaire personnalisé'
                 : 'Mon planning de la semaine'}
             </h3>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
               {mode === 'coach'
                 ? 'Programme personnalisé hors événements publics + séances auxquelles l’adhérent s’est inscrit.'
                 : 'Retrouvez sur la semaine vos événements inscrits et votre programme personnalisé avec un coach.'}
             </p>
-            <p className="mt-1 font-mono text-[11px] font-medium text-slate-600 dark:text-slate-300 tabular-nums">
+            <p className="mt-1 text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3] tabular-nums">
               Semaine {weekNumber} ({weekRangeLabel}) · {weekCounts.total}{' '}
               séance{weekCounts.total > 1 ? 's' : ''} ({weekCounts.events}{' '}
               événement{weekCounts.events > 1 ? 's' : ''}, {weekCounts.custom}{' '}
@@ -1527,7 +1527,7 @@ export function MemberWeeklyScheduleCard({
               ? 'Replier le planning hebdomadaire'
               : 'Déplier le planning hebdomadaire'
           }
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
         >
           <ChevronDown
             className={`h-4 w-4 transition-transform duration-200 ${
@@ -1546,11 +1546,11 @@ export function MemberWeeklyScheduleCard({
                 <div
                   key={`sent-alert-${program.id}-${delivery.unlockedWeeks}`}
                   role="status"
-                  className="flex flex-col gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/90 p-3.5 text-xs text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2.5 rounded-[12px] border border-emerald-200 bg-emerald-50/90 p-3.5 text-xs text-emerald-950 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5] sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-start gap-2.5 min-w-0">
                     <BellRing
-                      className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+                      className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
                       aria-hidden="true"
                     />
                     <div className="min-w-0">
@@ -1558,7 +1558,7 @@ export function MemberWeeklyScheduleCard({
                         Semaine {delivery.unlockedWeeks}/{delivery.totalWeeks} envoyée ·{' '}
                         {program.title}
                       </p>
-                      <p className="mt-0.5 text-emerald-800 dark:text-emerald-200">
+                      <p className="mt-0.5 text-emerald-800 dark:text-[#A3A3A3]">
                         {delivery.unlockedWeeks === 1
                           ? 'Test VMA validé : la Semaine 1 est envoyée dans votre planning.'
                           : `Nouvelle semaine disponible : vos séances de la semaine ${delivery.unlockedWeeks} viennent d’être envoyées.`}
@@ -1576,7 +1576,7 @@ export function MemberWeeklyScheduleCard({
                         setWeekAnchor(unlockedWeekWindow.firstSessionDate);
                         acknowledgeProgramWeek(program.id, delivery.unlockedWeeks);
                       }}
-                      className="inline-flex min-h-[32px] items-center rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                      className="inline-flex min-h-[32px] items-center rounded-[10px] bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
                     >
                       Voir la semaine {delivery.unlockedWeeks}
                     </button>
@@ -1586,7 +1586,7 @@ export function MemberWeeklyScheduleCard({
                         acknowledgeProgramWeek(program.id, delivery.unlockedWeeks)
                       }
                       aria-label="Fermer la notification de semaine envoyée"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-emerald-800 hover:bg-emerald-100 dark:text-emerald-200 dark:hover:bg-emerald-900/60 cursor-pointer"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-emerald-800 hover:bg-emerald-100 dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -1597,9 +1597,9 @@ export function MemberWeeklyScheduleCard({
           )}
 
           {memberPrograms.length > 0 && (
-            <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 dark:border-sky-900/70 dark:bg-sky-950/30 space-y-2.5">
+            <div className="rounded-[12px] border border-sky-200 bg-sky-50/60 p-3 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="flex items-center gap-1.5 text-xs font-bold text-sky-950 dark:text-sky-100">
+                <p className="flex items-center gap-1.5 text-xs font-bold text-sky-950 dark:text-[#E5E5E5]">
                   <Footprints className="h-3.5 w-3.5 text-sky-700 dark:text-sky-400" aria-hidden="true" />
                   <span>
                     {memberPrograms.length === 1
@@ -1626,25 +1626,25 @@ export function MemberWeeklyScheduleCard({
                   return (
                     <div
                       key={prog.id}
-                      className="flex flex-col justify-between gap-2 rounded-lg border border-sky-200/80 bg-white p-2.5 text-xs dark:border-sky-800/70 dark:bg-slate-900/90"
+                      className="flex flex-col justify-between gap-2 rounded-[10px] border border-sky-200/80 bg-white p-2.5 text-xs dark:border-[#262626] dark:bg-[#161616]"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-mono text-[10px] font-semibold uppercase text-sky-700 dark:text-sky-400 tabular-nums">
+                          <p className="text-[10px] font-semibold uppercase text-sky-700 dark:text-sky-400 tabular-nums">
                             {tpl.shortLabel} · {prog.durationWeeks} sem. · {prog.sessionsPerWeek} séances/sem. · Jour 1 : {formatFrenchDateShort(startDate)}
                           </p>
-                          <p className="mt-0.5 truncate font-display text-xs font-bold text-slate-900 dark:text-white">
+                          <p className="mt-0.5 truncate font-display text-xs font-bold text-slate-900 dark:text-[#E5E5E5]">
                             {prog.title}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                             Coach : {prog.coachName} · {doneCount}/{totalSessions} séances
                           </p>
                           {delivery && (
                             <p
-                              className={`mt-0.5 font-mono text-[10px] font-semibold tabular-nums ${
+                              className={`mt-0.5 text-[10px] font-semibold tabular-nums ${
                                 !delivery.hasAccess || delivery.awaitingVma
                                   ? 'text-amber-700 dark:text-amber-400'
-                                  : 'text-emerald-700 dark:text-emerald-400'
+                                  : 'text-emerald-700 dark:text-[#4ADE80]'
                               }`}
                             >
                               {!delivery.hasAccess
@@ -1658,9 +1658,9 @@ export function MemberWeeklyScheduleCard({
                           )}
                         </div>
                         <span
-                          className={`shrink-0 font-mono text-[10px] font-bold tabular-nums ${
+                          className={`shrink-0 text-[10px] font-bold tabular-nums ${
                             hasAccess
-                              ? 'text-emerald-700 dark:text-emerald-400'
+                              ? 'text-emerald-700 dark:text-[#4ADE80]'
                               : 'text-amber-700 dark:text-amber-400'
                           }`}
                         >
@@ -1685,7 +1685,7 @@ export function MemberWeeklyScheduleCard({
                                   : startDate
                             );
                           }}
-                          className="inline-flex min-h-[28px] items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
+                          className="inline-flex min-h-[28px] items-center gap-1 rounded-[8px] border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] whitespace-nowrap cursor-pointer"
                         >
                           <span>
                             {mode === 'member' && delivery?.awaitingVma
@@ -1701,7 +1701,7 @@ export function MemberWeeklyScheduleCard({
                               setFilter('all');
                               setWeekAnchor(currentWeekFirstDate);
                             }}
-                            className="inline-flex min-h-[28px] items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 whitespace-nowrap cursor-pointer"
+                            className="inline-flex min-h-[28px] items-center gap-1 rounded-[8px] border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 whitespace-nowrap cursor-pointer"
                           >
                             <span>Semaine {delivery.unlockedWeeks} (en cours)</span>
                           </button>
@@ -1711,7 +1711,7 @@ export function MemberWeeklyScheduleCard({
                           <button
                             type="button"
                             onClick={() => setPaymentTarget({ kind: 'program', program: prog })}
-                            className="inline-flex min-h-[28px] items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                            className="inline-flex min-h-[28px] items-center gap-1 rounded-[8px] bg-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
                           >
                             <CreditCard className="h-3 w-3" aria-hidden="true" />
                             <span>Régler {formatPriceEuros(prog.priceCents)}</span>
@@ -1723,7 +1723,7 @@ export function MemberWeeklyScheduleCard({
                             type="button"
                             disabled={payingItemId === `program-${prog.id}`}
                             onClick={() => void handleCoachMarkProgramPaid(prog)}
-                            className="inline-flex min-h-[28px] items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                            className="inline-flex min-h-[28px] items-center gap-1 rounded-[8px] bg-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 whitespace-nowrap cursor-pointer"
                           >
                             <span>
                               {payingItemId === `program-${prog.id}`
@@ -1737,7 +1737,7 @@ export function MemberWeeklyScheduleCard({
                           <button
                             type="button"
                             onClick={() => setVmaTestProgram(prog)}
-                            className="inline-flex min-h-[28px] items-center gap-1 rounded-md bg-sky-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-sky-800 whitespace-nowrap cursor-pointer"
+                            className="inline-flex min-h-[28px] items-center gap-1 rounded-[8px] bg-sky-700 px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-sky-800 whitespace-nowrap cursor-pointer"
                           >
                             <Gauge className="h-3 w-3" aria-hidden="true" />
                             <span>
@@ -1756,7 +1756,7 @@ export function MemberWeeklyScheduleCard({
           {/* Toolbar: Week Navigation + Source Filter + Actions */}
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800/70">
+              <div className="inline-flex items-center rounded-[10px] border border-slate-200 bg-slate-50 p-0.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
                 <button
                   type="button"
                   onClick={() =>
@@ -1769,14 +1769,14 @@ export function MemberWeeklyScheduleCard({
                     )
                   }
                   aria-label="Semaine précédente"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-slate-600 hover:bg-white hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:bg-[#161616] dark:hover:text-[#E5E5E5] cursor-pointer"
                 >
                   <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setWeekAnchor(new Date())}
-                  className="min-h-[32px] rounded-md px-2.5 text-xs font-semibold text-slate-800 hover:bg-white dark:text-slate-100 dark:hover:bg-slate-900 whitespace-nowrap shrink-0 cursor-pointer"
+                  className="min-h-[32px] rounded-[8px] px-2.5 text-xs font-semibold text-slate-800 hover:bg-white dark:text-[#E5E5E5] dark:hover:bg-[#161616] whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   Cette semaine
                 </button>
@@ -1792,7 +1792,7 @@ export function MemberWeeklyScheduleCard({
                     )
                   }
                   aria-label="Semaine suivante"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-slate-600 hover:bg-white hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:bg-[#161616] dark:hover:text-[#E5E5E5] cursor-pointer"
                 >
                   <ChevronRight className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -1801,7 +1801,7 @@ export function MemberWeeklyScheduleCard({
               <div
                 role="group"
                 aria-label="Filtrer les séances de la semaine"
-                className="inline-flex flex-wrap items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+                className="inline-flex flex-wrap items-center gap-1 rounded-[10px] bg-slate-100 p-1 dark:bg-[#1F1F1F]"
               >
                 {(
                   [
@@ -1824,10 +1824,10 @@ export function MemberWeeklyScheduleCard({
                     key={tab.id}
                     type="button"
                     onClick={() => setFilter(tab.id)}
-                    className={`min-h-[30px] rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
+                    className={`min-h-[30px] rounded-[8px] px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
                       filter === tab.id
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     {tab.label}
@@ -1846,7 +1846,7 @@ export function MemberWeeklyScheduleCard({
                       setIsFormOpen(false);
                       setRunningProgramModalOpen(true);
                     }}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 whitespace-nowrap shrink-0 cursor-pointer"
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300 whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     <Footprints className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>Programme 5–42 km</span>
@@ -1858,7 +1858,7 @@ export function MemberWeeklyScheduleCard({
                       setIsFormOpen(false);
                       setProgramBuilderState({ open: true, editingSession: null });
                     }}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white whitespace-nowrap shrink-0 cursor-pointer"
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:border dark:border-[#262626] dark:hover:bg-[#262626] whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>Programme (bibliothèque)</span>
@@ -1875,10 +1875,10 @@ export function MemberWeeklyScheduleCard({
                       onRequestCoachProgram(undefined);
                     }
                   }}
-                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <MessageSquare
-                    className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400"
+                    className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]"
                     aria-hidden="true"
                   />
                   <span>Coachs, tarifs &amp; programme</span>
@@ -1894,7 +1894,7 @@ export function MemberWeeklyScheduleCard({
                         : weekDays[0];
                     openCreateForm(defaultTarget);
                   }}
-                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap shrink-0 cursor-pointer"
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Ajouter une séance perso</span>
@@ -1906,9 +1906,9 @@ export function MemberWeeklyScheduleCard({
           {actionFeedback && (
             <div
               role="status"
-              className={`rounded-lg border p-3 text-xs ${
+              className={`rounded-[10px] border p-3 text-xs ${
                 actionFeedback.type === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
                   : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
               }`}
             >
@@ -1921,15 +1921,15 @@ export function MemberWeeklyScheduleCard({
             <form
               ref={formContainerRef}
               onSubmit={handleSubmitForm}
-              className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 dark:border-emerald-900/70 dark:bg-emerald-950/20 space-y-3.5"
+              className="rounded-[12px] border border-emerald-200 bg-emerald-50/40 p-4 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-3.5"
             >
-              <div className="flex items-center justify-between gap-2 border-b border-emerald-200/70 pb-2.5 dark:border-emerald-900/60">
+              <div className="flex items-center justify-between gap-2 border-b border-emerald-200/70 pb-2.5 dark:border-[#262626]">
                 <div className="flex items-center gap-2 min-w-0">
                   <Dumbbell
-                    className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+                    className="h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
                     aria-hidden="true"
                   />
-                  <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white truncate">
+                  <h4 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5] truncate">
                     {editingSession
                       ? 'Modifier la séance personnalisée'
                       : `Nouvelle séance sur mesure pour ${memberName}`}
@@ -1942,7 +1942,7 @@ export function MemberWeeklyScheduleCard({
                     setEditingSession(null);
                   }}
                   aria-label="Fermer le formulaire"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                  className="flex h-8 w-8 items-center justify-center rounded-[8px] text-slate-500 hover:bg-white hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:bg-[#161616] dark:hover:text-[#E5E5E5] cursor-pointer"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -1952,7 +1952,7 @@ export function MemberWeeklyScheduleCard({
                 <div>
                   <label
                     htmlFor={`sched-title-${mode}`}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Titre de la séance *
                   </label>
@@ -1966,14 +1966,14 @@ export function MemberWeeklyScheduleCard({
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
                     placeholder="Ex. Renforcement haut du corps, Footing Z2..."
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor={`sched-discipline-${mode}`}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Discipline *
                   </label>
@@ -1981,7 +1981,7 @@ export function MemberWeeklyScheduleCard({
                     id={`sched-discipline-${mode}`}
                     value={formDiscipline}
                     onChange={(e) => setFormDiscipline(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   >
                     {disciplineOptions.map((name) => (
                       <option key={name} value={name}>
@@ -1996,7 +1996,7 @@ export function MemberWeeklyScheduleCard({
                 <div>
                   <label
                     htmlFor={`sched-date-${mode}`}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Date *
                   </label>
@@ -2006,14 +2006,14 @@ export function MemberWeeklyScheduleCard({
                     required
                     value={formDate}
                     onChange={(e) => setFormDate(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 tabular-nums"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor={`sched-time-${mode}`}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Heure de début *
                   </label>
@@ -2023,14 +2023,14 @@ export function MemberWeeklyScheduleCard({
                     required
                     value={formTime}
                     onChange={(e) => setFormTime(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 tabular-nums"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor={`sched-duration-${mode}`}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Durée (minutes) *
                   </label>
@@ -2038,7 +2038,7 @@ export function MemberWeeklyScheduleCard({
                     id={`sched-duration-${mode}`}
                     value={formDuration}
                     onChange={(e) => setFormDuration(Number(e.target.value))}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 tabular-nums"
                   >
                     {DURATION_PRESETS.map((min) => (
                       <option key={min} value={min}>
@@ -2053,7 +2053,7 @@ export function MemberWeeklyScheduleCard({
                 <div>
                   <label
                     htmlFor={`sched-coach-${mode}`}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Coach référent (optionnel)
                   </label>
@@ -2073,7 +2073,7 @@ export function MemberWeeklyScheduleCard({
                         );
                       }
                     }}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   >
                     <option value="">Programme autonome (sans coach)</option>
                     {mode === 'coach' &&
@@ -2095,7 +2095,7 @@ export function MemberWeeklyScheduleCard({
                 <div>
                   <label
                     htmlFor={`sched-location-${mode}`}
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Lieu (optionnel)
                   </label>
@@ -2106,7 +2106,7 @@ export function MemberWeeklyScheduleCard({
                     value={formLocation}
                     onChange={(e) => setFormLocation(e.target.value)}
                     placeholder="Ex. Salle, Domicile, Parc..."
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   />
                 </div>
               </div>
@@ -2114,7 +2114,7 @@ export function MemberWeeklyScheduleCard({
               <div>
                 <label
                   htmlFor={`sched-notes-${mode}`}
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Exercices, séries & consignes
                 </label>
@@ -2125,29 +2125,29 @@ export function MemberWeeklyScheduleCard({
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
                   placeholder="Ex. 4×10 squats gobelet, 3×12 pompes, 20 min cardio modéré..."
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 w-full rounded-[10px] border border-slate-300 bg-white p-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
 
               {/* Optional pricing for quick personalized session */}
-              <div className="rounded-lg border border-emerald-200/80 bg-white/80 p-3 dark:border-emerald-900/60 dark:bg-slate-900/50 space-y-2.5">
+              <div className="rounded-[10px] border border-emerald-200/80 bg-white/80 p-3 dark:border-[#262626] dark:bg-[#161616] space-y-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                    <CreditCard className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
+                    <CreditCard className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                     Tarification de la séance
                   </span>
                   <div
                     role="group"
                     aria-label="Séance gratuite ou payante"
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-200/80 p-0.5 dark:bg-slate-800"
+                    className="inline-flex items-center gap-1 rounded-[10px] bg-slate-200/80 p-0.5 dark:bg-[#1F1F1F]"
                   >
                     <button
                       type="button"
                       onClick={() => setFormIsPaid(false)}
-                      className={`min-h-[26px] rounded-md px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer transition-colors ${
+                      className={`min-h-[26px] rounded-[8px] px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer transition-colors ${
                         !formIsPaid
-                          ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-white'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                          ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       Offert (gratuit)
@@ -2155,10 +2155,10 @@ export function MemberWeeklyScheduleCard({
                     <button
                       type="button"
                       onClick={() => setFormIsPaid(true)}
-                      className={`min-h-[26px] rounded-md px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer transition-colors ${
+                      className={`min-h-[26px] rounded-[8px] px-2.5 py-0.5 text-[11px] font-semibold cursor-pointer transition-colors ${
                         formIsPaid
-                          ? 'bg-emerald-700 text-white shadow-xs dark:bg-emerald-600'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                          ? 'bg-emerald-700 text-white shadow-xs dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       Payant
@@ -2171,7 +2171,7 @@ export function MemberWeeklyScheduleCard({
                     <div>
                       <label
                         htmlFor={`sched-price-${mode}`}
-                        className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                        className="block text-[11px] font-semibold text-slate-700 dark:text-[#E5E5E5]"
                       >
                         Tarif (€) *
                       </label>
@@ -2187,7 +2187,7 @@ export function MemberWeeklyScheduleCard({
                           setFormPriceTouched(true);
                           setFormPriceEuros(e.target.value);
                         }}
-                        className="mt-1 min-h-[36px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="mt-1 min-h-[36px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] tabular-nums"
                       />
                       {(() => {
                         const selCoach = formCoachUid
@@ -2206,7 +2206,7 @@ export function MemberWeeklyScheduleCard({
                               setFormPriceEuros((coachCents / 100).toFixed(2));
                               setFormPriceTouched(false);
                             }}
-                            className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                            className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-[#4ADE80] cursor-pointer"
                           >
                             Tarif de {selCoach?.displayName || 'ce coach'} :{' '}
                             {formatPriceEuros(coachCents)}
@@ -2217,7 +2217,7 @@ export function MemberWeeklyScheduleCard({
                     <div>
                       <label
                         htmlFor={`sched-pay-mode-${mode}`}
-                        className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                        className="block text-[11px] font-semibold text-slate-700 dark:text-[#E5E5E5]"
                       >
                         Mode de règlement
                       </label>
@@ -2227,7 +2227,7 @@ export function MemberWeeklyScheduleCard({
                         onChange={(e) =>
                           setFormPaymentMode(e.target.value as EventPaymentMode)
                         }
-                        className="mt-1 min-h-[36px] w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="mt-1 min-h-[36px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                       >
                         <option value="both">Carte en ligne ou sur place</option>
                         <option value="online">Carte en ligne uniquement</option>
@@ -2236,14 +2236,14 @@ export function MemberWeeklyScheduleCard({
                     </div>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-600 dark:text-[#8E8E8E]">
                     Séance offerte : accessible immédiatement dans le planning de l’adhérent sans paiement.
                   </p>
                 )}
               </div>
 
               {formError && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+                <div className="rounded-[10px] border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
                   {formError}
                 </div>
               )}
@@ -2255,14 +2255,14 @@ export function MemberWeeklyScheduleCard({
                     setIsFormOpen(false);
                     setEditingSession(null);
                   }}
-                  className="min-h-[38px] rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                  className="min-h-[38px] rounded-[10px] border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={formSaving}
-                  className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                  className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
                 >
                   <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
                   {formSaving
@@ -2286,7 +2286,7 @@ export function MemberWeeklyScheduleCard({
                 return (
                   <div
                     key={`locked-wk-${program.id}-${lockedWk}`}
-                    className="flex flex-col gap-2.5 rounded-xl border border-amber-200 bg-amber-50/75 p-3 text-xs text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/35 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50/75 p-3 text-xs text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/35 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-start gap-2 min-w-0">
                       <Lock
@@ -2315,7 +2315,7 @@ export function MemberWeeklyScheduleCard({
                           onClick={() =>
                             setPaymentTarget({ kind: 'program', program })
                           }
-                          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
                         >
                           <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
                           <span>Régler {formatPriceEuros(program.priceCents)}</span>
@@ -2324,7 +2324,7 @@ export function MemberWeeklyScheduleCard({
                         <button
                           type="button"
                           onClick={() => setVmaTestProgram(program)}
-                          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg bg-sky-700 px-3 py-1 text-xs font-semibold text-white hover:bg-sky-800 dark:bg-sky-600 dark:hover:bg-sky-500 whitespace-nowrap cursor-pointer"
+                          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-[10px] bg-sky-700 px-3 py-1 text-xs font-semibold text-white hover:bg-sky-800 dark:bg-sky-600 dark:hover:bg-sky-500 whitespace-nowrap cursor-pointer"
                         >
                           <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
                           <span>Passer / saisir mon test VMA</span>
@@ -2336,7 +2336,7 @@ export function MemberWeeklyScheduleCard({
                             setFilter('all');
                             setWeekAnchor(targetAnchorDate);
                           }}
-                          className="inline-flex min-h-[32px] items-center rounded-lg border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100/60 dark:border-amber-700 dark:bg-slate-900 dark:text-amber-100 whitespace-nowrap cursor-pointer"
+                          className="inline-flex min-h-[32px] items-center rounded-[10px] border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-950 hover:bg-amber-100/60 dark:border-amber-700 dark:bg-[#161616] dark:text-amber-100 whitespace-nowrap cursor-pointer"
                         >
                           Revenir à la semaine {delivery.unlockedWeeks}
                         </button>
@@ -2356,10 +2356,10 @@ export function MemberWeeklyScheduleCard({
                 <button
                   type="button"
                   onClick={() => setCompactSelectedDayIso('all')}
-                  className={`min-h-[30px] rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
+                  className={`min-h-[30px] rounded-[8px] px-2.5 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
                     compactSelectedDayIso === 'all'
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                      : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                      ? 'bg-slate-900 text-white dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3]'
                   }`}
                 >
                   Toute la semaine ({weekEntries.length})
@@ -2384,24 +2384,26 @@ export function MemberWeeklyScheduleCard({
                       onClick={() =>
                         setCompactSelectedDayIso(isSelected ? 'all' : iso)
                       }
-                      className={`flex flex-col items-center rounded-lg border py-1.5 px-1 text-center transition-colors cursor-pointer ${
+                      className={`flex flex-col items-center rounded-[10px] border py-1.5 px-1 text-center transition-colors cursor-pointer ${
                         isSelected
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-950 dark:border-emerald-500 dark:bg-emerald-950/60 dark:text-emerald-100'
+                          ? 'border-emerald-600 bg-emerald-50 text-emerald-950 dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
                           : isToday
-                            ? 'border-emerald-300 bg-white text-slate-900 dark:border-emerald-800 dark:bg-slate-900 dark:text-white'
-                            : 'border-slate-200 bg-slate-50/70 text-slate-700 hover:bg-white dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300'
+                            ? 'border-emerald-300 bg-white text-slate-900 dark:border-[#4ADE80]/40 dark:bg-[#1F1F1F] dark:text-[#4ADE80]'
+                            : 'border-slate-200 bg-slate-50/70 text-slate-700 hover:bg-white dark:border-[#262626] dark:bg-[#1F1F1F]/60 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       <span className="text-[10px] font-semibold uppercase">
                         {weekdayShort}
                       </span>
-                      <span className="font-mono text-xs font-bold tabular-nums">
+                      <span className="text-xs font-bold tabular-nums">
                         {day.getDate()}
                       </span>
                       <span
                         className={`mt-0.5 h-1.5 w-1.5 rounded-full ${
                           count > 0
-                            ? 'bg-emerald-600 dark:bg-emerald-400'
+                            ? isSelected
+                              ? 'bg-emerald-700 dark:bg-[#0A0A0A]'
+                              : 'bg-emerald-600 dark:bg-[#4ADE80]'
                             : 'bg-transparent'
                         }`}
                       />
@@ -2424,17 +2426,17 @@ export function MemberWeeklyScheduleCard({
                   return (
                     <div
                       key={iso}
-                      className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/30"
+                      className="rounded-[12px] border border-slate-200 bg-slate-50/50 p-3 dark:border-[#262626] dark:bg-[#1F1F1F]/60"
                     >
                       <div className="flex items-center justify-between gap-2 pb-2">
-                        <span className="text-xs font-bold capitalize text-slate-800 dark:text-slate-200">
+                        <span className="text-xs font-bold capitalize text-slate-800 dark:text-[#E5E5E5]">
                           {formatFrenchDateShort(day)}
                         </span>
                         {mode === 'coach' && (
                           <button
                             type="button"
                             onClick={() => openCreateForm(day)}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 cursor-pointer"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 dark:text-[#4ADE80] cursor-pointer"
                           >
                             <Plus className="h-3 w-3" aria-hidden="true" />
                             <span>Ajouter</span>
@@ -2442,7 +2444,7 @@ export function MemberWeeklyScheduleCard({
                         )}
                       </div>
                       {items.length === 0 ? (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                           Aucune séance prévue ce jour.
                         </p>
                       ) : (
@@ -2474,27 +2476,27 @@ export function MemberWeeklyScheduleCard({
                 return (
                   <div
                     key={iso}
-                    className={`flex min-h-[190px] flex-col rounded-xl border p-2.5 ${
+                    className={`flex min-h-[190px] flex-col rounded-[12px] border p-2.5 ${
                       isToday
-                        ? 'border-emerald-300 bg-emerald-50/25 dark:border-emerald-800 dark:bg-emerald-950/15'
-                        : 'border-slate-200 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-950/40'
+                        ? 'border-emerald-300 bg-emerald-50/25 dark:border-[#4ADE80]/35 dark:bg-[#4ADE80]/10'
+                        : 'border-slate-200 bg-slate-50/60 dark:border-[#262626] dark:bg-[#1F1F1F]/60'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-1 border-b border-slate-200/80 pb-2 dark:border-slate-800">
+                    <div className="flex items-center justify-between gap-1 border-b border-slate-200/80 pb-2 dark:border-[#262626]">
                       <div className="min-w-0">
                         <p
                           className={`text-[11px] font-bold uppercase tracking-wide ${
                             isToday
-                              ? 'text-emerald-700 dark:text-emerald-400'
-                              : 'text-slate-500 dark:text-slate-400'
+                              ? 'text-emerald-700 dark:text-[#4ADE80]'
+                              : 'text-slate-500 dark:text-[#8E8E8E]'
                           }`}
                         >
                           {weekdayLabel}
                           {isToday ? ' · Auj.' : ''}
                         </p>
-                        <p className="font-mono text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+                        <p className="text-sm font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                           {day.getDate()}{' '}
-                          <span className="font-sans text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                             {monthLabel}
                           </span>
                         </p>
@@ -2506,7 +2508,7 @@ export function MemberWeeklyScheduleCard({
                           onClick={() => openCreateForm(day)}
                           aria-label={`Ajouter une séance le ${formatFrenchDateShort(day)}`}
                           title={`Ajouter le ${formatFrenchDateShort(day)}`}
-                          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-emerald-700 dark:hover:text-emerald-400 cursor-pointer"
+                          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:border-[#4ADE80]/40 dark:hover:text-[#4ADE80] cursor-pointer"
                         >
                           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
@@ -2515,12 +2517,12 @@ export function MemberWeeklyScheduleCard({
 
                     <div className="mt-2.5 flex-1 space-y-2">
                       {items.length === 0 ? (
-                        <div className="flex h-full min-h-[92px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200/90 px-2 py-4 text-center dark:border-slate-800">
+                        <div className="flex h-full min-h-[92px] flex-col items-center justify-center rounded-[10px] border border-dashed border-slate-200/90 px-2 py-4 text-center dark:border-[#262626]">
                           <Clock
-                            className="h-4 w-4 text-slate-300 dark:text-slate-600"
+                            className="h-4 w-4 text-slate-300 dark:text-[#525252]"
                             aria-hidden="true"
                           />
-                          <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                          <p className="mt-1 text-[11px] text-slate-400 dark:text-[#525252]">
                             Repos / libre
                           </p>
                         </div>
@@ -2535,22 +2537,22 @@ export function MemberWeeklyScheduleCard({
           )}
 
           {/* Concise legend */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-[11px] text-slate-500 dark:border-[#262626] dark:text-[#8E8E8E]">
             <div className="flex flex-wrap items-center gap-4">
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm border border-emerald-300 bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950" />
+                <span className="h-2.5 w-2.5 rounded-sm border border-emerald-300 bg-emerald-100 dark:border-[#4ADE80]/40 dark:bg-[#4ADE80]/20" />
                 Événements inscrits ({selfRegisteredEntries.length} au total)
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800" />
+                <span className="h-2.5 w-2.5 rounded-sm border border-slate-300 bg-white dark:border-[#262626] dark:bg-[#161616]" />
                 Séances personnalisées ({customEntries.length} au total)
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm border border-sky-300 bg-sky-100 dark:border-sky-700 dark:bg-sky-950" />
+                <span className="h-2.5 w-2.5 rounded-sm border border-sky-300 bg-sky-100 dark:border-sky-500/40 dark:bg-sky-500/20" />
                 Plans running 5–42 km ({programEntries.length} séances)
               </span>
             </div>
-            <span className="font-mono tabular-nums">
+            <span className="tabular-nums">
               {formatFrenchTime(today)} · Mis à jour en temps réel
             </span>
           </div>
@@ -2676,18 +2678,18 @@ export function MemberWeeklyScheduleCard({
           onClick={() => setCoachPricingModalOpen(false)}
         >
           <div
-            className="flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+            className="flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[16px] border border-slate-200 bg-white shadow-2xl sm:rounded-[16px] dark:border-[#262626] dark:bg-[#161616]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-[#262626]">
               <div>
                 <h3
                   id="coach-pricing-directory-title"
-                  className="font-display text-base font-bold text-slate-900 dark:text-white"
+                  className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]"
                 >
                   Coachs &amp; tarifs proposés
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Consultez les spécialités et les tarifs propres à chaque coach, puis contactez celui de votre choix.
                 </p>
               </div>
@@ -2695,7 +2697,7 @@ export function MemberWeeklyScheduleCard({
                 type="button"
                 onClick={() => setCoachPricingModalOpen(false)}
                 aria-label="Fermer"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center rounded-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -2708,7 +2710,7 @@ export function MemberWeeklyScheduleCard({
                 return (
                   <div
                     key={coach.uid}
-                    className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/50 space-y-3"
+                    className="rounded-[12px] border border-slate-200 bg-slate-50/60 p-4 dark:border-[#262626] dark:bg-[#1F1F1F] space-y-3"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-start gap-3 min-w-0">
@@ -2718,18 +2720,18 @@ export function MemberWeeklyScheduleCard({
                           size="md"
                         />
                         <div className="min-w-0">
-                          <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white truncate">
+                          <h4 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5] truncate">
                             {coach.displayName}
                           </h4>
                           {(coach.specialty || coach.city || coach.region) && (
-                            <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                            <p className="mt-0.5 text-xs text-slate-600 dark:text-[#A3A3A3]">
                               {[coach.specialty, coach.city, coach.region]
                                 .filter(Boolean)
                                 .join(' · ')}
                             </p>
                           )}
                           {coach.bio && (
-                            <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400 line-clamp-2">
+                            <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-[#8E8E8E] line-clamp-2">
                               {coach.bio}
                             </p>
                           )}
@@ -2742,14 +2744,14 @@ export function MemberWeeklyScheduleCard({
                           setCoachPricingModalOpen(false);
                           onRequestCoachProgram(coach);
                         }}
-                        className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                        className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
                       >
                         <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                         <span>Contacter ce coach</span>
                       </button>
                     </div>
 
-                    <div className="border-t border-slate-200/80 pt-3 dark:border-slate-800">
+                    <div className="border-t border-slate-200/80 pt-3 dark:border-[#262626]">
                       {hasPricing ? (
                         <div className="space-y-2">
                           {pricingItems.length > 0 && (
@@ -2757,12 +2759,12 @@ export function MemberWeeklyScheduleCard({
                               {pricingItems.map((item) => (
                                 <div
                                   key={item.key}
-                                  className="flex items-center justify-between gap-2 rounded-lg border border-slate-200/80 bg-white px-2.5 py-1.5 text-xs dark:border-slate-800 dark:bg-slate-900"
+                                  className="flex items-center justify-between gap-2 rounded-[10px] border border-slate-200/80 bg-white px-2.5 py-1.5 text-xs dark:border-[#262626] dark:bg-[#161616]"
                                 >
-                                  <span className="text-slate-600 dark:text-slate-300 truncate">
+                                  <span className="text-slate-600 dark:text-[#A3A3A3] truncate">
                                     {item.label}
                                   </span>
-                                  <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 tabular-nums shrink-0">
+                                  <span className="font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums shrink-0">
                                     {item.formattedPrice}
                                   </span>
                                 </div>
@@ -2770,13 +2772,13 @@ export function MemberWeeklyScheduleCard({
                             </div>
                           )}
                           {coach.pricing?.pricingNotes?.trim() && (
-                            <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+                            <p className="text-[11px] leading-relaxed text-slate-600 dark:text-[#8E8E8E]">
                               {coach.pricing.pricingNotes.trim()}
                             </p>
                           )}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                           Tarifs standards · Discutez directement avec {coach.displayName} pour un devis adapté à vos objectifs.
                         </p>
                       )}

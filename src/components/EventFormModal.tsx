@@ -719,19 +719,19 @@ export function EventFormModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="event-form-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-slate-950/75 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-black/75 p-0 backdrop-blur-xs sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:rounded-xl"
+        className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-[16px] border border-slate-200 bg-white shadow-xl dark:border-[#262626] dark:bg-[#161616] sm:rounded-[16px]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-slate-700 sm:hidden" />
+        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-[#262626] sm:hidden" />
 
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 dark:border-slate-800 sm:px-6">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 dark:border-[#262626] sm:px-6">
           <h2
             id="event-form-title"
-            className="font-display text-lg font-bold text-slate-900 dark:text-white"
+            className="font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]"
           >
             {isEditing
               ? 'Modifier la séance sportive'
@@ -743,7 +743,7 @@ export function EventFormModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -751,14 +751,14 @@ export function EventFormModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:p-6">
           {isDuplicating && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+            <div className="rounded-[10px] border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]">
               Vous dupliquez <strong>{duplicatingEvent?.title}</strong>. Choisissez la nouvelle date (proposée à J+7 par défaut) pour créer une séance indépendante avec 0 inscrit.
             </div>
           )}
           <div>
             <label
               htmlFor="ev-title"
-              className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+              className="block text-xs font-medium text-slate-700 dark:text-[#E5E5E5]"
             >
               Titre de la séance *
             </label>
@@ -771,19 +771,19 @@ export function EventFormModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex. Circuit Training Métabolique"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
             />
           </div>
 
           {/* Visuel / Image d'en-tête de l'événement */}
-          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+          <div className="space-y-2.5 rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <ImagePlus
-                  className="h-4 w-4 text-emerald-700 dark:text-emerald-400"
+                  className="h-4 w-4 text-emerald-700 dark:text-[#4ADE80]"
                   aria-hidden="true"
                 />
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                <span className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                   Visuel d’en-tête (optionnel)
                 </span>
               </div>
@@ -802,7 +802,7 @@ export function EventFormModal({
                     type="button"
                     disabled={processingCover}
                     onClick={() => coverFileInputRef.current?.click()}
-                    className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                    className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                   >
                     Remplacer
                   </button>
@@ -814,7 +814,7 @@ export function EventFormModal({
                       setCoverPosY(50);
                       setCoverError(null);
                     }}
-                    className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900/70 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-950/50 cursor-pointer"
+                    className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-[#161616] dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer"
                   >
                     <Trash2 className="h-3 w-3" aria-hidden="true" />
                     Supprimer
@@ -833,18 +833,18 @@ export function EventFormModal({
                   e.preventDefault();
                   void handleCoverFileSelected(e.dataTransfer.files?.[0]);
                 }}
-                className="flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-white px-4 py-5 text-center transition-colors hover:border-emerald-500 hover:bg-emerald-50/40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-500/70 dark:hover:bg-emerald-950/20 cursor-pointer"
+                className="flex w-full flex-col items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-slate-300 bg-white px-4 py-5 text-center transition-colors hover:border-emerald-500 hover:bg-emerald-50/40 dark:border-[#262626] dark:bg-[#161616] dark:hover:border-[#4ADE80]/60 dark:hover:bg-[#4ADE80]/5 cursor-pointer"
               >
                 <ImagePlus
-                  className="h-5 w-5 text-slate-400 dark:text-slate-500"
+                  className="h-5 w-5 text-slate-400 dark:text-[#8E8E8E]"
                   aria-hidden="true"
                 />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                <span className="text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]">
                   {processingCover
                     ? 'Traitement de l’image en cours...'
                     : 'Ajouter une image ou un visuel'}
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                   JPG, PNG ou WebP · Affiché en tête de l’événement et recadrable à votre convenance
                 </span>
               </button>
@@ -855,7 +855,7 @@ export function EventFormModal({
                   onPointerMove={handleCoverPointerMove}
                   onPointerUp={handleCoverPointerUp}
                   onPointerCancel={handleCoverPointerUp}
-                  className="group relative aspect-[16/7] w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-900 touch-none select-none cursor-grab active:cursor-grabbing dark:border-slate-700"
+                  className="group relative aspect-[16/7] w-full overflow-hidden rounded-[10px] border border-slate-200 bg-slate-900 touch-none select-none cursor-grab active:cursor-grabbing dark:border-[#262626]"
                   title="Glissez directement sur l’image pour la replacer"
                 >
                   <img
@@ -867,7 +867,7 @@ export function EventFormModal({
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/75 via-slate-950/25 to-transparent p-2.5 sm:p-3">
                     <div className="flex items-center justify-between gap-2 text-[11px] text-white/95">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-950/60 px-2 py-0.5 font-medium backdrop-blur-xs">
+                      <span className="inline-flex items-center gap-1 rounded-[6px] bg-slate-950/60 px-2 py-0.5 font-medium backdrop-blur-xs tabular-nums">
                         <Move className="h-3 w-3" aria-hidden="true" />
                         Glissez l’image pour la replacer ({coverPosX}% · {coverPosY}%)
                       </span>
@@ -881,7 +881,7 @@ export function EventFormModal({
                 </div>
 
                 <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                  <label className="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                  <label className="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
                     <span className="w-16 shrink-0">Horizontal</span>
                     <input
                       type="range"
@@ -889,13 +889,13 @@ export function EventFormModal({
                       max={100}
                       value={coverPosX}
                       onChange={(e) => setCoverPosX(Number(e.target.value))}
-                      className="h-1.5 w-full accent-emerald-600 cursor-pointer"
+                      className="h-1.5 w-full accent-emerald-600 dark:accent-[#4ADE80] cursor-pointer"
                     />
-                    <span className="w-9 text-right font-mono tabular-nums">
+                    <span className="w-9 text-right tabular-nums">
                       {coverPosX}%
                     </span>
                   </label>
-                  <label className="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                  <label className="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
                     <span className="w-16 shrink-0">Vertical</span>
                     <input
                       type="range"
@@ -903,9 +903,9 @@ export function EventFormModal({
                       max={100}
                       value={coverPosY}
                       onChange={(e) => setCoverPosY(Number(e.target.value))}
-                      className="h-1.5 w-full accent-emerald-600 cursor-pointer"
+                      className="h-1.5 w-full accent-emerald-600 dark:accent-[#4ADE80] cursor-pointer"
                     />
-                    <span className="w-9 text-right font-mono tabular-nums">
+                    <span className="w-9 text-right tabular-nums">
                       {coverPosY}%
                     </span>
                   </label>
@@ -919,7 +919,7 @@ export function EventFormModal({
                         setCoverPosX(50);
                         setCoverPosY(50);
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5] cursor-pointer"
                     >
                       <RotateCcw className="h-3 w-3" aria-hidden="true" />
                       Recentrer le visuel
@@ -940,7 +940,7 @@ export function EventFormModal({
             <div className="flex items-center justify-between gap-2">
               <label
                 htmlFor="ev-discipline"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#E5E5E5]"
               >
                 Discipline *
               </label>
@@ -950,7 +950,7 @@ export function EventFormModal({
                   setDiscError(null);
                   setShowNewDiscForm((prev) => !prev);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-[#4ADE80] dark:hover:text-[#22C55E] cursor-pointer"
               >
                 <Plus className="h-3 w-3" aria-hidden="true" />
                 {showNewDiscForm ? 'Fermer' : 'Ajouter une discipline'}
@@ -958,10 +958,10 @@ export function EventFormModal({
             </div>
             <div className="mt-1 flex items-center gap-2">
               <span
-                className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border ${
+                className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[10px] border ${
                   discipline
                     ? `${activeDiscStyle.softBg} ${activeDiscStyle.border} ${activeDiscStyle.text}`
-                    : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-700 dark:bg-slate-800'
+                    : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-[#262626] dark:bg-[#1F1F1F]'
                 }`}
                 title={discipline ? `Couleur : ${activeDiscStyle.label}` : undefined}
                 aria-hidden="true"
@@ -977,7 +977,7 @@ export function EventFormModal({
                 required
                 value={discipline}
                 onChange={(e) => setDiscipline(e.target.value)}
-                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               >
                 {selectOptions.length === 0 || !discipline ? (
                   <option value="">
@@ -999,7 +999,7 @@ export function EventFormModal({
                   onClick={() => void handleDeleteSelectedDiscipline()}
                   title={`Supprimer la discipline ${selectedCatalogDiscipline.name}`}
                   aria-label={`Supprimer la discipline ${selectedCatalogDiscipline.name}`}
-                  className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 disabled:opacity-50 cursor-pointer"
+                  className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#8E8E8E] dark:hover:border-rose-800/60 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 disabled:opacity-50 cursor-pointer"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -1011,8 +1011,8 @@ export function EventFormModal({
           </div>
 
           {showNewDiscForm && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3.5 space-y-3 dark:border-emerald-800/80 dark:bg-emerald-950/40">
-              <p className="text-xs font-semibold text-slate-900 dark:text-white">
+            <div className="rounded-[12px] border border-emerald-200 bg-emerald-50/50 p-3.5 space-y-3 dark:border-[#4ADE80]/30 dark:bg-[#1F1F1F]">
+              <p className="text-xs font-semibold text-slate-900 dark:text-[#E5E5E5]">
                 Nouvelle discipline sportive
               </p>
               <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
@@ -1029,13 +1029,13 @@ export function EventFormModal({
                   }}
                   placeholder="Ex. Boxe, CrossFit, Yoga..."
                   aria-label="Nom de la nouvelle discipline"
-                  className="min-h-[40px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="min-h-[40px] flex-1 rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
                 <button
                   type="button"
                   disabled={addingDisc}
                   onClick={() => void handleAddInlineDiscipline()}
-                  className="inline-flex min-h-[40px] items-center justify-center gap-1 rounded-lg bg-emerald-700 px-3.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                  className="inline-flex min-h-[40px] items-center justify-center gap-1 rounded-[10px] bg-emerald-700 px-3.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                   {addingDisc ? 'Ajout...' : 'Ajouter'}
@@ -1043,13 +1043,13 @@ export function EventFormModal({
               </div>
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                  <span className="text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
                     Couleur :{' '}
-                    <strong className="text-slate-900 dark:text-white">
+                    <strong className="text-slate-900 dark:text-[#E5E5E5]">
                       {DISCIPLINE_COLOR_PRESETS[selectedNewDiscColor].label}
                     </strong>
                   </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                     {!manualDiscColor && !usedDisciplineColorKeys.has(selectedNewDiscColor)
                       ? 'Auto (disponible)'
                       : usedDisciplineColorKeys.has(selectedNewDiscColor)
@@ -1069,9 +1069,9 @@ export function EventFormModal({
                         onClick={() => setManualDiscColor(key)}
                         title={`${preset.label}${isUsed ? ' (déjà utilisée)' : ' (disponible)'}`}
                         aria-label={`Couleur ${preset.label}${isUsed ? ' (déjà utilisée)' : ''}`}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-transform ${preset.swatchBg} ${
+                        className={`flex h-7 w-7 items-center justify-center rounded-[6px] cursor-pointer transition-transform ${preset.swatchBg} ${
                           selected
-                            ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-slate-100 dark:ring-offset-slate-900 scale-105'
+                            ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-[#4ADE80] dark:ring-offset-[#1F1F1F] scale-105'
                             : isUsed
                               ? 'opacity-45 hover:opacity-90'
                               : 'opacity-85 hover:opacity-100'
@@ -1087,14 +1087,14 @@ export function EventFormModal({
               </div>
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                  <span className="text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
                     Picto :{' '}
-                    <strong className="text-slate-900 dark:text-white">
+                    <strong className="text-slate-900 dark:text-[#E5E5E5]">
                       {DISCIPLINE_ICON_PRESETS[selectedNewDiscIcon].label}
                     </strong>
                   </span>
                   {!manualDiscIcon && newDiscName.trim().length >= 2 && (
-                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                    <span className="text-[11px] text-emerald-700 dark:text-[#4ADE80]">
                       Suggestion auto
                     </span>
                   )}
@@ -1113,10 +1113,10 @@ export function EventFormModal({
                         title={meta.label}
                         aria-label={`Picto ${meta.label}`}
                         aria-pressed={selected}
-                        className={`flex h-8 w-8 items-center justify-center rounded-md border cursor-pointer transition-colors ${
+                        className={`flex h-8 w-8 items-center justify-center rounded-[8px] border cursor-pointer transition-colors ${
                           selected
-                            ? `${activePreset.softBg} ${activePreset.border} ${activePreset.text} ring-2 ring-slate-900/20 dark:ring-white/25`
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                            ? `${activePreset.softBg} ${activePreset.border} ${activePreset.text} ring-2 ring-slate-900/20 dark:ring-[#4ADE80]/30`
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5]'
                         }`}
                       >
                         <DisciplineIcon iconKey={iconKey} className="h-4 w-4" />
@@ -1132,13 +1132,13 @@ export function EventFormModal({
           )}
 
           {/* Multi-Coach Assignment */}
-          <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/50">
+          <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100">
-                <UserCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
+                <UserCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                 Animateur(s) * ({selectedCoaches.length})
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                 Tous les animateurs sélectionnés reçoivent les alertes d’inscription
               </span>
             </div>
@@ -1153,7 +1153,7 @@ export function EventFormModal({
                   return (
                     <span
                       key={`${coach.uid || 'custom'}-${coach.name}-${idx}`}
-                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white py-1 pl-2 pr-1.5 text-xs font-semibold text-slate-800 shadow-2xs dark:border-emerald-800 dark:bg-slate-900 dark:text-slate-100"
+                      className="inline-flex items-center gap-2 rounded-[8px] border border-emerald-200 bg-white py-1 pl-2 pr-1.5 text-xs font-semibold text-slate-800 shadow-2xs dark:border-[#4ADE80]/30 dark:bg-[#161616] dark:text-[#E5E5E5]"
                     >
                       <ProfileAvatar
                         name={coach.name}
@@ -1165,7 +1165,7 @@ export function EventFormModal({
                         type="button"
                         onClick={() => removeCoachAt(idx)}
                         aria-label={`Retirer ${coach.name}`}
-                        className="flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-400 cursor-pointer"
+                        className="flex h-5 w-5 items-center justify-center rounded-[6px] text-slate-400 hover:bg-rose-50 hover:text-rose-700 dark:text-[#8E8E8E] dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer"
                       >
                         <X className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
@@ -1182,7 +1182,7 @@ export function EventFormModal({
             {/* Quick pick from registered team coaches */}
             {activeTeamCoaches.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                <p className="text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
                   Équipe d’animateurs enregistrés :
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -1198,16 +1198,16 @@ export function EventFormModal({
                         key={admin.uid}
                         type="button"
                         onClick={() => toggleTeamCoach(admin)}
-                        className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                        className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                           isSelected
-                            ? 'border-emerald-600 bg-emerald-700 text-white dark:bg-emerald-600'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                            ? 'border-emerald-600 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                         }`}
                       >
                         {isSelected ? (
                           <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                         ) : (
-                          <Plus className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                          <Plus className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                         )}
                         <span>{admin.displayName}</span>
                       </button>
@@ -1236,12 +1236,12 @@ export function EventFormModal({
                 }}
                 placeholder="Ajouter un autre animateur ou co-animateur..."
                 aria-label="Nom d’un autre animateur à ajouter"
-                className="min-h-[40px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="min-h-[40px] flex-1 rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
               <button
                 type="button"
                 onClick={handleAddCustomCoach}
-                className="inline-flex min-h-[40px] items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="inline-flex min-h-[40px] items-center justify-center gap-1 rounded-[10px] border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 Ajouter cet animateur
@@ -1259,7 +1259,7 @@ export function EventFormModal({
             <div className="col-span-2 sm:col-span-1">
               <label
                 htmlFor="ev-date"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
               >
                 Date *
               </label>
@@ -1269,14 +1269,14 @@ export function EventFormModal({
                 required
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-mono text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="ev-time"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
               >
                 Heure début *
               </label>
@@ -1286,19 +1286,19 @@ export function EventFormModal({
                 required
                 value={timeStr}
                 onChange={(e) => setTimeStr(e.target.value)}
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-mono text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="ev-duration"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
               >
                 Durée (min) {!isDurationDisabled && '*'}
               </label>
               {isDurationDisabled ? (
-                <div className="mt-1 flex min-h-[44px] items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                <div className="mt-1 flex min-h-[44px] items-center rounded-[10px] border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]">
                   Désactivée
                 </div>
               ) : (
@@ -1310,7 +1310,7 @@ export function EventFormModal({
                   max={VALIDATION_LIMITS.DURATION_MAX}
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-mono tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               )}
             </div>
@@ -1318,12 +1318,12 @@ export function EventFormModal({
             <div>
               <label
                 htmlFor="ev-capacity"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
               >
                 Places max {!isUnlimitedCapacity && '*'}
               </label>
               {isUnlimitedCapacity ? (
-                <div className="mt-1 flex min-h-[44px] items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                <div className="mt-1 flex min-h-[44px] items-center rounded-[10px] border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                   Illimité
                 </div>
               ) : (
@@ -1342,7 +1342,7 @@ export function EventFormModal({
                   max={VALIDATION_LIMITS.CAPACITY_MAX}
                   value={maxCapacity}
                   onChange={(e) => setMaxCapacity(Number(e.target.value))}
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-mono tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               )}
             </div>
@@ -1350,42 +1350,42 @@ export function EventFormModal({
 
           {/* Disable duration & Unlimited capacity toggles */}
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            <label className="flex min-h-[44px] items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 dark:border-slate-800 dark:bg-slate-800/60 cursor-pointer">
+            <label className="flex min-h-[44px] items-center gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-3.5 py-2 dark:border-[#262626] dark:bg-[#1F1F1F] cursor-pointer">
               <input
                 type="checkbox"
                 checked={isDurationDisabled}
                 onChange={(e) => setIsDurationDisabled(e.target.checked)}
-                className="h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-slate-600 dark:bg-slate-900"
+                className="h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-[#262626] dark:bg-[#161616] dark:accent-[#4ADE80]"
               />
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
+              <span className="text-xs font-medium text-slate-800 dark:text-[#E5E5E5]">
                 Désactiver la durée (heure de début uniquement)
               </span>
             </label>
 
-            <label className="flex min-h-[44px] items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 dark:border-slate-800 dark:bg-slate-800/60 cursor-pointer">
+            <label className="flex min-h-[44px] items-center gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-3.5 py-2 dark:border-[#262626] dark:bg-[#1F1F1F] cursor-pointer">
               <input
                 type="checkbox"
                 checked={isUnlimitedCapacity}
                 onChange={(e) => setIsUnlimitedCapacity(e.target.checked)}
-                className="h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-slate-600 dark:bg-slate-900"
+                className="h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600 dark:border-[#262626] dark:bg-[#161616] dark:accent-[#4ADE80]"
               />
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
+              <span className="text-xs font-medium text-slate-800 dark:text-[#E5E5E5]">
                 Nombre de places illimité (aucune limite de participants)
               </span>
             </label>
           </div>
 
           {/* Configurable booking closure offset before session start */}
-          <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/50">
+          <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                 <Clock
-                  className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400"
+                  className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]"
                   aria-hidden="true"
                 />
                 Clôture des inscriptions avant le début
               </span>
-              <span className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+              <span className="text-[11px] font-semibold tabular-nums text-emerald-700 dark:text-[#4ADE80]">
                 {effectiveCutoffMinutes === 0
                   ? 'Jusqu’au début'
                   : `${formatBookingCutoffLabel(effectiveCutoffMinutes)} avant`}
@@ -1418,10 +1418,10 @@ export function EventFormModal({
                       setCustomCutoffMode(false);
                       setBookingCutoffMinutes(preset.minutes);
                     }}
-                    className={`min-h-[34px] rounded-md border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
+                    className={`min-h-[34px] rounded-[8px] border px-2.5 py-1 text-xs font-medium tabular-nums cursor-pointer transition-colors ${
                       isSelected
-                        ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                        ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     {preset.label}
@@ -1431,10 +1431,10 @@ export function EventFormModal({
               <button
                 type="button"
                 onClick={() => setCustomCutoffMode(true)}
-                className={`min-h-[34px] rounded-md border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
+                className={`min-h-[34px] rounded-[8px] border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                   customCutoffMode
-                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                 }`}
               >
                 Personnalisée
@@ -1446,7 +1446,7 @@ export function EventFormModal({
                 <div>
                   <label
                     htmlFor="ev-cutoff-value"
-                    className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                    className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                   >
                     Durée avant le début
                   </label>
@@ -1463,13 +1463,13 @@ export function EventFormModal({
                     }
                     value={customCutoffValue}
                     onChange={(e) => setCustomCutoffValue(e.target.value)}
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-mono tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm tabular-nums text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="ev-cutoff-unit"
-                    className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                    className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                   >
                     Unité
                   </label>
@@ -1481,7 +1481,7 @@ export function EventFormModal({
                         e.target.value as 'minutes' | 'hours' | 'days'
                       )
                     }
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   >
                     <option value="minutes">Minutes</option>
                     <option value="hours">Heures</option>
@@ -1491,7 +1491,7 @@ export function EventFormModal({
               </div>
             )}
 
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-600 dark:text-[#A3A3A3]">
               {effectiveCutoffMinutes === 0 ? (
                 <>
                   Les inscriptions restent ouvertes jusqu’au début de la séance
@@ -1503,11 +1503,11 @@ export function EventFormModal({
               ) : previewCutoffDate ? (
                 <>
                   Clôture prévue le{' '}
-                  <strong className="text-slate-900 dark:text-white capitalize">
+                  <strong className="text-slate-900 dark:text-[#E5E5E5] capitalize">
                     {formatFrenchDateShort(previewCutoffDate)}
                   </strong>{' '}
                   à{' '}
-                  <strong className="font-mono text-slate-900 dark:text-white">
+                  <strong className="tabular-nums text-slate-900 dark:text-[#E5E5E5]">
                     {formatFrenchTime(previewCutoffDate)}
                   </strong>{' '}
                   ({formatBookingCutoffLabel(effectiveCutoffMinutes)} avant le début).
@@ -1518,7 +1518,7 @@ export function EventFormModal({
             </p>
 
             {(isCustomCutoffPassed || isStartTimePassed) && (
-              <p className="rounded-md border border-amber-200 bg-amber-50/90 px-3 py-2 text-xs text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-200">
+              <p className="rounded-[8px] border border-amber-200 bg-amber-50/90 px-3 py-2 text-xs text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
                 {isStartTimePassed
                   ? 'L’heure de début choisie est déjà dépassée : la séance sera tout de même enregistrée dans le planning.'
                   : 'Ce délai de clôture est déjà dépassé : sans inscrit, la séance affichera « Inscriptions clôturées · Séance annulée » pour les adhérents (choisissez « Aucune (au début) » pour la laisser ouverte).'}
@@ -1527,24 +1527,24 @@ export function EventFormModal({
           </div>
 
           {/* Pricing & Payment Mode Configuration */}
-          <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/50">
+          <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100">
-                <CreditCard className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
+                <CreditCard className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                 Tarification & paiement
               </span>
               <div
                 role="group"
                 aria-label="Séance gratuite ou payante"
-                className="inline-flex items-center gap-1 rounded-lg bg-slate-200/80 p-1 dark:bg-slate-900"
+                className="inline-flex items-center gap-1 rounded-[10px] bg-slate-200/80 p-1 dark:border dark:border-[#262626] dark:bg-[#161616]"
               >
                 <button
                   type="button"
                   onClick={() => setIsPaid(false)}
-                  className={`min-h-[32px] rounded-md px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                  className={`min-h-[32px] rounded-[8px] px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
                     !isPaid
-                      ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      ? 'bg-white text-slate-900 shadow-xs dark:bg-[#1F1F1F] dark:text-[#E5E5E5]'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                   }`}
                 >
                   Gratuit
@@ -1552,10 +1552,10 @@ export function EventFormModal({
                 <button
                   type="button"
                   onClick={() => setIsPaid(true)}
-                  className={`min-h-[32px] rounded-md px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
+                  className={`min-h-[32px] rounded-[8px] px-3 py-1 text-xs font-semibold cursor-pointer transition-colors ${
                     isPaid
-                      ? 'bg-emerald-700 text-white shadow-xs dark:bg-emerald-600'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      ? 'bg-emerald-700 text-white shadow-xs dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
                   }`}
                 >
                   Payant
@@ -1568,7 +1568,7 @@ export function EventFormModal({
                 <div>
                   <label
                     htmlFor="ev-price"
-                    className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Tarif de la séance (€) *
                   </label>
@@ -1584,13 +1584,13 @@ export function EventFormModal({
                         setPriceEurosInput(e.target.value);
                       }}
                       placeholder="15"
-                      className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-9 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      className="min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white pl-3 pr-9 text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                     />
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500 dark:text-[#8E8E8E]">
                       €
                     </span>
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                     Entre 1 € et 1 000 € (ex. 15 ou 12,50).
                   </p>
                   {(() => {
@@ -1613,7 +1613,7 @@ export function EventFormModal({
                           );
                           setPriceTouched(false);
                         }}
-                        className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                        className="mt-1 text-left text-[11px] font-semibold text-emerald-700 hover:underline dark:text-[#4ADE80] cursor-pointer"
                       >
                         Appliquer le tarif de {primaryAdmin?.displayName || defaultCoachName} :{' '}
                         {formatPriceEuros(coachPriceCents)}
@@ -1625,7 +1625,7 @@ export function EventFormModal({
                 <div>
                   <label
                     htmlFor="ev-payment-mode"
-                    className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                   >
                     Mode de règlement accepté
                   </label>
@@ -1635,19 +1635,19 @@ export function EventFormModal({
                     onChange={(e) =>
                       setPaymentMode(e.target.value as EventPaymentMode)
                     }
-                    className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   >
                     <option value="online">Carte bancaire en ligne</option>
                     <option value="both">Carte en ligne ou sur place</option>
                     <option value="onsite">Sur place uniquement</option>
                   </select>
-                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                     Le suivi des règlements apparaît dans la liste des inscrits.
                   </p>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Séance sans frais d’inscription pour les adhérents.
               </p>
             )}
@@ -1658,7 +1658,7 @@ export function EventFormModal({
             <div>
               <label
                 htmlFor="ev-location"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
               >
                 Adresse ou lieu précis *
               </label>
@@ -1686,7 +1686,7 @@ export function EventFormModal({
               <div>
                 <label
                   htmlFor="ev-city"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Ville *
                 </label>
@@ -1699,14 +1699,14 @@ export function EventFormModal({
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="Paris"
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="ev-region"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Région
                 </label>
@@ -1717,7 +1717,7 @@ export function EventFormModal({
                   value={region}
                   onChange={(e) => setRegion(e.target.value)}
                   placeholder="Ex. Île-de-France"
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
             </div>
@@ -1726,7 +1726,7 @@ export function EventFormModal({
           <div>
             <label
               htmlFor="ev-description"
-              className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+              className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
             >
               Description & matériel recommandé
             </label>
@@ -1737,16 +1737,16 @@ export function EventFormModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Niveau requis, intensité, bouteille d'eau, serviette..."
-              className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="mt-1 w-full rounded-[10px] border border-slate-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
             />
           </div>
 
           <div>
             <label
               htmlFor="ev-external-url"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
             >
-              <Link2 className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+              <Link2 className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
               Lien associé à l’événement (optionnel)
             </label>
             <input
@@ -1757,39 +1757,39 @@ export function EventFormModal({
               value={externalUrl}
               onChange={(e) => setExternalUrl(e.target.value)}
               placeholder="https://exemple.fr/parcours-ou-infos"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
             />
-            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
               Parcours GPS, billetterie, document PDF ou page d’information (https:// ou http://).
             </p>
           </div>
 
-          <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+          <p className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
             Rappel : aucune clôture automatique n’est imposée par défaut. Si vous définissez un délai de clôture et qu’il n’y a aucun inscrit à l’échéance, la séance indiquera « Inscriptions clôturées · Séance annulée » ; dès 1 inscrit, elle reste maintenue au planning. Chaque événement reste affiché puis est supprimé 30 jours après la fin de la séance.
           </p>
 
           {errorMsg && (
             <div
               role="alert"
-              className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
+              className="flex items-start gap-2 rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200"
             >
               <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <div className="flex flex-col-reverse gap-2.5 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+          <div className="flex flex-col-reverse gap-2.5 border-t border-slate-100 pt-4 dark:border-[#262626] sm:flex-row sm:items-center sm:justify-end sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[44px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+              className="min-h-[44px] rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={submitting || processingCover}
-              className="min-h-[44px] rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-60 cursor-pointer"
+              className="min-h-[44px] rounded-[10px] bg-emerald-700 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
             >
               {submitting
                 ? 'Enregistrement...'

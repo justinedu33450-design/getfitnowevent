@@ -514,12 +514,12 @@ export function MembersTrackingView({
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-slate-200 dark:border-[#262626] pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+          <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-2xl">
             Suivi des adhérents
           </h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-[#8E8E8E]">
             Vos adhérents rattachés ({currentCoachName || coachEmail}) · Ajoutez, suivez ou réaffectez un adhérent à un coach.
           </p>
         </div>
@@ -531,7 +531,7 @@ export function MembersTrackingView({
               setFeedback(null);
               setIsAddModalOpen(true);
             }}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Ajouter un adhérent
@@ -541,7 +541,7 @@ export function MembersTrackingView({
             type="button"
             onClick={handleExportMembers}
             disabled={filteredMembers.length === 0}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#1F1F1F] disabled:opacity-50 cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             Exporter CSV
@@ -550,7 +550,7 @@ export function MembersTrackingView({
           <button
             type="button"
             onClick={onSignOut}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 py-2 text-xs font-medium text-slate-600 dark:text-[#A3A3A3] hover:bg-slate-50 dark:hover:bg-[#1F1F1F] hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
             Déconnexion
@@ -559,36 +559,36 @@ export function MembersTrackingView({
       </div>
 
       {/* 4-Column Summary Strip */}
-      <div className="mt-6 grid grid-cols-2 divide-y divide-slate-200 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+      <div className="mt-6 grid grid-cols-2 divide-y divide-slate-200 dark:divide-[#262626] rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] sm:grid-cols-4 sm:divide-x sm:divide-y-0">
         <div className="p-4 sm:px-5">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
             Adhérents enregistrés
           </p>
-          <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
+          <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
             {stats.total}
           </p>
         </div>
         <div className="p-4 sm:px-5">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
             Réservations à venir
           </p>
-          <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
+          <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
             {stats.upcomingTotal}
           </p>
         </div>
         <div className="p-4 sm:px-5">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
             Assiduité moyenne
           </p>
-          <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
+          <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
             {stats.avgAttendance !== null ? `${stats.avgAttendance}%` : '—'}
           </p>
         </div>
         <div className="p-4 sm:px-5">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
             Profils à relancer
           </p>
-          <p className="mt-1 font-mono text-2xl font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
+          <p className="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
             {stats.toFollowUp}
           </p>
         </div>
@@ -596,10 +596,10 @@ export function MembersTrackingView({
 
       {feedback && (
         <div
-          className={`mt-5 rounded-xl border p-3.5 text-sm ${
+          className={`mt-5 rounded-[12px] border p-3.5 text-sm ${
             feedback.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-              : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+              : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
           }`}
         >
           {feedback.text}
@@ -611,7 +611,7 @@ export function MembersTrackingView({
         <div
           role="group"
           aria-label="Filtrer par statut de suivi"
-          className="flex flex-wrap items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 p-1"
+          className="flex flex-wrap items-center gap-1 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-slate-100 dark:bg-[#1F1F1F] p-1"
         >
           {(
             [
@@ -625,10 +625,10 @@ export function MembersTrackingView({
               key={tab.id}
               type="button"
               onClick={() => setStatusFilter(tab.id)}
-              className={`min-h-[32px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+              className={`min-h-[32px] rounded-[8px] px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                 statusFilter === tab.id
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#161616] text-slate-900 dark:text-[#E5E5E5] shadow-sm'
+                  : 'text-slate-600 dark:text-[#A3A3A3] hover:text-slate-900 dark:hover:text-[#E5E5E5]'
               }`}
             >
               {tab.label}
@@ -638,7 +638,7 @@ export function MembersTrackingView({
 
         <div className="relative w-full sm:w-72">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#8E8E8E]"
             aria-hidden="true"
           />
           <input
@@ -647,25 +647,25 @@ export function MembersTrackingView({
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher nom, email, objectif..."
             aria-label="Rechercher un adhérent"
-            className="min-h-[40px] w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+            className="min-h-[40px] w-full rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] pl-9 pr-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
           />
         </div>
       </div>
 
       {/* Members Table / Mobile Cards */}
       {filteredMembers.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center sm:p-12">
-          <UserCheck className="mx-auto h-9 w-9 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-          <h3 className="mt-3 font-display text-base font-bold text-slate-900 dark:text-white">
+        <div className="mt-6 rounded-[16px] border border-dashed border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] p-10 text-center sm:p-12">
+          <UserCheck className="mx-auto h-9 w-9 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
+          <h3 className="mt-3 font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
             Aucun adhérent trouvé
           </h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-[#8E8E8E]">
             Ajoutez un adhérent manuellement ou attendez qu’un participant s’inscrive à une séance via le calendrier.
           </p>
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+            className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
           >
             <UserPlus className="h-4 w-4" aria-hidden="true" />
             Ajouter un adhérent
@@ -688,7 +688,7 @@ export function MembersTrackingView({
                 <div
                   key={member.emailKey}
                   onClick={() => setSelectedMemberKey(member.emailKey)}
-                  className="cursor-pointer rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 active:bg-slate-50 dark:active:bg-slate-800"
+                  className="cursor-pointer rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-4 active:bg-slate-50 dark:active:bg-[#1F1F1F]"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
@@ -698,15 +698,15 @@ export function MembersTrackingView({
                         size="md"
                       />
                       <div className="min-w-0">
-                        <p className="font-display text-base font-bold text-slate-900 dark:text-white truncate">
+                        <p className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5] truncate">
                           {member.firstName} {member.lastName}
                           {memberAge !== null && (
-                            <span className="ml-1.5 font-mono text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <span className="ml-1.5 text-xs font-medium text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                               · {memberAge} ans
                             </span>
                           )}
                         </p>
-                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                        <p className="truncate text-xs text-slate-500 dark:text-[#8E8E8E]">
                           {member.email}
                         </p>
                       </div>
@@ -714,10 +714,10 @@ export function MembersTrackingView({
                     <span
                       className={`shrink-0 text-xs font-semibold ${
                         followStatus === 'active'
-                          ? 'text-emerald-700 dark:text-emerald-400'
+                          ? 'text-emerald-700 dark:text-[#4ADE80]'
                           : followStatus === 'to_follow_up'
                             ? 'text-amber-700 dark:text-amber-400'
-                            : 'text-slate-500 dark:text-slate-400'
+                            : 'text-slate-500 dark:text-[#8E8E8E]'
                       }`}
                     >
                       {FOLLOW_UP_LABELS[followStatus]}
@@ -725,9 +725,9 @@ export function MembersTrackingView({
                   </div>
 
                   {(memberLevelShort || member.profile?.goal) && (
-                    <div className="mt-2 space-y-0.5 text-xs text-slate-600 dark:text-slate-300">
+                    <div className="mt-2 space-y-0.5 text-xs text-slate-600 dark:text-[#A3A3A3]">
                       {memberLevelShort && (
-                        <p className="font-medium text-emerald-700 dark:text-emerald-400">
+                        <p className="font-medium text-emerald-700 dark:text-[#4ADE80]">
                           Niveau : {memberLevelShort}
                         </p>
                       )}
@@ -739,8 +739,8 @@ export function MembersTrackingView({
                     </div>
                   )}
 
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 text-xs text-slate-600 dark:text-slate-300">
-                    <span className="font-mono tabular-nums">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 dark:border-[#262626] pt-3 text-xs text-slate-600 dark:text-[#A3A3A3]">
+                    <span className="tabular-nums">
                       {member.totalRegistrations} séances · {member.attendedCount}{' '}
                       prés.
                       {member.attendanceRate !== null &&
@@ -756,12 +756,12 @@ export function MembersTrackingView({
                           type="button"
                           onClick={() => onMessageMember(member)}
                           aria-label={`Envoyer un message à ${member.firstName} ${member.lastName}`}
-                          className="relative inline-flex min-h-[38px] items-center gap-1 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 cursor-pointer"
+                          className="relative inline-flex min-h-[38px] items-center gap-1 rounded-[10px] border border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-[#4ADE80] cursor-pointer"
                         >
                           <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                           <span>Message</span>
                           {(unreadMessagesByMemberKey?.get(member.emailKey) ?? 0) > 0 && (
-                            <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums">
+                            <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white tabular-nums">
                               {unreadMessagesByMemberKey?.get(member.emailKey)}
                             </span>
                           )}
@@ -770,7 +770,7 @@ export function MembersTrackingView({
                       <button
                         type="button"
                         onClick={() => setSelectedMemberKey(member.emailKey)}
-                        className="min-h-[38px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 cursor-pointer"
+                        className="min-h-[38px] rounded-[10px] border border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#1F1F1F] px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5] cursor-pointer"
                       >
                         Fiche
                       </button>
@@ -781,14 +781,14 @@ export function MembersTrackingView({
                             type="button"
                             disabled={deletingKey === member.emailKey}
                             onClick={() => void handleDeleteMember(member)}
-                            className="min-h-[38px] rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                            className="min-h-[38px] rounded-[10px] bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
                           >
                             Suppr.
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteKey(null)}
-                            className="min-h-[38px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+                            className="min-h-[38px] rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-2.5 py-1.5 text-xs text-slate-600 dark:text-[#A3A3A3] cursor-pointer"
                           >
                             Non
                           </button>
@@ -798,7 +798,7 @@ export function MembersTrackingView({
                           type="button"
                           onClick={() => setConfirmDeleteKey(member.emailKey)}
                           aria-label={`Supprimer ${member.firstName} ${member.lastName}`}
-                          className="flex h-[38px] w-[38px] items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
+                          className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] text-slate-500 dark:text-[#A3A3A3] hover:border-rose-200 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
                         >
                           <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -811,10 +811,10 @@ export function MembersTrackingView({
           </div>
 
           {/* Desktop Table (>= md) */}
-          <div className="mt-5 hidden overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 md:block">
+          <div className="mt-5 hidden overflow-hidden rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] md:block">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-sm">
-                <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                <thead className="border-b border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#1F1F1F] text-xs font-semibold text-slate-600 dark:text-[#A3A3A3]">
                   <tr>
                     <th className="px-4 py-3.5">Adhérent</th>
                     <th className="px-4 py-3.5">Âge & Niveau</th>
@@ -826,7 +826,7 @@ export function MembersTrackingView({
                     <th className="px-4 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-200 dark:divide-[#262626]">
                   {filteredMembers.map((member) => {
                     const followStatus: FollowUpStatus =
                       member.profile?.followUpStatus ?? 'active';
@@ -842,7 +842,7 @@ export function MembersTrackingView({
                       <tr
                         key={member.emailKey}
                         onClick={() => setSelectedMemberKey(member.emailKey)}
-                        className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                        className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-[#1F1F1F]/60"
                       >
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
@@ -852,40 +852,40 @@ export function MembersTrackingView({
                               size="sm"
                             />
                             <div className="min-w-0">
-                              <p className="font-semibold text-slate-900 dark:text-white">
+                              <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                                 {member.firstName} {member.lastName}
                               </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">{member.email}</p>
+                              <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">{member.email}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3.5 text-xs">
                           <div className="space-y-0.5">
-                            <p className="font-mono font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
+                            <p className="font-semibold text-slate-800 dark:text-[#E5E5E5] tabular-nums">
                               {memberAge !== null ? `${memberAge} ans` : 'Âge —'}
                             </p>
-                            <p className="text-slate-600 dark:text-slate-300">
+                            <p className="text-slate-600 dark:text-[#A3A3A3]">
                               {memberLevelShort || 'Niveau non renseigné'}
                             </p>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 text-xs text-slate-600 dark:text-slate-300 max-w-[180px] truncate">
+                        <td className="px-4 py-3.5 text-xs text-slate-600 dark:text-[#A3A3A3] max-w-[180px] truncate">
                           {member.profile?.goal || 'Non renseigné'}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono tabular-nums text-slate-900 dark:text-white">
+                        <td className="px-4 py-3.5 text-right tabular-nums text-slate-900 dark:text-[#E5E5E5]">
                           {member.totalRegistrations}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono tabular-nums text-slate-900 dark:text-white">
+                        <td className="px-4 py-3.5 text-right tabular-nums text-slate-900 dark:text-[#E5E5E5]">
                           {member.attendedCount}
                           {member.attendanceRate !== null && (
-                            <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">
+                            <span className="ml-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                               ({member.attendanceRate}%)
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-xs text-slate-600 dark:text-slate-300">
+                        <td className="px-4 py-3.5 text-xs text-slate-600 dark:text-[#A3A3A3]">
                           {member.nextSessionDate ? (
-                            <span className="font-medium text-emerald-700 dark:text-emerald-400 capitalize">
+                            <span className="font-medium text-emerald-700 dark:text-[#4ADE80] capitalize">
                               À venir : {formatFrenchDateShort(member.nextSessionDate)}
                             </span>
                           ) : member.lastSessionDate ? (
@@ -900,10 +900,10 @@ export function MembersTrackingView({
                           <span
                             className={`text-xs font-semibold ${
                               followStatus === 'active'
-                                ? 'text-emerald-700 dark:text-emerald-400'
+                                ? 'text-emerald-700 dark:text-[#4ADE80]'
                                 : followStatus === 'to_follow_up'
                                   ? 'text-amber-700 dark:text-amber-400'
-                                  : 'text-slate-500 dark:text-slate-400'
+                                  : 'text-slate-500 dark:text-[#8E8E8E]'
                             }`}
                           >
                             {FOLLOW_UP_LABELS[followStatus]}
@@ -920,11 +920,11 @@ export function MembersTrackingView({
                                 onClick={() => onMessageMember(member)}
                                 title={`Envoyer un message à ${member.firstName} ${member.lastName}`}
                                 aria-label={`Envoyer un message à ${member.firstName} ${member.lastName}`}
-                                className="relative inline-flex h-[34px] items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300 cursor-pointer"
+                                className="relative inline-flex h-[34px] items-center gap-1 rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-2.5 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:hover:border-[#4ADE80]/40 dark:hover:bg-[#4ADE80]/10 dark:hover:text-[#4ADE80] cursor-pointer"
                               >
                                 <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                                 {(unreadMessagesByMemberKey?.get(member.emailKey) ?? 0) > 0 && (
-                                  <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums">
+                                  <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white tabular-nums">
                                     {unreadMessagesByMemberKey?.get(member.emailKey)}
                                   </span>
                                 )}
@@ -933,7 +933,7 @@ export function MembersTrackingView({
                             <button
                               type="button"
                               onClick={() => setSelectedMemberKey(member.emailKey)}
-                              className="min-h-[34px] rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                              className="min-h-[34px] rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 py-1 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
                             >
                               Ouvrir
                             </button>
@@ -944,14 +944,14 @@ export function MembersTrackingView({
                                   type="button"
                                   disabled={deletingKey === member.emailKey}
                                   onClick={() => void handleDeleteMember(member)}
-                                  className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                                  className="min-h-[34px] rounded-[8px] bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
                                 >
                                   Suppr.
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setConfirmDeleteKey(null)}
-                                  className="min-h-[34px] rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+                                  className="min-h-[34px] rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-2 py-1 text-xs text-slate-600 dark:text-[#A3A3A3] cursor-pointer"
                                 >
                                   Non
                                 </button>
@@ -962,7 +962,7 @@ export function MembersTrackingView({
                                 onClick={() => setConfirmDeleteKey(member.emailKey)}
                                 title="Supprimer cet adhérent"
                                 aria-label={`Supprimer ${member.firstName} ${member.lastName}`}
-                                className="flex h-[34px] w-[34px] items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
+                                className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] text-slate-500 dark:text-[#A3A3A3] hover:border-rose-200 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
                               >
                                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -1174,22 +1174,22 @@ function AddMemberModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="add-member-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-slate-950/75 backdrop-blur-xs sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-black/75 backdrop-blur-xs sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl sm:rounded-2xl"
+        className="flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] shadow-2xl sm:rounded-[16px]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 p-4 sm:p-6">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#262626] p-4 sm:p-6">
           <div>
             <h2
               id="add-member-title"
-              className="font-display text-lg font-bold text-slate-900 dark:text-white sm:text-xl"
+              className="font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5] sm:text-xl"
             >
               Ajouter un adhérent
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
               Créez manuellement une fiche adhérent dans votre suivi coaching.
             </p>
           </div>
@@ -1197,7 +1197,7 @@ function AddMemberModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] text-slate-500 dark:text-[#8E8E8E] hover:bg-slate-100 dark:hover:bg-[#1F1F1F] hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -1218,7 +1218,7 @@ function AddMemberModal({
             <div>
               <label
                 htmlFor="add-member-firstname"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Prénom *
               </label>
@@ -1231,14 +1231,14 @@ function AddMemberModal({
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Ex. Camille"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="add-member-lastname"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Nom *
               </label>
@@ -1251,7 +1251,7 @@ function AddMemberModal({
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Ex. Durand"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
           </div>
@@ -1259,7 +1259,7 @@ function AddMemberModal({
           <div>
             <label
               htmlFor="add-member-email"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
             >
               Adresse email *
             </label>
@@ -1271,7 +1271,7 @@ function AddMemberModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="camille.durand@exemple.fr"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
             />
           </div>
 
@@ -1279,7 +1279,7 @@ function AddMemberModal({
             <div>
               <label
                 htmlFor="add-member-phone"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Téléphone
               </label>
@@ -1290,14 +1290,14 @@ function AddMemberModal({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="06 12 34 56 78"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="add-member-status"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Statut de suivi
               </label>
@@ -1307,7 +1307,7 @@ function AddMemberModal({
                 onChange={(e) =>
                   setFollowUpStatus(e.target.value as FollowUpStatus)
                 }
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               >
                 <option value="active">Actif</option>
                 <option value="to_follow_up">À relancer</option>
@@ -1320,7 +1320,7 @@ function AddMemberModal({
             <div className="sm:col-span-8">
               <label
                 htmlFor="add-member-birthdate"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Date de naissance
               </label>
@@ -1331,14 +1331,14 @@ function AddMemberModal({
                 max={todayIso}
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
             <div className="sm:col-span-4">
-              <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]">
                 Âge (auto)
               </span>
-              <div className="mt-1 flex min-h-[44px] items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 font-mono text-sm font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
+              <div className="mt-1 flex min-h-[44px] items-center rounded-[10px] border border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#1F1F1F] px-3 text-sm font-semibold text-slate-800 dark:text-[#E5E5E5] tabular-nums">
                 {computedAge !== null ? `${computedAge} ans` : '—'}
               </div>
             </div>
@@ -1347,7 +1347,7 @@ function AddMemberModal({
           <div>
             <label
               htmlFor="add-member-fitness-level"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
             >
               Niveau sportif
             </label>
@@ -1357,7 +1357,7 @@ function AddMemberModal({
               onChange={(e) =>
                 setFitnessLevel(e.target.value as FitnessLevel | '')
               }
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+              className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
             >
               <option value="">Sélectionner un niveau</option>
               {FITNESS_LEVEL_OPTIONS.map((opt) => (
@@ -1371,7 +1371,7 @@ function AddMemberModal({
           <div>
             <label
               htmlFor="add-member-goal"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
             >
               Objectif sportif
             </label>
@@ -1382,14 +1382,14 @@ function AddMemberModal({
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               placeholder="Ex. Remise en forme, endurance..."
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
             />
           </div>
 
           <div>
             <label
               htmlFor="add-member-referent-coach"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
             >
               Coach référent (rattachement)
             </label>
@@ -1397,7 +1397,7 @@ function AddMemberModal({
               id="add-member-referent-coach"
               value={referentCoachUid}
               onChange={(e) => setReferentCoachUid(e.target.value)}
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+              className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
             >
               {coachOptions.map((c) => (
                 <option key={c.uid} value={c.uid}>
@@ -1406,7 +1406,7 @@ function AddMemberModal({
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
               Seul le coach référent choisi pourra voir et gérer cet adhérent dans son espace.
             </p>
           </div>
@@ -1414,7 +1414,7 @@ function AddMemberModal({
           <div>
             <label
               htmlFor="add-member-notes"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
             >
               Notes de coaching
             </label>
@@ -1425,28 +1425,28 @@ function AddMemberModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Antécédents, préférences, disponibilités..."
-              className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              className="mt-1 w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] p-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
             />
           </div>
 
           {error && (
-            <p className="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 p-3 text-xs text-rose-800 dark:text-rose-200">
+            <p className="rounded-[10px] border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 p-3 text-xs text-rose-800 dark:text-rose-200">
               {error}
             </p>
           )}
 
-          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 dark:border-slate-800 pt-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 dark:border-[#262626] pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[44px] rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+              className="min-h-[44px] rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-4 py-2 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
             >
               <UserPlus className="h-4 w-4" aria-hidden="true" />
               {saving ? 'Création...' : 'Créer la fiche adhérent'}
@@ -1690,14 +1690,14 @@ function MemberDetailDrawer({
       role="dialog"
       aria-modal="true"
       aria-labelledby="member-drawer-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-slate-950/75 backdrop-blur-xs sm:items-stretch sm:justify-end"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-black/75 backdrop-blur-xs sm:items-stretch sm:justify-end"
       onClick={onClose}
     >
       <div
-        className="flex h-[92dvh] w-full max-w-xl flex-col rounded-t-2xl border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl sm:h-full sm:rounded-none sm:border-t-0 sm:border-l"
+        className="flex h-[92dvh] w-full max-w-xl flex-col rounded-t-[16px] border-t border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] shadow-2xl sm:h-full sm:rounded-none sm:border-t-0 sm:border-l"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-slate-800 p-4 sm:p-6">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-[#262626] p-4 sm:p-6">
           <div className="flex items-center gap-3.5 min-w-0">
             <ProfileAvatar
               name={`${member.firstName} ${member.lastName}`}
@@ -1707,16 +1707,16 @@ function MemberDetailDrawer({
             <div className="min-w-0">
               <h2
                 id="member-drawer-title"
-                className="font-display text-lg font-bold text-slate-900 dark:text-white sm:text-xl truncate"
+                className="font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5] sm:text-xl truncate"
               >
                 {member.firstName} {member.lastName}
               </h2>
-              <p className="mt-0.5 truncate text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 truncate text-sm text-slate-500 dark:text-[#8E8E8E]">
                 {member.email}
                 {computedAge !== null ? ` · ${computedAge} ans` : ''}
                 {headerLevelLabel ? ` · ${headerLevelLabel}` : ''}
               </p>
-              <p className="mt-1.5 font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums">
+              <p className="mt-1.5 text-xs text-slate-600 dark:text-[#A3A3A3] tabular-nums">
                 {member.totalRegistrations} séance
                 {member.totalRegistrations > 1 ? 's' : ''} réservée
                 {member.totalRegistrations > 1 ? 's' : ''} · {member.attendedCount}{' '}
@@ -1729,7 +1729,7 @@ function MemberDetailDrawer({
             type="button"
             onClick={onClose}
             aria-label="Fermer la fiche adhérent"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-slate-500 dark:text-[#8E8E8E] hover:bg-slate-100 dark:hover:bg-[#1F1F1F] hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -1737,24 +1737,24 @@ function MemberDetailDrawer({
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4 sm:p-6">
           {onMessageMember && (
-            <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-emerald-800/80 dark:bg-emerald-950/35">
-              <div className="text-xs text-emerald-950 dark:text-emerald-100">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-[12px] border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10">
+              <div className="text-xs text-emerald-950 dark:text-[#E5E5E5]">
                 <p className="font-semibold">
                   Échanger en direct avec {member.firstName}
                 </p>
-                <p className="text-emerald-800/85 dark:text-emerald-200/80">
+                <p className="text-emerald-800/85 dark:text-[#A3A3A3]">
                   Posez vos questions de suivi ou partagez des consignes.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onMessageMember}
-                className="inline-flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                className="inline-flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
               >
                 <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>Envoyer un message</span>
                 {unreadMessagesCount > 0 && (
-                  <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums">
+                  <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white tabular-nums">
                     {unreadMessagesCount}
                   </span>
                 )}
@@ -1762,15 +1762,15 @@ function MemberDetailDrawer({
             </div>
           )}
           {/* Referent Coach Assignment Card */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 p-4 space-y-2.5">
+          <div className="rounded-[12px] border border-slate-200 dark:border-[#262626] bg-slate-50/80 dark:bg-[#1F1F1F] p-4 space-y-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-xs">
-                <p className="font-bold text-slate-900 dark:text-white">
+                <p className="font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Coach référent &amp; rattachement
                 </p>
-                <p className="mt-0.5 text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-slate-500 dark:text-[#8E8E8E]">
                   Actuellement rattaché à{' '}
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <span className="font-semibold text-slate-800 dark:text-[#E5E5E5]">
                     {currentReferentName}
                   </span>
                 </p>
@@ -1787,7 +1787,7 @@ function MemberDetailDrawer({
                     setReassignFeedback(null);
                     setReassignError(null);
                   }}
-                  className="min-h-[38px] flex-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs text-slate-900 dark:text-slate-100"
+                  className="min-h-[38px] flex-1 rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-xs text-slate-900 dark:text-[#E5E5E5] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                 >
                   {coachOptions.map((c) => (
                     <option key={c.uid} value={c.uid}>
@@ -1805,7 +1805,7 @@ function MemberDetailDrawer({
                       selectedReferentUid === member.profile?.referentCoachUid)
                   }
                   onClick={() => void handleAssignReferentCoach()}
-                  className="min-h-[38px] shrink-0 rounded-lg bg-slate-900 dark:bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white disabled:opacity-50 cursor-pointer"
+                  className="min-h-[38px] shrink-0 rounded-[10px] bg-slate-900 dark:bg-[#4ADE80] px-3.5 py-1.5 text-xs font-semibold text-white dark:text-[#0A0A0A] hover:bg-slate-800 dark:hover:bg-[#22C55E] disabled:opacity-50 cursor-pointer"
                 >
                   {reassignSaving
                     ? 'Rattachement...'
@@ -1815,7 +1815,7 @@ function MemberDetailDrawer({
             )}
 
             {reassignFeedback && (
-              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              <p className="text-xs font-medium text-emerald-700 dark:text-[#4ADE80]">
                 {reassignFeedback}
               </p>
             )}
@@ -1827,11 +1827,11 @@ function MemberDetailDrawer({
           </div>
 
           {/* Coaching Profile Form */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5">
+          <div className="rounded-[12px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] p-4 sm:p-5">
             <div
               className={`flex items-start justify-between gap-3 ${
                 profileExpanded
-                  ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+                  ? 'border-b border-slate-100 pb-3.5 dark:border-[#262626]'
                   : ''
               }`}
             >
@@ -1842,14 +1842,14 @@ function MemberDetailDrawer({
                 aria-controls="member-drawer-profile-form"
                 className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-700 dark:bg-[#161616] dark:text-[#A3A3A3]">
                   <UserCheck className="h-4 w-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                     Informations & suivi du coach
                   </h3>
-                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E] truncate">
                     Statut : {FOLLOW_UP_LABELS[followUpStatus]}
                     {headerLevelLabel ? ` · ${headerLevelLabel}` : ''}
                     {goal.trim() ? ` · ${goal.trim()}` : ''}
@@ -1867,7 +1867,7 @@ function MemberDetailDrawer({
                     ? 'Replier les informations et le suivi du coach'
                     : 'Déplier les informations et le suivi du coach'
                 }
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 <ChevronDown
                   className={`h-4 w-4 transition-transform duration-200 ${
@@ -1896,7 +1896,7 @@ function MemberDetailDrawer({
               <div>
                 <label
                   htmlFor="member-firstname"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Prénom *
                 </label>
@@ -1908,14 +1908,14 @@ function MemberDetailDrawer({
                   maxLength={VALIDATION_LIMITS.FIRST_NAME_MAX}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="member-lastname"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Nom *
                 </label>
@@ -1927,7 +1927,7 @@ function MemberDetailDrawer({
                   maxLength={VALIDATION_LIMITS.LAST_NAME_MAX}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
             </div>
@@ -1936,7 +1936,7 @@ function MemberDetailDrawer({
               <div>
                 <label
                   htmlFor="member-status"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Statut de suivi
                 </label>
@@ -1946,7 +1946,7 @@ function MemberDetailDrawer({
                   onChange={(e) =>
                     setFollowUpStatus(e.target.value as FollowUpStatus)
                   }
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                 >
                   <option value="active">Actif</option>
                   <option value="to_follow_up">À relancer</option>
@@ -1957,7 +1957,7 @@ function MemberDetailDrawer({
               <div>
                 <label
                   htmlFor="member-phone"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Téléphone
                 </label>
@@ -1968,7 +1968,7 @@ function MemberDetailDrawer({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="06 12 34 56 78"
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
             </div>
@@ -1977,7 +1977,7 @@ function MemberDetailDrawer({
               <div className="sm:col-span-8">
                 <label
                   htmlFor="member-birthdate"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Date de naissance
                 </label>
@@ -1988,14 +1988,14 @@ function MemberDetailDrawer({
                   max={todayIso}
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
               <div className="sm:col-span-4">
-                <span className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                <span className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]">
                   Âge (auto)
                 </span>
-                <div className="mt-1 flex min-h-[44px] items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 font-mono text-sm font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
+                <div className="mt-1 flex min-h-[44px] items-center rounded-[10px] border border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#161616] px-3 text-sm font-semibold text-slate-800 dark:text-[#E5E5E5] tabular-nums">
                   {computedAge !== null ? `${computedAge} ans` : '—'}
                 </div>
               </div>
@@ -2004,7 +2004,7 @@ function MemberDetailDrawer({
             <div>
               <label
                 htmlFor="member-fitness-level"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
               >
                 Niveau sportif
               </label>
@@ -2014,7 +2014,7 @@ function MemberDetailDrawer({
                 onChange={(e) =>
                   setFitnessLevel(e.target.value as FitnessLevel | '')
                 }
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               >
                 <option value="">Non renseigné</option>
                 {FITNESS_LEVEL_OPTIONS.map((opt) => (
@@ -2028,7 +2028,7 @@ function MemberDetailDrawer({
             <div>
               <label
                 htmlFor="member-goal"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
               >
                 Objectif sportif
               </label>
@@ -2039,14 +2039,14 @@ function MemberDetailDrawer({
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
                 placeholder="Ex. Remise en forme, préparation semi-marathon..."
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="member-notes"
-                className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]"
               >
                 Notes de séance, antécédents & progression
               </label>
@@ -2057,19 +2057,19 @@ function MemberDetailDrawer({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Genou gauche sensible, progresse vite sur les kettlebells..."
-                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="mt-1 w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] p-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             {saveError && (
-              <p className="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 p-3 text-xs text-rose-800 dark:text-rose-200">
+              <p className="rounded-[10px] border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 p-3 text-xs text-rose-800 dark:text-rose-200">
                 {saveError}
               </p>
             )}
 
             <div className="flex items-center justify-between gap-3">
               {savedNotice ? (
-                <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <span className="text-xs font-medium text-emerald-700 dark:text-[#4ADE80]">
                   Fiche de suivi enregistrée.
                 </span>
               ) : (
@@ -2078,7 +2078,7 @@ function MemberDetailDrawer({
               <button
                 type="submit"
                 disabled={saving}
-                className="min-h-[44px] rounded-lg bg-slate-900 dark:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white disabled:opacity-60 cursor-pointer"
+                className="min-h-[44px] rounded-[10px] bg-slate-900 dark:bg-[#4ADE80] px-4 py-2 text-xs font-semibold text-white dark:text-[#0A0A0A] hover:bg-slate-800 dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
               >
                 {saving ? 'Enregistrement...' : 'Enregistrer le suivi'}
               </button>
@@ -2129,11 +2129,11 @@ function MemberDetailDrawer({
               title="Badges & récompenses obtenus"
             />
 
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5">
+            <div className="rounded-[12px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] p-4 sm:p-5">
               <div
                 className={`flex items-start justify-between gap-3 ${
                   historyExpanded
-                    ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+                    ? 'border-b border-slate-100 pb-3.5 dark:border-[#262626]'
                     : ''
                 }`}
               >
@@ -2144,7 +2144,7 @@ function MemberDetailDrawer({
                   aria-controls="member-drawer-history-panel"
                   className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-700 dark:bg-[#161616] dark:text-[#A3A3A3]">
                     <History className="h-4 w-4" aria-hidden="true" />
                   </div>
                   {(() => {
@@ -2183,10 +2183,10 @@ function MemberDetailDrawer({
                     }
                     return (
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                        <h3 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                           Historique des séances ({historyCountedRegs.length})
                         </h3>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                           {parts.join(' · ')}
                         </p>
                       </div>
@@ -2204,7 +2204,7 @@ function MemberDetailDrawer({
                       ? 'Replier l’historique des séances'
                       : 'Déplier l’historique des séances'
                   }
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
                 >
                   <ChevronDown
                     className={`h-4 w-4 transition-transform duration-200 ${
@@ -2218,7 +2218,7 @@ function MemberDetailDrawer({
               {historyExpanded && (
                 <div id="member-drawer-history-panel" className="mt-4">
                   {member.registrations.length === 0 ? (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
                       Aucune séance réservée pour le moment.
                     </p>
                   ) : (
@@ -2243,40 +2243,40 @@ function MemberDetailDrawer({
                         return (
                           <div
                             key={reg.id}
-                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm"
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3.5 py-2.5 text-sm"
                           >
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="font-medium text-slate-900 dark:text-white truncate">
+                                <p className="font-medium text-slate-900 dark:text-[#E5E5E5] truncate">
                                   {reg.eventTitle}
                                 </p>
                                 {isUpcoming && (
-                                  <span className="inline-flex items-center rounded border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                                  <span className="inline-flex items-center rounded-[6px] border border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-[#4ADE80]">
                                     Participe
                                   </span>
                                 )}
                                 {isPastParticipated && (
-                                  <span className="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                                  <span className="inline-flex items-center rounded-[6px] border border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#1F1F1F] px-1.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-[#A3A3A3]">
                                     A participé
                                   </span>
                                 )}
                                 {isMemberCancelled && (
-                                  <span className="inline-flex items-center rounded border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 text-[11px] font-semibold text-rose-800 dark:text-rose-300">
+                                  <span className="inline-flex items-center rounded-[6px] border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 text-[11px] font-semibold text-rose-800 dark:text-rose-300">
                                     Annulé par l’adhérent
                                   </span>
                                 )}
                                 {isAdminCancelled && (
-                                  <span className="inline-flex items-center rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                                  <span className="inline-flex items-center rounded-[6px] border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/35 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
                                     Annulé par l’administrateur
                                   </span>
                                 )}
                               </div>
-                              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums capitalize">
+                              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums capitalize">
                                 <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
                                 {formatFrenchDateShort(startDate)} ·{' '}
                                 {formatFrenchTime(startDate)}
                                 {isUpcoming && (
-                                  <span className="text-emerald-700 dark:text-emerald-400 font-sans font-semibold normal-case">
+                                  <span className="text-emerald-700 dark:text-[#4ADE80] font-semibold normal-case">
                                     · À venir
                                   </span>
                                 )}
@@ -2292,10 +2292,10 @@ function MemberDetailDrawer({
                                     !reg.attended
                                   )
                                 }
-                                className={`inline-flex min-h-[38px] shrink-0 items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold cursor-pointer ${
+                                className={`inline-flex min-h-[38px] shrink-0 items-center gap-1 rounded-[8px] border px-3 py-1 text-xs font-semibold cursor-pointer ${
                                   reg.attended
-                                    ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
-                                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                    ? 'border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 text-emerald-800 dark:text-[#4ADE80]'
+                                    : 'border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] text-slate-600 dark:text-[#A3A3A3] hover:bg-slate-50 dark:hover:bg-[#262626]'
                                 }`}
                               >
                                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
@@ -2313,8 +2313,8 @@ function MemberDetailDrawer({
           </div>
 
           {/* Delete Member Section */}
-          <div className="border-t border-slate-200 dark:border-slate-800 pt-5">
-            <div className="rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/35 p-4">
+          <div className="border-t border-slate-200 dark:border-[#262626] pt-5">
+            <div className="rounded-[12px] border border-rose-200 dark:border-rose-800/60 bg-rose-50/50 dark:bg-rose-950/30 p-4">
               <h4 className="text-xs font-bold text-rose-900 dark:text-rose-200">
                 Suppression de l’adhérent
               </h4>
@@ -2328,14 +2328,14 @@ function MemberDetailDrawer({
                     type="button"
                     disabled={deleting}
                     onClick={onDelete}
-                    className="min-h-[40px] rounded-lg bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                    className="min-h-[40px] rounded-[10px] bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                   >
                     {deleting ? 'Suppression...' : 'Confirmer la suppression'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
-                    className="min-h-[40px] rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+                    className="min-h-[40px] rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 py-2 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
                   >
                     Annuler
                   </button>
@@ -2344,7 +2344,7 @@ function MemberDetailDrawer({
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(true)}
-                  className="mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-rose-300 dark:border-rose-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/60 cursor-pointer"
+                  className="mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] border border-rose-300 dark:border-rose-800/60 bg-white dark:bg-[#1F1F1F] px-3.5 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Supprimer cet adhérent

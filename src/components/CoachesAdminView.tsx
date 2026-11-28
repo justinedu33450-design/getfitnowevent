@@ -597,12 +597,12 @@ export function CoachesAdminView({
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-slate-200 dark:border-[#262626] pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+          <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-2xl">
             Équipe coachs & fiche personnelle
           </h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-[#8E8E8E]">
             {isCoachAdmin
               ? `Connecté en tant que coach administrateur (${currentAdminUser.email}) · Personnalisez votre fiche coach et gérez les accès de l’équipe.`
               : `Connecté en tant que coach (${currentAdminUser.email}) · Personnalisez votre fiche coach et consultez l’équipe.`}
@@ -612,7 +612,7 @@ export function CoachesAdminView({
         <button
           type="button"
           onClick={onSignOut}
-          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white self-start sm:self-auto cursor-pointer"
+          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-[#A3A3A3] hover:bg-slate-50 dark:hover:bg-[#1F1F1F] hover:text-slate-900 dark:hover:text-[#E5E5E5] self-start sm:self-auto cursor-pointer"
         >
           <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
           Déconnexion
@@ -622,42 +622,42 @@ export function CoachesAdminView({
       {/* KPI Strip */}
       {isCoachAdmin ? (
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Coachs actifs</p>
-            <p className="mt-1 font-mono text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+          <div className="rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-4">
+            <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">Coachs actifs</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
               {activeCoachesCount}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Administrateurs</p>
-            <p className="mt-1 font-mono text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
+          <div className="rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-4">
+            <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">Administrateurs</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
               {adminCoachesCount}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Demandes en attente</p>
-            <p className="mt-1 font-mono text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+          <div className="rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-4">
+            <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">Demandes en attente</p>
+            <p className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
               {pendingRequests.length + pendingAdminPromotions.length}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Invitations en attente</p>
-            <p className="mt-1 font-mono text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
+          <div className="rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-4">
+            <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">Invitations en attente</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
               {activeInvites.filter((i) => i.status === 'pending').length}
             </p>
           </div>
         </div>
       ) : (
         <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4">
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Coachs actifs</p>
-            <p className="mt-1 font-mono text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+          <div className="rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-4">
+            <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">Coachs actifs</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
               {activeCoachesCount}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Mon statut</p>
-            <p className="mt-1 font-display text-lg font-bold text-slate-900 dark:text-white">
+          <div className="rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-4">
+            <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">Mon statut</p>
+            <p className="mt-1 font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]">
               {myAdminRecord?.adminRequestStatus === 'pending'
                 ? 'Coach (admin demandé)'
                 : 'Coach'}
@@ -667,30 +667,30 @@ export function CoachesAdminView({
       )}
 
       {/* Section: Coach's own event registrations (without mixing with Adhérent directory) */}
-      <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+      <div className="mt-6 rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => setCoachBookingsExpanded((prev) => !prev)}
             className="flex flex-1 items-center gap-3 text-left cursor-pointer"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-emerald-50 dark:bg-[#4ADE80]/10 text-emerald-700 dark:text-[#4ADE80]">
               <CalendarDays className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Mes inscriptions aux événements
                 </h3>
-                <span className="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+                <span className="inline-flex items-center rounded-[6px] border border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#1F1F1F] px-2 py-0.5 text-xs font-semibold text-slate-700 dark:text-[#E5E5E5] tabular-nums">
                   {upcomingCoachRegistrations.length} à venir
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Consultez ou annulez les séances auxquelles vous êtes inscrit en tant que participant, sans créer de fiche adhérent.
               </p>
             </div>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 dark:border-[#262626] text-slate-500 dark:text-[#8E8E8E]">
               {coachBookingsExpanded ? (
                 <ChevronUp className="h-4 w-4" aria-hidden="true" />
               ) : (
@@ -703,7 +703,7 @@ export function CoachesAdminView({
             <button
               type="button"
               onClick={onExploreCalendar}
-              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
+              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:text-[#4ADE80] hover:bg-emerald-100 dark:hover:bg-[#4ADE80]/20 cursor-pointer"
             >
               <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
               Voir le calendrier
@@ -712,12 +712,12 @@ export function CoachesAdminView({
         </div>
 
         {coachBookingsExpanded && (
-          <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-4">
+          <div className="mt-4 border-t border-slate-100 dark:border-[#262626] pt-4 space-y-4">
             {bookingFeedback && (
               <div
-                className={`rounded-lg border p-3 text-xs ${
+                className={`rounded-[10px] border p-3 text-xs ${
                   bookingFeedback.type === 'success'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
                     : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
                 }`}
               >
@@ -726,11 +726,11 @@ export function CoachesAdminView({
             )}
 
             {ownCoachRegistrations.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center">
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              <div className="rounded-[12px] border border-dashed border-slate-200 dark:border-[#262626] p-6 text-center">
+                <p className="text-sm font-medium text-slate-700 dark:text-[#E5E5E5]">
                   Vous n’êtes inscrit à aucun événement pour le moment.
                 </p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Vous pouvez vous inscrire librement à n’importe quelle séance depuis le calendrier ou la liste des séances.
                 </p>
               </div>
@@ -738,7 +738,7 @@ export function CoachesAdminView({
               <>
                 {upcomingCoachRegistrations.length > 0 && (
                   <div className="space-y-2.5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                       Séances à venir ({upcomingCoachRegistrations.length})
                     </p>
                     {upcomingCoachRegistrations.map((reg) => {
@@ -755,27 +755,27 @@ export function CoachesAdminView({
                       return (
                         <div
                           key={reg.id}
-                          className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3.5"
+                          className="rounded-[12px] border border-slate-200 dark:border-[#262626] bg-slate-50/70 dark:bg-[#1F1F1F] p-3.5"
                         >
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                                <p className="font-semibold text-sm text-slate-900 dark:text-[#E5E5E5] truncate">
                                   {reg.eventTitle}
                                 </p>
                                 {reg.isGuest && (
-                                  <span className="inline-flex items-center rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                                  <span className="inline-flex items-center rounded-[6px] border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
                                     Invité : {reg.firstName} {reg.lastName}
                                   </span>
                                 )}
                                 {payInfo.status !== 'free' && (
-                                  <span className="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+                                  <span className="inline-flex items-center rounded-[6px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-1.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-[#E5E5E5] tabular-nums">
                                     {payInfo.shortLabel}
                                   </span>
                                 )}
                               </div>
-                              <p className="mt-1 flex items-center gap-1.5 font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums capitalize">
-                                <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" aria-hidden="true" />
+                              <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#A3A3A3] tabular-nums capitalize">
+                                <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
                                 {formatFrenchDateShort(startDate)} ·{' '}
                                 {formatTimeRange(
                                   startDate,
@@ -792,7 +792,7 @@ export function CoachesAdminView({
                                 <button
                                   type="button"
                                   onClick={() => onSelectEvent(matchedEvent)}
-                                  className="min-h-[36px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                                  className="min-h-[36px] rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
                                 >
                                   Détails
                                 </button>
@@ -801,7 +801,7 @@ export function CoachesAdminView({
                                 <button
                                   type="button"
                                   onClick={() => downloadEventIcs(matchedEvent)}
-                                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
                                 >
                                   <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
                                   .ics
@@ -830,7 +830,7 @@ export function CoachesAdminView({
                                       cardLast4: reg.cardLast4,
                                     })
                                   }
-                                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
                                 >
                                   <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
                                   Reçu
@@ -845,7 +845,7 @@ export function CoachesAdminView({
                                       onClick={() =>
                                         void handleCancelOwnRegistration(reg)
                                       }
-                                      className="min-h-[36px] rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                      className="min-h-[36px] rounded-[10px] bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                                     >
                                       {cancellingRegId === reg.id
                                         ? 'Annulation...'
@@ -855,7 +855,7 @@ export function CoachesAdminView({
                                       type="button"
                                       disabled={cancellingRegId === reg.id}
                                       onClick={() => setConfirmCancelRegId(null)}
-                                      className="min-h-[36px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+                                      className="min-h-[36px] rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-2.5 py-1.5 text-xs text-slate-600 dark:text-[#A3A3A3] cursor-pointer"
                                     >
                                       Non
                                     </button>
@@ -864,7 +864,7 @@ export function CoachesAdminView({
                                   <button
                                     type="button"
                                     onClick={() => setConfirmCancelRegId(reg.id)}
-                                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
+                                    className="inline-flex min-h-[36px] items-center gap-1 rounded-[10px] border border-rose-200 dark:border-rose-800 bg-white dark:bg-[#161616] px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
                                   >
                                     <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
                                     Annuler
@@ -887,7 +887,7 @@ export function CoachesAdminView({
 
                 {pastCoachRegistrations.length > 0 && (
                   <div className="space-y-2 pt-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                       Historique récent ({pastCoachRegistrations.length})
                     </p>
                     <div className="space-y-2">
@@ -897,13 +897,13 @@ export function CoachesAdminView({
                         return (
                           <div
                             key={reg.id}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs"
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3.5 py-2.5 text-xs"
                           >
                             <div className="min-w-0">
-                              <span className="font-semibold text-slate-900 dark:text-white">
+                              <span className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                                 {reg.eventTitle}
                               </span>
-                              <span className="ml-2 font-mono text-slate-500 dark:text-slate-400 capitalize tabular-nums">
+                              <span className="ml-2 text-slate-500 dark:text-[#8E8E8E] capitalize tabular-nums">
                                 {formatFrenchDateShort(startDate)}
                               </span>
                               {reg.isGuest && (
@@ -916,8 +916,8 @@ export function CoachesAdminView({
                               <span
                                 className={`font-semibold ${
                                   reg.attended
-                                    ? 'text-emerald-700 dark:text-emerald-400'
-                                    : 'text-slate-500 dark:text-slate-400'
+                                    ? 'text-emerald-700 dark:text-[#4ADE80]'
+                                    : 'text-slate-500 dark:text-[#8E8E8E]'
                                 }`}
                               >
                                 {reg.attended ? 'Présent' : 'Terminée'}
@@ -926,7 +926,7 @@ export function CoachesAdminView({
                                 <button
                                   type="button"
                                   onClick={() => onSelectEvent(matchedEvent)}
-                                  className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                                  className="text-xs font-semibold text-emerald-700 dark:text-[#4ADE80] hover:underline cursor-pointer"
                                 >
                                   Voir
                                 </button>
@@ -945,11 +945,11 @@ export function CoachesAdminView({
       </div>
 
       {/* Section 0: My Coach Info Sheet */}
-      <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+      <div className="mt-6 rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-5">
         <div
           className={`flex items-start justify-between gap-3 ${
             coachProfileExpanded
-              ? 'border-b border-slate-100 dark:border-slate-800 pb-4'
+              ? 'border-b border-slate-100 dark:border-[#262626] pb-4'
               : ''
           }`}
         >
@@ -960,23 +960,23 @@ export function CoachesAdminView({
             aria-controls="coach-profile-sheet-form"
             className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-900 dark:bg-[#4ADE80]/15 text-white dark:text-[#4ADE80]">
               <UserCog className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Ma fiche de renseignement coach
                 </h3>
                 {getCoachPricingItems(myAdminRecord?.pricing).length > 0 && (
-                  <span className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  <span className="text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                     · {getCoachPricingItems(myAdminRecord?.pricing).length} tarif
                     {getCoachPricingItems(myAdminRecord?.pricing).length > 1 ? 's' : ''}{' '}
                     configuré{getCoachPricingItems(myAdminRecord?.pricing).length > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Personnalisez votre nom affiché, vos spécialités, coordonnées, présentation et vos propres tarifs.
               </p>
             </div>
@@ -992,7 +992,7 @@ export function CoachesAdminView({
                 ? 'Replier ma fiche de renseignement coach'
                 : 'Déplier ma fiche de renseignement coach'
             }
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
@@ -1020,7 +1020,7 @@ export function CoachesAdminView({
             <div>
               <label
                 htmlFor="coach-profile-name"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Nom affiché (sur les séances) *
               </label>
@@ -1033,14 +1033,14 @@ export function CoachesAdminView({
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
                 placeholder="Ex. David Frosio"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="coach-profile-specialty"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Spécialités sportives
               </label>
@@ -1051,14 +1051,14 @@ export function CoachesAdminView({
                 value={profileSpecialty}
                 onChange={(e) => setProfileSpecialty(e.target.value)}
                 placeholder="Ex. HIIT, Préparation physique, Running"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="coach-profile-phone"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Téléphone professionnel
               </label>
@@ -1069,14 +1069,14 @@ export function CoachesAdminView({
                 value={profilePhone}
                 onChange={(e) => setProfilePhone(e.target.value)}
                 placeholder="06 12 34 56 78"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="coach-profile-city"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Ville d’intervention
               </label>
@@ -1087,14 +1087,14 @@ export function CoachesAdminView({
                 value={profileCity}
                 onChange={(e) => setProfileCity(e.target.value)}
                 placeholder="Ex. Paris"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="coach-profile-region"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Région
               </label>
@@ -1105,14 +1105,14 @@ export function CoachesAdminView({
                 value={profileRegion}
                 onChange={(e) => setProfileRegion(e.target.value)}
                 placeholder="Ex. Île-de-France"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="coach-profile-certifications"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Diplômes & certifications
               </label>
@@ -1123,7 +1123,7 @@ export function CoachesAdminView({
                 value={profileCertifications}
                 onChange={(e) => setProfileCertifications(e.target.value)}
                 placeholder="Ex. BPJEPS AF, CrossFit Level 1"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
           </div>
@@ -1131,7 +1131,7 @@ export function CoachesAdminView({
           <div>
             <label
               htmlFor="coach-profile-bio"
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
             >
               Présentation & approche pédagogique
             </label>
@@ -1142,23 +1142,23 @@ export function CoachesAdminView({
               value={profileBio}
               onChange={(e) => setProfileBio(e.target.value)}
               placeholder="Décrivez votre parcours, votre méthode d’accompagnement et vos objectifs pour vos groupes..."
-              className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              className="mt-1 w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] p-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
             />
           </div>
 
           {/* Personal Coach Pricing Grid */}
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20 space-y-3.5">
-            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-emerald-200/70 pb-2.5 dark:border-emerald-900/60">
+          <div className="rounded-[12px] border border-emerald-200/80 bg-emerald-50/40 p-4 dark:border-[#4ADE80]/25 dark:bg-[#1F1F1F] space-y-3.5">
+            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-emerald-200/70 pb-2.5 dark:border-[#262626]">
               <div className="flex items-start gap-2">
                 <CreditCard
-                  className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
                   aria-hidden="true"
                 />
                 <div>
-                  <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                  <h4 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                     Mes tarifs proposés (€)
                   </h4>
-                  <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
+                  <p className="mt-0.5 text-[11px] text-slate-600 dark:text-[#A3A3A3]">
                     Définissez vos propres tarifs. Ils seront visibles par les adhérents et préremplis automatiquement lors de la création de vos séances et programmes (laissez vide pour conserver le tarif par défaut).
                   </p>
                 </div>
@@ -1169,7 +1169,7 @@ export function CoachesAdminView({
               <div>
                 <label
                   htmlFor="coach-price-group"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Séance collective / événement (€)
                 </label>
@@ -1181,9 +1181,9 @@ export function CoachesAdminView({
                     value={profileGroupSessionPrice}
                     onChange={(e) => setProfileGroupSessionPrice(e.target.value)}
                     placeholder="Ex. 15"
-                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    className="min-h-[42px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] pl-3 pr-8 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#8E8E8E]">
                     €
                   </span>
                 </div>
@@ -1192,7 +1192,7 @@ export function CoachesAdminView({
               <div>
                 <label
                   htmlFor="coach-price-custom"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Séance sur mesure / perso (€)
                 </label>
@@ -1204,9 +1204,9 @@ export function CoachesAdminView({
                     value={profileCustomSessionPrice}
                     onChange={(e) => setProfileCustomSessionPrice(e.target.value)}
                     placeholder="Ex. 45"
-                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    className="min-h-[42px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] pl-3 pr-8 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#8E8E8E]">
                     €
                   </span>
                 </div>
@@ -1215,7 +1215,7 @@ export function CoachesAdminView({
               <div>
                 <label
                   htmlFor="coach-price-5km"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Programme 5 km (€)
                 </label>
@@ -1227,9 +1227,9 @@ export function CoachesAdminView({
                     value={profileProgram5kmPrice}
                     onChange={(e) => setProfileProgram5kmPrice(e.target.value)}
                     placeholder="Défaut : 39 €"
-                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    className="min-h-[42px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] pl-3 pr-8 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#8E8E8E]">
                     €
                   </span>
                 </div>
@@ -1238,7 +1238,7 @@ export function CoachesAdminView({
               <div>
                 <label
                   htmlFor="coach-price-10km"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Programme 10 km (€)
                 </label>
@@ -1250,9 +1250,9 @@ export function CoachesAdminView({
                     value={profileProgram10kmPrice}
                     onChange={(e) => setProfileProgram10kmPrice(e.target.value)}
                     placeholder="Défaut : 49 €"
-                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    className="min-h-[42px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] pl-3 pr-8 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#8E8E8E]">
                     €
                   </span>
                 </div>
@@ -1261,7 +1261,7 @@ export function CoachesAdminView({
               <div>
                 <label
                   htmlFor="coach-price-21km"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Semi-marathon 21 km (€)
                 </label>
@@ -1273,9 +1273,9 @@ export function CoachesAdminView({
                     value={profileProgram21kmPrice}
                     onChange={(e) => setProfileProgram21kmPrice(e.target.value)}
                     placeholder="Défaut : 69 €"
-                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    className="min-h-[42px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] pl-3 pr-8 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#8E8E8E]">
                     €
                   </span>
                 </div>
@@ -1284,7 +1284,7 @@ export function CoachesAdminView({
               <div>
                 <label
                   htmlFor="coach-price-42km"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Marathon 42 km (€)
                 </label>
@@ -1296,9 +1296,9 @@ export function CoachesAdminView({
                     value={profileProgram42kmPrice}
                     onChange={(e) => setProfileProgram42kmPrice(e.target.value)}
                     placeholder="Défaut : 89 €"
-                    className="min-h-[42px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-8 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                    className="min-h-[42px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] pl-3 pr-8 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] tabular-nums focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-slate-400">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#8E8E8E]">
                     €
                   </span>
                 </div>
@@ -1308,7 +1308,7 @@ export function CoachesAdminView({
             <div>
               <label
                 htmlFor="coach-pricing-notes"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Précisions & formules tarifaires (optionnel)
               </label>
@@ -1319,17 +1319,17 @@ export function CoachesAdminView({
                 value={profilePricingNotes}
                 onChange={(e) => setProfilePricingNotes(e.target.value)}
                 placeholder="Ex. Bilan VMA inclus, pack 10 séances dégressif, tarif réduit étudiants..."
-                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#161616] p-2.5 text-xs text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
           </div>
 
           {profileFeedback && (
             <div
-              className={`rounded-lg border p-3 text-xs ${
+              className={`rounded-[10px] border p-3 text-xs ${
                 profileFeedback.type === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-                  : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+                  : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
               }`}
             >
               {profileFeedback.text}
@@ -1340,7 +1340,7 @@ export function CoachesAdminView({
             <button
               type="submit"
               disabled={savingProfile}
-              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
             >
               <Save className="h-4 w-4" aria-hidden="true" />
               {savingProfile ? 'Enregistrement...' : 'Enregistrer ma fiche coach'}
@@ -1357,17 +1357,17 @@ export function CoachesAdminView({
 
       {/* Section 0c: Standard Coach Admin Status & Promotion Request */}
       {!isCoachAdmin && myAdminRecord && (
-        <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+        <div className="mt-6 rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 dark:bg-[#1F1F1F] text-slate-700 dark:text-[#A3A3A3]">
                 <Shield className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Droits d’administration
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Vous disposez actuellement du rôle <strong>Coach</strong>. Seul un coach administrateur peut accepter ou refuser de vous nommer administrateur.
                 </p>
                 {myAdminRecord.adminRequestStatus === 'pending' && (
@@ -1390,7 +1390,7 @@ export function CoachesAdminView({
                 type="button"
                 disabled={requestingAdmin}
                 onClick={() => void handleRequestAdminPromotion()}
-                className="inline-flex min-h-[42px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white disabled:opacity-60 cursor-pointer"
+                className="inline-flex min-h-[42px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-slate-900 dark:bg-[#4ADE80] px-4 py-2 text-xs font-semibold text-white dark:text-[#0A0A0A] hover:bg-slate-800 dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" aria-hidden="true" />
                 {requestingAdmin
@@ -1404,10 +1404,10 @@ export function CoachesAdminView({
 
       {feedback && (
         <div
-          className={`mt-5 rounded-xl border p-3.5 text-sm ${
+          className={`mt-5 rounded-[12px] border p-3.5 text-sm ${
             feedback.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-              : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+              : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
           }`}
         >
           {feedback.text}
@@ -1416,11 +1416,11 @@ export function CoachesAdminView({
 
       {/* Section 1: Add a new Coach (Coach Admin only — added as standard Coach, NOT admin) */}
       {isCoachAdmin && (
-        <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+        <div className="mt-6 rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-5">
           <div
             className={`flex items-start justify-between gap-3 ${
               addCoachExpanded
-                ? 'border-b border-slate-100 dark:border-slate-800 pb-4'
+                ? 'border-b border-slate-100 dark:border-[#262626] pb-4'
                 : ''
             }`}
           >
@@ -1431,14 +1431,14 @@ export function CoachesAdminView({
               aria-controls="add-coach-form"
               className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-emerald-50 dark:bg-[#4ADE80]/10 text-emerald-700 dark:text-[#4ADE80]">
                 <UserPlus className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Ajouter un coach
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Ajoutez un nouveau coach par son nom et son adresse email. Il reçoit automatiquement le rôle <strong>Coach</strong> (sans droits administrateur). Seul un coach administrateur pourra ensuite accepter ou refuser de le nommer administrateur.
                 </p>
               </div>
@@ -1454,7 +1454,7 @@ export function CoachesAdminView({
                   ? 'Replier le formulaire d’ajout de coach'
                   : 'Déplier le formulaire d’ajout de coach'
               }
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
             >
               <ChevronDown
                 className={`h-4 w-4 transition-transform duration-200 ${
@@ -1474,7 +1474,7 @@ export function CoachesAdminView({
             <div className="sm:col-span-4">
               <label
                 htmlFor="nominate-name"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Nom complet *
               </label>
@@ -1487,14 +1487,14 @@ export function CoachesAdminView({
                 value={nominationName}
                 onChange={(e) => setNominationName(e.target.value)}
                 placeholder="Ex. Julien Moreau"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             <div className="sm:col-span-5">
               <label
                 htmlFor="nominate-email"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Adresse email *
               </label>
@@ -1506,7 +1506,7 @@ export function CoachesAdminView({
                 value={nominationEmail}
                 onChange={(e) => setNominationEmail(e.target.value)}
                 placeholder="coach.partenaire@exemple.fr"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 text-sm text-slate-900 dark:text-[#E5E5E5] placeholder:text-slate-400 dark:placeholder:text-[#525252] focus:border-emerald-600 dark:focus:border-[#4ADE80] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
@@ -1514,7 +1514,7 @@ export function CoachesAdminView({
               <button
                 type="submit"
                 disabled={nominating}
-                className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white disabled:opacity-60 cursor-pointer"
+                className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-[10px] bg-slate-900 dark:bg-[#4ADE80] px-4 py-2 text-xs font-semibold text-white dark:text-[#0A0A0A] hover:bg-slate-800 dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
               >
                 <UserCheck className="h-4 w-4" aria-hidden="true" />
                 {nominating ? 'Ajout en cours...' : 'Ajouter ce coach'}
@@ -1527,13 +1527,13 @@ export function CoachesAdminView({
 
       {/* Section 2: Incoming Access Requests & Admin Promotion Requests (Coach Admin only) */}
       {isCoachAdmin && (
-        <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-5">
+        <div className="mt-6 rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-5 space-y-5">
           {/* 2a. New coach access requests */}
           <div>
             <div
               className={`flex items-start justify-between gap-3 ${
                 accessRequestsExpanded
-                  ? 'border-b border-slate-100 dark:border-slate-800 pb-4'
+                  ? 'border-b border-slate-100 dark:border-[#262626] pb-4'
                   : ''
               }`}
             >
@@ -1545,15 +1545,15 @@ export function CoachesAdminView({
                 className="flex flex-1 flex-wrap items-center justify-between gap-2 text-left min-w-0 cursor-pointer"
               >
                 <div className="min-w-0">
-                  <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                  <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                     Demandes d’accès de nouveaux coachs
                   </h3>
-                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                     Seul un coach administrateur peut accepter ou refuser un nouveau coach. L’acceptation attribue le rôle Coach (non administrateur).
                   </p>
                 </div>
                 {pendingRequests.length > 0 && (
-                  <span className="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums shrink-0">
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums shrink-0">
                     {pendingRequests.length} en attente
                   </span>
                 )}
@@ -1569,7 +1569,7 @@ export function CoachesAdminView({
                     ? 'Replier les demandes d’accès de nouveaux coachs'
                     : 'Déplier les demandes d’accès de nouveaux coachs'
                 }
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 <ChevronDown
                   className={`h-4 w-4 transition-transform duration-200 ${
@@ -1583,7 +1583,7 @@ export function CoachesAdminView({
             {accessRequestsExpanded && (
             <div id="coach-access-requests-panel">
             {pendingRequests.length === 0 ? (
-              <div className="py-5 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="py-5 text-center text-sm text-slate-500 dark:text-[#8E8E8E]">
                 Aucune demande d’accès coach en attente pour le moment.
               </div>
             ) : (
@@ -1591,11 +1591,11 @@ export function CoachesAdminView({
                 {pendingRequests.map((req) => (
                   <div
                     key={req.id}
-                    className="flex flex-col gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/35 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-[12px] border border-amber-200 dark:border-amber-800/50 bg-amber-50/40 dark:bg-amber-950/25 p-4 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-slate-900 dark:text-white">
+                        <span className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                           {req.displayName}
                         </span>
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300">
@@ -1603,17 +1603,17 @@ export function CoachesAdminView({
                           En attente
                         </span>
                       </div>
-                      <p className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 break-all">
-                        <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                      <p className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-[#A3A3A3] break-all">
+                        <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                         {req.email}
                       </p>
                       {req.message && (
-                        <p className="text-xs text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-slate-900/80 rounded border border-amber-100 dark:border-amber-900/60 p-2">
+                        <p className="text-xs text-slate-700 dark:text-[#E5E5E5] bg-white/80 dark:bg-[#1F1F1F] rounded-[8px] border border-amber-100 dark:border-[#262626] p-2">
                           « {req.message} »
                         </p>
                       )}
                       {req.createdAt && (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                           Reçue le {formatFrenchDateShort(req.createdAt.toDate())}
                         </p>
                       )}
@@ -1624,7 +1624,7 @@ export function CoachesAdminView({
                         type="button"
                         disabled={busyId === req.id}
                         onClick={() => void handleApproveRequest(req)}
-                        className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                        className="inline-flex min-h-[42px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
                       >
                         <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                         Accepter comme coach
@@ -1633,7 +1633,7 @@ export function CoachesAdminView({
                         type="button"
                         disabled={busyId === req.id}
                         onClick={() => void handleRejectRequest(req)}
-                        className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-700 dark:hover:text-rose-300 hover:border-rose-200 dark:hover:border-rose-800 disabled:opacity-60 cursor-pointer"
+                        className="inline-flex min-h-[42px] items-center gap-1.5 rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 hover:border-rose-200 dark:hover:border-rose-800/60 disabled:opacity-60 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" aria-hidden="true" />
                         Refuser
@@ -1645,23 +1645,23 @@ export function CoachesAdminView({
             )}
 
             {processedRequests.length > 0 && (
-              <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2.5">
+              <div className="mt-4 border-t border-slate-100 dark:border-[#262626] pt-4">
+                <p className="text-xs font-semibold text-slate-500 dark:text-[#8E8E8E] mb-2.5">
                   Historique des demandes d’accès traitées
                 </p>
                 <div className="space-y-2">
                   {processedRequests.map((req) => (
                     <div
                       key={req.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-slate-50/70 dark:bg-[#1F1F1F] px-3.5 py-2.5 text-xs"
                     >
                       <div className="min-w-0">
-                        <span className="font-semibold text-slate-900 dark:text-white">
+                        <span className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                           {req.displayName}
                         </span>{' '}
-                        <span className="text-slate-500 dark:text-slate-400">({req.email})</span>
+                        <span className="text-slate-500 dark:text-[#A3A3A3]">({req.email})</span>
                         {req.reviewedByEmail && (
-                          <span className="text-slate-400 dark:text-slate-500">
+                          <span className="text-slate-400 dark:text-[#8E8E8E]">
                             {' '}
                             · par {req.reviewedByEmail}
                           </span>
@@ -1671,7 +1671,7 @@ export function CoachesAdminView({
                         <span
                           className={`font-semibold ${
                             req.status === 'approved'
-                              ? 'text-emerald-700 dark:text-emerald-400'
+                              ? 'text-emerald-700 dark:text-[#4ADE80]'
                               : 'text-rose-700 dark:text-rose-400'
                           }`}
                         >
@@ -1682,7 +1682,7 @@ export function CoachesAdminView({
                           onClick={() => void deleteCoachAccessRequest(req.id)}
                           aria-label={`Effacer la demande de ${req.displayName}`}
                           title="Effacer de l’historique"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] text-slate-400 dark:text-[#8E8E8E] hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
@@ -1697,7 +1697,7 @@ export function CoachesAdminView({
           </div>
 
           {/* 2b. Pending admin promotion requests */}
-          <div className="border-t border-slate-100 dark:border-slate-800 pt-5">
+          <div className="border-t border-slate-100 dark:border-[#262626] pt-5">
             <div
               className={`flex items-start justify-between gap-3 ${
                 adminPromotionsExpanded ? 'pb-3' : ''
@@ -1711,15 +1711,15 @@ export function CoachesAdminView({
                 className="flex flex-1 flex-wrap items-center justify-between gap-2 text-left min-w-0 cursor-pointer"
               >
                 <div className="min-w-0">
-                  <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                  <h4 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                     Demandes de nomination administrateur
                   </h4>
-                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                     Acceptez ou refusez de nommer un coach existant comme coach administrateur.
                   </p>
                 </div>
                 {pendingAdminPromotions.length > 0 && (
-                  <span className="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums shrink-0">
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums shrink-0">
                     {pendingAdminPromotions.length} en attente
                   </span>
                 )}
@@ -1735,7 +1735,7 @@ export function CoachesAdminView({
                     ? 'Replier les demandes de nomination administrateur'
                     : 'Déplier les demandes de nomination administrateur'
                 }
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 <ChevronDown
                   className={`h-4 w-4 transition-transform duration-200 ${
@@ -1749,7 +1749,7 @@ export function CoachesAdminView({
             {adminPromotionsExpanded && (
             <div id="coach-admin-promotions-panel">
             {pendingAdminPromotions.length === 0 ? (
-              <p className="py-3 text-center text-xs text-slate-500 dark:text-slate-400">
+              <p className="py-3 text-center text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Aucune demande de rôle administrateur en attente.
               </p>
             ) : (
@@ -1757,7 +1757,7 @@ export function CoachesAdminView({
                 {pendingAdminPromotions.map((coach) => (
                   <div
                     key={coach.id}
-                    className="flex flex-col gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/35 p-3.5 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-[12px] border border-amber-200 dark:border-amber-800/50 bg-amber-50/40 dark:bg-amber-950/25 p-3.5 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <ProfileAvatar
@@ -1766,10 +1766,10 @@ export function CoachesAdminView({
                         size="sm"
                       />
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                        <p className="font-semibold text-sm text-slate-900 dark:text-[#E5E5E5] truncate">
                           {coach.displayName}
                         </p>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 break-all">
+                        <p className="text-xs text-slate-600 dark:text-[#A3A3A3] break-all">
                           {coach.email}
                         </p>
                       </div>
@@ -1782,7 +1782,7 @@ export function CoachesAdminView({
                         onClick={() =>
                           void handleSetCoachRole(coach, 'coach_admin', 'none')
                         }
-                        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
                       >
                         <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                         Accepter administrateur
@@ -1793,7 +1793,7 @@ export function CoachesAdminView({
                         onClick={() =>
                           void handleSetCoachRole(coach, 'coach', 'rejected')
                         }
-                        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-700 dark:hover:text-rose-300 hover:border-rose-200 dark:hover:border-rose-800 disabled:opacity-60 cursor-pointer"
+                        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] border border-slate-300 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 hover:border-rose-200 dark:hover:border-rose-800/60 disabled:opacity-60 cursor-pointer"
                       >
                         <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
                         Refuser
@@ -1810,12 +1810,12 @@ export function CoachesAdminView({
       )}
 
       {/* Section 3: Registered Coaches */}
-      <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-        <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-          <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+      <div className="mt-6 rounded-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] p-5">
+        <div className="border-b border-slate-100 dark:border-[#262626] pb-4">
+          <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
             Coachs de l’application
           </h3>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
             {isCoachAdmin
               ? 'Consultez les fiches de renseignement, nommez ou retirez le rôle administrateur, activez/désactivez ou supprimez l’accès d’un coach.'
               : 'Consultez l’annuaire et les fiches de renseignement des coachs de l’équipe.'}
@@ -1834,7 +1834,7 @@ export function CoachesAdminView({
             return (
               <div
                 key={admin.id}
-                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3"
+                className="rounded-[12px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] p-4 space-y-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-3 min-w-0">
@@ -1845,32 +1845,32 @@ export function CoachesAdminView({
                     />
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="font-semibold text-slate-900 dark:text-white">
+                        <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                           {admin.displayName}
                         </p>
                         {isProtected ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80]">
                             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                             Admin principal
                           </span>
                         ) : isAdminRole ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80]">
                             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                             Administrateur
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
                             <Shield className="h-3 w-3" aria-hidden="true" />
                             Coach
                           </span>
                         )}
                         {isSelf && (
-                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                             (Vous)
                           </span>
                         )}
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300 break-all">
+                      <p className="mt-0.5 text-xs text-slate-600 dark:text-[#A3A3A3] break-all">
                         {admin.email}
                       </p>
                       {isCoachAdmin && hasPendingPromo && (
@@ -1879,17 +1879,17 @@ export function CoachesAdminView({
                         </p>
                       )}
                       {admin.specialty && (
-                        <p className="mt-1 text-xs font-medium text-slate-700 dark:text-slate-200">
+                        <p className="mt-1 text-xs font-medium text-slate-700 dark:text-[#E5E5E5]">
                           {admin.specialty}
                         </p>
                       )}
                       {(admin.city || admin.phone) && (
-                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                           {[admin.city, admin.phone].filter(Boolean).join(' · ')}
                         </p>
                       )}
                       {getCoachPricingItems(admin.pricing).length > 0 && (
-                        <p className="mt-1 font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                        <p className="mt-1 text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                           {getCoachPricingItems(admin.pricing)
                             .slice(0, 3)
                             .map((p) => `${p.shortLabel} ${p.formattedPrice}`)
@@ -1900,18 +1900,18 @@ export function CoachesAdminView({
                   </div>
                   <span
                     className={`shrink-0 text-xs font-semibold ${
-                      admin.active ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+                      admin.active ? 'text-emerald-700 dark:text-[#4ADE80]' : 'text-rose-700 dark:text-rose-400'
                     }`}
                   >
                     {admin.active ? 'Actif' : 'Désactivé'}
                   </span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 dark:border-[#262626] pt-3">
                   <button
                     type="button"
                     onClick={() => setInspectedCoach(admin)}
-                    className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                    className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#161616] px-3 py-2 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-100 dark:hover:bg-[#262626] cursor-pointer"
                   >
                     <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                     Fiche
@@ -1928,7 +1928,7 @@ export function CoachesAdminView({
                               onClick={() =>
                                 void handleSetCoachRole(admin, 'coach_admin', 'none')
                               }
-                              className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                              className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                             >
                               <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                               Accepter admin
@@ -1939,7 +1939,7 @@ export function CoachesAdminView({
                               onClick={() =>
                                 void handleSetCoachRole(admin, 'coach', 'rejected')
                               }
-                              className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-3 py-2 text-xs font-semibold text-rose-800 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-950 cursor-pointer"
+                              className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-xs font-semibold text-rose-800 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-950/60 cursor-pointer"
                             >
                               <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
                               Refuser admin
@@ -1952,7 +1952,7 @@ export function CoachesAdminView({
                             onClick={() =>
                               void handleSetCoachRole(admin, 'coach_admin', 'none')
                             }
-                            className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950 cursor-pointer"
+                            className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] border border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 px-3 py-2 text-xs font-semibold text-emerald-800 dark:text-[#4ADE80] hover:bg-emerald-100 dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                           >
                             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                             Nommer admin
@@ -1965,7 +1965,7 @@ export function CoachesAdminView({
                           onClick={() =>
                             void handleSetCoachRole(admin, 'coach', 'none')
                           }
-                          className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+                          className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 py-2 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
                         >
                           <ShieldOff className="h-3.5 w-3.5" aria-hidden="true" />
                           Retirer admin
@@ -1976,10 +1976,10 @@ export function CoachesAdminView({
                         type="button"
                         disabled={busyId === admin.id}
                         onClick={() => void handleToggleAdminActive(admin)}
-                        className={`inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold cursor-pointer ${
+                        className={`inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[10px] border px-3 py-2 text-xs font-semibold cursor-pointer ${
                           admin.active
-                            ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950'
-                            : 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950'
+                            ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/35 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50'
+                            : 'border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 text-emerald-800 dark:text-[#4ADE80] hover:bg-emerald-100 dark:hover:bg-[#4ADE80]/20'
                         }`}
                       >
                         <Power className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1992,14 +1992,14 @@ export function CoachesAdminView({
                             type="button"
                             disabled={busyId === admin.id}
                             onClick={() => void handleDeleteAdmin(admin)}
-                            className="min-h-[42px] rounded-lg bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                            className="min-h-[42px] rounded-[10px] bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
                           >
                             Confirmer
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteAdminId(null)}
-                            className="min-h-[42px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+                            className="min-h-[42px] rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 text-xs text-slate-600 dark:text-[#A3A3A3] cursor-pointer"
                           >
                             Annuler
                           </button>
@@ -2008,7 +2008,7 @@ export function CoachesAdminView({
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteAdminId(admin.id)}
-                          className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
+                          className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 py-2 text-xs font-medium text-slate-600 dark:text-[#A3A3A3] hover:border-rose-200 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                           Supprimer
@@ -2023,9 +2023,9 @@ export function CoachesAdminView({
         </div>
 
         {/* Desktop Table (>= md) */}
-        <div className="mt-4 hidden overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 md:block">
+        <div className="mt-4 hidden overflow-x-auto rounded-[12px] border border-slate-200 dark:border-[#262626] md:block">
           <table className="w-full border-collapse text-left text-sm">
-            <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300">
+            <thead className="border-b border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#1F1F1F] text-xs font-semibold text-slate-600 dark:text-[#A3A3A3]">
               <tr>
                 <th className="px-4 py-3">Coach & Spécialité</th>
                 <th className="px-4 py-3">Coordonnées</th>
@@ -2033,7 +2033,7 @@ export function CoachesAdminView({
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-y divide-slate-200 dark:divide-[#262626]">
               {admins.map((admin) => {
                 const isSelf = admin.id === currentAdminUser.uid;
                 const isProtected = admin.isPrimary;
@@ -2042,7 +2042,7 @@ export function CoachesAdminView({
                   !isAdminRole && admin.adminRequestStatus === 'pending';
 
                 return (
-                  <tr key={admin.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                  <tr key={admin.id} className="hover:bg-slate-50/70 dark:hover:bg-[#1F1F1F]/60">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <ProfileAvatar
@@ -2052,22 +2052,22 @@ export function CoachesAdminView({
                         />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-slate-900 dark:text-white">
+                            <span className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                               {admin.displayName}
                             </span>
                             {isSelf && (
-                              <span className="text-xs text-slate-500 dark:text-slate-400">(Vous)</span>
+                              <span className="text-xs text-slate-500 dark:text-[#8E8E8E]">(Vous)</span>
                             )}
                           </div>
                           {(admin.specialty || admin.certifications) && (
-                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E] truncate max-w-xs">
                               {[admin.specialty, admin.certifications]
                                 .filter(Boolean)
                                 .join(' · ')}
                             </p>
                           )}
                           {getCoachPricingItems(admin.pricing).length > 0 && (
-                            <p className="mt-0.5 font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 truncate max-w-xs">
+                            <p className="mt-0.5 text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80] truncate max-w-xs tabular-nums">
                               {getCoachPricingItems(admin.pricing)
                                 .slice(0, 3)
                                 .map((p) => `${p.shortLabel} ${p.formattedPrice}`)
@@ -2077,10 +2077,10 @@ export function CoachesAdminView({
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-[#A3A3A3]">
                       <p>{admin.email}</p>
                       {(admin.city || admin.phone) && (
-                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                           {[admin.city, admin.region, admin.phone]
                             .filter(Boolean)
                             .join(' · ')}
@@ -2090,24 +2090,24 @@ export function CoachesAdminView({
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-0.5">
                         {isProtected ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-[#4ADE80]">
                             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                             Admin principal
                           </span>
                         ) : isAdminRole ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-[#4ADE80]">
                             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                             Administrateur
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 dark:text-slate-200">
-                            <Shield className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 dark:text-[#E5E5E5]">
+                            <Shield className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                             Coach
                           </span>
                         )}
                         <span
                           className={`text-[11px] font-semibold ${
-                            admin.active ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+                            admin.active ? 'text-emerald-700 dark:text-[#4ADE80]' : 'text-rose-700 dark:text-rose-400'
                           }`}
                         >
                           {admin.active ? 'Actif' : 'Désactivé'}
@@ -2122,7 +2122,7 @@ export function CoachesAdminView({
                         <button
                           type="button"
                           onClick={() => setInspectedCoach(admin)}
-                          className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                          className="inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
                         >
                           <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                           Fiche
@@ -2130,11 +2130,11 @@ export function CoachesAdminView({
 
                         {isCoachAdmin &&
                           (isProtected ? (
-                            <span className="text-xs text-slate-400 dark:text-slate-500">
+                            <span className="text-xs text-slate-400 dark:text-[#8E8E8E]">
                               Protégé
                             </span>
                           ) : isSelf ? (
-                            <span className="text-xs text-slate-400 dark:text-slate-500">
+                            <span className="text-xs text-slate-400 dark:text-[#8E8E8E]">
                               Session actuelle
                             </span>
                           ) : (
@@ -2152,7 +2152,7 @@ export function CoachesAdminView({
                                           'none'
                                         )
                                       }
-                                      className="inline-flex min-h-[34px] items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                                      className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                                     >
                                       <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                                       Accepter admin
@@ -2167,7 +2167,7 @@ export function CoachesAdminView({
                                           'rejected'
                                         )
                                       }
-                                      className="inline-flex min-h-[34px] items-center gap-1 rounded-md border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-950 cursor-pointer"
+                                      className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-950/60 cursor-pointer"
                                     >
                                       <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
                                       Refuser admin
@@ -2184,7 +2184,7 @@ export function CoachesAdminView({
                                         'none'
                                       )
                                     }
-                                    className="inline-flex min-h-[34px] items-center gap-1 rounded-md border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950 cursor-pointer"
+                                    className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] border border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:text-[#4ADE80] hover:bg-emerald-100 dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                                   >
                                     <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                                     Nommer admin
@@ -2201,7 +2201,7 @@ export function CoachesAdminView({
                                       'none'
                                     )
                                   }
-                                  className="inline-flex min-h-[34px] items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+                                  className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-[#E5E5E5] hover:bg-slate-50 dark:hover:bg-[#262626] cursor-pointer"
                                 >
                                   <ShieldOff className="h-3.5 w-3.5" aria-hidden="true" />
                                   Retirer admin
@@ -2212,10 +2212,10 @@ export function CoachesAdminView({
                                 type="button"
                                 disabled={busyId === admin.id}
                                 onClick={() => void handleToggleAdminActive(admin)}
-                                className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold cursor-pointer ${
+                                className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] border px-2.5 py-1 text-xs font-semibold cursor-pointer ${
                                   admin.active
-                                    ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950'
-                                    : 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950'
+                                    ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/35 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50'
+                                    : 'border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 text-emerald-800 dark:text-[#4ADE80] hover:bg-emerald-100 dark:hover:bg-[#4ADE80]/20'
                                 }`}
                               >
                                 <Power className="h-3.5 w-3.5" aria-hidden="true" />
@@ -2228,14 +2228,14 @@ export function CoachesAdminView({
                                     type="button"
                                     disabled={busyId === admin.id}
                                     onClick={() => void handleDeleteAdmin(admin)}
-                                    className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                                    className="min-h-[34px] rounded-[8px] bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
                                   >
                                     Confirmer
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setConfirmDeleteAdminId(null)}
-                                    className="min-h-[34px] rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+                                    className="min-h-[34px] rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-2 py-1 text-xs text-slate-600 dark:text-[#A3A3A3] cursor-pointer"
                                   >
                                     Non
                                   </button>
@@ -2244,7 +2244,7 @@ export function CoachesAdminView({
                                 <button
                                   type="button"
                                   onClick={() => setConfirmDeleteAdminId(admin.id)}
-                                  className="inline-flex min-h-[34px] items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
+                                  className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#1F1F1F] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#A3A3A3] hover:border-rose-200 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                                   Supprimer
@@ -2263,22 +2263,22 @@ export function CoachesAdminView({
 
         {/* Pending Email Invitations (Coach Admin only) */}
         {isCoachAdmin && activeInvites.length > 0 && (
-          <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <div className="mt-6 border-t border-slate-100 dark:border-[#262626] pt-5">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
               Invitations en attente de première connexion ({activeInvites.length})
             </h4>
             <div className="mt-3 space-y-2.5">
               {activeInvites.map((invite) => (
                 <div
                   key={invite.id}
-                  className="flex flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/60 p-3.5 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-[12px] border border-slate-200 dark:border-[#262626] bg-slate-50/70 dark:bg-[#1F1F1F] p-3.5 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-sm text-slate-900 dark:text-white">
+                      <span className="font-semibold text-sm text-slate-900 dark:text-[#E5E5E5]">
                         {invite.displayName}
                       </span>
-                      <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                      <span className="text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]">
                         · Rôle :{' '}
                         {invite.role === 'coach_admin'
                           ? 'Administrateur'
@@ -2287,7 +2287,7 @@ export function CoachesAdminView({
                       <span
                         className={`text-xs font-semibold ${
                           invite.status === 'pending'
-                            ? 'text-emerald-700 dark:text-emerald-400'
+                            ? 'text-emerald-700 dark:text-[#4ADE80]'
                             : 'text-rose-700 dark:text-rose-400'
                         }`}
                       >
@@ -2296,7 +2296,7 @@ export function CoachesAdminView({
                           : 'Désactivée'}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300 break-all">
+                    <p className="mt-0.5 text-xs text-slate-600 dark:text-[#A3A3A3] break-all">
                       {invite.email} · ajouté par {invite.invitedByEmail}
                     </p>
                   </div>
@@ -2311,10 +2311,10 @@ export function CoachesAdminView({
                             invite.status === 'pending' ? 'disabled' : 'pending',
                         })
                       }
-                      className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold cursor-pointer ${
+                      className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold cursor-pointer ${
                         invite.status === 'pending'
-                          ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950'
-                          : 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950'
+                          ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/35 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50'
+                          : 'border-emerald-200 dark:border-[#4ADE80]/30 bg-emerald-50 dark:bg-[#4ADE80]/10 text-emerald-800 dark:text-[#4ADE80] hover:bg-emerald-100 dark:hover:bg-[#4ADE80]/20'
                       }`}
                     >
                       <Power className="h-3.5 w-3.5" aria-hidden="true" />
@@ -2329,14 +2329,14 @@ export function CoachesAdminView({
                             await deleteCoachInvite(invite.id);
                             setConfirmDeleteInviteId(null);
                           }}
-                          className="min-h-[38px] rounded-lg bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                          className="min-h-[38px] rounded-[10px] bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
                         >
                           Confirmer
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteInviteId(null)}
-                          className="min-h-[38px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+                          className="min-h-[38px] rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-2.5 text-xs text-slate-600 dark:text-[#A3A3A3] cursor-pointer"
                         >
                           Non
                         </button>
@@ -2345,7 +2345,7 @@ export function CoachesAdminView({
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteInviteId(invite.id)}
-                        className="inline-flex min-h-[38px] items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
+                        className="inline-flex min-h-[38px] items-center gap-1 rounded-[10px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-[#A3A3A3] hover:border-rose-200 dark:hover:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         Supprimer
@@ -2365,14 +2365,14 @@ export function CoachesAdminView({
           role="dialog"
           aria-modal="true"
           aria-labelledby="coach-sheet-modal-title"
-          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-slate-950/75 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-black/75 p-0 backdrop-blur-xs sm:items-center sm:p-4"
           onClick={() => setInspectedCoach(null)}
         >
           <div
-            className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl sm:rounded-xl"
+            className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-[16px] border border-slate-200 dark:border-[#262626] bg-white dark:bg-[#161616] shadow-xl sm:rounded-[16px]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-slate-800 p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-[#262626] p-4 sm:p-5">
               <div className="flex items-center gap-3.5 min-w-0">
                 <ProfileAvatar
                   name={inspectedCoach.displayName}
@@ -2380,12 +2380,12 @@ export function CoachesAdminView({
                   size="lg"
                 />
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-[#4ADE80]">
                     Fiche de renseignement coach
                   </p>
                   <h3
                     id="coach-sheet-modal-title"
-                    className="mt-0.5 font-display text-lg font-bold text-slate-900 dark:text-white truncate"
+                    className="mt-0.5 font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5] truncate"
                   >
                     {inspectedCoach.displayName}
                   </h3>
@@ -2395,27 +2395,27 @@ export function CoachesAdminView({
                 type="button"
                 onClick={() => setInspectedCoach(null)}
                 aria-label="Fermer"
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                className="flex h-10 w-10 items-center justify-center rounded-[10px] text-slate-500 dark:text-[#8E8E8E] hover:bg-slate-100 dark:hover:bg-[#1F1F1F] hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
 
             <div className="space-y-4 p-4 sm:p-5 text-sm">
-              <div className="space-y-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 text-xs text-slate-700 dark:text-slate-200">
+              <div className="space-y-2.5 rounded-[12px] border border-slate-200 dark:border-[#262626] bg-slate-50 dark:bg-[#1F1F1F] p-4 text-xs text-slate-700 dark:text-[#E5E5E5]">
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                  <Mail className="h-4 w-4 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
                   <span className="break-all">{inspectedCoach.email}</span>
                 </div>
                 {inspectedCoach.phone && (
                   <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
-                    <span className="font-mono">{inspectedCoach.phone}</span>
+                    <Phone className="h-4 w-4 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
+                    <span className="tabular-nums">{inspectedCoach.phone}</span>
                   </div>
                 )}
                 {(inspectedCoach.city || inspectedCoach.region) && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                    <MapPin className="h-4 w-4 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
                     <span>
                       {[inspectedCoach.city, inspectedCoach.region]
                         .filter(Boolean)
@@ -2425,38 +2425,38 @@ export function CoachesAdminView({
                 )}
                 {inspectedCoach.certifications && (
                   <div className="flex items-center gap-2">
-                    <Award className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                    <Award className="h-4 w-4 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
                     <span>{inspectedCoach.certifications}</span>
                   </div>
                 )}
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <p className="text-xs font-semibold text-slate-500 dark:text-[#8E8E8E]">
                   Spécialités sportives
                 </p>
-                <p className="mt-1 text-sm text-slate-900 dark:text-white">
+                <p className="mt-1 text-sm text-slate-900 dark:text-[#E5E5E5]">
                   {inspectedCoach.specialty?.trim() || 'Non renseignées'}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <p className="text-xs font-semibold text-slate-500 dark:text-[#8E8E8E]">
                   Présentation & approche
                 </p>
-                <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-[#A3A3A3]">
                   {inspectedCoach.bio?.trim() ||
                     'Aucune présentation renseignée pour le moment.'}
                 </p>
               </div>
 
-              <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/40 p-3.5 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+              <div className="rounded-[12px] border border-emerald-200/80 bg-emerald-50/40 p-3.5 dark:border-[#4ADE80]/25 dark:bg-[#1F1F1F]">
                 <div className="flex items-center gap-1.5">
                   <CreditCard
-                    className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400"
+                    className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]"
                     aria-hidden="true"
                   />
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">
+                  <p className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5]">
                     Tarifs proposés par ce coach
                   </p>
                 </div>
@@ -2467,12 +2467,12 @@ export function CoachesAdminView({
                         {getCoachPricingItems(inspectedCoach.pricing).map((item) => (
                           <div
                             key={item.key}
-                            className="flex items-center justify-between gap-2 rounded-md border border-slate-200/80 bg-white px-2.5 py-1.5 text-xs dark:border-slate-800 dark:bg-slate-900"
+                            className="flex items-center justify-between gap-2 rounded-[8px] border border-slate-200/80 bg-white px-2.5 py-1.5 text-xs dark:border-[#262626] dark:bg-[#161616]"
                           >
-                            <span className="text-slate-600 dark:text-slate-300 truncate">
+                            <span className="text-slate-600 dark:text-[#A3A3A3] truncate">
                               {item.label}
                             </span>
-                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 tabular-nums shrink-0">
+                            <span className="font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums shrink-0">
                               {item.formattedPrice}
                             </span>
                           </div>
@@ -2480,13 +2480,13 @@ export function CoachesAdminView({
                       </div>
                     )}
                     {inspectedCoach.pricing?.pricingNotes?.trim() && (
-                      <p className="whitespace-pre-line text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                      <p className="whitespace-pre-line text-xs leading-relaxed text-slate-600 dark:text-[#A3A3A3]">
                         {inspectedCoach.pricing.pricingNotes.trim()}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                     Tarifs personnalisés non renseignés (tarifs standards appliqués par défaut).
                   </p>
                 )}

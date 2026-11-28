@@ -253,9 +253,9 @@ export function MemberRegularityChart({
         count: validatedCount,
         percentage: pctValidated,
         fillLight: '#059669',
-        fillDark: '#10b981',
-        swatchClass: 'bg-emerald-600 dark:bg-emerald-500',
-        textClass: 'text-emerald-700 dark:text-emerald-400',
+        fillDark: '#4ade80',
+        swatchClass: 'bg-emerald-600 dark:bg-[#4ADE80]',
+        textClass: 'text-emerald-700 dark:text-[#4ADE80]',
       },
       {
         key: 'registered',
@@ -335,15 +335,15 @@ export function MemberRegularityChart({
     <div
       className={
         collapsible
-          ? 'rounded-xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900'
-          : 'border-b border-slate-100 pb-5 mb-5 dark:border-slate-800'
+          ? 'rounded-[16px] border border-slate-200 bg-white p-4 sm:p-5 dark:border-[#262626] dark:bg-[#161616]'
+          : 'border-b border-slate-100 pb-5 mb-5 dark:border-[#262626]'
       }
     >
       {/* Header + Period Controls */}
       <div
         className={`flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between ${
           collapsible && isBodyVisible
-            ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+            ? 'border-b border-slate-100 pb-3.5 dark:border-[#262626]'
             : ''
         }`}
       >
@@ -356,14 +356,14 @@ export function MemberRegularityChart({
               aria-controls="member-regularity-chart-body"
               className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-emerald-50 text-emerald-700 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]">
                 <PieChart className="h-4 w-4" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                <h4 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                   {title}
                 </h4>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   {subtitle}
                 </p>
               </div>
@@ -377,7 +377,7 @@ export function MemberRegularityChart({
               aria-label={
                 expanded ? 'Replier la régularité' : 'Déplier la régularité'
               }
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
             >
               <ChevronDown
                 className={`h-4 w-4 transition-transform duration-200 ${
@@ -392,14 +392,14 @@ export function MemberRegularityChart({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <PieChart
-                  className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+                  className="h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
                   aria-hidden="true"
                 />
-                <h4 className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                <h4 className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                   {title}
                 </h4>
               </div>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 {subtitle}
               </p>
             </div>
@@ -408,17 +408,17 @@ export function MemberRegularityChart({
               <div
                 role="group"
                 aria-label="Échelle de régularité"
-                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+                className="inline-flex items-center gap-1 rounded-[10px] bg-slate-100 p-1 dark:bg-[#1F1F1F]"
               >
                 {(['week', 'month', 'year'] as RegularityPeriod[]).map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => handleSelectPeriod(p)}
-                    className={`min-h-[32px] rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                    className={`min-h-[32px] rounded-[8px] px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                       period === p
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     {PERIOD_LABELS[p]}
@@ -437,17 +437,17 @@ export function MemberRegularityChart({
               <div
                 role="group"
                 aria-label="Échelle de régularité"
-                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+                className="inline-flex items-center gap-1 rounded-[10px] bg-slate-100 p-1 dark:bg-[#1F1F1F]"
               >
                 {(['week', 'month', 'year'] as RegularityPeriod[]).map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => handleSelectPeriod(p)}
-                    className={`min-h-[32px] rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                    className={`min-h-[32px] rounded-[8px] px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                       period === p
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     {PERIOD_LABELS[p]}
@@ -464,18 +464,18 @@ export function MemberRegularityChart({
             type="button"
             onClick={() => setOffset((v) => v - 1)}
             aria-label="Période précédente"
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
-          <span className="min-w-[132px] text-center font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
+          <span className="min-w-[132px] text-center text-xs font-semibold text-slate-800 dark:text-[#E5E5E5] tabular-nums">
             {periodRange.label}
           </span>
           <button
             type="button"
             onClick={() => setOffset((v) => v + 1)}
             aria-label="Période suivante"
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -484,14 +484,14 @@ export function MemberRegularityChart({
             <button
               type="button"
               onClick={() => setOffset(0)}
-              className="ml-1 min-h-[30px] rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
+              className="ml-1 min-h-[30px] rounded-[8px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] whitespace-nowrap cursor-pointer"
             >
               Actuelle
             </button>
           )}
         </div>
 
-        <span className="font-mono text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+        <span className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] tabular-nums">
           Total : {stats.total} événement{stats.total > 1 ? 's' : ''}
         </span>
       </div>
@@ -509,7 +509,7 @@ export function MemberRegularityChart({
               cx="110"
               cy="110"
               r={compact ? 84 : 90}
-              className="fill-slate-100 stroke-slate-200 dark:fill-slate-800/80 dark:stroke-slate-700"
+              className="fill-slate-100 stroke-slate-200 dark:fill-[#1F1F1F] dark:stroke-[#262626]"
               strokeWidth="2"
               strokeDasharray="6 4"
             />
@@ -517,7 +517,7 @@ export function MemberRegularityChart({
               x="110"
               y="106"
               textAnchor="middle"
-              className="fill-slate-500 dark:fill-slate-400 font-mono text-lg font-bold"
+              className="fill-slate-500 dark:fill-[#8E8E8E] text-lg font-bold tabular-nums"
             >
               0
             </text>
@@ -525,19 +525,19 @@ export function MemberRegularityChart({
               x="110"
               y="126"
               textAnchor="middle"
-              className="fill-slate-400 dark:fill-slate-500 text-[11px] font-medium"
+              className="fill-slate-400 dark:fill-[#525252] text-[11px] font-medium"
             >
               événement
             </text>
           </svg>
 
           <div className="flex-1 text-center sm:text-left">
-            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+            <p className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
               Aucun événement sur cette période
             </p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
               Aucune inscription, validation ou annulation enregistrée pour{' '}
-              <span className="font-medium text-slate-700 dark:text-slate-300">
+              <span className="font-medium text-slate-700 dark:text-[#A3A3A3]">
                 {periodRange.label}
               </span>
               .
@@ -547,7 +547,7 @@ export function MemberRegularityChart({
                 <button
                   type="button"
                   onClick={() => handleSelectPeriod('year')}
-                  className="min-h-[34px] rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                  className="min-h-[34px] rounded-[10px] border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                 >
                   Afficher l’année
                 </button>
@@ -556,7 +556,7 @@ export function MemberRegularityChart({
                 <button
                   type="button"
                   onClick={onExploreCalendar}
-                  className="min-h-[34px] rounded-md bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                  className="min-h-[34px] rounded-[10px] bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                 >
                   Explorer le calendrier
                 </button>
@@ -608,14 +608,14 @@ export function MemberRegularityChart({
                         cy={slice.cy}
                         r={slice.radius}
                         fill={slice.fillLight}
-                        className="stroke-white dark:stroke-slate-900"
+                        className="stroke-white dark:stroke-[#161616]"
                         strokeWidth="2.5"
                       />
                     ) : (
                       <path
                         d={slice.path}
                         fill={slice.fillLight}
-                        className="stroke-white dark:stroke-slate-900"
+                        className="stroke-white dark:stroke-[#161616]"
                         strokeWidth="2.5"
                         strokeLinejoin="round"
                       />
@@ -626,7 +626,7 @@ export function MemberRegularityChart({
                         x={slice.isFullCircle ? slice.cx : slice.labelX}
                         y={slice.isFullCircle ? slice.cy + 5 : slice.labelY + 4}
                         textAnchor="middle"
-                        className="pointer-events-none fill-white font-mono text-[13px] font-bold"
+                        className="pointer-events-none fill-white text-[13px] font-bold tabular-nums"
                         style={{
                           textShadow: '0 1px 2px rgba(15, 23, 42, 0.35)',
                         }}
@@ -641,7 +641,7 @@ export function MemberRegularityChart({
           </div>
 
           {/* Breakdown Legend */}
-          <div className="w-full flex-1 divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="w-full flex-1 divide-y divide-slate-100 dark:divide-[#262626]">
             {stats.slices.map((slice) => {
               const isHighlighted = activeSlice === slice.key;
               return (
@@ -663,31 +663,31 @@ export function MemberRegularityChart({
                         )
                       : undefined
                   }
-                  className={`flex w-full items-center justify-between gap-3 py-2.5 px-2 text-left transition-colors rounded-md ${
+                  className={`flex w-full items-center justify-between gap-3 py-2.5 px-2 text-left transition-colors rounded-[10px] ${
                     slice.count > 0 ? 'cursor-pointer' : 'cursor-default opacity-70'
                   } ${
                     isHighlighted
-                      ? 'bg-slate-50 dark:bg-slate-800/70'
-                      : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40'
+                      ? 'bg-slate-50 dark:bg-[#1F1F1F]'
+                      : 'hover:bg-slate-50/70 dark:hover:bg-[#1F1F1F]/70'
                   }`}
                 >
                   <div className="flex items-start gap-2.5 min-w-0">
                     <span
-                      className={`mt-1 h-3 w-3 shrink-0 rounded-xs ${slice.swatchClass}`}
+                      className={`mt-1 h-3 w-3 shrink-0 rounded-[4px] ${slice.swatchClass}`}
                       aria-hidden="true"
                     />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-slate-900 dark:text-white">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-[#E5E5E5]">
                         {slice.label}
                       </p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E] truncate">
                         {slice.description}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-baseline gap-2.5 shrink-0 font-mono tabular-nums">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  <div className="flex items-baseline gap-2.5 shrink-0 tabular-nums">
+                    <span className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
                       {slice.count}
                     </span>
                     <span className={`min-w-[3.25rem] text-right text-sm font-bold ${slice.textClass}`}>

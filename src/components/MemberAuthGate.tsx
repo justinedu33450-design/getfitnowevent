@@ -29,27 +29,27 @@ export function MemberAuthGate({
   if (authLoading) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="h-80 animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" />
+        <div className="h-80 animate-pulse rounded-[16px] border border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616]" />
       </section>
     );
   }
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-      <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-12">
+      <div className="grid grid-cols-1 overflow-hidden rounded-[16px] border border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616] lg:grid-cols-12">
         {/* Left: Member Sign-in (Email/Password) */}
         <div className="flex flex-col justify-between p-6 sm:p-8 lg:col-span-7 lg:p-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-[#4ADE80]">
               GetFitNow Event · Espace Adhérent
             </p>
             <h1
-              className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl"
+              className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-3xl"
               style={{ textWrap: 'balance' }}
             >
               Connectez-vous à votre profil adhérent pour vos inscriptions et votre suivi
             </h1>
-            <p className="mt-2.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <p className="mt-2.5 text-sm leading-relaxed text-slate-600 dark:text-[#A3A3A3]">
               Connectez-vous avec votre adresse email et votre mot de passe personnel, ou créez un compte en quelques secondes.
             </p>
 
@@ -62,18 +62,18 @@ export function MemberAuthGate({
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-5 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-5 dark:border-[#262626] sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
               <span className="inline-flex items-center gap-1">
-                <CalendarDays className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                <CalendarDays className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                 Calendrier & carte
               </span>
               <span className="inline-flex items-center gap-1">
-                <ClipboardCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                <ClipboardCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                 Suivi personnel
               </span>
               <span className="inline-flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                 Gratuit
               </span>
             </div>
@@ -83,7 +83,7 @@ export function MemberAuthGate({
                 <button
                   type="button"
                   onClick={onBackToCalendar}
-                  className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white whitespace-nowrap shrink-0 cursor-pointer"
+                  className="inline-flex min-h-[40px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   Retour au calendrier
                 </button>
@@ -91,9 +91,9 @@ export function MemberAuthGate({
               <button
                 type="button"
                 onClick={onCoachAccess}
-                className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white whitespace-nowrap shrink-0 cursor-pointer"
+                className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] whitespace-nowrap shrink-0 cursor-pointer"
               >
-                <ShieldCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+                <ShieldCheck className="h-3.5 w-3.5 text-slate-500 dark:text-[#8E8E8E]" aria-hidden="true" />
                 Espace coach
               </button>
             </div>
@@ -125,7 +125,7 @@ export function MemberAuthGate({
           />
 
           <div className="absolute inset-x-0 bottom-0 space-y-2.5 p-5 text-white sm:p-6">
-            <p className="font-mono text-xs uppercase tracking-wider text-emerald-300">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#4ADE80]">
               Accès adhérents
             </p>
             <p className="font-display text-lg font-bold">
@@ -133,11 +133,11 @@ export function MemberAuthGate({
             </p>
             <ul className="space-y-1.5 text-xs text-slate-200">
               <li className="flex items-center gap-2">
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-[#4ADE80]" aria-hidden="true" />
                 Recherche par ville, région et discipline
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#4ADE80]" aria-hidden="true" />
                 Inscription en ligne jusqu’au début de la séance
               </li>
             </ul>

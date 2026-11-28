@@ -214,12 +214,12 @@ export function SessionsListView({
       id="sessions-section"
       className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
     >
-      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-[#262626] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+          <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-2xl">
             Toutes les séances sportives
           </h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+          <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E] sm:text-sm">
             Recherchez par ville ou région, affichez les séances à proximité selon votre position GPS et réservez votre place jusqu’au début de la séance.
           </p>
         </div>
@@ -228,7 +228,7 @@ export function SessionsListView({
           {/* City or Region Search */}
           <div className="relative w-full sm:w-56">
             <MapPin
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#8E8E8E]"
               aria-hidden="true"
             />
             <input
@@ -238,7 +238,7 @@ export function SessionsListView({
               placeholder="Ville ou région..."
               aria-label="Rechercher par ville ou région"
               list="sessions-locations-list"
-              className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="min-h-[44px] w-full rounded-[10px] border border-slate-200 bg-white pl-9 pr-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
             />
             <datalist id="sessions-locations-list">
               {availableLocationSuggestions.map((loc) => (
@@ -250,7 +250,7 @@ export function SessionsListView({
           {/* Text Search */}
           <div className="relative w-full sm:w-64">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#8E8E8E]"
               aria-hidden="true"
             />
             <input
@@ -259,7 +259,7 @@ export function SessionsListView({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Séance, lieu, animateur..."
               aria-label="Rechercher une séance"
-              className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="min-h-[44px] w-full rounded-[10px] border border-slate-200 bg-white pl-9 pr-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
             />
           </div>
         </div>
@@ -270,7 +270,7 @@ export function SessionsListView({
         <div
           role="group"
           aria-label="Filtrer par disponibilité"
-          className="flex items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+          className="flex items-center gap-1 overflow-x-auto rounded-[10px] bg-slate-100 p-1 dark:border dark:border-[#262626] dark:bg-[#1F1F1F]"
         >
           {(
             [
@@ -284,10 +284,10 @@ export function SessionsListView({
               key={tab.id}
               type="button"
               onClick={() => setStatusFilter(tab.id)}
-              className={`min-h-[36px] rounded-md px-3 py-1.5 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+              className={`min-h-[36px] rounded-[8px] px-3 py-1.5 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                 statusFilter === tab.id
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-[#161616] dark:text-[#E5E5E5]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
               }`}
             >
               {tab.label}
@@ -300,7 +300,7 @@ export function SessionsListView({
             value={regionFilter}
             onChange={(e) => setRegionFilter(e.target.value)}
             aria-label="Filtrer par région"
-            className="min-h-[40px] flex-1 rounded-lg border border-slate-200 bg-white px-3 text-base sm:text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:flex-none"
+            className="min-h-[40px] flex-1 rounded-[10px] border border-slate-200 bg-white px-3 text-base sm:text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] sm:flex-none"
           >
             <option value="">Toutes les régions</option>
             {availableRegions.map((reg) => (
@@ -316,7 +316,7 @@ export function SessionsListView({
               setDisciplineFilter(e.target.value as 'all' | Discipline)
             }
             aria-label="Filtrer par discipline"
-            className="min-h-[40px] flex-1 rounded-lg border border-slate-200 bg-white px-3 text-base sm:text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:flex-none"
+            className="min-h-[40px] flex-1 rounded-[10px] border border-slate-200 bg-white px-3 text-base sm:text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] sm:flex-none"
           >
             <option value="all">Toutes les disciplines</option>
             {disciplineOptions.map((d) => (
@@ -329,15 +329,15 @@ export function SessionsListView({
           <div
             role="group"
             aria-label="Affichage liste, proximité ou carte"
-            className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+            className="flex items-center gap-1 rounded-[10px] bg-slate-100 p-1 dark:border dark:border-[#262626] dark:bg-[#1F1F1F]"
           >
             <button
               type="button"
               onClick={() => setDisplayMode('list')}
-              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                 displayMode === 'list'
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-[#161616] dark:text-[#E5E5E5]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
               }`}
             >
               <List className="h-3.5 w-3.5" aria-hidden="true" />
@@ -349,10 +349,10 @@ export function SessionsListView({
                 primeDeviceLocationFromGesture();
                 setDisplayMode('nearby');
               }}
-              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors touch-manipulation ${
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors touch-manipulation ${
                 displayMode === 'nearby'
-                  ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-600'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? 'bg-emerald-700 text-white shadow-sm dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
               }`}
             >
               <LocateFixed className="h-3.5 w-3.5" aria-hidden="true" />
@@ -361,10 +361,10 @@ export function SessionsListView({
             <button
               type="button"
               onClick={() => setDisplayMode('map')}
-              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+              className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                 displayMode === 'map'
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-[#161616] dark:text-[#E5E5E5]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
               }`}
             >
               <MapIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -377,16 +377,16 @@ export function SessionsListView({
       {/* Quick City Selector */}
       {displayMode !== 'nearby' && availableCities.length > 1 && (
         <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0 mr-1">
+          <span className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] whitespace-nowrap shrink-0 mr-1">
             Villes :
           </span>
           <button
             type="button"
             onClick={() => setCityFilter('')}
-            className={`min-h-[34px] rounded-md border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+            className={`min-h-[34px] rounded-[8px] border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
               cityFilter.trim() === ''
-                ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
-                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                ? 'border-slate-900 bg-slate-900 text-white dark:border-[#E5E5E5] dark:bg-[#E5E5E5] dark:text-[#0A0A0A]'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F]'
             }`}
           >
             Toutes
@@ -399,10 +399,10 @@ export function SessionsListView({
                 key={city}
                 type="button"
                 onClick={() => setCityFilter(active ? '' : city)}
-                className={`min-h-[34px] rounded-md border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                className={`min-h-[34px] rounded-[8px] border px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                   active
-                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F]'
                 }`}
               >
                 {city}
@@ -418,7 +418,7 @@ export function SessionsListView({
           {Array.from({ length: 6 }).map((_, idx) => (
             <div
               key={idx}
-              className="h-52 animate-pulse rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
+              className="h-52 animate-pulse rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616]"
             />
           ))}
         </div>
@@ -435,13 +435,13 @@ export function SessionsListView({
           />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900 sm:p-12">
-          <p className="font-display text-base font-semibold text-slate-900 dark:text-white">
+        <div className="mt-6 rounded-[16px] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-[#262626] dark:bg-[#161616] sm:p-12">
+          <p className="font-display text-base font-semibold text-slate-900 dark:text-[#E5E5E5]">
             {events.length === 0
               ? 'Aucune séance sportive publiée pour le moment'
               : 'Aucune séance ne correspond à votre recherche'}
           </p>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-[#8E8E8E]">
             {events.length === 0
               ? 'Un animateur publiera prochainement de nouveaux créneaux sportifs.'
               : 'Essayez une autre ville ou région, affichez l’historique ou réinitialisez vos filtres.'}
@@ -456,7 +456,7 @@ export function SessionsListView({
                 setDisciplineFilter('all');
                 setStatusFilter('upcoming');
               }}
-              className="mt-4 min-h-[44px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+              className="mt-4 min-h-[44px] rounded-[10px] border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
             >
               Réinitialiser les filtres
             </button>
@@ -470,7 +470,7 @@ export function SessionsListView({
             hasMapsApiKey={hasMapsApiKey}
             onSelectEvent={onSelectEvent}
           />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
             Touchez un repère sur la carte pour consulter les détails de la séance et réserver votre place.
           </p>
         </div>
@@ -490,7 +490,7 @@ export function SessionsListView({
             return (
               <article
                 key={ev.id}
-                className={`flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700`}
+                className={`flex flex-col justify-between overflow-hidden rounded-[16px] border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white shadow-xs transition-colors hover:border-slate-300 dark:border-[#262626] dark:bg-[#161616] dark:shadow-[0_12px_32px_-12px_rgba(0,0,0,0.6)] dark:hover:border-[#333333]`}
               >
                 <div>
                   {coverImageSrc && (
@@ -500,7 +500,7 @@ export function SessionsListView({
                         setLightboxImage({ src: coverImageSrc, title: ev.title })
                       }
                       aria-label={`Agrandir le visuel de ${ev.title}`}
-                      className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+                      className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-[#262626] cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#4ADE80]"
                     >
                       <img
                         src={coverImageSrc}
@@ -509,17 +509,17 @@ export function SessionsListView({
                         style={{ objectPosition: coverImagePosition }}
                         loading="lazy"
                       />
-                      <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
+                      <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-[8px] bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
                         <Maximize2 className="h-3 w-3" aria-hidden="true" />
                         Agrandir
                       </span>
                     </button>
                   )}
                   <div className="p-4 pb-0 sm:p-5 sm:pb-0">
-                    <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-[#8E8E8E]">
                     <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+                        className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold shrink-0 ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                       >
                         <DisciplineIcon
                           disciplineName={ev.discipline}
@@ -529,21 +529,21 @@ export function SessionsListView({
                         {ev.discipline}
                       </span>
                       <span
-                        className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums shrink-0 ${
+                        className={`inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold tabular-nums shrink-0 ${
                           ev.isPaid
                             ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                            : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                            : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]'
                         }`}
                       >
                         {formatEventPrice(ev)}
                       </span>
                       {registeredEventIds?.has(ev.id) && (
-                        <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 shrink-0">
+                        <span className="inline-flex items-center rounded-[6px] border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] shrink-0">
                           Inscrit
                         </span>
                       )}
                       {hasEventDuration(ev) && (
-                        <span className="font-mono tabular-nums">
+                        <span className="tabular-nums">
                           {ev.durationMinutes} min
                         </span>
                       )}
@@ -552,13 +552,13 @@ export function SessionsListView({
                     <span
                       className={`inline-flex items-center gap-1 font-semibold shrink-0 ${
                         evalInfo.state === 'open'
-                          ? 'text-emerald-700 dark:text-emerald-400'
+                          ? 'text-emerald-700 dark:text-[#4ADE80]'
                           : evalInfo.state === 'closed'
                             ? 'text-amber-700 dark:text-amber-400'
                             : evalInfo.state === 'full' ||
                                 evalInfo.state === 'cancelled'
                               ? 'text-rose-700 dark:text-rose-400'
-                              : 'text-slate-500 dark:text-slate-400'
+                              : 'text-slate-500 dark:text-[#8E8E8E]'
                       }`}
                     >
                       {evalInfo.state === 'open' && (
@@ -575,7 +575,7 @@ export function SessionsListView({
                     </span>
                   </div>
 
-                  <h3 className="mt-2 font-display text-lg font-bold text-slate-900 dark:text-white">
+                  <h3 className="mt-2 font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]">
                     {ev.title}
                   </h3>
 
@@ -588,28 +588,28 @@ export function SessionsListView({
                   )}
 
                   {ev.description && (
-                    <p className="mt-1.5 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
+                    <p className="mt-1.5 line-clamp-2 text-sm text-slate-600 dark:text-[#A3A3A3]">
                       {ev.description}
                     </p>
                   )}
 
-                  <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300">
-                    <div className="flex items-center gap-2 font-mono tabular-nums">
-                      <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                  <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-[#262626] dark:text-[#A3A3A3]">
+                    <div className="flex items-center gap-2 tabular-nums">
+                      <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
                       <span className="capitalize">
                         {formatFrenchDateShort(startDate)} ·{' '}
                         {formatTimeRange(startDate, ev.durationMinutes)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                      <MapPin className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
                       <span className="truncate">
-                        {ev.location} · <strong className="text-slate-900 dark:text-white">{ev.city}</strong>
+                        {ev.location} · <strong className="text-slate-900 dark:text-[#E5E5E5]">{ev.city}</strong>
                         {ev.region ? ` (${ev.region})` : ''}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <UserCheck className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                      <UserCheck className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
                       <span className="truncate">{formatEventCoachesLabel(ev)}</span>
                     </div>
                     {(() => {
@@ -617,13 +617,13 @@ export function SessionsListView({
                       if (!safeExternalUrl) return null;
                       return (
                         <div className="flex items-center gap-2">
-                          <ExternalLink className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                          <ExternalLink className="h-3.5 w-3.5 text-emerald-600 dark:text-[#4ADE80] shrink-0" aria-hidden="true" />
                           <a
                             href={safeExternalUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="truncate font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                            className="truncate font-medium text-emerald-700 hover:underline dark:text-[#4ADE80]"
                           >
                             {formatExternalUrlLabel(safeExternalUrl)}
                           </a>
@@ -636,7 +636,7 @@ export function SessionsListView({
 
                 <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5 sm:pt-4">
                   {ev.isPaid && (
-                    <p className="mb-1.5 font-mono text-[11px] text-amber-800 dark:text-amber-300 tabular-nums">
+                    <p className="mb-1.5 text-[11px] text-amber-800 dark:text-amber-300 tabular-nums">
                       Tarif : {formatEventPrice(ev)} · {formatPaymentModeLabel(ev.paymentMode)}
                     </p>
                   )}
@@ -644,7 +644,7 @@ export function SessionsListView({
                     className={`mb-2.5 text-xs ${
                       evalInfo.state === 'cancelled'
                         ? 'font-medium text-rose-700 dark:text-rose-400'
-                        : 'text-slate-500 dark:text-slate-400'
+                        : 'text-slate-500 dark:text-[#8E8E8E]'
                     }`}
                   >
                     {evalInfo.helperText}
@@ -667,7 +667,7 @@ export function SessionsListView({
                     return (
                       <div className="space-y-2">
                         {showClosedMessageCta && (
-                          <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                          <p className="text-[11px] font-medium text-emerald-700 dark:text-[#4ADE80]">
                             Message à l’animateur possible jusqu’à {formatFrenchTime(startDate)}
                           </p>
                         )}
@@ -683,7 +683,7 @@ export function SessionsListView({
                             <button
                               type="button"
                               onClick={() => onMessageCoach(ev)}
-                              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-emerald-700 bg-white px-3.5 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-950/50 cursor-pointer"
+                              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] border border-emerald-700 bg-white px-3.5 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 dark:border-[#4ADE80]/40 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                             >
                               <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                               Écrire à l’animateur
@@ -692,10 +692,10 @@ export function SessionsListView({
                           <button
                             type="button"
                             onClick={() => onSelectEvent(ev)}
-                            className={`flex-1 min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold transition-colors cursor-pointer ${
+                            className={`flex-1 min-h-[44px] rounded-[10px] px-4 py-2 text-sm font-semibold transition-colors cursor-pointer ${
                               canBookFromCard
-                                ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                                : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                                ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E]'
+                                : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                             }`}
                           >
                             {evalInfo.state === 'open' && hasSpots

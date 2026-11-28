@@ -109,26 +109,26 @@ export function VmaTestModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="vma-test-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-xs dark:bg-black/75"
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:p-6"
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[16px] border border-slate-200 bg-white p-5 shadow-2xl dark:border-[#262626] dark:bg-[#161616] sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-[#262626]">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700 dark:bg-sky-950/70 dark:text-sky-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-emerald-50 text-emerald-700 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]">
               <Gauge className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h2
                 id="vma-test-title"
-                className="font-display text-lg font-bold text-slate-900 dark:text-white"
+                className="font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]"
               >
                 Test VMA · Effectuable n’importe quel jour
               </h2>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                 {program.title} · Objectif {tpl.shortLabel} en{' '}
                 {formatDurationHMS(program.targetTimeSeconds)}
               </p>
@@ -138,15 +138,15 @@ export function VmaTestModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer la fenêtre du test VMA"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div className="flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50/80 p-3.5 text-xs text-sky-950 dark:border-sky-800 dark:bg-sky-950/45 dark:text-sky-100">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-700 dark:text-sky-400" aria-hidden="true" />
+          <div className="flex items-start gap-2.5 rounded-[12px] border border-emerald-200 bg-emerald-50/80 p-3.5 text-xs text-emerald-950 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
             <p>
               Seule la séance <strong>Test VMA</strong> peut être effectuée n’importe quel jour.
               Tant que ce test n’est pas validé, l’envoi du programme reste en attente.
@@ -156,11 +156,11 @@ export function VmaTestModal({
           </div>
 
           {/* Protocol explainer */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-300">
-            <p className="font-bold text-slate-900 dark:text-white">
+          <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 text-xs text-slate-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
+            <p className="font-bold text-slate-900 dark:text-[#E5E5E5]">
               Protocole Demi-Cooper (6 minutes)
             </p>
-            <p className="mt-1 leading-relaxed">
+            <p className="mt-1 leading-relaxed tabular-nums">
               Après 15 min d’échauffement souple, courez la plus grande distance possible pendant
               6 minutes à allure régulière. Votre VMA calibre automatiquement toutes vos séances
               des {program.durationWeeks || 12} semaines.
@@ -172,10 +172,10 @@ export function VmaTestModal({
             <button
               type="button"
               onClick={() => setInputMode('demicooper')}
-              className={`rounded-lg border px-3 py-2 text-xs font-semibold cursor-pointer ${
+              className={`rounded-[10px] border px-3 py-2 text-xs font-semibold cursor-pointer ${
                 inputMode === 'demicooper'
-                  ? 'border-sky-600 bg-sky-50 text-sky-900 dark:border-sky-500 dark:bg-sky-950/60 dark:text-sky-200'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                  ? 'border-emerald-600 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80] dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
               }`}
             >
               Calculer depuis distance & durée
@@ -183,10 +183,10 @@ export function VmaTestModal({
             <button
               type="button"
               onClick={() => setInputMode('direct')}
-              className={`rounded-lg border px-3 py-2 text-xs font-semibold cursor-pointer ${
+              className={`rounded-[10px] border px-3 py-2 text-xs font-semibold cursor-pointer ${
                 inputMode === 'direct'
-                  ? 'border-sky-600 bg-sky-50 text-sky-900 dark:border-sky-500 dark:bg-sky-950/60 dark:text-sky-200'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                  ? 'border-emerald-600 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80] dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
               }`}
             >
               Saisir la VMA (km/h) directement
@@ -198,7 +198,7 @@ export function VmaTestModal({
               <div>
                 <label
                   htmlFor="vma-distance"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Distance parcourue (mètres) *
                 </label>
@@ -213,9 +213,9 @@ export function VmaTestModal({
                   onChange={(e) =>
                     setDistanceMeters(Math.max(0, Math.round(Number(e.target.value) || 0)))
                   }
-                  className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-semibold text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                 />
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                   Ex. 1200 m en 6 min = 12.0 km/h · 1500 m = 15.0 km/h
                 </span>
               </div>
@@ -223,7 +223,7 @@ export function VmaTestModal({
               <div>
                 <label
                   htmlFor="vma-duration"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Durée du test (secondes) *
                 </label>
@@ -238,9 +238,9 @@ export function VmaTestModal({
                   onChange={(e) =>
                     setDurationSeconds(Math.max(60, Math.round(Number(e.target.value) || 360)))
                   }
-                  className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-semibold text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                 />
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                   360 sec = 6 min (Demi-Cooper standard)
                 </span>
               </div>
@@ -249,7 +249,7 @@ export function VmaTestModal({
             <div>
               <label
                 htmlFor="vma-direct"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 VMA mesurée (km/h) *
               </label>
@@ -262,21 +262,21 @@ export function VmaTestModal({
                 required
                 value={directVmaKmh}
                 onChange={(e) => setDirectVmaKmh(e.target.value)}
-                className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-semibold text-slate-900 focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
               />
             </div>
           )}
 
           {/* Computed Pace Zones Preview */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+          <div className="rounded-[12px] border border-slate-200 bg-white p-4 dark:border-[#262626] dark:bg-[#1F1F1F]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-[#262626]">
               <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
-                <span className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                <Activity className="h-4 w-4 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
+                <span className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                   Allures calculées pour les {program.durationWeeks || 12} semaines
                 </span>
               </div>
-              <span className="font-mono text-base font-bold text-sky-700 dark:text-sky-400 tabular-nums">
+              <span className="text-base font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                 {isVmaValid ? `VMA ${computedVma.toFixed(1)} km/h` : 'VMA invalide'}
               </span>
             </div>
@@ -315,45 +315,45 @@ export function VmaTestModal({
                 ].map((z) => (
                   <div
                     key={z.label}
-                    className="rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900"
+                    className="rounded-[10px] border border-slate-200 bg-slate-50/70 p-2.5 dark:border-[#262626] dark:bg-[#161616]"
                   >
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#8E8E8E]">
                       {z.label}
                     </p>
-                    <p className="mt-0.5 font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                    <p className="mt-0.5 text-xs font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                       {z.pace}
                     </p>
-                    <p className="mt-0.5 truncate text-[10px] text-emerald-700 dark:text-emerald-400">
+                    <p className="mt-0.5 truncate text-[10px] text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                       {z.sub}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-3 text-xs text-rose-600 dark:text-rose-400">
+              <p className="mt-3 text-xs text-rose-600 dark:text-rose-400 tabular-nums">
                 Renseignez une valeur produisant une VMA entre 6.0 et 26.0 km/h.
               </p>
             )}
           </div>
 
           {error && (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+            <div className="rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200">
               {error}
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-4 dark:border-[#262626]">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[40px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+              className="min-h-[40px] rounded-[10px] border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={saving || !isVmaValid}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
               {saving

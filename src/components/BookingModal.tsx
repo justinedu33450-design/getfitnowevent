@@ -744,22 +744,22 @@ export function BookingModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="booking-modal-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-slate-950/75 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 dark:bg-black/75 p-0 backdrop-blur-xs sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="relative max-h-[92dvh] w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:rounded-xl"
+        className="relative max-h-[92dvh] w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[16px] border border-slate-200 bg-white shadow-xl dark:border-[#262626] dark:bg-[#161616] sm:rounded-[16px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile sheet drag affordance */}
-        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-slate-700 sm:hidden" />
+        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-[#262626] sm:hidden" />
 
         {/* Header */}
         <div
-          className={`overflow-hidden border-b border-slate-200 border-t-4 dark:border-slate-800 ${discStyle.leftBorder.replace('border-l-', 'border-t-')} sm:rounded-t-xl`}
+          className={`overflow-hidden border-b border-slate-200 border-t-4 dark:border-[#262626] ${discStyle.leftBorder.replace('border-l-', 'border-t-')} sm:rounded-t-[16px]`}
         >
           {coverImageSrc && (
-            <div className="relative aspect-[16/7] min-h-[150px] max-h-[240px] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800">
+            <div className="relative aspect-[16/7] min-h-[150px] max-h-[240px] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-[#262626]">
               <button
                 type="button"
                 onClick={() => setImageLightboxOpen(true)}
@@ -789,7 +789,7 @@ export function BookingModal({
                   type="button"
                   onClick={onClose}
                   aria-label="Fermer la fenêtre"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/90 text-slate-700 shadow-sm backdrop-blur-xs hover:bg-white hover:text-slate-950 dark:bg-slate-900/85 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer"
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-white/90 text-slate-700 shadow-sm backdrop-blur-xs hover:bg-white hover:text-slate-950 dark:bg-[#1F1F1F]/90 dark:text-[#E5E5E5] dark:hover:bg-[#262626] dark:hover:text-white cursor-pointer"
                 >
                   <X className="h-5 w-5" aria-hidden="true" />
                 </button>
@@ -799,7 +799,7 @@ export function BookingModal({
 
           <div className="flex items-start justify-between gap-4 p-4 sm:p-6">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 <span
                   className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                 >
@@ -819,7 +819,7 @@ export function BookingModal({
               </div>
               <h2
                 id="booking-modal-title"
-                className="mt-1.5 font-display text-lg font-bold text-slate-900 dark:text-white sm:text-xl"
+                className="mt-1.5 font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5] sm:text-xl"
               >
                 {event.title}
               </h2>
@@ -836,7 +836,7 @@ export function BookingModal({
                   type="button"
                   onClick={onClose}
                   aria-label="Fermer la fenêtre"
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white shrink-0 cursor-pointer"
+                  className="flex h-10 w-10 items-center justify-center rounded-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] shrink-0 cursor-pointer"
                 >
                   <X className="h-5 w-5" aria-hidden="true" />
                 </button>
@@ -847,14 +847,14 @@ export function BookingModal({
 
         {/* Body */}
         <div className="space-y-4 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6">
-          <div className="grid grid-cols-1 gap-2.5 rounded-lg border border-slate-200 bg-slate-50 p-3.5 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-200 sm:p-4">
+          <div className="grid grid-cols-1 gap-2.5 rounded-[12px] border border-slate-200 bg-slate-50 p-3.5 text-sm text-slate-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] sm:p-4">
             <div className="flex items-center gap-2.5">
-              <Clock className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+              <Clock className="h-4 w-4 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
               <span className="capitalize font-medium">
                 {formatFrenchDateLong(startDate)}
               </span>
             </div>
-            <div className="pl-6 font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums">
+            <div className="pl-6 text-xs text-slate-600 dark:text-[#A3A3A3] tabular-nums">
               Horaire : {formatTimeRange(startDate, getEventDurationMinutes(event))}
               {hasEventDuration(event) ? ` (${event.durationMinutes} min)` : ''} ·{' '}
               {evaluation.state === 'cancelled'
@@ -871,14 +871,14 @@ export function BookingModal({
             </div>
             <div className="pl-6">
               <span
-                className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${
+                className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold ${
                   evaluation.state === 'open'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]'
                     : evaluation.state === 'closed'
-                      ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                      ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300'
                       : evaluation.state === 'cancelled' || evaluation.state === 'full'
-                        ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                        : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                        ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300'
+                        : 'border-slate-200 bg-white text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3]'
                 }`}
               >
                 {evaluation.statusLabel}
@@ -886,9 +886,9 @@ export function BookingModal({
             </div>
             <div className="flex items-start justify-between gap-2.5">
               <div className="flex items-start gap-2.5 min-w-0">
-                <MapPin className="mt-0.5 h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+                <MapPin className="mt-0.5 h-4 w-4 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
                 <span className="min-w-0">
-                  {event.location} · <strong className="text-slate-900 dark:text-white">{event.city}</strong>
+                  {event.location} · <strong className="text-slate-900 dark:text-[#E5E5E5]">{event.city}</strong>
                   {event.region ? ` (${event.region})` : ''}
                 </span>
               </div>
@@ -900,29 +900,29 @@ export function BookingModal({
                   event.title
                 )}
                 {...getExternalMapLinkProps()}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-400 dark:hover:bg-slate-800 touch-manipulation"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#262626] touch-manipulation"
               >
                 Carte
                 <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             </div>
             <div className="flex items-center gap-2.5">
-              <UserCheck className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+              <UserCheck className="h-4 w-4 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
               <span>{formatEventCoachesLabel(event)}</span>
             </div>
-            <div className="flex items-center justify-between gap-2.5 border-t border-slate-200/80 pt-2.5 dark:border-slate-700/80">
+            <div className="flex items-center justify-between gap-2.5 border-t border-slate-200/80 pt-2.5 dark:border-[#262626]">
               <div className="flex items-center gap-2.5">
-                <CreditCard className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                <CreditCard className="h-4 w-4 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
+                <span className="text-xs font-medium text-slate-600 dark:text-[#A3A3A3]">
                   Tarif de la séance
                   {isPaidEvent ? ` · ${formatPaymentModeLabel(allowedMode)}` : ''}
                 </span>
               </div>
               <span
-                className={`font-mono text-sm font-bold tabular-nums ${
+                className={`text-sm font-bold tabular-nums ${
                   isPaidEvent
-                    ? 'text-slate-900 dark:text-white'
-                    : 'text-emerald-700 dark:text-emerald-400'
+                    ? 'text-slate-900 dark:text-[#E5E5E5]'
+                    : 'text-emerald-700 dark:text-[#4ADE80]'
                 }`}
               >
                 {priceLabel}
@@ -931,7 +931,7 @@ export function BookingModal({
           </div>
 
           {event.description && (
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <p className="text-sm leading-relaxed text-slate-600 dark:text-[#A3A3A3]">
               {event.description}
             </p>
           )}
@@ -944,7 +944,7 @@ export function BookingModal({
                 href={safeExternalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100/80 dark:border-emerald-800/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/70"
+                className="flex items-center justify-between gap-3 rounded-[10px] border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100/80 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20"
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -961,7 +961,7 @@ export function BookingModal({
 
           {/* Interactive Event Location Map */}
           <div>
-            <h3 className="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <h3 className="mb-2 text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]">
               Emplacement de l’événement
             </h3>
             <EventLocationMap
@@ -972,12 +972,12 @@ export function BookingModal({
           </div>
 
           {isCoach && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
               <div className="space-y-0.5">
-                <span className="block text-xs font-medium text-slate-700 dark:text-slate-200">
+                <span className="block text-xs font-medium text-slate-700 dark:text-[#A3A3A3]">
                   {isCoachAdmin ? 'Mode administrateur actif' : 'Mode coach actif'}
                 </span>
-                <span className="block font-mono text-xs font-semibold text-slate-900 tabular-nums dark:text-white">
+                <span className="block text-xs font-semibold text-slate-900 tabular-nums dark:text-[#E5E5E5]">
                   {evaluation.capacityLabel}
                 </span>
               </div>
@@ -986,7 +986,7 @@ export function BookingModal({
                   <button
                     type="button"
                     onClick={() => onDuplicateEvent(event)}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white underline underline-offset-2 cursor-pointer"
+                    className="inline-flex min-h-[36px] items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-[#E5E5E5] dark:hover:text-white underline underline-offset-2 cursor-pointer"
                   >
                     <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                     Dupliquer sur une autre date
@@ -995,7 +995,7 @@ export function BookingModal({
                 <button
                   type="button"
                   onClick={() => onOpenCoachRoster(event)}
-                  className="min-h-[36px] text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2 cursor-pointer"
+                  className="min-h-[36px] text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-[#4ADE80] dark:hover:text-[#22C55E] underline underline-offset-2 cursor-pointer"
                 >
                   Voir les inscrits & pointage ({event.registeredCount})
                 </button>
@@ -1006,8 +1006,8 @@ export function BookingModal({
           {isSignedIn &&
             canMessageCoachNow &&
             onMessageCoach && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/60">
-                <span className="text-xs text-slate-600 dark:text-slate-300">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
+                <span className="text-xs text-slate-600 dark:text-[#A3A3A3]">
                   {isClosedBeforeStart
                     ? `Inscriptions clôturées — vous pouvez contacter l’animateur jusqu’à ${formatFrenchTime(startDate)}.`
                     : 'Une question sur cette séance ?'}
@@ -1015,7 +1015,7 @@ export function BookingModal({
                 <button
                   type="button"
                   onClick={() => onMessageCoach(event)}
-                  className="inline-flex min-h-[36px] items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2 cursor-pointer"
+                  className="inline-flex min-h-[36px] items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-[#4ADE80] dark:hover:text-[#22C55E] underline underline-offset-2 cursor-pointer"
                 >
                   <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                   Écrire à l’animateur
@@ -1064,10 +1064,10 @@ export function BookingModal({
                 evaluation.state !== 'cancelled';
 
               return (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/50 sm:p-5">
+                <div className="rounded-[16px] border border-emerald-200 bg-emerald-50 p-4 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 sm:p-5">
                   <div className="flex items-start gap-3">
                     <CheckCircle2
-                      className="mt-0.5 h-5 w-5 text-emerald-700 dark:text-emerald-400 shrink-0"
+                      className="mt-0.5 h-5 w-5 text-emerald-700 dark:text-[#4ADE80] shrink-0"
                       aria-hidden="true"
                     />
                     <div className="min-w-0 flex-1">
@@ -1084,8 +1084,8 @@ export function BookingModal({
                         Merci {confirmedMember.firstName} {confirmedMember.lastName}. Votre place est enregistrée pour cette séance ({confirmedMember.email}).
                       </p>
                       {confirmedMember.guests.length > 0 && (
-                        <div className="mt-3 rounded-lg border border-emerald-200/80 bg-white/80 p-3 text-xs text-slate-700 dark:border-emerald-800/80 dark:bg-slate-900/70 dark:text-slate-200 space-y-1.5">
-                          <p className="font-semibold text-slate-900 dark:text-white">
+                        <div className="mt-3 rounded-[10px] border border-emerald-200/80 bg-white/80 p-3 text-xs text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] space-y-1.5">
+                          <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                             Invités inscrits ({confirmedMember.guests.length})
                           </p>
                           <ul className="space-y-1">
@@ -1096,12 +1096,12 @@ export function BookingModal({
                               >
                                 <span>
                                   {g.firstName} {g.lastName}{' '}
-                                  <span className="text-slate-500 dark:text-slate-400">
+                                  <span className="text-slate-500 dark:text-[#8E8E8E]">
                                     ({g.email})
                                   </span>
                                 </span>
                                 {g.paymentReference && (
-                                  <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                                  <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                                     Réf. {g.paymentReference}
                                   </span>
                                 )}
@@ -1111,13 +1111,13 @@ export function BookingModal({
                         </div>
                       )}
                       {confirmedMember.totalAmountCents > 0 && (
-                        <div className="mt-3 rounded-lg border border-emerald-200/80 bg-white/80 p-3 text-xs text-slate-700 dark:border-emerald-800/80 dark:bg-slate-900/70 dark:text-slate-200 space-y-1">
+                        <div className="mt-3 rounded-[10px] border border-emerald-200/80 bg-white/80 p-3 text-xs text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] space-y-1">
                           <div className="flex items-center justify-between gap-2">
                             <span>
                               Montant total ({1 + confirmedMember.guests.length}{' '}
                               place{confirmedMember.guests.length > 0 ? 's' : ''})
                             </span>
-                            <span className="font-mono font-bold tabular-nums text-slate-900 dark:text-white">
+                            <span className="font-bold tabular-nums text-slate-900 dark:text-[#E5E5E5]">
                               {formatPriceEuros(confirmedMember.totalAmountCents)}
                             </span>
                           </div>
@@ -1132,7 +1132,7 @@ export function BookingModal({
                           {confirmedMember.paymentReference && (
                             <div className="flex items-center justify-between gap-2">
                               <span>Référence</span>
-                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                              <span className="text-[11px] text-slate-600 dark:text-[#A3A3A3] tabular-nums">
                                 {confirmedMember.paymentReference}
                               </span>
                             </div>
@@ -1145,7 +1145,7 @@ export function BookingModal({
                   {errorMsg && (
                     <div
                       role="alert"
-                      className="mt-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
+                      className="mt-3 flex items-start gap-2 rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200"
                     >
                       <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
                       <span>{errorMsg}</span>
@@ -1153,8 +1153,8 @@ export function BookingModal({
                   )}
 
                   {confirmingCancel && canCancelConfirmedHere && (
-                    <div className="mt-4 rounded-lg border border-rose-200 bg-white p-3.5 dark:border-rose-900 dark:bg-slate-900">
-                      <p className="text-xs text-slate-800 dark:text-slate-200">
+                    <div className="mt-4 rounded-[10px] border border-rose-200 bg-white p-3.5 dark:border-rose-900/60 dark:bg-[#161616]">
+                      <p className="text-xs text-slate-800 dark:text-[#E5E5E5]">
                         <strong>Confirmer l’annulation de votre inscription ?</strong> Votre place sera immédiatement libérée.
                         {confirmedMember.paymentStatus === 'paid' &&
                         confirmedMember.amountCents > 0
@@ -1166,7 +1166,7 @@ export function BookingModal({
                           type="button"
                           disabled={cancelling}
                           onClick={() => void handleCancelRegistration(targetRegForCancel)}
-                          className="min-h-[38px] rounded-lg bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                          className="min-h-[38px] rounded-[10px] bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                         >
                           {cancelling ? 'Annulation...' : 'Confirmer l’annulation'}
                         </button>
@@ -1174,7 +1174,7 @@ export function BookingModal({
                           type="button"
                           disabled={cancelling}
                           onClick={() => setConfirmingCancel(false)}
-                          className="min-h-[38px] rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                          className="min-h-[38px] rounded-[10px] border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                         >
                           Conserver ma place
                         </button>
@@ -1186,7 +1186,7 @@ export function BookingModal({
                     <button
                       type="button"
                       onClick={() => downloadEventIcs(event)}
-                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                     >
                       <CalendarPlus className="h-4 w-4" aria-hidden="true" />
                       Ajouter à mon agenda (.ics)
@@ -1213,7 +1213,7 @@ export function BookingModal({
                             cardLast4: confirmedMember.cardLast4,
                           })
                         }
-                        className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                        className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-[#4ADE80]/40 dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 cursor-pointer"
                       >
                         <FileDown className="h-4 w-4" aria-hidden="true" />
                         Télécharger le reçu
@@ -1223,7 +1223,7 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={onOpenMemberTracking}
-                        className="min-h-[44px] rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                        className="min-h-[44px] rounded-[10px] border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-[#4ADE80]/40 dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 cursor-pointer"
                       >
                         Voir dans Mon suivi
                       </button>
@@ -1232,7 +1232,7 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={onOpenCoachRegistrations}
-                        className="min-h-[44px] rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                        className="min-h-[44px] rounded-[10px] border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-[#4ADE80]/40 dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 cursor-pointer"
                       >
                         Voir mes inscriptions
                       </button>
@@ -1244,7 +1244,7 @@ export function BookingModal({
                           setErrorMsg(null);
                           setConfirmingCancel(true);
                         }}
-                        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:border-rose-300 hover:bg-rose-50 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
+                        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:border-rose-300 hover:bg-rose-50 dark:border-rose-900 dark:bg-[#161616] dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" aria-hidden="true" />
                         Annuler mon inscription
@@ -1253,7 +1253,7 @@ export function BookingModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="min-h-[44px] rounded-lg border border-emerald-300 bg-white px-4 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-100/60 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-900/40 cursor-pointer"
+                      className="min-h-[44px] rounded-[10px] border border-emerald-300 bg-white px-4 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-100/60 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] cursor-pointer"
                     >
                       Fermer
                     </button>
@@ -1275,24 +1275,24 @@ export function BookingModal({
                 evaluation.state !== 'cancelled';
 
               return (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/50 sm:p-5">
+                <div className="rounded-[16px] border border-emerald-200 bg-emerald-50 p-4 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 sm:p-5">
                   <div className="flex items-start gap-3">
                     <CheckCircle2
-                      className="mt-0.5 h-5 w-5 text-emerald-700 dark:text-emerald-400 shrink-0"
+                      className="mt-0.5 h-5 w-5 text-emerald-700 dark:text-[#4ADE80] shrink-0"
                       aria-hidden="true"
                     />
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-display text-base font-bold text-emerald-950 dark:text-emerald-100">
+                      <h3 className="font-display text-base font-bold text-emerald-950 dark:text-[#E5E5E5]">
                         Vous êtes déjà inscrit à cette séance
                       </h3>
-                      <p className="mt-1 text-sm text-emerald-900 dark:text-emerald-200">
+                      <p className="mt-1 text-sm text-emerald-900 dark:text-[#A3A3A3]">
                         Place réservée pour {existingRegistration.firstName} {existingRegistration.lastName} ({existingRegistration.email}).
                       </p>
                       {(existingRegistration.amountCents ?? 0) > 0 && (
-                        <div className="mt-3 rounded-lg border border-emerald-200/80 bg-white/80 p-3 text-xs text-slate-700 dark:border-emerald-800/80 dark:bg-slate-900/70 dark:text-slate-200 space-y-1">
+                        <div className="mt-3 rounded-[10px] border border-emerald-200/80 bg-white/80 p-3 text-xs text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] space-y-1">
                           <div className="flex items-center justify-between gap-2">
                             <span>Montant</span>
-                            <span className="font-mono font-bold tabular-nums text-slate-900 dark:text-white">
+                            <span className="font-bold tabular-nums text-slate-900 dark:text-[#E5E5E5]">
                               {payInfo.amountLabel}
                             </span>
                           </div>
@@ -1303,7 +1303,7 @@ export function BookingModal({
                           {existingRegistration.paymentReference && (
                             <div className="flex items-center justify-between gap-2">
                               <span>Référence</span>
-                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                              <span className="text-[11px] text-slate-600 dark:text-[#A3A3A3] tabular-nums">
                                 {existingRegistration.paymentReference}
                               </span>
                             </div>
@@ -1314,8 +1314,8 @@ export function BookingModal({
                   </div>
 
                   {invitedGuestRegistrations.length > 0 && (
-                    <div className="mt-3 rounded-lg border border-emerald-200/80 bg-white/85 p-3 text-xs text-slate-700 dark:border-emerald-800/80 dark:bg-slate-900/75 dark:text-slate-200 space-y-2">
-                      <p className="font-semibold text-slate-900 dark:text-white">
+                    <div className="mt-3 rounded-[10px] border border-emerald-200/80 bg-white/85 p-3 text-xs text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] space-y-2">
+                      <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                         Personnes invitées ({invitedGuestRegistrations.length})
                       </p>
                       <div className="space-y-2">
@@ -1332,14 +1332,14 @@ export function BookingModal({
                           return (
                             <div
                               key={guestReg.id}
-                              className="rounded-md border border-slate-200/80 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-800/50"
+                              className="rounded-[8px] border border-slate-200/80 bg-slate-50/70 p-2.5 dark:border-[#262626] dark:bg-[#1F1F1F]"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="min-w-0">
-                                  <p className="font-semibold text-slate-900 dark:text-white">
+                                  <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                                     {guestReg.firstName} {guestReg.lastName}
                                   </p>
-                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                  <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E] truncate">
                                     {guestReg.email}
                                     {(guestReg.amountCents ?? 0) > 0
                                       ? ` · ${guestPayInfo.label}`
@@ -1354,7 +1354,7 @@ export function BookingModal({
                                       setGuestSuccessMsg(null);
                                       setConfirmingCancelGuestId(guestReg.id);
                                     }}
-                                    className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
+                                    className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-[#161616] dark:text-rose-300 dark:hover:bg-rose-950/40 cursor-pointer"
                                   >
                                     <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
                                     Annuler
@@ -1362,8 +1362,8 @@ export function BookingModal({
                                 )}
                               </div>
                               {isConfirmingGuestCancel && canCancelGuest && (
-                                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2 dark:border-slate-700">
-                                  <span className="text-[11px] text-slate-700 dark:text-slate-300">
+                                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2 dark:border-[#262626]">
+                                  <span className="text-[11px] text-slate-700 dark:text-[#A3A3A3]">
                                     Libérer la place de {guestReg.firstName} ?
                                   </span>
                                   <div className="flex items-center gap-1.5">
@@ -1373,7 +1373,7 @@ export function BookingModal({
                                       onClick={() =>
                                         void handleCancelGuestRegistration(guestReg)
                                       }
-                                      className="min-h-[30px] rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                      className="min-h-[30px] rounded-[8px] bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                                     >
                                       {isCancellingGuest ? 'Annulation...' : 'Confirmer'}
                                     </button>
@@ -1381,7 +1381,7 @@ export function BookingModal({
                                       type="button"
                                       disabled={isCancellingGuest}
                                       onClick={() => setConfirmingCancelGuestId(null)}
-                                      className="min-h-[30px] rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 cursor-pointer"
+                                      className="min-h-[30px] rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] cursor-pointer"
                                     >
                                       Non
                                     </button>
@@ -1398,9 +1398,9 @@ export function BookingModal({
                   {guestSuccessMsg && (
                     <div
                       role="status"
-                      className="mt-3 flex items-start gap-2 rounded-lg border border-emerald-300 bg-white p-3 text-xs text-emerald-900 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-200"
+                      className="mt-3 flex items-start gap-2 rounded-[10px] border border-emerald-300 bg-white p-3 text-xs text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#161616] dark:text-[#4ADE80]"
                     >
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                       <span>{guestSuccessMsg}</span>
                     </div>
                   )}
@@ -1409,7 +1409,7 @@ export function BookingModal({
                     <div
                       ref={errorAlertRef}
                       role="alert"
-                      className="mt-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
+                      className="mt-3 flex items-start gap-2 rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200"
                     >
                       <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
                       <span>{errorMsg}</span>
@@ -1420,14 +1420,14 @@ export function BookingModal({
                     <form
                       onSubmit={handleSubmitAdditionalGuests}
                       noValidate
-                      className="mt-4 space-y-3 rounded-lg border border-emerald-200 bg-white p-3.5 dark:border-emerald-800 dark:bg-slate-900"
+                      className="mt-4 space-y-3 rounded-[12px] border border-emerald-200 bg-white p-3.5 dark:border-[#262626] dark:bg-[#161616]"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5]">
                             Inviter une ou plusieurs personnes
                           </h4>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                             Renseignez le prénom, nom et email de chaque invité.
                           </p>
                         </div>
@@ -1435,7 +1435,7 @@ export function BookingModal({
                           type="button"
                           disabled={additionalGuests.length >= maxAdditionalGuests}
                           onClick={() => handleAddGuestRow(true)}
-                          className="inline-flex min-h-[34px] items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 cursor-pointer"
+                          className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] cursor-pointer"
                         >
                           <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
                           Ajouter un invité
@@ -1445,16 +1445,16 @@ export function BookingModal({
                       {additionalGuests.map((guest, idx) => (
                         <div
                           key={guest.id}
-                          className="space-y-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/50"
+                          className="space-y-2.5 rounded-[10px] border border-slate-200 bg-slate-50/70 p-3 dark:border-[#262626] dark:bg-[#1F1F1F]"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                            <span className="text-[11px] font-semibold text-slate-700 dark:text-[#E5E5E5]">
                               Invité {idx + 1}
                             </span>
                             <button
                               type="button"
                               onClick={() => handleRemoveGuestRow(guest.id, true)}
-                              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-rose-700 dark:text-slate-400 dark:hover:text-rose-400 cursor-pointer"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-rose-700 dark:text-[#8E8E8E] dark:hover:text-rose-400 cursor-pointer"
                             >
                               <Trash2 className="h-3 w-3" aria-hidden="true" />
                               Retirer
@@ -1472,7 +1472,7 @@ export function BookingModal({
                               }
                               placeholder="Prénom *"
                               aria-label={`Prénom de l’invité ${idx + 1}`}
-                              className="min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                             />
                             <input
                               id={`additional-guest-last-${guest.id}`}
@@ -1485,7 +1485,7 @@ export function BookingModal({
                               }
                               placeholder="Nom *"
                               aria-label={`Nom de l’invité ${idx + 1}`}
-                              className="min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                             />
                           </div>
                           <input
@@ -1499,19 +1499,19 @@ export function BookingModal({
                             }
                             placeholder="Adresse email de l’invité *"
                             aria-label={`Adresse email de l’invité ${idx + 1}`}
-                            className="min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                           />
                         </div>
                       ))}
 
                       {isPaidEvent && additionalGuests.length > 0 && (
-                        <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+                        <div className="space-y-3 rounded-[10px] border border-slate-200 bg-slate-50/80 p-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                            <span className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                               Règlement ({additionalGuests.length} invité
                               {additionalGuests.length > 1 ? 's' : ''})
                             </span>
-                            <span className="font-mono text-xs font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                            <span className="text-xs font-bold tabular-nums text-emerald-700 dark:text-[#4ADE80]">
                               Total : {totalAddGuestsPriceLabel}
                             </span>
                           </div>
@@ -1520,10 +1520,10 @@ export function BookingModal({
                               <button
                                 type="button"
                                 onClick={() => setSelectedPayMethod('card')}
-                                className={`flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold cursor-pointer ${
+                                className={`flex min-h-[38px] items-center justify-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold cursor-pointer ${
                                   selectedPayMethod === 'card'
-                                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
-                                    : 'border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                                    : 'border-slate-300 bg-white text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5]'
                                 }`}
                               >
                                 <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1532,10 +1532,10 @@ export function BookingModal({
                               <button
                                 type="button"
                                 onClick={() => setSelectedPayMethod('onsite')}
-                                className={`flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold cursor-pointer ${
+                                className={`flex min-h-[38px] items-center justify-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold cursor-pointer ${
                                   selectedPayMethod === 'onsite'
-                                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
-                                    : 'border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                                    ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                                    : 'border-slate-300 bg-white text-slate-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5]'
                                 }`}
                               >
                                 <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1544,15 +1544,15 @@ export function BookingModal({
                             </div>
                           )}
                           {selectedPayMethod === 'card' ? (
-                            <div className="space-y-2.5 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                            <div className="space-y-2.5 rounded-[10px] border border-slate-200 bg-white p-3 dark:border-[#262626] dark:bg-[#161616]">
                               <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                                <span className="text-[11px] font-semibold text-slate-700 dark:text-[#E5E5E5]">
                                   Carte ({cardBrand})
                                 </span>
                                 <button
                                   type="button"
                                   onClick={handleFillTestCard}
-                                  className="text-[11px] font-semibold text-emerald-700 underline dark:text-emerald-400 cursor-pointer"
+                                  className="text-[11px] font-semibold text-emerald-700 underline dark:text-[#4ADE80] cursor-pointer"
                                 >
                                   Remplir carte test
                                 </button>
@@ -1568,7 +1568,7 @@ export function BookingModal({
                                   setCardHolder(e.target.value);
                                 }}
                                 placeholder="Titulaire de la carte *"
-                                className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                className="min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-xs text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                               />
                               <input
                                 id="additional-card-number"
@@ -1582,7 +1582,7 @@ export function BookingModal({
                                   setCardNumber(formatCardNumberInput(e.target.value))
                                 }
                                 placeholder="Numéro de carte *"
-                                className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                className="min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-xs tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                               />
                               <div className="grid grid-cols-2 gap-2">
                                 <input
@@ -1597,7 +1597,7 @@ export function BookingModal({
                                     setCardExpiry(formatCardExpiryInput(e.target.value))
                                   }
                                   placeholder="MM/AA *"
-                                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  className="min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-xs tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                                 />
                                 <input
                                   id="additional-card-cvc"
@@ -1613,7 +1613,7 @@ export function BookingModal({
                                     )
                                   }
                                   placeholder="CVC *"
-                                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-xs tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  className="min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-xs tabular-nums text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]"
                                 />
                               </div>
                             </div>
@@ -1634,14 +1634,14 @@ export function BookingModal({
                             setAdditionalGuests([]);
                             setErrorMsg(null);
                           }}
-                          className="min-h-[36px] touch-manipulation rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                          className="min-h-[36px] touch-manipulation rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] cursor-pointer"
                         >
                           Fermer
                         </button>
                         <button
                           type="submit"
                           disabled={addingGuests || additionalGuests.length === 0}
-                          className="min-h-[36px] touch-manipulation rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                          className="min-h-[36px] touch-manipulation rounded-[10px] bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                         >
                           {addingGuests
                             ? 'Enregistrement...'
@@ -1654,8 +1654,8 @@ export function BookingModal({
                   )}
 
                   {confirmingCancel && canCancelHere && (
-                    <div className="mt-4 rounded-lg border border-rose-200 bg-white p-3.5 dark:border-rose-900 dark:bg-slate-900">
-                      <p className="text-xs text-slate-800 dark:text-slate-200">
+                    <div className="mt-4 rounded-[10px] border border-rose-200 bg-white p-3.5 dark:border-rose-900/60 dark:bg-[#161616]">
+                      <p className="text-xs text-slate-800 dark:text-[#E5E5E5]">
                         <strong>Confirmer l’annulation de votre inscription ?</strong> Votre place sera immédiatement libérée.
                         {existingRegistration.paymentStatus === 'paid' &&
                         (existingRegistration.amountCents ?? 0) > 0
@@ -1667,7 +1667,7 @@ export function BookingModal({
                           type="button"
                           disabled={cancelling}
                           onClick={() => void handleCancelRegistration(existingRegistration)}
-                          className="min-h-[38px] rounded-lg bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                          className="min-h-[38px] rounded-[10px] bg-rose-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                         >
                           {cancelling ? 'Annulation...' : 'Confirmer l’annulation'}
                         </button>
@@ -1675,7 +1675,7 @@ export function BookingModal({
                           type="button"
                           disabled={cancelling}
                           onClick={() => setConfirmingCancel(false)}
-                          className="min-h-[38px] rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                          className="min-h-[38px] rounded-[10px] border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                         >
                           Conserver ma place
                         </button>
@@ -1697,7 +1697,7 @@ export function BookingModal({
                               setAdditionalGuests([createEmptyGuestRow()]);
                             }
                           }}
-                          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-[#4ADE80]/40 dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 cursor-pointer"
                         >
                           <UserPlus className="h-4 w-4" aria-hidden="true" />
                           Inviter une personne
@@ -1706,7 +1706,7 @@ export function BookingModal({
                     <button
                       type="button"
                       onClick={() => downloadEventIcs(event)}
-                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                     >
                       <CalendarPlus className="h-4 w-4" aria-hidden="true" />
                       Ajouter à mon agenda (.ics)
@@ -1734,7 +1734,7 @@ export function BookingModal({
                             cardLast4: existingRegistration.cardLast4,
                           })
                         }
-                        className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                        className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-[#4ADE80]/40 dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 cursor-pointer"
                       >
                         <FileDown className="h-4 w-4" aria-hidden="true" />
                         Télécharger le reçu
@@ -1744,7 +1744,7 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={onOpenMemberTracking}
-                        className="min-h-[44px] rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                        className="min-h-[44px] rounded-[10px] border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-[#4ADE80]/40 dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 cursor-pointer"
                       >
                         Voir dans Mon suivi
                       </button>
@@ -1753,7 +1753,7 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={onOpenCoachRegistrations}
-                        className="min-h-[44px] rounded-lg border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-600 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-900/40 cursor-pointer"
+                        className="min-h-[44px] rounded-[10px] border border-emerald-700 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100/60 dark:border-[#4ADE80]/40 dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 cursor-pointer"
                       >
                         Voir mes inscriptions
                       </button>
@@ -1765,7 +1765,7 @@ export function BookingModal({
                           setErrorMsg(null);
                           setConfirmingCancel(true);
                         }}
-                        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:border-rose-300 hover:bg-rose-50 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
+                        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:border-rose-300 hover:bg-rose-50 dark:border-rose-900 dark:bg-[#161616] dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
                       >
                         <XCircle className="h-4 w-4" aria-hidden="true" />
                         Annuler mon inscription
@@ -1774,7 +1774,7 @@ export function BookingModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="min-h-[44px] rounded-lg border border-emerald-300 bg-white px-4 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-100/60 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-900/40 cursor-pointer"
+                      className="min-h-[44px] rounded-[10px] border border-emerald-300 bg-white px-4 py-2 text-xs font-medium text-emerald-900 hover:bg-emerald-100/60 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] cursor-pointer"
                     >
                       Fermer
                     </button>
@@ -1783,11 +1783,11 @@ export function BookingModal({
               );
             })()
           ) : cancelledFeedback ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60 sm:p-5">
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+            <div className="rounded-[16px] border border-slate-200 bg-slate-50 p-4 dark:border-[#262626] dark:bg-[#1F1F1F] sm:p-5">
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                 Inscription annulée
               </h3>
-              <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+              <p className="mt-1 text-sm text-slate-700 dark:text-[#A3A3A3]">
                 {cancelledFeedback}
               </p>
               <div className="mt-4 flex flex-wrap gap-2.5">
@@ -1795,7 +1795,7 @@ export function BookingModal({
                   <button
                     type="button"
                     onClick={() => setCancelledFeedback(null)}
-                    className="min-h-[42px] rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                    className="min-h-[42px] rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                   >
                     Me réinscrire
                   </button>
@@ -1804,7 +1804,7 @@ export function BookingModal({
                   <button
                     type="button"
                     onClick={onOpenMemberTracking}
-                    className="min-h-[42px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                    className="min-h-[42px] rounded-[10px] border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] cursor-pointer"
                   >
                     Voir dans Mon suivi
                   </button>
@@ -1813,7 +1813,7 @@ export function BookingModal({
                   <button
                     type="button"
                     onClick={onOpenCoachRegistrations}
-                    className="min-h-[42px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                    className="min-h-[42px] rounded-[10px] border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] cursor-pointer"
                   >
                     Voir mes inscriptions
                   </button>
@@ -1821,27 +1821,27 @@ export function BookingModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-[42px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                  className="min-h-[42px] rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] cursor-pointer"
                 >
                   Fermer
                 </button>
               </div>
             </div>
           ) : canBookInModal && !isSignedIn ? (
-            <div className="space-y-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <div className="space-y-4 border-t border-slate-100 pt-4 dark:border-[#262626]">
               {!showAuthStep ? (
                 <div className="space-y-4">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <h3 className="font-display text-base font-semibold text-slate-900 dark:text-white">
+                    <h3 className="font-display text-base font-semibold text-slate-900 dark:text-[#E5E5E5]">
                       {isPaidEvent
                         ? `Inscription · ${priceLabel}`
                         : 'Inscription gratuite'}
                     </h3>
-                    <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    <span className="text-xs font-medium text-emerald-700 dark:text-[#4ADE80]">
                       {evaluation.helperText}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                  <p className="text-sm text-slate-600 dark:text-[#A3A3A3]">
                     {isPaidEvent
                       ? `Pour réserver votre place (${priceLabel} — ${formatPaymentModeLabel(allowedMode).toLowerCase()}) et retrouver votre reçu dans votre suivi personnel, connectez-vous ou créez votre profil adhérent.`
                       : 'Pour réserver votre place et la retrouver dans votre suivi personnel, connectez-vous ou créez votre profil adhérent.'}
@@ -1850,7 +1850,7 @@ export function BookingModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="min-h-[44px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      className="min-h-[44px] rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                     >
                       Fermer
                     </button>
@@ -1860,7 +1860,7 @@ export function BookingModal({
                         setAuthIntent('book');
                         setShowAuthStep(true);
                       }}
-                      className="min-h-[44px] rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                      className="min-h-[44px] rounded-[10px] bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                     >
                       {isPaidEvent
                         ? `S’inscrire (${priceLabel})`
@@ -1872,17 +1872,17 @@ export function BookingModal({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
                     <div>
-                      <h3 className="font-display text-base font-semibold text-slate-900 dark:text-white">
+                      <h3 className="font-display text-base font-semibold text-slate-900 dark:text-[#E5E5E5]">
                         Identifiez-vous pour vous inscrire
                       </h3>
-                      <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                      <p className="mt-0.5 text-xs text-slate-600 dark:text-[#A3A3A3]">
                         Connectez-vous ou créez un compte, puis confirmez votre inscription.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowAuthStep(false)}
-                      className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shrink-0 cursor-pointer"
+                      className="inline-flex min-h-[36px] items-center gap-1 rounded-[10px] border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] shrink-0 cursor-pointer"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                       Retour
@@ -1899,14 +1899,14 @@ export function BookingModal({
               )}
             </div>
           ) : canBookInModal ? (
-            <form onSubmit={handleSubmit} noValidate className="space-y-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 border-t border-slate-100 pt-4 dark:border-[#262626]">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="font-display text-base font-semibold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-semibold text-slate-900 dark:text-[#E5E5E5]">
                   {isPaidEvent
                     ? `Inscription & paiement · ${priceLabel}`
                     : 'Inscription gratuite'}
                 </h3>
-                <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <span className="text-xs font-medium text-emerald-700 dark:text-[#4ADE80]">
                   {evaluation.helperText}
                 </span>
               </div>
@@ -1915,7 +1915,7 @@ export function BookingModal({
                 <div>
                   <label
                     htmlFor="booking-first-name"
-                    className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-medium text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Prénom *
                   </label>
@@ -1927,13 +1927,13 @@ export function BookingModal({
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Camille"
-                    className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                    className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="booking-last-name"
-                    className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-medium text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Nom *
                   </label>
@@ -1945,7 +1945,7 @@ export function BookingModal({
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Laurent"
-                    className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                    className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   />
                 </div>
               </div>
@@ -1953,7 +1953,7 @@ export function BookingModal({
               <div>
                 <label
                   htmlFor="booking-email"
-                  className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-medium text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Adresse email *
                 </label>
@@ -1966,33 +1966,33 @@ export function BookingModal({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="camille.laurent@exemple.fr"
-                  className={`mt-1 min-h-[44px] w-full rounded-lg border px-3 text-base sm:text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 ${
+                  className={`mt-1 min-h-[44px] w-full rounded-[10px] border px-3 text-base sm:text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 ${
                     !isCoachAdmin && Boolean(userEmail)
-                      ? 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
-                      : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500'
+                      ? 'border-slate-200 bg-slate-50 text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F]/60 dark:text-[#A3A3A3]'
+                      : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252]'
                   }`}
                 />
                 {!isCoachAdmin && Boolean(userEmail) ? (
-                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                     {isCoach
                       ? 'Email de votre compte coach connecté — retrouvez vos inscriptions dans votre espace coach.'
                       : 'Email de votre profil connecté — la réservation apparaîtra dans Mon suivi.'}
                   </p>
                 ) : isCoachAdmin && Boolean(userEmail) ? (
-                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                     Prérempli avec votre email coach (modifiable si vous inscrivez un tiers).
                   </p>
                 ) : null}
               </div>
 
               {/* Accompanying Guests Section */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/40">
+              <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                       Inviter une ou plusieurs personnes (optionnel)
                     </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                       Renseignez le prénom, nom et email de chaque accompagnant.
                     </p>
                   </div>
@@ -2000,7 +2000,7 @@ export function BookingModal({
                     type="button"
                     disabled={guests.length >= maxGuestsInitial}
                     onClick={() => handleAddGuestRow(false)}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-950/50 cursor-pointer"
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50 dark:border-[#4ADE80]/30 dark:bg-[#161616] dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/15 cursor-pointer"
                   >
                     <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
                     Ajouter un invité
@@ -2016,16 +2016,16 @@ export function BookingModal({
                 {guests.map((guest, idx) => (
                   <div
                     key={guest.id}
-                    className="space-y-2.5 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
+                    className="space-y-2.5 rounded-[10px] border border-slate-200 bg-white p-3 dark:border-[#262626] dark:bg-[#161616]"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                      <span className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                         Invité {idx + 1}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleRemoveGuestRow(guest.id, false)}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-rose-700 dark:text-slate-400 dark:hover:text-rose-400 cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-rose-700 dark:text-[#8E8E8E] dark:hover:text-rose-400 cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         Retirer
@@ -2035,7 +2035,7 @@ export function BookingModal({
                       <div>
                         <label
                           htmlFor={`booking-guest-first-${guest.id}`}
-                          className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                          className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                         >
                           Prénom *
                         </label>
@@ -2049,13 +2049,13 @@ export function BookingModal({
                             handleUpdateGuestRow(guest.id, 'firstName', e.target.value, false)
                           }
                           placeholder="Prénom de l’invité"
-                          className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                         />
                       </div>
                       <div>
                         <label
                           htmlFor={`booking-guest-last-${guest.id}`}
-                          className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                          className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                         >
                           Nom *
                         </label>
@@ -2069,14 +2069,14 @@ export function BookingModal({
                             handleUpdateGuestRow(guest.id, 'lastName', e.target.value, false)
                           }
                           placeholder="Nom de l’invité"
-                          className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                         />
                       </div>
                     </div>
                     <div>
                       <label
                         htmlFor={`booking-guest-email-${guest.id}`}
-                        className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                        className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                       >
                         Adresse email *
                       </label>
@@ -2090,7 +2090,7 @@ export function BookingModal({
                           handleUpdateGuestRow(guest.id, 'email', e.target.value, false)
                         }
                         placeholder="invite@exemple.fr"
-                        className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                       />
                     </div>
                   </div>
@@ -2098,15 +2098,15 @@ export function BookingModal({
               </div>
 
               {isPaidEvent && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3.5 dark:border-slate-800 dark:bg-slate-800/50">
+                <div className="rounded-[12px] border border-slate-200 bg-slate-50/80 p-4 space-y-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                       Mode de règlement
                       {guests.length > 0
                         ? ` (${totalBookingParticipants} places × ${priceLabel})`
                         : ''}
                     </span>
-                    <span className="font-mono text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                    <span className="text-sm font-bold tabular-nums text-emerald-700 dark:text-[#4ADE80]">
                       Total : {totalBookingPriceLabel}
                     </span>
                   </div>
@@ -2116,10 +2116,10 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={() => setSelectedPayMethod('card')}
-                        className={`flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                        className={`flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-[10px] border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
                           selectedPayMethod === 'card'
-                            ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
-                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                            ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                         }`}
                       >
                         <CreditCard className="h-4 w-4" aria-hidden="true" />
@@ -2128,10 +2128,10 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={() => setSelectedPayMethod('onsite')}
-                        className={`flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                        className={`flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-[10px] border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
                           selectedPayMethod === 'onsite'
-                            ? 'border-emerald-700 bg-emerald-700 text-white dark:border-emerald-600 dark:bg-emerald-600'
-                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                            ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                         }`}
                       >
                         <Wallet className="h-4 w-4" aria-hidden="true" />
@@ -2141,16 +2141,16 @@ export function BookingModal({
                   )}
 
                   {selectedPayMethod === 'card' ? (
-                    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3.5 dark:border-slate-700 dark:bg-slate-900">
+                    <div className="space-y-3 rounded-[10px] border border-slate-200 bg-white p-3.5 dark:border-[#262626] dark:bg-[#161616]">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100">
-                          <ShieldCheck className="h-4 w-4 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
+                          <ShieldCheck className="h-4 w-4 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
                           Paiement par carte ({cardBrand})
                         </span>
                         <button
                           type="button"
                           onClick={handleFillTestCard}
-                          className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 underline underline-offset-2 cursor-pointer"
+                          className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-[#4ADE80] dark:hover:text-[#22C55E] underline underline-offset-2 cursor-pointer"
                         >
                           Remplir carte test
                         </button>
@@ -2159,7 +2159,7 @@ export function BookingModal({
                       <div>
                         <label
                           htmlFor="booking-card-holder"
-                          className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                          className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                         >
                           Titulaire de la carte *
                         </label>
@@ -2174,14 +2174,14 @@ export function BookingModal({
                             setCardHolder(e.target.value);
                           }}
                           placeholder="Camille Laurent"
-                          className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                         />
                       </div>
 
                       <div>
                         <label
                           htmlFor="booking-card-number"
-                          className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                          className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                         >
                           Numéro de carte *
                         </label>
@@ -2197,7 +2197,7 @@ export function BookingModal({
                             setCardNumber(formatCardNumberInput(e.target.value))
                           }
                           placeholder="4242 4242 4242 4242"
-                          className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                         />
                       </div>
 
@@ -2205,7 +2205,7 @@ export function BookingModal({
                         <div>
                           <label
                             htmlFor="booking-card-expiry"
-                            className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                            className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                           >
                             Expiration (MM/AA) *
                           </label>
@@ -2221,13 +2221,13 @@ export function BookingModal({
                               setCardExpiry(formatCardExpiryInput(e.target.value))
                             }
                             placeholder="12/28"
-                            className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                           />
                         </div>
                         <div>
                           <label
                             htmlFor="booking-card-cvc"
-                            className="block text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                            className="block text-[11px] font-medium text-slate-600 dark:text-[#A3A3A3]"
                           >
                             CVC *
                           </label>
@@ -2243,17 +2243,17 @@ export function BookingModal({
                               setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))
                             }
                             placeholder="123"
-                            className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                           />
                         </div>
                       </div>
 
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                         Validation locale sécurisée : seuls les 4 derniers chiffres et le réseau sont conservés sur votre reçu (aucun numéro complet ni CVC n’est enregistré).
                       </p>
                     </div>
                   ) : (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/45 dark:text-amber-200">
+                    <div className="rounded-[10px] border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/45 dark:text-amber-200">
                       {guests.length > 0
                         ? `${totalBookingParticipants} places sont réservées immédiatement. Vous réglerez `
                         : 'Votre place est réservée immédiatement. Vous réglerez '}
@@ -2267,7 +2267,7 @@ export function BookingModal({
                 <div
                   ref={errorAlertRef}
                   role="alert"
-                  className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
+                  className="flex items-start gap-2 rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
                 >
                   <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
                   <span>{errorMsg}</span>
@@ -2278,14 +2278,14 @@ export function BookingModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-[44px] touch-manipulation rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                  className="min-h-[44px] touch-manipulation rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="min-h-[44px] touch-manipulation rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                  className="min-h-[44px] touch-manipulation rounded-[10px] bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
                 >
                   {submitting
                     ? isPaidEvent && selectedPayMethod === 'card'
@@ -2304,12 +2304,12 @@ export function BookingModal({
           ) : (
             <div className="space-y-3">
               <div
-                className={`rounded-xl border p-4 ${
+                className={`rounded-[12px] border p-4 ${
                   evaluation.state === 'cancelled'
-                    ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100'
+                    ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-100'
                     : evaluation.state === 'closed'
-                      ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-100'
-                      : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
+                      ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100'
+                      : 'border-slate-200 bg-slate-50 text-slate-800 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -2335,7 +2335,7 @@ export function BookingModal({
                       <button
                         type="button"
                         onClick={() => onMessageCoach(event)}
-                        className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                        className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                       >
                         <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                         Envoyer un message à l’animateur
@@ -2347,7 +2347,7 @@ export function BookingModal({
                           setAuthIntent('message');
                           setShowAuthStep(true);
                         }}
-                        className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                        className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                       >
                         <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                         Se connecter pour écrire à l’animateur
@@ -2361,13 +2361,13 @@ export function BookingModal({
                 !isSignedIn &&
                 showAuthStep &&
                 authIntent === 'message' && (
-                  <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                  <div className="space-y-4 rounded-[16px] border border-slate-200 bg-white p-4 dark:border-[#262626] dark:bg-[#161616]">
                     <div className="flex items-center justify-between gap-2">
                       <div>
-                        <h3 className="font-display text-base font-semibold text-slate-900 dark:text-white">
+                        <h3 className="font-display text-base font-semibold text-slate-900 dark:text-[#E5E5E5]">
                           Identifiez-vous pour écrire à l’animateur
                         </h3>
-                        <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                        <p className="mt-0.5 text-xs text-slate-600 dark:text-[#A3A3A3]">
                           Connectez-vous ou créez votre profil adhérent pour envoyer un message jusqu’à {formatFrenchTime(startDate)}.
                         </p>
                       </div>
@@ -2377,7 +2377,7 @@ export function BookingModal({
                           setShowAuthStep(false);
                           setAuthIntent('book');
                         }}
-                        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shrink-0 cursor-pointer"
+                        className="inline-flex min-h-[36px] items-center gap-1 rounded-[10px] border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] shrink-0 cursor-pointer"
                       >
                         <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                         Retour
@@ -2401,7 +2401,7 @@ export function BookingModal({
               {!isCoach &&
               existingRegistration?.status === 'confirmed' &&
               !existingRegistration.attended ? (
-                <div className="space-y-2.5 border-t border-slate-200 pt-4 dark:border-slate-800">
+                <div className="space-y-2.5 border-t border-slate-200 pt-4 dark:border-[#262626]">
                   <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3.5 dark:border-amber-800/80 dark:bg-amber-950/40 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-0.5 text-xs text-amber-950 dark:text-amber-100">
                       <p className="font-semibold">
@@ -2432,7 +2432,7 @@ export function BookingModal({
                             setValidatingSession(false);
                           }
                         }}
-                        className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                        className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 whitespace-nowrap cursor-pointer"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                         {validatingSession ? 'Validation...' : 'Valider ma séance'}
@@ -2442,7 +2442,7 @@ export function BookingModal({
                         <button
                           type="button"
                           onClick={onOpenMemberTracking}
-                          className="inline-flex min-h-[38px] shrink-0 items-center justify-center rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                          className="inline-flex min-h-[38px] shrink-0 items-center justify-center rounded-[10px] bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
                         >
                           Valider dans Mon suivi
                         </button>

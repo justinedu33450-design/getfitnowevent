@@ -630,14 +630,14 @@ export function MemberPortalView({
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-[#262626] sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3.5 min-w-0">
           <ProfileAvatar name={fullName} photoUrl={photoUrl} size="lg" />
           <div className="min-w-0">
-            <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl truncate">
+            <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-2xl truncate">
               {fullName}
             </h2>
-            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400 truncate">
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-[#8E8E8E] truncate">
               {user.email} · Mon profil adhérent & suivi des événements
             </p>
           </div>
@@ -648,12 +648,12 @@ export function MemberPortalView({
             <button
               type="button"
               onClick={() => onOpenMessages()}
-              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 whitespace-nowrap cursor-pointer"
+              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] whitespace-nowrap cursor-pointer"
             >
-              <MessageSquare className="h-4 w-4 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+              <MessageSquare className="h-4 w-4 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
               <span>Messagerie</span>
               {unreadMessagesCount > 0 && (
-                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 font-mono text-[10px] font-bold text-white tabular-nums">
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-bold text-white tabular-nums">
                   {unreadMessagesCount}
                 </span>
               )}
@@ -662,7 +662,7 @@ export function MemberPortalView({
           <button
             type="button"
             onClick={onExploreCalendar}
-            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
           >
             <CalendarDays className="h-4 w-4" aria-hidden="true" />
             Voir le calendrier
@@ -671,7 +671,7 @@ export function MemberPortalView({
             <button
               type="button"
               onClick={onExploreNearby}
-              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 whitespace-nowrap cursor-pointer"
+              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 whitespace-nowrap cursor-pointer"
             >
               <LocateFixed className="h-4 w-4" aria-hidden="true" />
               Autour de moi
@@ -680,7 +680,7 @@ export function MemberPortalView({
           <button
             type="button"
             onClick={onSignOut}
-            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white whitespace-nowrap cursor-pointer"
+            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] whitespace-nowrap cursor-pointer"
           >
             <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
             Déconnexion
@@ -689,18 +689,18 @@ export function MemberPortalView({
       </div>
 
       {onOpenMessages && (
-        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-3 rounded-[16px] border border-slate-200 bg-white p-4 dark:border-[#262626] dark:bg-[#161616] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-emerald-50 text-emerald-700 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]">
               <MessageSquare className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0 text-xs">
-              <p className="font-semibold text-slate-900 dark:text-white">
+              <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
                 {unreadMessagesCount > 0
                   ? `${unreadMessagesCount} nouveau${unreadMessagesCount > 1 ? 'x' : ''} message${unreadMessagesCount > 1 ? 's' : ''} de votre coach`
                   : 'Échanger avec un coach'}
               </p>
-              <p className="mt-0.5 truncate text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 truncate text-slate-500 dark:text-[#8E8E8E]">
                 {recentConversations.length > 0
                   ? `${recentConversations[0].coachName} : « ${recentConversations[0].lastMessageText} »`
                   : 'Posez vos questions sur les séances ou faites le point sur votre progression.'}
@@ -710,7 +710,7 @@ export function MemberPortalView({
           <button
             type="button"
             onClick={() => onOpenMessages(recentConversations[0])}
-            className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+            className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
           >
             {recentConversations.length > 0
               ? 'Ouvrir la discussion'
@@ -720,35 +720,35 @@ export function MemberPortalView({
       )}
 
       {/* 4-Column Personal KPI Strip */}
-      <div className="mt-6 grid grid-cols-2 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+      <div className="mt-6 grid grid-cols-2 divide-y divide-slate-200 rounded-[16px] border border-slate-200 bg-white dark:divide-[#262626] dark:border-[#262626] dark:bg-[#161616] sm:grid-cols-4 sm:divide-x sm:divide-y-0">
         <div className="p-4 sm:px-5">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
             Inscriptions totales
           </p>
-          <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
+          <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
             {statsTotalRegistrationsCount}
           </p>
         </div>
         <div className="p-4 sm:px-5">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Séances à venir</p>
-          <p className="mt-1 font-mono text-2xl font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">Séances à venir</p>
+          <p className="mt-1 text-2xl font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
             {upcomingRegistrations.length}
           </p>
         </div>
         <div className="p-4 sm:px-5">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Séances passées</p>
-          <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
+          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">Séances passées</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
             {statsPastCount}
           </p>
         </div>
         <div className="p-4 sm:px-5">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
             Présences validées
           </p>
-          <p className="mt-1 font-mono text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">
+          <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
             {attendedCount}
           </p>
-          <p className="mt-0.5 font-mono text-[11px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+          <p className="mt-0.5 text-[11px] text-emerald-700 dark:text-[#4ADE80] tabular-nums">
             {badgesSummary.unlockedCount} badge
             {badgesSummary.unlockedCount > 1 ? 's' : ''} validé
             {badgesSummary.unlockedCount > 1 ? 's' : ''}
@@ -760,11 +760,11 @@ export function MemberPortalView({
         <div
           role="status"
           aria-live="polite"
-          className="mt-5 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between"
+          className="mt-5 flex flex-col gap-3 rounded-[16px] border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5] sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-start gap-2.5 min-w-0">
             <Sparkles
-              className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+              className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
               aria-hidden="true"
             />
             <div className="min-w-0 text-xs">
@@ -773,7 +773,7 @@ export function MemberPortalView({
                   ? `Félicitations ! Nouveau badge débloqué : ${newlyUnlockedBadges[0].title}`
                   : `Félicitations ! ${newlyUnlockedBadges.length} nouveaux badges débloqués`}
               </p>
-              <p className="mt-0.5 text-emerald-800 dark:text-emerald-200">
+              <p className="mt-0.5 text-emerald-800 dark:text-[#A3A3A3]">
                 {newlyUnlockedBadges.map((b) => b.title).join(' · ')}
               </p>
             </div>
@@ -787,7 +787,7 @@ export function MemberPortalView({
                   .getElementById('member-badges-section')
                   ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
               }}
-              className="inline-flex min-h-[36px] items-center rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+              className="inline-flex min-h-[36px] items-center rounded-[10px] bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
             >
               Voir mes badges
             </button>
@@ -795,7 +795,7 @@ export function MemberPortalView({
               type="button"
               onClick={() => setNewlyUnlockedBadges([])}
               aria-label="Fermer la notification de badge"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-900/50 cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-[10px] text-emerald-700 hover:bg-emerald-100 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 cursor-pointer"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -828,19 +828,19 @@ export function MemberPortalView({
         {/* Left Column: Referent Coach + Profile + Password */}
         <div className="space-y-6 lg:col-span-5">
           {/* Referent Coach Selection Card */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <div className="rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616] space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Mon coach référent
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Par défaut, vous êtes rattaché(e) au coach administrateur David Frosio. Vous pouvez choisir un autre coach enregistré à tout moment.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+            <div className="flex items-center gap-3 rounded-[12px] border border-slate-200 bg-slate-50/80 p-3 dark:border-[#262626] dark:bg-[#1F1F1F]">
               <ProfileAvatar
                 name={
                   currentReferentCoachEntry?.displayName ||
@@ -852,13 +852,13 @@ export function MemberPortalView({
                 size="md"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                <p className="truncate text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                   {currentReferentCoachEntry?.displayName ||
                     memberProfile?.referentCoachName ||
                     defaultPrimaryCoach.displayName ||
                     'David Frosio'}
                 </p>
-                <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                <p className="truncate text-xs text-slate-500 dark:text-[#8E8E8E]">
                   {currentReferentCoachEntry?.specialty ||
                     (memberProfile?.referentCoachUid
                       ? 'Coach référent sélectionné'
@@ -872,7 +872,7 @@ export function MemberPortalView({
                 <button
                   type="button"
                   onClick={() => onRequestCoachProgram(currentReferentCoachEntry)}
-                  className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 cursor-pointer"
+                  className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-[10px] border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                 >
                   <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                   Écrire
@@ -884,7 +884,7 @@ export function MemberPortalView({
               <div className="space-y-2.5">
                 <label
                   htmlFor="member-referent-coach"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Choisir mon coach référent
                 </label>
@@ -895,7 +895,7 @@ export function MemberPortalView({
                     setSelectedReferentCoachUid(e.target.value);
                     setReferentCoachFeedback(null);
                   }}
-                  className="min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 >
                   {activeCoaches.map((c) => (
                     <option key={c.uid} value={c.uid}>
@@ -908,9 +908,9 @@ export function MemberPortalView({
 
                 {referentCoachFeedback && (
                   <p
-                    className={`rounded-lg border p-2.5 text-xs ${
+                    className={`rounded-[10px] border p-2.5 text-xs ${
                       referentCoachFeedback.type === 'success'
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
                         : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
                     }`}
                   >
@@ -927,7 +927,7 @@ export function MemberPortalView({
                       selectedReferentCoachUid === memberProfile?.referentCoachUid)
                   }
                   onClick={() => void handleSaveReferentCoach()}
-                  className="inline-flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-50 cursor-pointer"
                 >
                   <Save className="h-3.5 w-3.5" aria-hidden="true" />
                   {savingReferentCoach
@@ -939,11 +939,11 @@ export function MemberPortalView({
           </div>
 
           {/* Profile Card */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616]">
           <div
             className={`flex items-start justify-between gap-3 ${
               profileExpanded
-                ? 'border-b border-slate-100 pb-3.5 dark:border-slate-800'
+                ? 'border-b border-slate-100 pb-3.5 dark:border-[#262626]'
                 : ''
             }`}
           >
@@ -954,14 +954,14 @@ export function MemberPortalView({
               aria-controls="member-profile-details-form"
               className="flex flex-1 items-start gap-3 text-left cursor-pointer"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-700 dark:bg-[#1F1F1F] dark:text-[#E5E5E5]">
                 <UserCheck className="h-4 w-4" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Mon profil adhérent
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Ces informations pré-remplissent vos réservations et apparaissent sur votre suivi coach.
                 </p>
               </div>
@@ -976,7 +976,7 @@ export function MemberPortalView({
                   ? 'Replier les informations du profil'
                   : 'Déplier les informations du profil'
               }
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
             >
               <ChevronDown
                 className={`h-4 w-4 transition-transform duration-200 ${
@@ -1005,7 +1005,7 @@ export function MemberPortalView({
               <div>
                 <label
                   htmlFor="my-member-firstname"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Prénom *
                 </label>
@@ -1017,14 +1017,14 @@ export function MemberPortalView({
                   maxLength={VALIDATION_LIMITS.FIRST_NAME_MAX}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="my-member-lastname"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Nom *
                 </label>
@@ -1036,7 +1036,7 @@ export function MemberPortalView({
                   maxLength={VALIDATION_LIMITS.LAST_NAME_MAX}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
             </div>
@@ -1044,7 +1044,7 @@ export function MemberPortalView({
             <div>
               <label
                 htmlFor="my-member-email"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
               >
                 Adresse email connectée
               </label>
@@ -1053,14 +1053,14 @@ export function MemberPortalView({
                 type="email"
                 readOnly
                 value={user.email || ''}
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F]/60 dark:text-[#A3A3A3]"
               />
             </div>
 
             <div>
               <label
                 htmlFor="my-member-phone"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
               >
                 Téléphone
               </label>
@@ -1071,7 +1071,7 @@ export function MemberPortalView({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="06 12 34 56 78"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
@@ -1079,7 +1079,7 @@ export function MemberPortalView({
               <div className="sm:col-span-8">
                 <label
                   htmlFor="my-member-birthdate"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Date de naissance
                 </label>
@@ -1090,14 +1090,14 @@ export function MemberPortalView({
                   max={todayIso}
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
               <div className="sm:col-span-4">
-                <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <span className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]">
                   Âge (auto)
                 </span>
-                <div className="mt-1 flex min-h-[44px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 font-mono text-sm font-semibold text-slate-800 tabular-nums dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
+                <div className="mt-1 flex min-h-[44px] items-center rounded-[10px] border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-800 tabular-nums dark:border-[#262626] dark:bg-[#1F1F1F]/60 dark:text-[#E5E5E5]">
                   {computedAge !== null ? `${computedAge} ans` : '—'}
                 </div>
               </div>
@@ -1106,7 +1106,7 @@ export function MemberPortalView({
             <div>
               <label
                 htmlFor="my-member-fitness-level"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
               >
                 Niveau sportif
               </label>
@@ -1116,7 +1116,7 @@ export function MemberPortalView({
                 onChange={(e) =>
                   setFitnessLevel(e.target.value as FitnessLevel | '')
                 }
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               >
                 <option value="">Sélectionner votre niveau</option>
                 {FITNESS_LEVEL_OPTIONS.map((opt) => (
@@ -1130,7 +1130,7 @@ export function MemberPortalView({
             <div>
               <label
                 htmlFor="my-member-goal"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
               >
                 Objectif sportif
               </label>
@@ -1141,16 +1141,16 @@ export function MemberPortalView({
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
                 placeholder="Ex. Remise en forme, endurance, mobilité..."
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
             </div>
 
             {feedback && (
               <div
-                className={`rounded-lg border p-3 text-xs ${
+                className={`rounded-[10px] border p-3 text-xs ${
                   feedback.type === 'success'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-                    : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+                    : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
                 }`}
               >
                 {feedback.text}
@@ -1160,7 +1160,7 @@ export function MemberPortalView({
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white disabled:opacity-60 cursor-pointer"
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
             >
               <Save className="h-4 w-4" aria-hidden="true" />
               {saving ? 'Enregistrement...' : 'Enregistrer mon profil'}
@@ -1175,20 +1175,20 @@ export function MemberPortalView({
         {/* Right Column: Personal Event Tracking + Member Badges */}
         <div className="space-y-6 lg:col-span-7">
           {/* Event Tracking Card */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616]">
           <div
             className={
               trackingExpanded
-                ? 'border-b border-slate-100 pb-4 dark:border-slate-800'
+                ? 'border-b border-slate-100 pb-4 dark:border-[#262626]'
                 : ''
             }
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Mon suivi des événements
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Retrouvez vos séances réservées et l’historique de vos présences.
                 </p>
               </div>
@@ -1202,7 +1202,7 @@ export function MemberPortalView({
                     ? 'Replier le suivi des événements'
                     : 'Déplier le suivi des événements'
                 }
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 <ChevronDown
                   className={`h-4 w-4 transition-transform duration-200 ${
@@ -1218,7 +1218,7 @@ export function MemberPortalView({
                 <div
                   role="group"
                   aria-label="Filtrer mes événements"
-                  className="inline-flex flex-wrap items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+                  className="inline-flex flex-wrap items-center gap-1 rounded-[10px] bg-slate-100 p-1 dark:bg-[#1F1F1F]"
                 >
                   <button
                     type="button"
@@ -1226,10 +1226,10 @@ export function MemberPortalView({
                       setTrackingTab('upcoming');
                       setConfirmCancelRegId(null);
                     }}
-                    className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
+                    className={`min-h-[34px] rounded-[8px] px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
                       trackingTab === 'upcoming'
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     À venir ({upcomingRegistrations.length})
@@ -1240,17 +1240,17 @@ export function MemberPortalView({
                       setTrackingTab('history');
                       setConfirmCancelRegId(null);
                     }}
-                    className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
+                    className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
                       trackingTab === 'history'
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                     }`}
                   >
                     <span>Historique ({pastRegistrations.length})</span>
                     {endedUnvalidatedRegistrations.length > 0 && (
                       <span
                         aria-label={`${endedUnvalidatedRegistrations.length} séance(s) à valider`}
-                        className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 font-mono text-[10px] font-bold text-white tabular-nums"
+                        className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white tabular-nums"
                       >
                         {endedUnvalidatedRegistrations.length}
                       </span>
@@ -1263,10 +1263,10 @@ export function MemberPortalView({
                         setTrackingTab('cancelled');
                         setConfirmCancelRegId(null);
                       }}
-                      className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
+                      className={`min-h-[34px] rounded-[8px] px-3 py-1 text-xs font-medium whitespace-nowrap cursor-pointer ${
                         trackingTab === 'cancelled'
-                          ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                          ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       Annulées ({cancelledRegistrations.length})
@@ -1280,13 +1280,13 @@ export function MemberPortalView({
           {trackingExpanded && (
           <div id="member-tracking-details">
           {endedUnvalidatedRegistrations.length > 0 && (
-            <div className="mt-4 flex flex-col gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3.5 dark:border-amber-800 dark:bg-amber-950/45 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-4 flex flex-col gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50/90 p-3.5 dark:border-amber-800/60 dark:bg-amber-950/40 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-2.5 min-w-0">
                 <BellRing
                   className="mt-0.5 h-4 w-4 shrink-0 text-amber-800 dark:text-amber-300"
                   aria-hidden="true"
                 />
-                <div className="text-xs text-amber-950 dark:text-amber-100">
+                <div className="text-xs text-amber-950 dark:text-amber-200">
                   <p className="font-semibold">
                     {endedUnvalidatedRegistrations.length === 1
                       ? '1 séance terminée attend votre validation'
@@ -1301,7 +1301,7 @@ export function MemberPortalView({
                 <button
                   type="button"
                   onClick={() => setTrackingTab('history')}
-                  className="inline-flex min-h-[36px] shrink-0 items-center justify-center rounded-lg bg-amber-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-500 whitespace-nowrap cursor-pointer"
+                  className="inline-flex min-h-[36px] shrink-0 items-center justify-center rounded-[10px] bg-amber-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-500 whitespace-nowrap cursor-pointer"
                 >
                   Valider dans l’historique
                 </button>
@@ -1310,7 +1310,7 @@ export function MemberPortalView({
           )}
 
           {validationError && (
-            <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+            <div className="mt-3 rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200">
               {validationError}
             </div>
           )}
@@ -1318,10 +1318,10 @@ export function MemberPortalView({
           {cancelFeedback && (
             <div
               role="status"
-              className={`mt-3 rounded-lg border p-3 text-xs ${
+              className={`mt-3 rounded-[10px] border p-3 text-xs ${
                 cancelFeedback.type === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-                  : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+                  : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
               }`}
             >
               {cancelFeedback.text}
@@ -1343,17 +1343,17 @@ export function MemberPortalView({
           {displayedRegistrations.length === 0 ? (
             <div className="py-10 text-center">
               <UserCheck
-                className="mx-auto h-9 w-9 text-slate-300 dark:text-slate-600"
+                className="mx-auto h-9 w-9 text-slate-300 dark:text-[#525252]"
                 aria-hidden="true"
               />
-              <h4 className="mt-3 font-display text-sm font-bold text-slate-900 dark:text-white">
+              <h4 className="mt-3 font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                 {trackingTab === 'upcoming'
                   ? 'Aucune séance réservée à venir'
                   : trackingTab === 'history'
                     ? 'Aucune séance passée pour le moment'
                     : 'Aucune inscription annulée'}
               </h4>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 {trackingTab === 'upcoming'
                   ? 'Parcourez le calendrier pour réserver votre prochaine séance sportive.'
                   : trackingTab === 'history'
@@ -1365,7 +1365,7 @@ export function MemberPortalView({
                   <button
                     type="button"
                     onClick={onExploreCalendar}
-                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                   >
                     <CalendarDays className="h-4 w-4" aria-hidden="true" />
                     Explorer le calendrier
@@ -1374,7 +1374,7 @@ export function MemberPortalView({
                     <button
                       type="button"
                       onClick={onExploreNearby}
-                      className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 cursor-pointer"
+                      className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                     >
                       <LocateFixed className="h-4 w-4" aria-hidden="true" />
                       Autour de moi
@@ -1440,14 +1440,14 @@ export function MemberPortalView({
                 return (
                   <div
                     key={reg.id}
-                    className="rounded-lg border border-slate-200 p-4 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
+                    className="rounded-[12px] border border-slate-200 p-4 transition-colors hover:border-slate-300 dark:border-[#262626] dark:bg-[#1F1F1F]/70 dark:hover:border-[#3A3A3A]"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 space-y-1.5">
                         <div className="flex flex-wrap items-center gap-2">
                           {discName && discStyle && (
                             <span
-                              className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+                              className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
                             >
                               <DisciplineIcon
                                 disciplineName={discName}
@@ -1467,63 +1467,63 @@ export function MemberPortalView({
                               </span>
                             </span>
                           ) : reg.attended ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-[#4ADE80]">
                               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                               Séance validée
                             </span>
                           ) : isOngoing ? (
-                            <span className="text-xs font-semibold text-sky-700 dark:text-sky-400">
+                            <span className="text-xs font-semibold text-emerald-700 dark:text-[#4ADE80]">
                               Séance en cours
                             </span>
                           ) : trackingTab === 'upcoming' ? (
-                            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                            <span className="text-xs font-semibold text-emerald-700 dark:text-[#4ADE80]">
                               Place confirmée
                             </span>
                           ) : (
-                            <span className="inline-flex items-center rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                            <span className="inline-flex items-center rounded-[6px] border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300">
                               À valider
                             </span>
                           )}
 
                           <span
-                            className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
+                            className={`inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
                               payInfo.status === 'paid'
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]'
                                 : payInfo.status === 'pending'
-                                  ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                  ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300'
                                   : payInfo.status === 'refunded'
-                                    ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                                    : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                    ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300'
+                                    : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3]'
                             }`}
                           >
                             {payInfo.shortLabel}
                           </span>
 
                           {isHostedGuest && (
-                            <span className="inline-flex items-center rounded border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                            <span className="inline-flex items-center rounded-[6px] border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                               Invité : {reg.firstName} {reg.lastName}
                             </span>
                           )}
                           {!isHostedGuest && reg.isGuest && reg.invitedByName && (
-                            <span className="inline-flex items-center rounded border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                            <span className="inline-flex items-center rounded-[6px] border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
                               Invité par {reg.invitedByName}
                             </span>
                           )}
                         </div>
 
-                        <h4 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                        <h4 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                           {matchedEvent?.title || reg.eventTitle}
                         </h4>
 
                         {isHostedGuest && (
-                          <p className="text-xs text-sky-800 dark:text-sky-300">
+                          <p className="text-xs text-emerald-800 dark:text-[#4ADE80]">
                             Accompagnant inscrit : {reg.firstName} {reg.lastName} ({reg.email})
                           </p>
                         )}
 
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
-                          <span className="inline-flex items-center gap-1.5 font-mono tabular-nums capitalize">
-                            <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-[#A3A3A3]">
+                          <span className="inline-flex items-center gap-1.5 tabular-nums capitalize">
+                            <Clock className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                             {typeof durationForDisplay === 'number' &&
                             durationForDisplay > 0
                               ? `${formatFrenchDateShort(startDate)} · ${formatTimeRange(
@@ -1537,13 +1537,13 @@ export function MemberPortalView({
 
                           {matchedEvent && (
                             <span className="inline-flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                              <MapPin className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                               {matchedEvent.location} · {matchedEvent.city}
                             </span>
                           )}
 
                           {reg.paymentReference && (
-                            <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                            <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                               Réf. {reg.paymentReference}
                             </span>
                           )}
@@ -1577,7 +1577,7 @@ export function MemberPortalView({
                               type="button"
                               disabled={isValidating}
                               onClick={() => void handleValidateSession(reg)}
-                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 whitespace-nowrap cursor-pointer"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                               {isValidating ? 'Validation...' : 'Valider ma séance'}
@@ -1614,7 +1614,7 @@ export function MemberPortalView({
                                   cardLast4: reg.cardLast4,
                                 })
                               }
-                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                             >
                               <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                               Reçu
@@ -1624,7 +1624,7 @@ export function MemberPortalView({
                             <button
                               type="button"
                               onClick={() => downloadEventIcs(matchedEvent)}
-                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                             >
                               <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
                               Agenda .ics
@@ -1634,7 +1634,7 @@ export function MemberPortalView({
                             <button
                               type="button"
                               onClick={() => onSelectEvent(matchedEvent)}
-                              className="inline-flex min-h-[38px] items-center rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                              className="inline-flex min-h-[38px] items-center rounded-[10px] border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                             >
                               Détails & carte
                             </button>
@@ -1646,7 +1646,7 @@ export function MemberPortalView({
                                 setCancelFeedback(null);
                                 setConfirmCancelRegId(reg.id);
                               }}
-                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:border-rose-300 hover:bg-rose-50 dark:border-rose-900/70 dark:bg-slate-900 dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
+                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:border-rose-300 hover:bg-rose-50 dark:border-rose-900/70 dark:bg-[#161616] dark:text-rose-300 dark:hover:bg-rose-950/50 cursor-pointer"
                             >
                               <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
                               Annuler
@@ -1665,7 +1665,7 @@ export function MemberPortalView({
                       if (!canReviewReg) {
                         if (isOwnRegistration && !isCancelled && isEnded && !reg.attended) {
                           return (
-                            <p className="mt-3 border-t border-slate-100 pt-2.5 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                            <p className="mt-3 border-t border-slate-100 pt-2.5 text-xs text-slate-500 dark:border-[#262626] dark:text-[#8E8E8E]">
                               Validez votre séance pour pouvoir laisser un avis et un commentaire.
                             </p>
                           );
@@ -1682,7 +1682,7 @@ export function MemberPortalView({
                         Boolean(myReview) && deletingReviewId === myReview?.id;
 
                       return (
-                        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-[#262626]">
                           {isComposerOpen ? (
                             <EventReviewComposer
                               initialRating={myReview?.rating ?? 5}
@@ -1719,10 +1719,10 @@ export function MemberPortalView({
                               }}
                             />
                           ) : myReview ? (
-                            <div className="space-y-1.5 rounded-lg bg-slate-50/80 p-3 dark:bg-slate-800/50">
+                            <div className="space-y-1.5 rounded-[10px] border border-slate-200/80 bg-slate-50/80 p-3 dark:border-[#262626] dark:bg-[#161616]">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                                  <span className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                                     Votre avis
                                   </span>
                                   <StarRatingDisplay rating={myReview.rating} />
@@ -1734,7 +1734,7 @@ export function MemberPortalView({
                                       setReviewError(null);
                                       setReviewingRegId(reg.id);
                                     }}
-                                    className="min-h-[30px] rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                                    className="min-h-[30px] rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                                   >
                                     Modifier
                                   </button>
@@ -1745,7 +1745,7 @@ export function MemberPortalView({
                                         setConfirmDeleteReviewId(myReview.id)
                                       }
                                       aria-label="Supprimer mon avis"
-                                      className="inline-flex min-h-[30px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:text-rose-400 cursor-pointer"
+                                      className="inline-flex min-h-[30px] items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:border-rose-800 dark:hover:text-rose-400 cursor-pointer"
                                     >
                                       <Trash2 className="h-3 w-3" aria-hidden="true" />
                                       Supprimer
@@ -1753,11 +1753,11 @@ export function MemberPortalView({
                                   )}
                                 </div>
                               </div>
-                              <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-line break-words">
+                              <p className="text-xs leading-relaxed text-slate-700 dark:text-[#E5E5E5] whitespace-pre-line break-words">
                                 {myReview.comment}
                               </p>
                               {isConfirmingReviewDel && (
-                                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2 text-xs dark:border-slate-700">
+                                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2 text-xs dark:border-[#262626]">
                                   <span className="text-rose-800 dark:text-rose-200">
                                     Supprimer définitivement votre avis ?
                                   </span>
@@ -1780,7 +1780,7 @@ export function MemberPortalView({
                                           setDeletingReviewId(null);
                                         }
                                       }}
-                                      className="min-h-[28px] rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                      className="min-h-[28px] rounded-[6px] bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                                     >
                                       {isDeletingThis
                                         ? 'Suppression...'
@@ -1792,7 +1792,7 @@ export function MemberPortalView({
                                       onClick={() =>
                                         setConfirmDeleteReviewId(null)
                                       }
-                                      className="min-h-[28px] rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 cursor-pointer"
+                                      className="min-h-[28px] rounded-[6px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] cursor-pointer"
                                     >
                                       Non
                                     </button>
@@ -1802,7 +1802,7 @@ export function MemberPortalView({
                             </div>
                           ) : (
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                              <span className="text-xs text-slate-500 dark:text-[#8E8E8E]">
                                 Comment s’est passée cette séance ?
                               </span>
                               <button
@@ -1811,7 +1811,7 @@ export function MemberPortalView({
                                   setReviewError(null);
                                   setReviewingRegId(reg.id);
                                 }}
-                                className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/50 cursor-pointer"
+                                className="inline-flex min-h-[34px] items-center gap-1.5 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                               >
                                 <MessageSquare
                                   className="h-3.5 w-3.5"
@@ -1826,8 +1826,8 @@ export function MemberPortalView({
                     })()}
 
                     {isConfirmingCancel && canCancelReg && (
-                      <div className="mt-3 flex flex-col gap-2.5 rounded-lg border border-rose-200 bg-rose-50/80 p-3 dark:border-rose-900/80 dark:bg-rose-950/40 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-xs text-rose-950 dark:text-rose-100">
+                      <div className="mt-3 flex flex-col gap-2.5 rounded-[10px] border border-rose-200 bg-rose-50/80 p-3 dark:border-rose-800/60 dark:bg-rose-950/40 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs text-rose-950 dark:text-rose-200">
                           <strong>Confirmer l’annulation ?</strong>{' '}
                           {isHostedGuest
                             ? `La place de ${reg.firstName} ${reg.lastName} sera libérée.`
@@ -1841,7 +1841,7 @@ export function MemberPortalView({
                             type="button"
                             disabled={isCancelling}
                             onClick={() => void handleConfirmCancelRegistration(reg)}
-                            className="inline-flex min-h-[36px] items-center justify-center rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                            className="inline-flex min-h-[36px] items-center justify-center rounded-[10px] bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                           >
                             {isCancelling ? 'Annulation...' : 'Confirmer l’annulation'}
                           </button>
@@ -1849,7 +1849,7 @@ export function MemberPortalView({
                             type="button"
                             disabled={isCancelling}
                             onClick={() => setConfirmCancelRegId(null)}
-                            className="inline-flex min-h-[36px] items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                            className="inline-flex min-h-[36px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                           >
                             Conserver ma place
                           </button>

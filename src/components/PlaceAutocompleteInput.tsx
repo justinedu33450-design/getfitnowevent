@@ -39,7 +39,7 @@ export function PlaceAutocompleteInput({
   inputClassName,
 }: PlaceAutocompleteInputProps) {
   const defaultClassName =
-    'mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500';
+    'mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20';
 
   if (!hasMapsApiKey) {
     return (
@@ -277,7 +277,7 @@ function PlaceAutocompleteInner({
       />
 
       {open && suggestions.length > 0 && (
-        <ul className="absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto overscroll-contain rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <ul className="absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto overscroll-contain rounded-[12px] border border-slate-200 bg-white shadow-lg dark:border-[#262626] dark:bg-[#161616]">
           {suggestions.map((s, idx) => (
             <li key={idx}>
               <button
@@ -292,10 +292,10 @@ function PlaceAutocompleteInner({
                 onClick={() => {
                   void handleSuggestionClick(s);
                 }}
-                className="flex min-h-[44px] w-full items-start gap-2 px-3 py-2.5 text-left text-xs text-slate-800 hover:bg-slate-50 active:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 dark:active:bg-slate-800 cursor-pointer touch-manipulation"
+                className="flex min-h-[44px] w-full items-start gap-2 px-3 py-2.5 text-left text-xs text-slate-800 hover:bg-slate-50 active:bg-slate-100 dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] dark:active:bg-[#262626] cursor-pointer touch-manipulation"
               >
                 <MapPin
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700 dark:text-emerald-400"
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
                   aria-hidden="true"
                 />
                 <span>{s.placePrediction?.text.text}</span>

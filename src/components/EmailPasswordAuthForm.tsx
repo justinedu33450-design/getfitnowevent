@@ -119,17 +119,17 @@ export function EmailPasswordAuthForm({
       <div
         role="tablist"
         aria-label="Mode d’authentification"
-        className="grid grid-cols-2 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+        className="grid grid-cols-2 rounded-[10px] bg-slate-100 p-1 dark:border dark:border-[#262626] dark:bg-[#1F1F1F]"
       >
         <button
           type="button"
           role="tab"
           aria-selected={mode === 'login'}
           onClick={() => switchMode('login')}
-          className={`min-h-[38px] rounded-md px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+          className={`min-h-[38px] rounded-[8px] px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
             mode === 'login'
-              ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
+              ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+              : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
           }`}
         >
           Se connecter
@@ -139,10 +139,10 @@ export function EmailPasswordAuthForm({
           role="tab"
           aria-selected={mode === 'register'}
           onClick={() => switchMode('register')}
-          className={`min-h-[38px] rounded-md px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+          className={`min-h-[38px] rounded-[8px] px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
             mode === 'register'
-              ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
+              ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+              : 'text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5]'
           }`}
         >
           Créer un compte
@@ -156,7 +156,7 @@ export function EmailPasswordAuthForm({
               <div>
                 <label
                   htmlFor={`${audience}-auth-firstname`}
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Prénom *
                 </label>
@@ -169,13 +169,13 @@ export function EmailPasswordAuthForm({
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Camille"
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
               <div>
                 <label
                   htmlFor={`${audience}-auth-lastname`}
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Nom *
                 </label>
@@ -188,7 +188,7 @@ export function EmailPasswordAuthForm({
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Laurent"
-                  className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
             </div>
@@ -196,7 +196,7 @@ export function EmailPasswordAuthForm({
             <div>
               <label
                 htmlFor={`${audience}-auth-fullname`}
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
               >
                 Nom complet *
               </label>
@@ -209,7 +209,7 @@ export function EmailPasswordAuthForm({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="David Frosio"
-                className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
             </div>
           ))}
@@ -217,7 +217,7 @@ export function EmailPasswordAuthForm({
         <div>
           <label
             htmlFor={`${audience}-auth-email`}
-            className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+            className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
           >
             Adresse email *
           </label>
@@ -230,7 +230,7 @@ export function EmailPasswordAuthForm({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="nom@exemple.fr"
-            className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+            className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
           />
         </div>
 
@@ -239,7 +239,7 @@ export function EmailPasswordAuthForm({
             <div className="flex items-center justify-between gap-2">
               <label
                 htmlFor={`${audience}-auth-password`}
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
               >
                 Mot de passe *
               </label>
@@ -247,7 +247,7 @@ export function EmailPasswordAuthForm({
                 <button
                   type="button"
                   onClick={() => switchMode('reset')}
-                  className="text-[11px] font-medium text-emerald-700 hover:underline dark:text-emerald-400 cursor-pointer"
+                  className="text-[11px] font-medium text-emerald-700 hover:underline dark:text-[#4ADE80] cursor-pointer"
                 >
                   Mot de passe oublié ?
                 </button>
@@ -263,7 +263,7 @@ export function EmailPasswordAuthForm({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="6 caractères minimum"
-                className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white pl-3 pr-10 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
               />
               <button
                 type="button"
@@ -273,7 +273,7 @@ export function EmailPasswordAuthForm({
                     ? 'Masquer le mot de passe'
                     : 'Afficher le mot de passe'
                 }
-                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer"
+                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[8px] text-slate-400 hover:text-slate-700 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -289,7 +289,7 @@ export function EmailPasswordAuthForm({
           <div>
             <label
               htmlFor={`${audience}-auth-confirm`}
-              className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
             >
               Confirmer le mot de passe *
             </label>
@@ -302,7 +302,7 @@ export function EmailPasswordAuthForm({
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Répétez votre mot de passe"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="mt-1 min-h-[44px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
             />
           </div>
         )}
@@ -310,7 +310,7 @@ export function EmailPasswordAuthForm({
         {displayedError && (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
+            className="flex items-start gap-2 rounded-[10px] border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200"
           >
             <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
             <span>{displayedError}</span>
@@ -318,44 +318,44 @@ export function EmailPasswordAuthForm({
         )}
 
         {resetSent && (
-          <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200">
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+          <div className="flex items-start gap-2 rounded-[10px] border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
             <span>
               Si un compte existe pour cette adresse, un email de réinitialisation vient d’être envoyé.
             </span>
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
-        >
-          {mode === 'login' && <LogIn className="h-4 w-4" aria-hidden="true" />}
-          {mode === 'register' && (
-            <UserPlus className="h-4 w-4" aria-hidden="true" />
-          )}
-          {mode === 'reset' && (
-            <KeyRound className="h-4 w-4" aria-hidden="true" />
-          )}
-          {submitting
-            ? 'Validation en cours...'
-            : mode === 'login'
-              ? 'Se connecter avec mon mot de passe'
-              : mode === 'register'
-                ? 'Créer mon profil avec mot de passe'
-                : 'Envoyer le lien de réinitialisation'}
-        </button>
-
-        {mode === 'reset' && (
           <button
-            type="button"
-            onClick={() => switchMode('login')}
-            className="w-full text-center text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 cursor-pointer"
+            type="submit"
+            disabled={submitting}
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
           >
-            Retour à la connexion
+            {mode === 'login' && <LogIn className="h-4 w-4" aria-hidden="true" />}
+            {mode === 'register' && (
+              <UserPlus className="h-4 w-4" aria-hidden="true" />
+            )}
+            {mode === 'reset' && (
+              <KeyRound className="h-4 w-4" aria-hidden="true" />
+            )}
+            {submitting
+              ? 'Validation en cours...'
+              : mode === 'login'
+                ? 'Se connecter avec mon mot de passe'
+                : mode === 'register'
+                  ? 'Créer mon profil avec mot de passe'
+                  : 'Envoyer le lien de réinitialisation'}
           </button>
-        )}
+
+          {mode === 'reset' && (
+            <button
+              type="button"
+              onClick={() => switchMode('login')}
+              className="w-full text-center text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
+            >
+              Retour à la connexion
+            </button>
+          )}
       </form>
     </div>
   );

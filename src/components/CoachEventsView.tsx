@@ -317,7 +317,7 @@ export function CoachEventsView({
     return (
       <div
         key={ev.id}
-        className={`overflow-hidden rounded-xl border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white dark:border-slate-800 dark:bg-slate-900`}
+        className={`overflow-hidden rounded-[16px] border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white dark:border-[#262626] dark:bg-[#161616]`}
       >
         {coverImageSrc && (
           <button
@@ -326,7 +326,7 @@ export function CoachEventsView({
               setLightboxImage({ src: coverImageSrc, title: ev.title })
             }
             aria-label={`Agrandir le visuel de ${ev.title}`}
-            className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-slate-800 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+            className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200/80 bg-slate-900 dark:border-[#262626] dark:bg-[#0E0E0E] cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#4ADE80]"
           >
             <img
               src={coverImageSrc}
@@ -335,7 +335,7 @@ export function CoachEventsView({
               style={{ objectPosition: coverImagePosition }}
               loading="lazy"
             />
-            <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
+            <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-[6px] bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
               <Maximize2 className="h-3 w-3" aria-hidden="true" />
               Agrandir
             </span>
@@ -344,18 +344,18 @@ export function CoachEventsView({
         <div className="p-4">
           <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-xs font-semibold capitalize text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-semibold capitalize text-slate-500 dark:text-[#8E8E8E]">
               {formatFrenchDateShort(ev.startAt.toDate())} ·{' '}
-              <span className="font-mono tabular-nums">
+              <span className="tabular-nums">
                 {formatTimeRange(ev.startAt.toDate(), ev.durationMinutes)}
               </span>
             </p>
-            <h3 className="mt-1 font-display text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="mt-1 font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
               {ev.title}
             </h3>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span
-                className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+                className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
               >
                 <DisciplineIcon
                   disciplineName={ev.discipline}
@@ -365,31 +365,31 @@ export function CoachEventsView({
                 {ev.discipline}
               </span>
               {hasEventDuration(ev) && (
-                <span className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                   {ev.durationMinutes} min
                 </span>
               )}
               <span
-                className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${
+                className={`inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
                   ev.isPaid
                     ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                    : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]'
                 }`}
               >
                 {formatEventPrice(ev)}
               </span>
             </div>
             {ev.isPaid && (
-              <p className="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                 {formatPaymentModeLabel(ev.paymentMode)} · Encaissé :{' '}
-                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                <span className="font-semibold text-emerald-700 dark:text-[#4ADE80]">
                   {formatPriceEuros(getCollectedCents(ev.id))}
                 </span>
               </p>
             )}
-            <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+            <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-slate-600 dark:text-[#A3A3A3]">
               <UserCheck
-                className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+                className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#8E8E8E]"
                 aria-hidden="true"
               />
               <span>{formatEventCoachesLabel(ev)}</span>
@@ -403,7 +403,7 @@ export function CoachEventsView({
                     href={safeExternalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                    className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-emerald-700 hover:underline dark:text-[#4ADE80]"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span className="truncate">{formatExternalUrlLabel(safeExternalUrl)}</span>
@@ -416,12 +416,12 @@ export function CoachEventsView({
             <span
               className={`text-xs font-semibold ${
                 evalInfo.state === 'open'
-                  ? 'text-emerald-700 dark:text-emerald-400'
+                  ? 'text-emerald-700 dark:text-[#4ADE80]'
                   : evalInfo.state === 'closed'
                     ? 'text-amber-700 dark:text-amber-400'
                     : evalInfo.state === 'full' || evalInfo.state === 'cancelled'
                       ? 'text-rose-700 dark:text-rose-400'
-                      : 'text-slate-500 dark:text-slate-400'
+                      : 'text-slate-500 dark:text-[#8E8E8E]'
               }`}
             >
               {evalInfo.statusLabel}
@@ -431,17 +431,17 @@ export function CoachEventsView({
                 Pas d’inscrit à cette séance
               </p>
             ) : evalInfo.cutoffMinutes > 0 && evalInfo.state !== 'cancelled' ? (
-              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                 Clôture {formatBookingCutoffLabel(evalInfo.cutoffMinutes)} avant
               </p>
             ) : null}
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-[#262626] dark:text-[#A3A3A3]">
           <span className="inline-flex min-w-0 items-center gap-1 truncate">
             <MapPin
-              className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+              className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#8E8E8E]"
               aria-hidden="true"
             />
             <span className="truncate">
@@ -451,7 +451,7 @@ export function CoachEventsView({
           </span>
           <div className="flex items-center gap-3 shrink-0">
             <EventRatingInline summary={ratingSummaryByEventId?.get(ev.id)} />
-            <span className="font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
+            <span className="font-semibold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
               {formatCapacityCompact(effectiveEvent)}
               {regCount > 0 && ` (${presentCount} prés.)`}
             </span>
@@ -462,7 +462,7 @@ export function CoachEventsView({
           <button
             type="button"
             onClick={() => onOpenRoster(effectiveEvent, 'roster')}
-            className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+            className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
           >
             <Users className="h-4 w-4" aria-hidden="true" />
             Inscrits ({regCount})
@@ -471,7 +471,7 @@ export function CoachEventsView({
             type="button"
             onClick={() => onOpenRoster(ev, 'reviews')}
             title="Consulter les avis"
-            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
           >
             <MessageSquare className="h-4 w-4" aria-hidden="true" />
             Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
@@ -490,7 +490,7 @@ export function CoachEventsView({
             onClick={() => onDuplicateEvent(ev)}
             title="Dupliquer sur une autre date"
             aria-label={`Dupliquer ${ev.title}`}
-            className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <Copy className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -499,13 +499,13 @@ export function CoachEventsView({
             type="button"
             onClick={() => onEditEvent(ev)}
             aria-label={`Modifier ${ev.title}`}
-            className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <Edit3 className="h-4 w-4" aria-hidden="true" />
           </button>
 
           {confirmDeleteId === ev.id ? (
-            <div className="flex w-full flex-col gap-2 rounded-lg border border-rose-200 bg-rose-50/70 p-2.5 dark:border-rose-900/70 dark:bg-rose-950/40">
+            <div className="flex w-full flex-col gap-2 rounded-[10px] border border-rose-200 bg-rose-50/70 p-2.5 dark:border-rose-900/70 dark:bg-rose-950/40">
               <p className="text-xs text-rose-950 dark:text-rose-100">
                 Supprimer cette séance ?{' '}
                 {regCount > 0
@@ -517,7 +517,7 @@ export function CoachEventsView({
                   type="button"
                   disabled={actionBusyId === ev.id}
                   onClick={() => void handleConfirmDelete(ev)}
-                  className="min-h-[38px] flex-1 rounded-lg bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                  className="min-h-[38px] flex-1 rounded-[10px] bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                 >
                   {actionBusyId === ev.id
                     ? 'Suppression...'
@@ -529,7 +529,7 @@ export function CoachEventsView({
                   type="button"
                   disabled={actionBusyId === ev.id}
                   onClick={() => setConfirmDeleteId(null)}
-                  className="min-h-[38px] rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 cursor-pointer"
+                  className="min-h-[38px] rounded-[10px] border border-slate-200 bg-white px-3 text-xs text-slate-600 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] cursor-pointer"
                 >
                   Non
                 </button>
@@ -541,7 +541,7 @@ export function CoachEventsView({
               onClick={() => setConfirmDeleteId(ev.id)}
               title="Supprimer la séance et notifier les inscrits"
               aria-label={`Supprimer ${ev.title} et notifier les inscrits`}
-              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+              className="flex h-[44px] w-[44px] items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#8E8E8E] dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -570,23 +570,23 @@ export function CoachEventsView({
     ).length;
 
     return (
-      <tr key={ev.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+      <tr key={ev.id} className="hover:bg-slate-50/70 dark:hover:bg-[#1F1F1F]/60">
         <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top whitespace-nowrap">
-          <p className="font-medium capitalize text-slate-900 dark:text-white">
+          <p className="font-medium capitalize text-slate-900 dark:text-[#E5E5E5]">
             {formatFrenchDateShort(ev.startAt.toDate())}
           </p>
-          <p className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+          <p className="text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
             {formatTimeRange(ev.startAt.toDate(), ev.durationMinutes)}
           </p>
         </td>
 
         <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top min-w-[200px]">
-          <p className="font-semibold text-slate-900 dark:text-white">
+          <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
             {ev.title}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span
-              className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+              className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
             >
               <DisciplineIcon
                 disciplineName={ev.discipline}
@@ -596,31 +596,31 @@ export function CoachEventsView({
               {ev.discipline}
             </span>
             {hasEventDuration(ev) && (
-              <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+              <span className="text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums whitespace-nowrap">
                 {ev.durationMinutes} min
               </span>
             )}
             <span
-              className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums whitespace-nowrap ${
+              className={`inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold tabular-nums whitespace-nowrap ${
                 ev.isPaid
                   ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                  : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]'
               }`}
             >
               {formatEventPrice(ev)}
             </span>
           </div>
           {ev.isPaid && (
-            <p className="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums">
               {formatPaymentModeLabel(ev.paymentMode)} · Encaissé :{' '}
-              <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+              <span className="font-semibold text-emerald-700 dark:text-[#4ADE80]">
                 {formatPriceEuros(getCollectedCents(ev.id))}
               </span>
             </p>
           )}
-          <p className="mt-1 flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+          <p className="mt-1 flex items-center gap-1 text-xs text-slate-600 dark:text-[#A3A3A3]">
             <UserCheck
-              className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+              className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#8E8E8E]"
               aria-hidden="true"
             />
             <span>{formatEventCoachesLabel(ev)}</span>
@@ -634,7 +634,7 @@ export function CoachEventsView({
                   href={safeExternalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-emerald-700 hover:underline dark:text-[#4ADE80]"
                 >
                   <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <span className="truncate">{formatExternalUrlLabel(safeExternalUrl)}</span>
@@ -647,9 +647,9 @@ export function CoachEventsView({
           </div>
         </td>
 
-        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-xs text-slate-600 dark:text-slate-300 max-w-[160px] lg:max-w-[210px]">
+        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-xs text-slate-600 dark:text-[#A3A3A3] max-w-[160px] lg:max-w-[210px]">
           {ev.city && (
-            <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+            <p className="font-semibold text-slate-800 dark:text-[#E5E5E5] truncate">
               {ev.city}
               {ev.region ? ` · ${ev.region}` : ''}
             </p>
@@ -657,12 +657,12 @@ export function CoachEventsView({
           <p className="truncate">{ev.location}</p>
         </td>
 
-        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-right font-mono tabular-nums whitespace-nowrap">
-          <p className="font-semibold text-slate-900 dark:text-white">
+        <td className="px-3 py-3 lg:px-4 lg:py-3.5 align-top text-right tabular-nums whitespace-nowrap">
+          <p className="font-semibold text-slate-900 dark:text-[#E5E5E5]">
             {formatCapacityCompact(effectiveEvent)}
           </p>
           {regCount > 0 && (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
               {presentCount} présent{presentCount > 1 ? 's' : ''}
             </p>
           )}
@@ -672,12 +672,12 @@ export function CoachEventsView({
           <span
             className={`block whitespace-nowrap text-xs font-semibold ${
               evalInfo.state === 'open'
-                ? 'text-emerald-700 dark:text-emerald-400'
+                ? 'text-emerald-700 dark:text-[#4ADE80]'
                 : evalInfo.state === 'closed'
                   ? 'text-amber-700 dark:text-amber-400'
                   : evalInfo.state === 'full' || evalInfo.state === 'cancelled'
                     ? 'text-rose-700 dark:text-rose-400'
-                    : 'text-slate-500 dark:text-slate-400'
+                    : 'text-slate-500 dark:text-[#8E8E8E]'
             }`}
           >
             {evalInfo.statusLabel}
@@ -687,7 +687,7 @@ export function CoachEventsView({
               Pas d’inscrit à cette séance
             </span>
           ) : evalInfo.cutoffMinutes > 0 && evalInfo.state !== 'cancelled' ? (
-            <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+            <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-[#8E8E8E]">
               Clôture {formatBookingCutoffLabel(evalInfo.cutoffMinutes)} avant
             </span>
           ) : null}
@@ -698,7 +698,7 @@ export function CoachEventsView({
             <button
               type="button"
               onClick={() => onOpenRoster(effectiveEvent, 'roster')}
-              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
+              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] whitespace-nowrap cursor-pointer"
             >
               <Users className="h-3.5 w-3.5" aria-hidden="true" />
               Inscrits
@@ -708,7 +708,7 @@ export function CoachEventsView({
               type="button"
               onClick={() => onOpenRoster(ev, 'reviews')}
               title="Consulter les avis"
-              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 whitespace-nowrap cursor-pointer"
+              className="inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] whitespace-nowrap cursor-pointer"
             >
               <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
               Avis ({ratingSummaryByEventId?.get(ev.id)?.count ?? 0})
@@ -727,7 +727,7 @@ export function CoachEventsView({
               onClick={() => onDuplicateEvent(ev)}
               title="Dupliquer sur une autre date"
               aria-label={`Dupliquer ${ev.title}`}
-              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
             >
               <Copy className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -737,7 +737,7 @@ export function CoachEventsView({
               onClick={() => onEditEvent(ev)}
               title="Modifier"
               aria-label={`Modifier ${ev.title}`}
-              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white cursor-pointer"
+              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
             >
               <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -753,7 +753,7 @@ export function CoachEventsView({
                       ? `Supprimer la séance et notifier les ${regCount} inscrit(s)`
                       : 'Supprimer la séance'
                   }
-                  className="min-h-[34px] rounded-md bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 whitespace-nowrap cursor-pointer"
+                  className="min-h-[34px] rounded-[8px] bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 whitespace-nowrap cursor-pointer"
                 >
                   {actionBusyId === ev.id
                     ? 'Envoi...'
@@ -765,7 +765,7 @@ export function CoachEventsView({
                   type="button"
                   disabled={actionBusyId === ev.id}
                   onClick={() => setConfirmDeleteId(null)}
-                  className="min-h-[34px] rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300 whitespace-nowrap cursor-pointer"
+                  className="min-h-[34px] rounded-[8px] border border-slate-200 px-2 py-1 text-xs text-slate-600 dark:border-[#262626] dark:text-[#A3A3A3] whitespace-nowrap cursor-pointer"
                 >
                   Non
                 </button>
@@ -776,7 +776,7 @@ export function CoachEventsView({
                 onClick={() => setConfirmDeleteId(ev.id)}
                 title="Supprimer la séance et notifier les inscrits"
                 aria-label={`Supprimer ${ev.title} et notifier les inscrits`}
-                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#8E8E8E] dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
@@ -790,12 +790,12 @@ export function CoachEventsView({
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       {/* Workspace Toolbar */}
-      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-[#262626] sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+          <h2 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-2xl">
             Gestion des événements sportifs
           </h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-[#8E8E8E]">
             Connecté en tant que coach ({coachEmail}) · Gérez vos créneaux, disciplines, couleurs et listes d’inscrits.
           </p>
         </div>
@@ -804,10 +804,10 @@ export function CoachEventsView({
           <button
             type="button"
             onClick={() => setShowDisciplinesPanel((prev) => !prev)}
-            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium cursor-pointer ${
+            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border px-3.5 py-2 text-xs font-medium cursor-pointer ${
               showDisciplinesPanel
-                ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
-                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
+                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F]'
             }`}
           >
             <Palette className="h-3.5 w-3.5" aria-hidden="true" />
@@ -818,7 +818,7 @@ export function CoachEventsView({
             type="button"
             onClick={handleExportEvents}
             disabled={events.length === 0}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] disabled:opacity-50 cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             Exporter CSV
@@ -827,7 +827,7 @@ export function CoachEventsView({
           <button
             type="button"
             onClick={onCreateEvent}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Nouvel événement
@@ -836,7 +836,7 @@ export function CoachEventsView({
           <button
             type="button"
             onClick={onSignOut}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
             Déconnexion
@@ -846,13 +846,13 @@ export function CoachEventsView({
 
       {/* Collapsible Disciplines & Color Coding Panel */}
       {showDisciplinesPanel && (
-        <div className="mt-5 rounded-xl border border-slate-200 bg-white p-5 space-y-5 dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 rounded-[16px] border border-slate-200 bg-white p-5 space-y-5 dark:border-[#262626] dark:bg-[#161616]">
+          <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 dark:border-[#262626] sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                 Disciplines sportives & code couleur
               </h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Ajoutez de nouvelles disciplines ou personnalisez la couleur appliquée dans le calendrier, la liste et sur Google Maps.
               </p>
             </div>
@@ -861,13 +861,13 @@ export function CoachEventsView({
           {/* Add custom discipline form */}
           <form
             onSubmit={handleAddDiscipline}
-            className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-800/50"
+            className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-[#262626] dark:bg-[#1F1F1F]"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1">
                 <label
                   htmlFor="new-discipline-name"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
                 >
                   Ajouter une discipline *
                 </label>
@@ -880,14 +880,14 @@ export function CoachEventsView({
                   value={newDiscName}
                   onChange={(e) => setNewDiscName(e.target.value)}
                   placeholder="Ex. CrossFit, Yoga Vinyasa, Boxe anglaise..."
-                  className="mt-1 min-h-[42px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="mt-1 min-h-[42px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={discBusy}
-                className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 shrink-0 cursor-pointer"
+                className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 shrink-0 cursor-pointer"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
                 {discBusy ? 'Ajout...' : 'Ajouter la discipline'}
@@ -896,13 +896,13 @@ export function CoachEventsView({
 
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                <span className="text-xs font-medium text-slate-600 dark:text-[#A3A3A3]">
                   Code couleur :{' '}
-                  <strong className="text-slate-900 dark:text-white">
+                  <strong className="text-slate-900 dark:text-[#E5E5E5]">
                     {DISCIPLINE_COLOR_PRESETS[selectedNewDiscColor].label}
                   </strong>
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                   {!manualDiscColor && !usedDisciplineColorKeys.has(selectedNewDiscColor)
                     ? 'Couleur disponible attribuée automatiquement'
                     : usedDisciplineColorKeys.has(selectedNewDiscColor)
@@ -922,9 +922,9 @@ export function CoachEventsView({
                       onClick={() => setManualDiscColor(key)}
                       title={`${preset.label}${isUsed ? ' (déjà utilisée)' : ' (disponible)'}`}
                       aria-label={`Choisir la couleur ${preset.label}${isUsed ? ' (déjà utilisée)' : ''}`}
-                      className={`relative flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-transform ${preset.swatchBg} ${
+                      className={`relative flex h-7 w-7 items-center justify-center rounded-[6px] cursor-pointer transition-transform ${preset.swatchBg} ${
                         selected
-                          ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-slate-100 dark:ring-offset-slate-900 scale-105'
+                          ? 'ring-2 ring-slate-900 ring-offset-2 dark:ring-[#4ADE80] dark:ring-offset-[#1F1F1F] scale-105'
                           : isUsed
                             ? 'opacity-45 hover:opacity-90'
                             : 'opacity-85 hover:opacity-100'
@@ -941,14 +941,14 @@ export function CoachEventsView({
 
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                <span className="text-xs font-medium text-slate-600 dark:text-[#A3A3A3]">
                   Picto de la discipline :{' '}
-                  <strong className="text-slate-900 dark:text-white">
+                  <strong className="text-slate-900 dark:text-[#E5E5E5]">
                     {DISCIPLINE_ICON_PRESETS[selectedNewDiscIcon].label}
                   </strong>
                 </span>
                 {!manualDiscIcon && newDiscName.trim().length >= 2 && (
-                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                  <span className="text-[11px] text-emerald-700 dark:text-[#4ADE80]">
                     Suggestion automatique
                   </span>
                 )}
@@ -967,10 +967,10 @@ export function CoachEventsView({
                       title={meta.label}
                       aria-label={`Picto ${meta.label}`}
                       aria-pressed={selected}
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg border cursor-pointer transition-colors ${
+                      className={`flex h-9 w-9 items-center justify-center rounded-[8px] border cursor-pointer transition-colors ${
                         selected
-                          ? `${activePreset.softBg} ${activePreset.border} ${activePreset.text} ring-2 ring-slate-900/20 dark:ring-white/25`
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                          ? `${activePreset.softBg} ${activePreset.border} ${activePreset.text} ring-2 ring-slate-900/20 dark:ring-[#4ADE80]/30`
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5]'
                       }`}
                     >
                       <DisciplineIcon iconKey={iconKey} className="h-4 w-4" />
@@ -984,7 +984,7 @@ export function CoachEventsView({
               <p
                 className={`text-xs font-medium ${
                   discFeedback.type === 'success'
-                    ? 'text-emerald-700 dark:text-emerald-400'
+                    ? 'text-emerald-700 dark:text-[#4ADE80]'
                     : 'text-rose-700 dark:text-rose-400'
                 }`}
               >
@@ -995,15 +995,15 @@ export function CoachEventsView({
 
           {/* Disciplines alphabetical list */}
           {disciplines.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
+            <div className="rounded-[12px] border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-xs text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F]/50 dark:text-[#A3A3A3]">
               Aucune discipline enregistrée pour le moment. Ajoutez votre première discipline ci-dessus.
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
                 Liste des disciplines (ordre alphabétique) :
               </p>
-              <ul className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+              <ul className="divide-y divide-slate-200 overflow-hidden rounded-[12px] border border-slate-200 bg-white dark:divide-[#262626] dark:border-[#262626] dark:bg-[#1F1F1F]">
                 {disciplines.map((item) => {
                   const preset = DISCIPLINE_COLOR_PRESETS[item.colorKey];
                   const isConfirming = confirmDeleteDiscId === item.id;
@@ -1016,7 +1016,7 @@ export function CoachEventsView({
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${preset.softBg} ${preset.border} ${preset.text}`}
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border ${preset.softBg} ${preset.border} ${preset.text}`}
                             title={DISCIPLINE_ICON_PRESETS[item.iconKey].label}
                           >
                             <DisciplineIcon
@@ -1024,7 +1024,7 @@ export function CoachEventsView({
                               className="h-4 w-4"
                             />
                           </span>
-                          <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                          <span className="font-semibold text-sm text-slate-900 dark:text-[#E5E5E5] truncate">
                             {item.name}
                           </span>
                         </div>
@@ -1049,9 +1049,9 @@ export function CoachEventsView({
                                   }
                                   title={`Appliquer ${c.label} à ${item.name}`}
                                   aria-label={`Couleur ${c.label} pour ${item.name}`}
-                                  className={`h-5 w-5 rounded-sm cursor-pointer ${c.swatchBg} ${
+                                  className={`h-5 w-5 rounded-[4px] cursor-pointer ${c.swatchBg} ${
                                     active
-                                      ? 'ring-2 ring-slate-900 ring-offset-1 dark:ring-slate-100 dark:ring-offset-slate-900'
+                                      ? 'ring-2 ring-slate-900 ring-offset-1 dark:ring-[#4ADE80] dark:ring-offset-[#1F1F1F]'
                                       : 'opacity-55 hover:opacity-100'
                                   }`}
                                 />
@@ -1068,10 +1068,10 @@ export function CoachEventsView({
                             }
                             aria-expanded={isEditingIcon}
                             title={`Changer le picto de ${item.name}`}
-                            className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium cursor-pointer ${
+                            className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-[8px] border px-2.5 text-xs font-medium cursor-pointer ${
                               isEditingIcon
-                                ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
-                                : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
+                                ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5]'
                             }`}
                           >
                             <DisciplineIcon
@@ -1089,14 +1089,14 @@ export function CoachEventsView({
                                   await deleteCustomDiscipline(item.id);
                                   setConfirmDeleteDiscId(null);
                                 }}
-                                className="min-h-[32px] rounded-md bg-rose-600 px-2.5 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                                className="min-h-[32px] rounded-[8px] bg-rose-600 px-2.5 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
                               >
                                 Supprimer
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteDiscId(null)}
-                                className="min-h-[32px] rounded-md border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
+                                className="min-h-[32px] rounded-[8px] border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:text-[#A3A3A3] dark:hover:bg-[#262626] cursor-pointer"
                               >
                                 Annuler
                               </button>
@@ -1107,7 +1107,7 @@ export function CoachEventsView({
                               onClick={() => setConfirmDeleteDiscId(item.id)}
                               title={`Supprimer ${item.name}`}
                               aria-label={`Supprimer la discipline ${item.name}`}
-                              className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 px-2.5 text-xs font-medium text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
+                              className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] border border-slate-200 px-2.5 text-xs font-medium text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 cursor-pointer"
                             >
                               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                               Supprimer
@@ -1117,8 +1117,8 @@ export function CoachEventsView({
                       </div>
 
                       {isEditingIcon && (
-                        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
-                          <span className="mr-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-[#262626]">
+                          <span className="mr-1 text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                             Choisir un picto :
                           </span>
                           {DISCIPLINE_ICON_KEYS.map((iconKey) => {
@@ -1140,10 +1140,10 @@ export function CoachEventsView({
                                 }}
                                 title={meta.label}
                                 aria-label={`${meta.label} pour ${item.name}`}
-                                className={`flex h-8 w-8 items-center justify-center rounded-md border cursor-pointer transition-colors ${
+                                className={`flex h-8 w-8 items-center justify-center rounded-[8px] border cursor-pointer transition-colors ${
                                   active
-                                    ? `${preset.softBg} ${preset.border} ${preset.text} ring-2 ring-slate-900/20 dark:ring-white/25`
-                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
+                                    ? `${preset.softBg} ${preset.border} ${preset.text} ring-2 ring-slate-900/20 dark:ring-[#4ADE80]/30`
+                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5]'
                                 }`}
                               >
                                 <DisciplineIcon
@@ -1165,8 +1165,8 @@ export function CoachEventsView({
       )}
 
       {isCoachAdmin && pendingCoachRequestsCount > 0 && onOpenCoachesAdmin && (
-        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/45 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5 text-sm text-amber-950 dark:text-amber-100">
+        <div className="mt-5 flex flex-col gap-3 rounded-[16px] border border-amber-200 bg-amber-50/90 p-4 dark:border-amber-800/60 dark:bg-amber-950/40 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5 text-sm text-amber-950 dark:text-amber-200">
             <ShieldCheck className="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
             <span>
               <strong>
@@ -1179,7 +1179,7 @@ export function CoachEventsView({
           <button
             type="button"
             onClick={onOpenCoachesAdmin}
-            className="min-h-[40px] rounded-lg bg-amber-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-500 whitespace-nowrap shrink-0 cursor-pointer"
+            className="min-h-[40px] rounded-[10px] bg-amber-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-amber-800 dark:bg-amber-600 dark:hover:bg-amber-500 whitespace-nowrap shrink-0 cursor-pointer"
           >
             Examiner les demandes
           </button>
@@ -1189,9 +1189,9 @@ export function CoachEventsView({
       {eventActionFeedback && (
         <div
           role="status"
-          className={`mt-5 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs font-medium ${
+          className={`mt-5 flex items-center justify-between gap-3 rounded-[12px] border px-4 py-3 text-xs font-medium ${
             eventActionFeedback.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
               : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-200'
           }`}
         >
@@ -1208,19 +1208,19 @@ export function CoachEventsView({
 
       {/* Content */}
       {events.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900 sm:p-12">
-          <CalendarPlus className="mx-auto h-10 w-10 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-          <h3 className="mt-3 font-display text-lg font-bold text-slate-900 dark:text-white">
+        <div className="mt-8 rounded-[16px] border border-dashed border-slate-300 bg-white p-8 text-center dark:border-[#262626] dark:bg-[#161616] sm:p-12">
+          <CalendarPlus className="mx-auto h-10 w-10 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
+          <h3 className="mt-3 font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]">
             Aucun événement sportif programmé
           </h3>
-          <p className="mx-auto mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
+          <p className="mx-auto mt-1 max-w-md text-sm text-slate-500 dark:text-[#8E8E8E]">
             Créez votre première séance sportive ou générez un planning d’exemple pour démarrer immédiatement.
           </p>
           <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <button
               type="button"
               onClick={onCreateEvent}
-              className="min-h-[44px] rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white cursor-pointer"
+              className="min-h-[44px] rounded-[10px] bg-emerald-700 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
             >
               + Créer ma première séance
             </button>
@@ -1228,7 +1228,7 @@ export function CoachEventsView({
               type="button"
               onClick={handleSeed}
               disabled={seeding}
-              className="min-h-[44px] rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-60 cursor-pointer"
+              className="min-h-[44px] rounded-[10px] border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] disabled:opacity-60 cursor-pointer"
             >
               {seeding ? 'Création en cours...' : 'Générer 5 séances d’exemple'}
             </button>
@@ -1237,11 +1237,11 @@ export function CoachEventsView({
       ) : (
         <>
           {upcomingEvents.length === 0 ? (
-            <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
-              <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
+            <div className="mt-5 rounded-[16px] border border-dashed border-slate-300 bg-white p-6 text-center dark:border-[#262626] dark:bg-[#161616]">
+              <p className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                 Aucun événement sportif à venir
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Planifiez une nouvelle séance ou dépliez vos événements passés ci-dessous.
               </p>
             </div>
@@ -1253,10 +1253,10 @@ export function CoachEventsView({
               </div>
 
               {/* Desktop Table (>= md) */}
-              <div className="mt-6 hidden overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:block">
+              <div className="mt-6 hidden overflow-hidden rounded-[16px] border border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616] md:block">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left text-sm">
-                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
                       <tr>
                         <th className="px-3 py-3 lg:px-4 lg:py-3.5 whitespace-nowrap">Date & Horaire</th>
                         <th className="px-3 py-3 lg:px-4 lg:py-3.5">Séance & Discipline</th>
@@ -1266,7 +1266,7 @@ export function CoachEventsView({
                         <th className="px-3 py-3 lg:px-4 lg:py-3.5 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    <tbody className="divide-y divide-slate-200 dark:divide-[#262626]">
                       {upcomingEvents.map(renderDesktopEventRow)}
                     </tbody>
                   </table>
@@ -1277,7 +1277,7 @@ export function CoachEventsView({
 
           {/* Collapsible Past Events Section */}
           {pastEvents.length > 0 && (
-            <div className="mt-6 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="mt-6 rounded-[16px] border border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616]">
               <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
                 <button
                   type="button"
@@ -1286,14 +1286,14 @@ export function CoachEventsView({
                   aria-controls="coach-past-events-body"
                   className="flex flex-1 items-center gap-3 text-left min-w-0 cursor-pointer"
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-600 dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
                     <History className="h-4 w-4" aria-hidden="true" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                    <p className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                       Événements passés ({pastEvents.length})
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-[#8E8E8E]">
                       {pastEventsExpanded
                         ? 'Séances dont la date est passée — cliquez pour replier'
                         : 'Séances dont la date est passée — cliquez pour déplier'}
@@ -1311,7 +1311,7 @@ export function CoachEventsView({
                       ? 'Replier les événements passés'
                       : 'Déplier les événements passés'
                   }
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
                 >
                   <ChevronDown
                     className={`h-4 w-4 transition-transform duration-200 ${
@@ -1325,7 +1325,7 @@ export function CoachEventsView({
               {pastEventsExpanded && (
                 <div
                   id="coach-past-events-body"
-                  className="border-t border-slate-100 p-3 dark:border-slate-800 sm:p-4"
+                  className="border-t border-slate-100 p-3 dark:border-[#262626] sm:p-4"
                 >
                   {/* Mobile Past Events (< md) */}
                   <div className="space-y-3 md:hidden">
@@ -1333,10 +1333,10 @@ export function CoachEventsView({
                   </div>
 
                   {/* Desktop Past Events Table (>= md) */}
-                  <div className="hidden overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 md:block">
+                  <div className="hidden overflow-hidden rounded-[12px] border border-slate-200 dark:border-[#262626] md:block">
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse text-left text-sm">
-                        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800/70 dark:text-slate-300">
+                        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
                           <tr>
                             <th className="px-3 py-3 lg:px-4 lg:py-3.5 whitespace-nowrap">Date & Horaire</th>
                             <th className="px-3 py-3 lg:px-4 lg:py-3.5">Séance & Discipline</th>
@@ -1346,7 +1346,7 @@ export function CoachEventsView({
                             <th className="px-3 py-3 lg:px-4 lg:py-3.5 text-right whitespace-nowrap">Actions</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                        <tbody className="divide-y divide-slate-200 dark:divide-[#262626]">
                           {pastEvents.map(renderDesktopEventRow)}
                         </tbody>
                       </table>

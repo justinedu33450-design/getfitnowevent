@@ -155,18 +155,18 @@ export function EventLocationMap({
 function FallbackLocationCard({ event }: { event: SportEvent }) {
   const coords = event.hasCoords ? { lat: event.lat, lng: event.lng } : null;
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
+    <div className="rounded-[16px] border border-slate-200 bg-slate-50 p-4 dark:border-[#262626] dark:bg-[#1F1F1F]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-2.5 min-w-0">
           <MapPin
-            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
             aria-hidden="true"
           />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+            <p className="text-sm font-semibold text-slate-900 dark:text-[#E5E5E5] truncate">
               {event.location}
             </p>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-600 dark:text-[#A3A3A3]">
               {event.city}
               {event.region ? ` · ${event.region}` : ''}
             </p>
@@ -175,7 +175,7 @@ function FallbackLocationCard({ event }: { event: SportEvent }) {
         <a
           href={buildMapsExternalUrl(event.location, event.city, coords, event.title)}
           {...getExternalMapLinkProps()}
-          className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 shrink-0"
+          className="inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-[10px] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] shrink-0"
         >
           Ouvrir sur Google Maps
           <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
@@ -295,7 +295,7 @@ function GoogleEventLocationMapInner({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-800">
+    <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-slate-100 dark:border-[#262626] dark:bg-[#161616]">
       <div ref={containerRef} className="relative h-64 w-full sm:h-72">
         {resolvedPos ? (
           <GoogleMap
@@ -344,9 +344,9 @@ function GoogleEventLocationMapInner({
             )}
           </GoogleMap>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center text-xs text-slate-500 dark:text-slate-400">
-            <MapPin className="h-6 w-6 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-            <p className="mt-2 font-medium text-slate-700 dark:text-slate-200">
+          <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center text-xs text-slate-500 dark:text-[#8E8E8E]">
+            <MapPin className="h-6 w-6 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
+            <p className="mt-2 font-medium text-slate-700 dark:text-[#E5E5E5]">
               {resolving
                 ? 'Localisation de l’adresse sur Google Maps...'
                 : `${event.location} (${event.city})`}
@@ -355,14 +355,14 @@ function GoogleEventLocationMapInner({
         )}
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-slate-200 bg-white px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
-        <span className="text-xs text-slate-600 dark:text-slate-300 truncate">
+      <div className="flex flex-col gap-2 border-t border-slate-200 bg-white px-3.5 py-2.5 dark:border-[#262626] dark:bg-[#161616] sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-xs text-slate-600 dark:text-[#A3A3A3] truncate">
           {event.location} · {event.city}
         </span>
         <a
           href={buildMapsExternalUrl(event.location, event.city, resolvedPos, event.title)}
           {...getExternalMapLinkProps()}
-          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 shrink-0"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-[#4ADE80] dark:hover:text-[#22C55E] shrink-0"
         >
           Itinéraire Google Maps
           <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
@@ -416,20 +416,20 @@ function EventsOverviewFallbackCard({
   subtitle?: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+    <div className="rounded-[16px] border border-slate-200 bg-white p-4 sm:p-6 dark:border-[#262626] dark:bg-[#161616] space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+          <p className="text-sm font-semibold text-slate-900 dark:text-[#E5E5E5]">
             Aperçu carte indisponible pour cette session
           </p>
-          <p className="text-xs text-slate-600 dark:text-slate-300">
+          <p className="text-xs text-slate-600 dark:text-[#A3A3A3]">
             {subtitle}
           </p>
         </div>
         <button
           type="button"
           onClick={() => void forceRefreshAppCache()}
-          className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+          className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
         >
           <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
           Actualiser l’application
@@ -444,16 +444,16 @@ function EventsOverviewFallbackCard({
             return (
               <div
                 key={ev.id}
-                className="flex flex-col justify-between gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/50"
+                className="flex flex-col justify-between gap-2.5 rounded-[10px] border border-slate-200 bg-slate-50/70 p-3 dark:border-[#262626] dark:bg-[#1F1F1F]"
               >
                 <div className="min-w-0 space-y-0.5">
-                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  <p className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5] truncate">
                     {ev.title}
                   </p>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                  <p className="text-[11px] text-slate-600 dark:text-[#A3A3A3] truncate">
                     {formatFrenchDateShort(start)} · {formatFrenchTime(start)} · {ev.city}
                   </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  <p className="text-[11px] text-slate-500 dark:text-[#8E8E8E] truncate">
                     {ev.location}
                   </p>
                 </div>
@@ -461,14 +461,14 @@ function EventsOverviewFallbackCard({
                   <button
                     type="button"
                     onClick={() => onSelectEvent(ev)}
-                    className="inline-flex min-h-[34px] flex-1 items-center justify-center rounded-md bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+                    className="inline-flex min-h-[34px] flex-1 items-center justify-center rounded-[8px] bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
                   >
                     Voir &amp; réserver
                   </button>
                   <a
                     href={buildMapsExternalUrl(ev.location, ev.city, coords, ev.title)}
                     {...getExternalMapLinkProps()}
-                    className="inline-flex min-h-[34px] items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-[34px] items-center justify-center gap-1 rounded-[8px] border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626]"
                   >
                     Itinéraire
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -601,7 +601,7 @@ function EventsOverviewMapInner({
   const initialZoom = mappedEvents.length === 1 ? 14 : mappedEvents.length > 1 ? 6 : 5;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616]">
       <div ref={containerRef} className={`${heightClass} w-full`}>
         <GoogleMap
           id="events-overview-map"
@@ -669,7 +669,7 @@ function EventsOverviewMapInner({
                 </p>
                 <p className="text-[11px] font-medium opacity-90">
                   {formatEventCoachesLabel(selectedEntry.event)} ·{' '}
-                  <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                  <span className="font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                     {formatEventPrice(selectedEntry.event)}
                   </span>
                 </p>
@@ -693,10 +693,10 @@ function EventsOverviewMapInner({
                       <button
                         type="button"
                         onClick={() => onSelectEvent(selectedEntry.event)}
-                        className={`mt-1 w-full rounded-md px-3 py-1.5 text-xs font-semibold cursor-pointer ${
+                        className={`mt-1 w-full rounded-[8px] px-3 py-1.5 text-xs font-semibold cursor-pointer ${
                           evalInfo.state === 'open'
-                            ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                            : 'border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                            ? 'bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E]'
+                            : 'border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5]'
                         }`}
                       >
                         {evalInfo.state === 'open'

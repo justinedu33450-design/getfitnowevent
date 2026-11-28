@@ -82,7 +82,7 @@ function SocialNetworkIcon({ id }: { id: SocialShareTarget['id'] }) {
     case 'email':
       return (
         <Mail
-          className="h-4 w-4 text-slate-600 dark:text-slate-300 shrink-0"
+          className="h-4 w-4 text-slate-600 dark:text-[#A3A3A3] shrink-0"
           aria-hidden="true"
         />
       );
@@ -170,28 +170,28 @@ export function EventShareModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="event-share-modal-title"
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-xs sm:items-center sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-xs dark:bg-black/75 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:rounded-2xl"
+        className="w-full max-w-md rounded-t-[16px] border border-slate-200 bg-white shadow-2xl dark:border-[#262626] dark:bg-[#161616] sm:rounded-[16px]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-slate-700 sm:hidden" />
+        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-[#262626] sm:hidden" />
 
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-4 dark:border-slate-800 sm:p-5">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-4 dark:border-[#262626] sm:p-5">
           <div className="flex items-start gap-2.5 min-w-0">
-            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-emerald-50 text-emerald-700 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80]">
               <Share2 className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h2
                 id="event-share-modal-title"
-                className="font-display text-base font-bold text-slate-900 dark:text-white"
+                className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]"
               >
                 Partager cette séance
               </h2>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Invitez vos amis ou votre communauté sur les réseaux sociaux.
               </p>
             </div>
@@ -201,7 +201,7 @@ export function EventShareModal({
             type="button"
             onClick={onClose}
             aria-label="Fermer la fenêtre de partage"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -209,7 +209,7 @@ export function EventShareModal({
 
         <div className="space-y-4 p-4 sm:p-5">
           {/* Event Preview Card */}
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-800/50">
+          <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50/80 dark:border-[#262626] dark:bg-[#1F1F1F]">
             {(() => {
               const coverSrc = getSafeEventCoverImageSrc(event.coverImageUrl);
               if (!coverSrc) return null;
@@ -218,7 +218,7 @@ export function EventShareModal({
                   type="button"
                   onClick={() => setImageLightboxOpen(true)}
                   aria-label={`Agrandir le visuel de ${event.title}`}
-                  className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200 bg-slate-900 dark:border-slate-800 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+                  className="group relative block aspect-[16/7] w-full overflow-hidden border-b border-slate-200 bg-slate-900 dark:border-[#262626] cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#4ADE80]"
                 >
                   <img
                     src={coverSrc}
@@ -230,7 +230,7 @@ export function EventShareModal({
                       ),
                     }}
                   />
-                  <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
+                  <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-[8px] bg-slate-950/65 px-2 py-1 text-[11px] font-medium text-white/95 backdrop-blur-xs transition-colors group-hover:bg-slate-950/85">
                     <Maximize2 className="h-3 w-3" aria-hidden="true" />
                     Agrandir
                   </span>
@@ -240,7 +240,7 @@ export function EventShareModal({
             <div className="p-3.5">
             <div className="flex flex-wrap items-center gap-2">
               <span
-                className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
+                className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold ${discStyle.softBg} ${discStyle.border} ${discStyle.text}`}
               >
                 <DisciplineIcon
                   disciplineName={event.discipline}
@@ -249,21 +249,21 @@ export function EventShareModal({
                 />
                 {event.discipline}
               </span>
-              <span className="font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
+              <span className="text-[11px] font-semibold text-slate-600 dark:text-[#A3A3A3] tabular-nums">
                 {formatEventPrice(event)}
               </span>
             </div>
-            <h3 className="mt-1.5 font-display text-sm font-bold text-slate-900 dark:text-white">
+            <h3 className="mt-1.5 font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
               {event.title}
             </h3>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
-              <span className="inline-flex items-center gap-1 font-mono tabular-nums capitalize">
-                <Calendar className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-[#A3A3A3]">
+              <span className="inline-flex items-center gap-1 tabular-nums capitalize">
+                <Calendar className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                 {formatFrenchDateShort(startDate)} ·{' '}
                 {formatTimeRange(startDate, event.durationMinutes)}
               </span>
               <span className="inline-flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                <MapPin className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E]" aria-hidden="true" />
                 {event.city}
               </span>
             </div>
@@ -274,7 +274,7 @@ export function EventShareModal({
             <button
               type="button"
               onClick={() => void handleNativeShare()}
-              className="flex min-h-[42px] w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer"
+              className="flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] cursor-pointer"
             >
               <Share2 className="h-4 w-4" aria-hidden="true" />
               Partager via mon appareil…
@@ -289,7 +289,7 @@ export function EventShareModal({
 
           {/* Social Network Links (rendered as anchors, never window.open) */}
           <div>
-            <p className="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <p className="mb-2 text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]">
               Réseaux sociaux & messageries
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -304,7 +304,7 @@ export function EventShareModal({
                       ? () => void handleInstagramShare()
                       : undefined
                   }
-                  className="inline-flex min-h-[42px] items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-700/70"
+                  className="inline-flex min-h-[42px] items-center justify-between gap-2 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:border-[#333333] dark:hover:bg-[#262626]"
                 >
                   <span className="inline-flex items-center gap-2 min-w-0">
                     <SocialNetworkIcon id={target.id} />
@@ -312,7 +312,7 @@ export function EventShareModal({
                   </span>
                   {target.external && (
                     <ExternalLink
-                      className="h-3 w-3 shrink-0 text-slate-400"
+                      className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#8E8E8E]"
                       aria-hidden="true"
                     />
                   )}
@@ -320,18 +320,18 @@ export function EventShareModal({
               ))}
             </div>
             {instagramCopied && (
-              <p className="mt-2 rounded-lg border border-pink-200 bg-pink-50 px-3 py-2 text-[11px] font-medium text-pink-900 dark:border-pink-800/60 dark:bg-pink-950/40 dark:text-pink-200">
+              <p className="mt-2 rounded-[10px] border border-pink-200 bg-pink-50 px-3 py-2 text-[11px] font-medium text-pink-900 dark:border-pink-800/60 dark:bg-pink-950/40 dark:text-pink-200">
                 Message et lien copiés ! Collez-les directement dans votre story, publication ou message Instagram.
               </p>
             )}
           </div>
 
           {/* Direct Link + Invitation Text Copy */}
-          <div className="space-y-2.5 border-t border-slate-100 pt-3.5 dark:border-slate-800">
+          <div className="space-y-2.5 border-t border-slate-100 pt-3.5 dark:border-[#262626]">
             <div>
               <label
                 htmlFor="event-share-link-input"
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                className="block text-xs font-semibold text-slate-700 dark:text-[#A3A3A3]"
               >
                 Lien direct de l’événement
               </label>
@@ -342,15 +342,15 @@ export function EventShareModal({
                   readOnly
                   value={shareContent.url}
                   onFocus={(e) => e.currentTarget.select()}
-                  className="min-h-[40px] flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 font-mono text-xs text-slate-700 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  className="min-h-[40px] flex-1 rounded-[10px] border border-slate-200 bg-slate-50 px-3 text-xs text-slate-700 focus:border-emerald-600 focus:outline-none dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80]"
                 />
                 <button
                   type="button"
                   onClick={() => void handleCopyLink()}
-                  className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                     copiedLink
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/40 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                   }`}
                 >
                   {copiedLink ? (
@@ -371,10 +371,10 @@ export function EventShareModal({
             <button
               type="button"
               onClick={() => void handleCopyFullMessage()}
-              className={`inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+              className={`inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                 copiedText
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-                  : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-[#4ADE80]/40 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                  : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
               }`}
             >
               {copiedText ? (

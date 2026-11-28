@@ -53,10 +53,10 @@ export function ProfileAvatar({
 
   const bgClasses =
     variant === 'dark'
-      ? 'bg-slate-800 text-white border-slate-700'
+      ? 'bg-[#1F1F1F] text-[#E5E5E5] border-[#262626]'
       : variant === 'neutral'
-        ? 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
-        : 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800';
+        ? 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:border-[#262626]'
+        : 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80] dark:border-[#4ADE80]/30';
 
   if (showImage) {
     return (
@@ -65,7 +65,7 @@ export function ProfileAvatar({
         alt={`Photo de profil de ${name}`}
         referrerPolicy="no-referrer"
         onError={() => setFailedSrc(resolvedSrc)}
-        className={`${SIZE_CLASSES[size]} shrink-0 rounded-lg border border-slate-200 dark:border-slate-700 object-cover ${className}`}
+        className={`${SIZE_CLASSES[size]} shrink-0 rounded-[10px] border border-slate-200 dark:border-[#262626] object-cover ${className}`}
       />
     );
   }
@@ -73,7 +73,7 @@ export function ProfileAvatar({
   return (
     <div
       aria-label={name}
-      className={`${SIZE_CLASSES[size]} inline-flex shrink-0 items-center justify-center rounded-lg border font-display font-bold select-none ${bgClasses} ${className}`}
+      className={`${SIZE_CLASSES[size]} inline-flex shrink-0 items-center justify-center rounded-[10px] border font-display font-bold select-none ${bgClasses} ${className}`}
     >
       {computeInitials(name)}
     </div>
@@ -124,7 +124,7 @@ export function PhotoUploadField({
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-700 dark:bg-slate-800/60">
+    <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
       <div
         className={
           stacked
@@ -137,11 +137,11 @@ export function PhotoUploadField({
           <div className="min-w-0">
             <label
               htmlFor={inputId}
-              className="block text-xs font-semibold text-slate-800 dark:text-slate-100"
+              className="block text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]"
             >
               {label}
             </label>
-            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{helperText}</p>
+            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E]">{helperText}</p>
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export function PhotoUploadField({
             type="button"
             disabled={processing}
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-60 cursor-pointer"
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] disabled:opacity-60 cursor-pointer"
           >
             <Camera className="h-3.5 w-3.5" aria-hidden="true" />
             {processing
@@ -176,7 +176,7 @@ export function PhotoUploadField({
                 setError(null);
                 onChange('');
               }}
-              className="inline-flex min-h-[38px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 hover:border-rose-200 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-400 dark:hover:bg-rose-950/60 dark:hover:border-rose-800 disabled:opacity-60 cursor-pointer"
+              className="inline-flex min-h-[38px] items-center gap-1 rounded-[10px] border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 hover:border-rose-200 dark:border-[#262626] dark:bg-[#161616] dark:text-rose-400 dark:hover:bg-rose-950/40 dark:hover:border-rose-800 disabled:opacity-60 cursor-pointer"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               Retirer
@@ -186,7 +186,7 @@ export function PhotoUploadField({
       </div>
 
       {error && (
-        <p className="mt-2 rounded border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+        <p className="mt-2 rounded-[8px] border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200">
           {error}
         </p>
       )}

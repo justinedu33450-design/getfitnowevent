@@ -197,20 +197,20 @@ export function MemberBadgesCard({
     return (
       <div
         key={badge.id}
-        className={`flex flex-col justify-between gap-2.5 rounded-lg border p-3.5 transition-colors ${
+        className={`flex flex-col justify-between gap-2.5 rounded-[12px] border p-3.5 transition-colors ${
           isHighlighted
-            ? 'border-emerald-500 bg-emerald-50/80 ring-1 ring-emerald-500/30 dark:border-emerald-500 dark:bg-emerald-950/50 dark:ring-emerald-400/30'
-            : 'border-emerald-200 bg-emerald-50/45 dark:border-emerald-800/80 dark:bg-emerald-950/25'
+            ? 'border-emerald-500 bg-emerald-50/80 ring-1 ring-emerald-500/30 dark:border-[#4ADE80] dark:bg-[#4ADE80]/10 dark:ring-[#4ADE80]/30'
+            : 'border-emerald-200 bg-emerald-50/45 dark:border-[#4ADE80]/25 dark:bg-[#1F1F1F]'
         }`}
       >
         <div className="flex items-start gap-3">
           <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border ${
               badge.category === 'discipline' && disciplinePreset
                 ? `${disciplinePreset.softBg} ${disciplinePreset.border} ${disciplinePreset.text}`
                 : badge.category === 'streak'
                   ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800/80 dark:bg-amber-950/60 dark:text-amber-300'
-                  : 'border-emerald-200 bg-emerald-100/80 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'
+                  : 'border-emerald-200 bg-emerald-100/80 text-emerald-800 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
             }`}
           >
             <IconComponent className="h-4 w-4" aria-hidden="true" />
@@ -218,16 +218,16 @@ export function MemberBadgesCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <p className="text-xs font-bold leading-snug text-slate-900 dark:text-white">
+              <p className="text-xs font-bold leading-snug text-slate-900 dark:text-[#E5E5E5]">
                 {displayTitle}
               </p>
-              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80]">
                 <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                 {isHighlighted ? 'Nouveau' : 'Validé'}
               </span>
             </div>
 
-            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
               {badge.subtitle}
             </p>
           </div>
@@ -235,15 +235,15 @@ export function MemberBadgesCard({
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-2 text-[11px]">
-            <span className="text-slate-500 dark:text-slate-400 capitalize">
+            <span className="text-slate-500 dark:text-[#8E8E8E] capitalize">
               {unlockedDateText ? `Obtenu le ${unlockedDateText}` : 'Validé'}
             </span>
-            <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+            <span className="font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
               {`${formatCountShort(badge.target)}/${formatCountShort(badge.target)}`}
             </span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-sm bg-emerald-100 dark:bg-emerald-950">
-            <div className="h-full w-full bg-emerald-600 dark:bg-emerald-500" />
+          <div className="h-1.5 w-full overflow-hidden rounded-sm bg-emerald-100 dark:bg-[#262626]">
+            <div className="h-full w-full bg-emerald-600 dark:bg-[#4ADE80]" />
           </div>
         </div>
       </div>
@@ -272,7 +272,7 @@ export function MemberBadgesCard({
             className="flex flex-1 items-center gap-3 text-left min-w-0 cursor-pointer"
           >
             <div
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${preset.softBg} ${preset.border} ${preset.text}`}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border ${preset.softBg} ${preset.border} ${preset.text}`}
             >
               <DisciplineIcon
                 disciplineName={group.disciplineName}
@@ -283,14 +283,14 @@ export function MemberBadgesCard({
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                <p className="text-sm font-bold text-slate-900 dark:text-[#E5E5E5] truncate">
                   {group.disciplineName}
                 </p>
-                <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                <span className="text-xs font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                   {group.unlockedCount} badge{group.unlockedCount > 1 ? 's' : ''} validé{group.unlockedCount > 1 ? 's' : ''}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                 {formatCountShort(group.validatedCount)} séance
                 {group.validatedCount > 1 ? 's' : ''} validée
                 {group.validatedCount > 1 ? 's' : ''}
@@ -312,7 +312,7 @@ export function MemberBadgesCard({
                 ? `Replier les badges ${group.disciplineName}`
                 : `Déplier les badges ${group.disciplineName}`
             }
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
@@ -325,7 +325,7 @@ export function MemberBadgesCard({
 
         {isGroupOpen && (
           <div
-            className={`mt-3.5 grid grid-cols-1 gap-2.5 border-t border-slate-100 pt-3.5 dark:border-slate-800 ${
+            className={`mt-3.5 grid grid-cols-1 gap-2.5 border-t border-slate-100 pt-3.5 dark:border-[#262626] ${
               compact ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3'
             }`}
           >
@@ -344,11 +344,11 @@ export function MemberBadgesCard({
     visibleDisciplineGroups.length > 0;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616]">
       <div
         className={
           expanded
-            ? 'border-b border-slate-100 pb-4 dark:border-slate-800'
+            ? 'border-b border-slate-100 pb-4 dark:border-[#262626]'
             : ''
         }
       >
@@ -360,14 +360,14 @@ export function MemberBadgesCard({
             aria-controls="member-badges-details"
             className="flex flex-1 items-start gap-3 text-left min-w-0 cursor-pointer"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-emerald-50 text-emerald-700 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]">
               <Trophy className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                 {title}
               </h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 {subtitle ?? collapsedSummaryText}
               </p>
             </div>
@@ -381,7 +381,7 @@ export function MemberBadgesCard({
             aria-label={
               expanded ? 'Replier les badges' : 'Déplier les badges'
             }
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
           >
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
@@ -397,7 +397,7 @@ export function MemberBadgesCard({
             <div
               role="group"
               aria-label="Filtrer les catégories de badges"
-              className="inline-flex flex-wrap items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+              className="inline-flex flex-wrap items-center gap-1 rounded-[10px] bg-slate-100 p-1 dark:bg-[#1F1F1F]"
             >
               {(
                 [
@@ -423,10 +423,10 @@ export function MemberBadgesCard({
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`min-h-[34px] rounded-[8px] px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
                     activeTab === tab.id
-                      ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                      ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#E5E5E5]'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
                   }`}
                 >
                   {tab.label}
@@ -440,41 +440,41 @@ export function MemberBadgesCard({
       {expanded && (
         <div id="member-badges-details" className="mt-4 space-y-5">
           {/* Compact Achievement Summary Strip */}
-          <div className="grid grid-cols-1 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-slate-50/70 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="grid grid-cols-1 divide-y divide-slate-200 rounded-[10px] border border-slate-200 bg-slate-50/70 dark:divide-[#262626] dark:border-[#262626] dark:bg-[#1F1F1F] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <div className="p-3">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                 Badges validés
               </p>
-              <p className="mt-0.5 font-mono text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                 {summary.unlockedCount}
               </p>
             </div>
             <div className="p-3">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                 Série en cours / Record
               </p>
-              <p className="mt-0.5 font-mono text-lg font-bold text-amber-700 dark:text-amber-400 tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-amber-700 dark:text-amber-400 tabular-nums">
                 {summary.currentStreakDays} j
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E]">
                   {' '}
                   · record {summary.bestStreakDays} j
                 </span>
               </p>
             </div>
             <div className="p-3">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                 Disciplines validées
               </p>
-              <p className="mt-0.5 font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                 {summary.unlockedDisciplinesCount}
               </p>
             </div>
           </div>
 
           {highlightedSet.size > 0 && (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-medium text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100">
+            <div className="flex items-center gap-2 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-medium text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]">
               <Sparkles
-                className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400"
+                className="h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
                 aria-hidden="true"
               />
               <span>
@@ -486,17 +486,17 @@ export function MemberBadgesCard({
           )}
 
           {!hasVisibleBadgesInTab ? (
-            <div className="rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center dark:border-slate-800">
+            <div className="rounded-[10px] border border-dashed border-slate-200 px-4 py-8 text-center dark:border-[#262626]">
               <Trophy
-                className="mx-auto h-7 w-7 text-slate-300 dark:text-slate-600"
+                className="mx-auto h-7 w-7 text-slate-300 dark:text-[#525252]"
                 aria-hidden="true"
               />
-              <p className="mt-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+              <p className="mt-2.5 text-xs font-semibold text-slate-800 dark:text-[#E5E5E5]">
                 {summary.unlockedCount === 0
                   ? 'Aucun badge validé pour le moment'
                   : 'Aucun badge validé dans cette catégorie pour le moment'}
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                 Les badges et récompenses apparaîtront ici automatiquement au fur et à mesure des paliers franchis.
               </p>
             </div>
@@ -506,10 +506,10 @@ export function MemberBadgesCard({
               {visibleMilestoneBadges.length > 0 && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-[#A3A3A3]">
                       Paliers d’événements validés
                     </h4>
-                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                    <span className="text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                       {formatCountShort(summary.totalValidatedEvents)} validé
                       {summary.totalValidatedEvents > 1 ? 's' : ''}
                     </span>
@@ -528,10 +528,10 @@ export function MemberBadgesCard({
               {visibleStreakBadges.length > 0 && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-[#A3A3A3]">
                       Enchaînements consécutifs
                     </h4>
-                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                    <span className="text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                       Record : {summary.bestStreakDays} j d’affilée
                     </span>
                   </div>
@@ -545,15 +545,15 @@ export function MemberBadgesCard({
               {visibleDisciplineGroups.length > 0 && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    <h4 className="font-display text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-[#A3A3A3]">
                       Paliers par discipline validés
                     </h4>
-                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                    <span className="text-xs text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                       {summary.unlockedDisciplineBadgesCount} validé
                       {summary.unlockedDisciplineBadgesCount > 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+                  <div className="divide-y divide-slate-200 rounded-[10px] border border-slate-200 bg-white dark:divide-[#262626] dark:border-[#262626] dark:bg-[#1F1F1F]">
                     {visibleDisciplineGroups.map(renderDisciplineGroup)}
                   </div>
                 </div>

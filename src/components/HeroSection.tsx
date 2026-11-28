@@ -21,21 +21,21 @@ export function HeroSection({
   onOpenMemberProfile,
 }: HeroSectionProps) {
   return (
-    <section className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <section className="border-b border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616]">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         {/* Hero header content */}
         <div className="flex flex-col justify-between">
           <div>
-            <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 sm:text-sm">
+            <p className="text-xs font-medium text-emerald-700 dark:text-[#4ADE80] sm:text-sm">
               GetFitNow Event · Coaching sportif collectif et personnalisé
             </p>
             <h1
-              className="mt-2 max-w-3xl font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]"
+              className="mt-2 max-w-3xl font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]"
               style={{ textWrap: 'balance' }}
             >
               Réservez vos séances sportives et suivez votre progression
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:mt-4 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-[#A3A3A3] sm:mt-4 sm:text-base">
               Consultez le calendrier par ville, région et discipline, localisez les séances à proximité sur la carte et réservez votre place en quelques clics jusqu’au début de la séance.
             </p>
           </div>
@@ -44,7 +44,7 @@ export function HeroSection({
             <button
               type="button"
               onClick={onExploreCalendar}
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap shrink-0 cursor-pointer sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap shrink-0 cursor-pointer sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4ADE80] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#161616]"
             >
               Voir le calendrier des séances
               <ArrowDownRight className="h-4 w-4" aria-hidden="true" />
@@ -53,7 +53,7 @@ export function HeroSection({
               <button
                 type="button"
                 onClick={onExploreNearby}
-                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors duration-150 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 whitespace-nowrap shrink-0 cursor-pointer sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 transition-colors duration-150 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 whitespace-nowrap shrink-0 cursor-pointer sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4ADE80] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#161616]"
               >
                 <LocateFixed className="h-4 w-4" aria-hidden="true" />
                 Événements autour de moi
@@ -66,7 +66,7 @@ export function HeroSection({
                   ? onOpenCoachSpace
                   : onOpenMemberProfile || onOpenCoachSpace
               }
-              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white whitespace-nowrap shrink-0 cursor-pointer sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-[10px] border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#2A2A2A] dark:hover:text-white whitespace-nowrap shrink-0 cursor-pointer sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4ADE80] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#161616]"
             >
               {isCoach ? 'Ouvrir le suivi adhérents' : 'Mon suivi & profil'}
             </button>

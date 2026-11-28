@@ -35,17 +35,17 @@ export function EventImageLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={title ? `Visuel en plein écran : ${title}` : 'Visuel de l’événement en plein écran'}
-      className="fixed inset-0 z-[100] flex h-[100dvh] w-screen flex-col items-center justify-center bg-slate-950/95 backdrop-blur-xs cursor-zoom-out"
+      className="fixed inset-0 z-[100] flex h-[100dvh] w-screen flex-col items-center justify-center bg-black/95 backdrop-blur-xs cursor-zoom-out"
       onClick={(e) => {
         e.stopPropagation();
         onClose();
       }}
     >
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-10 flex items-center justify-between gap-3 bg-gradient-to-b from-slate-950/85 via-slate-950/40 to-transparent px-4 py-3 sm:px-6 sm:py-4"
+        className="pointer-events-none fixed inset-x-0 top-0 z-10 flex items-center justify-between gap-3 bg-gradient-to-b from-black/85 via-black/40 to-transparent px-4 py-3 sm:px-6 sm:py-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="min-w-0 truncate text-sm font-semibold text-white drop-shadow-xs">
+        <p className="min-w-0 truncate text-sm font-semibold text-[#E5E5E5] drop-shadow-xs">
           {title}
         </p>
         <button
@@ -55,7 +55,7 @@ export function EventImageLightbox({
             onClose();
           }}
           aria-label="Fermer l’image en plein écran"
-          className="pointer-events-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-slate-900/80 text-white shadow-lg transition-colors hover:bg-slate-800 cursor-pointer"
+          className="pointer-events-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-[#262626] bg-[#161616]/90 text-[#E5E5E5] shadow-lg transition-colors hover:bg-[#1F1F1F] cursor-pointer"
         >
           <X className="h-5 w-5" aria-hidden="true" />
         </button>

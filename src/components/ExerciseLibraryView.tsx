@@ -585,17 +585,17 @@ export function ExerciseLibraryView({
   return (
     <div className="space-y-6">
       {/* Header card */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-[16px] border border-slate-200 bg-white p-5 sm:p-6 dark:border-[#262626] dark:bg-[#161616]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-[#4ADE80]">
               <BookOpen className="h-4 w-4" aria-hidden="true" />
               <span>Bibliothèque d’exercices & Programmes sur mesure</span>
             </div>
-            <h2 className="mt-1 font-display text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
+            <h2 className="mt-1 font-display text-xl font-bold text-slate-900 dark:text-[#E5E5E5] sm:text-2xl">
               Exercices de renforcement & running
             </h2>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-1 text-sm text-slate-600 dark:text-[#A3A3A3]">
               Paramétrez chaque exercice (répétitions, durée, tours, pause,
               repos), ajoutez vos propres exercices et préparez un programme
               adapté aux objectifs de chaque adhérent.
@@ -608,10 +608,10 @@ export function ExerciseLibraryView({
                 type="button"
                 disabled={seeding}
                 onClick={() => void handleSeedStarterCatalog()}
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <Sparkles
-                  className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+                  className="h-3.5 w-3.5 text-emerald-600 dark:text-[#4ADE80]"
                   aria-hidden="true"
                 />
                 <span>
@@ -625,7 +625,7 @@ export function ExerciseLibraryView({
             <button
               type="button"
               onClick={() => openCreateExercise('strength')}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               <span>Nouvel exercice</span>
@@ -634,7 +634,7 @@ export function ExerciseLibraryView({
             <button
               type="button"
               onClick={() => handleOpenProgramWithExercise()}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 whitespace-nowrap shrink-0 cursor-pointer"
             >
               <CalendarPlus className="h-4 w-4" aria-hidden="true" />
               <span>Séance sur mesure</span>
@@ -643,7 +643,7 @@ export function ExerciseLibraryView({
             <button
               type="button"
               onClick={() => openRunningBuilder('10km', null)}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Footprints className="h-4 w-4" aria-hidden="true" />
               <span>Programme 5–42 km (12 sem.)</span>
@@ -652,21 +652,21 @@ export function ExerciseLibraryView({
         </div>
 
         {/* Sub-tab Switcher */}
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-[#262626]">
           <div
             role="tablist"
             aria-label="Sections de la bibliothèque"
-            className="inline-flex flex-wrap items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800"
+            className="inline-flex flex-wrap items-center gap-1 rounded-[12px] border border-slate-200 bg-slate-100 p-1 dark:border-[#262626] dark:bg-[#1F1F1F]"
           >
             <button
               type="button"
               role="tab"
               aria-selected={libraryTab === 'exercises'}
               onClick={() => setLibraryTab('exercises')}
-              className={`inline-flex min-h-[36px] items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+              className={`inline-flex min-h-[36px] items-center gap-2 rounded-[8px] px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                 libraryTab === 'exercises'
-                  ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#4ADE80]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
               }`}
             >
               <Dumbbell className="h-3.5 w-3.5" aria-hidden="true" />
@@ -677,10 +677,10 @@ export function ExerciseLibraryView({
               role="tab"
               aria-selected={libraryTab === 'programs'}
               onClick={() => setLibraryTab('programs')}
-              className={`inline-flex min-h-[36px] items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+              className={`inline-flex min-h-[36px] items-center gap-2 rounded-[8px] px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                 libraryTab === 'programs'
-                  ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs dark:bg-[#161616] dark:text-[#4ADE80]'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
               }`}
             >
               <Footprints className="h-3.5 w-3.5" aria-hidden="true" />
@@ -690,7 +690,7 @@ export function ExerciseLibraryView({
             </button>
           </div>
 
-          <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+          <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E] tabular-nums">
             {libraryTab === 'exercises'
               ? `${counts.strength} renfo · ${counts.running} running · ${counts.mobility} mobilité`
               : `${trainingPrograms.filter((p) => !p.isPaid || p.paymentStatus === 'free').length} offert(s) · ${trainingPrograms.filter((p) => p.isPaid && p.paymentStatus === 'paid').length} réglé(s) · ${trainingPrograms.filter((p) => p.vmaTestStatus === 'completed').length} VMA évaluée(s)`}
@@ -699,35 +699,35 @@ export function ExerciseLibraryView({
 
         {libraryTab === 'exercises' && (
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-950/50">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E]">
                 Total bibliothèque
               </p>
-              <p className="mt-0.5 font-mono text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                 {counts.total}
               </p>
             </div>
-            <div className="rounded-lg border border-amber-200/80 bg-amber-50/60 px-3.5 py-2.5 dark:border-amber-900/60 dark:bg-amber-950/25">
+            <div className="rounded-[12px] border border-amber-200/80 bg-amber-50/60 px-3.5 py-2.5 dark:border-amber-900/60 dark:bg-amber-950/25">
               <p className="text-[11px] font-medium text-amber-800 dark:text-amber-300">
                 Renforcement musculaire
               </p>
-              <p className="mt-0.5 font-mono text-lg font-bold text-amber-900 dark:text-amber-200 tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-amber-900 dark:text-amber-200 tabular-nums">
                 {counts.strength}
               </p>
             </div>
-            <div className="rounded-lg border border-sky-200/80 bg-sky-50/60 px-3.5 py-2.5 dark:border-sky-900/60 dark:bg-sky-950/25">
+            <div className="rounded-[12px] border border-sky-200/80 bg-sky-50/60 px-3.5 py-2.5 dark:border-sky-900/60 dark:bg-sky-950/25">
               <p className="text-[11px] font-medium text-sky-800 dark:text-sky-300">
                 Running spécifique
               </p>
-              <p className="mt-0.5 font-mono text-lg font-bold text-sky-900 dark:text-sky-200 tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-sky-900 dark:text-sky-200 tabular-nums">
                 {counts.running}
               </p>
             </div>
-            <div className="rounded-lg border border-violet-200/80 bg-violet-50/60 px-3.5 py-2.5 dark:border-violet-900/60 dark:bg-violet-950/25">
+            <div className="rounded-[12px] border border-violet-200/80 bg-violet-50/60 px-3.5 py-2.5 dark:border-violet-900/60 dark:bg-violet-950/25">
               <p className="text-[11px] font-medium text-violet-800 dark:text-violet-300">
                 Mobilité & Prévention
               </p>
-              <p className="mt-0.5 font-mono text-lg font-bold text-violet-900 dark:text-violet-200 tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-violet-900 dark:text-violet-200 tabular-nums">
                 {counts.mobility}
               </p>
             </div>
@@ -738,10 +738,10 @@ export function ExerciseLibraryView({
       {feedback && (
         <div
           role="status"
-          className={`rounded-xl border p-3.5 text-xs font-medium ${
+          className={`rounded-[12px] border p-3.5 text-xs font-medium ${
             feedback.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200'
-              : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#E5E5E5]'
+              : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
           }`}
         >
           {feedback.text}
@@ -751,13 +751,13 @@ export function ExerciseLibraryView({
       {libraryTab === 'programs' ? (
         <div className="space-y-6">
           {/* 4 Race Templates Grid */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+          <div className="rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-[#262626]">
               <div>
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Modèles spécifiques (5 km, 10 km, 21 km, 42 km)
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Durée adaptée au niveau (Débutant / Régulier &amp; Expérimenté) · 3 séances/sem. par défaut (paramétrable de 2 à 6) · Test VMA Jour 1.
                 </p>
               </div>
@@ -765,7 +765,7 @@ export function ExerciseLibraryView({
                 <button
                   type="button"
                   onClick={onOpenCoachPricing}
-                  className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 whitespace-nowrap shrink-0 cursor-pointer"
+                  className="inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Configurer mes tarifs</span>
@@ -787,32 +787,32 @@ export function ExerciseLibraryView({
                 return (
                   <div
                     key={tpl.key}
-                    className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+                    className="flex flex-col justify-between rounded-[12px] border border-slate-200 bg-slate-50/50 p-4 dark:border-[#262626] dark:bg-[#1F1F1F]"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+                        <span className="text-lg font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                           {tpl.shortLabel}
                         </span>
-                        <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                        <span className="text-xs font-bold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                           {formatPriceEuros(resolvedPriceCents)}
                           {isCustomCoachPrice ? ' · Mon tarif' : ''}
                         </span>
                       </div>
-                      <p className="mt-0.5 font-mono text-[11px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
+                      <p className="mt-0.5 text-[11px] font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
                         {tpl.beginnerWeeks} sem. (débutant) · {tpl.regularWeeks} sem. (régulier / exp.)
                       </p>
-                      <p className="mt-0.5 font-mono text-[11px] font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                      <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-[#8E8E8E] tabular-nums">
                         {tpl.defaultSessionsPerWeek} séances/sem. par défaut
                       </p>
-                      <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                      <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-[#A3A3A3]">
                         {tpl.tagline}
                       </p>
-                      <div className="mt-3 space-y-1 border-t border-slate-200/80 pt-2.5 dark:border-slate-800">
+                      <div className="mt-3 space-y-1 border-t border-slate-200/80 pt-2.5 dark:border-[#262626]">
                         {defaultPhases.map((phase) => (
                           <p
                             key={phase}
-                            className="text-[11px] text-slate-600 dark:text-slate-400"
+                            className="text-[11px] text-slate-600 dark:text-[#8E8E8E]"
                           >
                             {phase}
                           </p>
@@ -823,7 +823,7 @@ export function ExerciseLibraryView({
                     <button
                       type="button"
                       onClick={() => openRunningBuilder(tpl.key, null)}
-                      className="mt-4 inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 whitespace-nowrap cursor-pointer"
+                      className="mt-4 inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-[10px] bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] whitespace-nowrap cursor-pointer"
                     >
                       <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
                       <span>Configurer pour un adhérent</span>
@@ -835,13 +835,13 @@ export function ExerciseLibraryView({
           </div>
 
           {/* Assigned Programs List */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <div className="rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616] space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Programmes attribués aux adhérents ({trainingPrograms.length})
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Suivez le règlement, le test VMA du Jour 1 et la progression du cycle.
                 </p>
               </div>
@@ -849,7 +849,7 @@ export function ExerciseLibraryView({
               <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center md:w-auto">
                 <div className="relative w-full sm:w-64">
                   <Search
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#525252]"
                     aria-hidden="true"
                   />
                   <input
@@ -857,7 +857,7 @@ export function ExerciseLibraryView({
                     value={programSearch}
                     onChange={(e) => setProgramSearch(e.target.value)}
                     placeholder="Rechercher adhérent, distance..."
-                    className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-slate-50 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-slate-50 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   />
                 </div>
                 <select
@@ -873,7 +873,7 @@ export function ExerciseLibraryView({
                     )
                   }
                   aria-label="Filtrer par statut de programme"
-                  className="min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
+                  className="min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 sm:w-auto"
                 >
                   <option value="all">Tous les statuts</option>
                   <option value="awaiting_payment">Paiement en attente</option>
@@ -885,13 +885,13 @@ export function ExerciseLibraryView({
             </div>
 
             {filteredTrainingPrograms.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center dark:border-slate-700">
-                <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
+              <div className="rounded-[12px] border border-dashed border-slate-300 p-8 text-center dark:border-[#262626]">
+                <p className="font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                   {trainingPrograms.length === 0
                     ? 'Aucun programme 5–42 km attribué pour le moment'
                     : 'Aucun programme ne correspond à votre recherche'}
                 </p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Sélectionnez une distance ci-dessus pour préparer un plan personnalisé adapté au niveau.
                 </p>
               </div>
@@ -922,33 +922,33 @@ export function ExerciseLibraryView({
                   return (
                     <div
                       key={prog.id}
-                      className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/40"
+                      className="flex flex-col justify-between rounded-[12px] border border-slate-200 bg-white p-4 dark:border-[#262626] dark:bg-[#1F1F1F]"
                     >
                       <div>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0 flex-1">
-                            <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400 break-words">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400 break-words tabular-nums">
                               {tpl.shortLabel}
                               {prog.level ? ` (${getProgramRunnerLevelLabel(prog.level)})` : ''} ·{' '}
                               {prog.durationWeeks} sem. · {prog.sessionsPerWeek} séances/sem.
                             </p>
-                            <h4 className="mt-0.5 font-display text-base font-bold text-slate-900 dark:text-white truncate">
+                            <h4 className="mt-0.5 font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5] truncate">
                               {prog.memberName}
                             </h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            <p className="text-xs text-slate-500 dark:text-[#8E8E8E] truncate">
                               {prog.title} · {prog.memberEmail}
                             </p>
                           </div>
 
-                          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-slate-50 px-2.5 py-1.5 sm:block sm:shrink-0 sm:rounded-none sm:bg-transparent sm:p-0 sm:text-right dark:bg-slate-900/60 dark:sm:bg-transparent">
+                          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[8px] bg-slate-50 px-2.5 py-1.5 sm:block sm:shrink-0 sm:rounded-none sm:bg-transparent sm:p-0 sm:text-right dark:bg-[#161616] dark:sm:bg-transparent">
                             {(() => {
                               const isFreeProgram = !prog.isPaid || prog.paymentStatus === 'free';
                               const isPaid = prog.paymentStatus === 'paid';
                               return (
                                 <p
-                                  className={`font-mono text-xs font-bold tabular-nums leading-snug ${
+                                  className={`text-xs font-bold tabular-nums leading-snug ${
                                     isFreeProgram || isPaid
-                                      ? 'text-emerald-700 dark:text-emerald-400'
+                                      ? 'text-emerald-700 dark:text-[#4ADE80]'
                                       : 'text-amber-700 dark:text-amber-400'
                                   }`}
                                 >
@@ -960,32 +960,32 @@ export function ExerciseLibraryView({
                                 </p>
                               );
                             })()}
-                            <p className="sm:mt-0.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 tabular-nums leading-snug">
+                            <p className="sm:mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E] tabular-nums leading-snug">
                               Démarrage : {formatFrenchDateShort((prog.desiredStartAt ?? prog.startAt).toDate())}
                             </p>
                           </div>
                         </div>
 
                         {/* Objective + VMA metrics */}
-                        <div className="mt-3 grid grid-cols-1 gap-2.5 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900/60 sm:grid-cols-2">
+                        <div className="mt-3 grid grid-cols-1 gap-2.5 rounded-[10px] border border-slate-100 bg-slate-50/70 p-2.5 dark:border-[#262626] dark:bg-[#161616] sm:grid-cols-2">
                           <div>
-                            <p className="flex items-center gap-1 text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+                            <p className="flex items-center gap-1 text-[10px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]">
                               <Timer className="h-3 w-3" aria-hidden="true" />
                               Objectif chrono
                             </p>
-                            <p className="mt-0.5 font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                            <p className="mt-0.5 text-xs font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                               {formatDurationHMS(prog.targetTimeSeconds)} ·{' '}
                               {formatPaceMinPerKm(targetPace)}
                             </p>
                           </div>
 
                           <div>
-                            <p className="flex items-center gap-1 text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+                            <p className="flex items-center gap-1 text-[10px] font-semibold uppercase text-slate-500 dark:text-[#8E8E8E]">
                               <Gauge className="h-3 w-3" aria-hidden="true" />
                               Test VMA (Jour 1)
                             </p>
                             <p
-                              className={`mt-0.5 font-mono text-xs font-bold tabular-nums ${
+                              className={`mt-0.5 text-xs font-bold tabular-nums ${
                                 zones
                                   ? 'text-sky-700 dark:text-sky-400'
                                   : 'text-amber-700 dark:text-amber-400'
@@ -1000,24 +1000,24 @@ export function ExerciseLibraryView({
 
                         {/* Progress bar */}
                         <div className="mt-3">
-                          <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                          <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-[#A3A3A3]">
                             <span>Progression du cycle</span>
-                            <span className="font-mono font-semibold tabular-nums">
+                            <span className="font-semibold tabular-nums">
                               {doneCount} / {totalSessions} séances ({pct}%)
                             </span>
                           </div>
-                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-[#262626]">
                             <div
-                              className="h-full bg-emerald-600 transition-all dark:bg-emerald-500"
+                              className="h-full bg-emerald-600 transition-all dark:bg-[#4ADE80]"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
                         </div>
 
                         {/* Progressive week-by-week delivery status */}
-                        <div className="mt-3 rounded-lg border border-slate-200/80 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900/50">
+                        <div className="mt-3 rounded-[10px] border border-slate-200/80 bg-slate-50/70 p-2.5 dark:border-[#262626] dark:bg-[#161616]">
                           <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            <span className="font-semibold text-slate-800 dark:text-[#E5E5E5]">
                               Envoi progressif :{' '}
                               {!delivery.hasAccess
                                 ? 'en attente du paiement'
@@ -1028,14 +1028,14 @@ export function ExerciseLibraryView({
                                     : `Sem. ${delivery.unlockedWeeks}/${delivery.totalWeeks} envoyée`}
                             </span>
                             {delivery.hasAccess && delivery.awaitingVma ? (
-                              <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400">
+                              <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400 tabular-nums">
                                 Sem. 1 dès validation · puis {delivery.autoSendShortLabel}
                               </span>
                             ) : (
                               delivery.hasAccess &&
                               delivery.nextWeekNumber &&
                               delivery.nextUnlockAtMs && (
-                                <span className="font-mono text-[10px] text-sky-700 dark:text-sky-400 tabular-nums">
+                                <span className="text-[10px] font-medium text-sky-700 dark:text-sky-400 tabular-nums">
                                   Sem. {delivery.nextWeekNumber} le{' '}
                                   {formatFrenchDateShort(new Date(delivery.nextUnlockAtMs))} à{' '}
                                   {formatFrenchTime(new Date(delivery.nextUnlockAtMs))}
@@ -1058,10 +1058,10 @@ export function ExerciseLibraryView({
                                         ? `Semaine ${wk.weekNumber} envoyée`
                                         : `Semaine ${wk.weekNumber} : envoi auto le ${formatFrenchDateShort(new Date(wk.unlockAtMs))} à ${formatFrenchTime(new Date(wk.unlockAtMs))}`
                                 }
-                                className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums ${
+                                className={`inline-flex items-center rounded-[6px] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
                                   wk.unlocked
-                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300'
-                                    : 'bg-slate-200/80 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                                    : 'bg-slate-200/80 text-slate-500 dark:bg-[#262626] dark:text-[#8E8E8E]'
                                 }`}
                               >
                                 S{wk.weekNumber}
@@ -1072,14 +1072,14 @@ export function ExerciseLibraryView({
                       </div>
 
                       {/* Actions */}
-                      <div className="mt-3.5 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between dark:border-slate-800">
+                      <div className="mt-3.5 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between dark:border-[#262626]">
                         <div className="flex flex-wrap items-center gap-1.5">
                           {prog.isPaid && prog.paymentStatus !== 'paid' && prog.paymentStatus !== 'free' && (
                             <button
                               type="button"
                               disabled={payingProgramId === prog.id}
                               onClick={() => void handleConfirmProgramPayment(prog)}
-                              className="inline-flex min-h-[32px] items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
+                              className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 whitespace-nowrap shrink-0 cursor-pointer"
                             >
                               <CreditCard className="h-3 w-3" aria-hidden="true" />
                               <span>
@@ -1093,7 +1093,7 @@ export function ExerciseLibraryView({
                           <button
                             type="button"
                             onClick={() => setVmaTestProgram(prog)}
-                            className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 whitespace-nowrap shrink-0 cursor-pointer"
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-900 hover:bg-sky-100 dark:border-sky-800/60 dark:bg-sky-950/40 dark:text-sky-200 whitespace-nowrap shrink-0 cursor-pointer"
                           >
                             <Activity className="h-3 w-3" aria-hidden="true" />
                             <span>
@@ -1111,7 +1111,7 @@ export function ExerciseLibraryView({
                                 sessionKey: `w${Math.max(1, delivery.currentWeekNumber)}-s1`,
                               })
                             }
-                            className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 whitespace-nowrap shrink-0 cursor-pointer"
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 whitespace-nowrap shrink-0 cursor-pointer"
                           >
                             <SlidersHorizontal className="h-3 w-3" aria-hidden="true" />
                             <span>
@@ -1130,7 +1130,7 @@ export function ExerciseLibraryView({
                                 type="button"
                                 disabled={deletingProgramId === prog.id}
                                 onClick={() => void handleDeleteTrainingProgram(prog)}
-                                className="min-h-[32px] rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                className="min-h-[32px] rounded-[8px] bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                               >
                                 {deletingProgramId === prog.id
                                   ? 'Suppr...'
@@ -1139,7 +1139,7 @@ export function ExerciseLibraryView({
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteProgramId(null)}
-                                className="min-h-[32px] rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-600 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
+                                className="min-h-[32px] rounded-[8px] border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                               >
                                 Annuler
                               </button>
@@ -1151,7 +1151,7 @@ export function ExerciseLibraryView({
                                 onClick={() =>
                                   openRunningBuilder(prog.distance, prog)
                                 }
-                                className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer"
+                                className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] whitespace-nowrap shrink-0 cursor-pointer"
                               >
                                 <Pencil className="h-3 w-3" aria-hidden="true" />
                                 <span>Modifier</span>
@@ -1160,7 +1160,7 @@ export function ExerciseLibraryView({
                                 type="button"
                                 onClick={() => setConfirmDeleteProgramId(prog.id)}
                                 aria-label={`Supprimer le programme de ${prog.memberName}`}
-                                className="inline-flex h-[32px] w-[32px] items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
+                                className="inline-flex h-[32px] w-[32px] items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#8E8E8E] dark:hover:border-rose-800/60 dark:hover:bg-rose-950/40 dark:hover:text-rose-300 cursor-pointer"
                               >
                                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
@@ -1176,20 +1176,20 @@ export function ExerciseLibraryView({
           </div>
 
           {/* Assigned Custom Sessions ("Séance sur mesure") */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 space-y-3.5">
+          <div className="rounded-[16px] border border-slate-200 bg-white p-5 dark:border-[#262626] dark:bg-[#161616] space-y-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                   Séances sur mesure attribuées ({coachCustomSessions.length})
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Séances personnalisées créées depuis la bibliothèque et visibles dans le planning de chaque adhérent.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => handleOpenProgramWithExercise()}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200 whitespace-nowrap cursor-pointer"
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 whitespace-nowrap cursor-pointer"
               >
                 <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>Nouvelle séance sur mesure</span>
@@ -1197,7 +1197,7 @@ export function ExerciseLibraryView({
             </div>
 
             {coachCustomSessions.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              <div className="rounded-[12px] border border-dashed border-slate-300 p-6 text-center text-xs text-slate-500 dark:border-[#262626] dark:text-[#8E8E8E]">
                 Aucune séance sur mesure attribuée pour le moment.
               </div>
             ) : (
@@ -1210,25 +1210,25 @@ export function ExerciseLibraryView({
                   return (
                     <div
                       key={sess.id}
-                      className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40"
+                      className="flex flex-col justify-between rounded-[12px] border border-slate-200 bg-slate-50/50 p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]"
                     >
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                            <p className="text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80] tabular-nums">
                               {sess.discipline} · {formatFrenchDateShort(sess.startAt.toDate())}
                             </p>
-                            <h4 className="mt-0.5 truncate font-display text-sm font-bold text-slate-900 dark:text-white">
+                            <h4 className="mt-0.5 truncate font-display text-sm font-bold text-slate-900 dark:text-[#E5E5E5]">
                               {sess.title}
                             </h4>
-                            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                            <p className="truncate text-xs text-slate-500 dark:text-[#8E8E8E]">
                               {sess.memberName} ({sess.memberEmail})
                             </p>
                           </div>
                           <span
-                            className={`shrink-0 font-mono text-[11px] font-bold tabular-nums ${
+                            className={`shrink-0 text-[11px] font-bold tabular-nums ${
                               isPaid
-                                ? 'text-emerald-700 dark:text-emerald-400'
+                                ? 'text-emerald-700 dark:text-[#4ADE80]'
                                 : 'text-amber-700 dark:text-amber-400'
                             }`}
                           >
@@ -1239,7 +1239,7 @@ export function ExerciseLibraryView({
                               : 'Offert · Gratuit'}
                           </span>
                         </div>
-                        <p className="mt-2 font-mono text-[11px] text-slate-600 dark:text-slate-300 tabular-nums">
+                        <p className="mt-2 text-[11px] text-slate-600 dark:text-[#A3A3A3] tabular-nums">
                           {sess.exercises?.length ?? 0} exercice
                           {(sess.exercises?.length ?? 0) > 1 ? 's' : ''} ·{' '}
                           {sess.durationMinutes} min
@@ -1247,14 +1247,14 @@ export function ExerciseLibraryView({
                         </p>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-slate-200/70 pt-2.5 dark:border-slate-800">
+                      <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-slate-200/70 pt-2.5 dark:border-[#262626]">
                         {isConfirmingDelete ? (
                           <>
                             <button
                               type="button"
                               disabled={isDeleting}
                               onClick={() => void handleDeleteCustomSession(sess)}
-                              className="min-h-[32px] rounded-md bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                              className="min-h-[32px] rounded-[8px] bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                             >
                               {isDeleting ? 'Suppr...' : 'Confirmer'}
                             </button>
@@ -1262,7 +1262,7 @@ export function ExerciseLibraryView({
                               type="button"
                               disabled={isDeleting}
                               onClick={() => setConfirmDeleteCustomSessionId(null)}
-                              className="min-h-[32px] rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
+                              className="min-h-[32px] rounded-[8px] border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                             >
                               Annuler
                             </button>
@@ -1272,7 +1272,7 @@ export function ExerciseLibraryView({
                             type="button"
                             onClick={() => setConfirmDeleteCustomSessionId(sess.id)}
                             aria-label={`Supprimer la séance ${sess.title} de ${sess.memberName}`}
-                            className="inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:border-rose-800/60 dark:hover:bg-rose-950/40 dark:hover:text-rose-300 cursor-pointer"
                           >
                             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                             <span>Supprimer</span>
@@ -1289,11 +1289,11 @@ export function ExerciseLibraryView({
       ) : (
         <>
           {/* Search & Filters */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 space-y-3">
+      <div className="rounded-[16px] border border-slate-200 bg-white p-4 dark:border-[#262626] dark:bg-[#161616] space-y-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="relative flex-1">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#525252]"
               aria-hidden="true"
             />
             <input
@@ -1301,7 +1301,7 @@ export function ExerciseLibraryView({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Rechercher un exercice (ex. Squat, VMA, Fentes, Gainage, Côte...)"
-              className="min-h-[40px] w-full rounded-lg border border-slate-300 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
             />
           </div>
 
@@ -1321,10 +1321,10 @@ export function ExerciseLibraryView({
                 key={cat.id}
                 type="button"
                 onClick={() => setCategoryFilter(cat.id)}
-                className={`min-h-[34px] rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                className={`min-h-[34px] rounded-[8px] px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                   categoryFilter === cat.id
-                    ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                    ? 'bg-emerald-700 text-white dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626]'
                 }`}
               >
                 {cat.label}
@@ -1334,18 +1334,18 @@ export function ExerciseLibraryView({
         </div>
 
         {/* Objective Filter Bar */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
-          <span className="mr-1 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-[#262626]">
+          <span className="mr-1 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-[#8E8E8E]">
             <Target className="h-3.5 w-3.5" aria-hidden="true" />
             Objectif :
           </span>
           <button
             type="button"
             onClick={() => setObjectiveFilter('all')}
-            className={`rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer ${
+            className={`rounded-[8px] px-2.5 py-1 text-[11px] font-medium cursor-pointer ${
               objectiveFilter === 'all'
-                ? 'bg-emerald-100 font-semibold text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-300'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                ? 'bg-emerald-100 font-semibold text-emerald-900 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                : 'text-slate-600 hover:bg-slate-100 dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F]'
             }`}
           >
             Tous
@@ -1355,10 +1355,10 @@ export function ExerciseLibraryView({
               key={obj}
               type="button"
               onClick={() => setObjectiveFilter(obj)}
-              className={`rounded-md px-2.5 py-1 text-[11px] font-medium cursor-pointer ${
+              className={`rounded-[8px] px-2.5 py-1 text-[11px] font-medium cursor-pointer ${
                 objectiveFilter === obj
-                  ? 'bg-emerald-100 font-semibold text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-300'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                  ? 'bg-emerald-100 font-semibold text-emerald-900 dark:bg-[#4ADE80]/15 dark:text-[#4ADE80]'
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-[#A3A3A3] dark:hover:bg-[#1F1F1F]'
               }`}
             >
               {obj}
@@ -1369,11 +1369,11 @@ export function ExerciseLibraryView({
 
       {/* Exercise Cards Grid */}
       {filteredRows.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
-          <p className="font-display text-base font-bold text-slate-900 dark:text-white">
+        <div className="rounded-[16px] border border-dashed border-slate-300 bg-white p-8 text-center dark:border-[#262626] dark:bg-[#161616]">
+          <p className="font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
             Aucun exercice trouvé
           </p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
             Modifiez les filtres ou créez un nouvel exercice personnalisé.
           </p>
         </div>
@@ -1384,12 +1384,12 @@ export function ExerciseLibraryView({
             return (
               <div
                 key={row.id}
-                className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-2xs transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                className="flex flex-col justify-between rounded-[16px] border border-slate-200 bg-white p-4 shadow-2xs transition-colors hover:border-slate-300 dark:border-[#262626] dark:bg-[#161616] dark:hover:border-[#404040]"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${meta.badgeClass}`}
+                      className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold ${meta.badgeClass}`}
                     >
                       {row.category === 'running' ? (
                         <Footprints className="h-3 w-3" aria-hidden="true" />
@@ -1399,23 +1399,23 @@ export function ExerciseLibraryView({
                       {meta.label}
                     </span>
 
-                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <span className="rounded-[6px] bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-[#1F1F1F] dark:text-[#A3A3A3]">
                       {row.isStored ? 'Enregistré' : 'Modèle de base'}
                     </span>
                   </div>
 
-                  <h3 className="mt-2.5 font-display text-base font-bold text-slate-900 dark:text-white">
+                  <h3 className="mt-2.5 font-display text-base font-bold text-slate-900 dark:text-[#E5E5E5]">
                     {row.name}
                   </h3>
 
                   {row.intensityHint && (
-                    <p className="mt-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                    <p className="mt-0.5 text-[11px] font-semibold text-emerald-700 dark:text-[#4ADE80]">
                       {row.intensityHint}
                     </p>
                   )}
 
                   {row.description && (
-                    <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-[#A3A3A3]">
                       {row.description}
                     </p>
                   )}
@@ -1425,7 +1425,7 @@ export function ExerciseLibraryView({
                       {row.targetObjectives.map((obj) => (
                         <span
                           key={obj}
-                          className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          className="rounded-[6px] bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-[#1F1F1F] dark:text-[#A3A3A3]"
                         >
                           {obj}
                         </span>
@@ -1434,22 +1434,22 @@ export function ExerciseLibraryView({
                   )}
 
                   {/* 5 Configurable Default Parameters Grid */}
-                  <div className="mt-3.5 grid grid-cols-5 gap-1.5 rounded-lg border border-slate-100 bg-slate-50/80 p-2 text-center dark:border-slate-800 dark:bg-slate-950/60">
+                  <div className="mt-3.5 grid grid-cols-5 gap-1.5 rounded-[12px] border border-slate-100 bg-slate-50/80 p-2 text-center dark:border-[#262626] dark:bg-[#1F1F1F]">
                     <div>
-                      <p className="text-[9px] font-semibold uppercase text-slate-400">
+                      <p className="text-[9px] font-semibold uppercase text-slate-400 dark:text-[#8E8E8E]">
                         Rép.
                       </p>
-                      <p className="font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                      <p className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                         {row.defaultParams.repetitions > 0
                           ? row.defaultParams.repetitions
                           : '—'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[9px] font-semibold uppercase text-slate-400">
+                      <p className="text-[9px] font-semibold uppercase text-slate-400 dark:text-[#8E8E8E]">
                         Durée
                       </p>
-                      <p className="font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                      <p className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                         {row.defaultParams.durationSeconds > 0
                           ? formatSecondsCompact(
                               row.defaultParams.durationSeconds
@@ -1458,28 +1458,28 @@ export function ExerciseLibraryView({
                       </p>
                     </div>
                     <div>
-                      <p className="text-[9px] font-semibold uppercase text-slate-400">
+                      <p className="text-[9px] font-semibold uppercase text-slate-400 dark:text-[#8E8E8E]">
                         Tours
                       </p>
-                      <p className="font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                      <p className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                         {row.defaultParams.setsOrRounds}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[9px] font-semibold uppercase text-slate-400">
+                      <p className="text-[9px] font-semibold uppercase text-slate-400 dark:text-[#8E8E8E]">
                         Pause
                       </p>
-                      <p className="font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                      <p className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                         {formatSecondsCompact(
                           row.defaultParams.intraSetPauseSeconds
                         )}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[9px] font-semibold uppercase text-slate-400">
+                      <p className="text-[9px] font-semibold uppercase text-slate-400 dark:text-[#8E8E8E]">
                         Repos
                       </p>
-                      <p className="font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                      <p className="text-xs font-bold text-slate-900 dark:text-[#E5E5E5] tabular-nums">
                         {formatSecondsCompact(
                           row.defaultParams.restBetweenRoundsSeconds
                         )}
@@ -1489,11 +1489,11 @@ export function ExerciseLibraryView({
                 </div>
 
                 {/* Card Footer Actions */}
-                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-[#262626]">
                   <button
                     type="button"
                     onClick={() => handleOpenProgramWithExercise(row)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-[8px] bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:border dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 cursor-pointer"
                   >
                     <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>+ Programme</span>
@@ -1508,14 +1508,14 @@ export function ExerciseLibraryView({
                           onClick={() =>
                             void handleDeleteExercise(row.id, row.name)
                           }
-                          className="rounded-md bg-rose-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                          className="rounded-[8px] bg-rose-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
                         >
                           {deletingId === row.id ? 'Suppr...' : 'Confirmer'}
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
+                          className="rounded-[8px] border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                         >
                           Annuler
                         </button>
@@ -1525,7 +1525,7 @@ export function ExerciseLibraryView({
                         <button
                           type="button"
                           onClick={() => openEditExercise(row)}
-                          className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-[8px] border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                         >
                           <Pencil className="h-3 w-3" aria-hidden="true" />
                           <span>
@@ -1537,7 +1537,7 @@ export function ExerciseLibraryView({
                             type="button"
                             onClick={() => setConfirmDeleteId(row.id)}
                             aria-label={`Supprimer ${row.name}`}
-                            className="inline-flex items-center justify-center rounded-md border border-slate-200 p-1.5 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-rose-950/60 dark:hover:text-rose-300 cursor-pointer"
+                            className="inline-flex items-center justify-center rounded-[8px] border border-slate-200 bg-white p-1.5 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#8E8E8E] dark:hover:border-rose-800/60 dark:hover:bg-rose-950/40 dark:hover:text-rose-300 cursor-pointer"
                           >
                             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                           </button>
@@ -1560,14 +1560,14 @@ export function ExerciseLibraryView({
           role="dialog"
           aria-modal="true"
           aria-labelledby="exercise-form-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 dark:bg-black/75 p-4 backdrop-blur-xs"
         >
-          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3.5 dark:border-slate-800">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[16px] border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl dark:border-[#262626] dark:bg-[#161616]">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3.5 dark:border-[#262626]">
               <div>
                 <h3
                   id="exercise-form-title"
-                  className="font-display text-lg font-bold text-slate-900 dark:text-white"
+                  className="font-display text-lg font-bold text-slate-900 dark:text-[#E5E5E5]"
                 >
                   {editingRow
                     ? editingRow.isStored
@@ -1575,7 +1575,7 @@ export function ExerciseLibraryView({
                       : 'Personnaliser & enregistrer l’exercice'
                     : 'Ajouter un nouvel exercice'}
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8E8E8E]">
                   Définissez la catégorie, les objectifs ciblés et les
                   paramètres par défaut.
                 </p>
@@ -1587,7 +1587,7 @@ export function ExerciseLibraryView({
                   setEditingRow(null);
                 }}
                 aria-label="Fermer"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-[#8E8E8E] dark:hover:bg-[#1F1F1F] dark:hover:text-[#E5E5E5] cursor-pointer"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -1598,7 +1598,7 @@ export function ExerciseLibraryView({
                 <div>
                   <label
                     htmlFor="ex-name"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Nom de l’exercice *
                   </label>
@@ -1611,14 +1611,14 @@ export function ExerciseLibraryView({
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                     placeholder="Ex. Squat bulgare, Fractionné 200m..."
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="ex-category"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                   >
                     Catégorie *
                   </label>
@@ -1628,7 +1628,7 @@ export function ExerciseLibraryView({
                     onChange={(e) =>
                       setFormCategory(e.target.value as ExerciseCategory)
                     }
-                    className="mt-1 min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mt-1 min-h-[40px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   >
                     <option value="strength">Renforcement musculaire</option>
                     <option value="running">Running spécifique</option>
@@ -1639,7 +1639,7 @@ export function ExerciseLibraryView({
 
               {/* Target Objectives */}
               <div>
-                <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <span className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]">
                   Objectifs ciblés (max {VALIDATION_LIMITS.EXERCISE_OBJECTIVES_MAX_COUNT})
                 </span>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -1652,10 +1652,10 @@ export function ExerciseLibraryView({
                         key={obj}
                         type="button"
                         onClick={() => toggleFormObjective(obj)}
-                        className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                        className={`rounded-[8px] border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                           active
-                            ? 'border-emerald-600 bg-emerald-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            ? 'border-emerald-600 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A]'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626]'
                         }`}
                       >
                         {obj}
@@ -1670,12 +1670,12 @@ export function ExerciseLibraryView({
                     value={customObjectiveInput}
                     onChange={(e) => setCustomObjectiveInput(e.target.value)}
                     placeholder="Ajouter un objectif personnalisé (ex. Prépa Trail)..."
-                    className="min-h-[36px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="min-h-[36px] flex-1 rounded-[10px] border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                   />
                   <button
                     type="button"
                     onClick={handleAddCustomObjective}
-                    className="rounded-lg border border-slate-300 bg-slate-50 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                    className="rounded-[10px] border border-slate-300 bg-slate-50 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                   >
                     + Ajouter
                   </button>
@@ -1683,11 +1683,11 @@ export function ExerciseLibraryView({
               </div>
 
               {/* 5 Default Parameters */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-950/50">
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <div className="rounded-[12px] border border-slate-200 bg-slate-50/70 p-3.5 dark:border-[#262626] dark:bg-[#1F1F1F]">
+                <p className="text-xs font-bold text-slate-800 dark:text-[#E5E5E5]">
                   Paramètres par défaut de l’exercice
                 </p>
-                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8E8E8E]">
                   Modifiables ensuite exercice par exercice dans chaque
                   programme adhérent.
                 </p>
@@ -1696,7 +1696,7 @@ export function ExerciseLibraryView({
                   <div>
                     <label
                       htmlFor="ex-reps"
-                      className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-[11px] font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Répétitions
                     </label>
@@ -1712,9 +1712,9 @@ export function ExerciseLibraryView({
                           repetitions: Math.round(Number(e.target.value) || 0),
                         }))
                       }
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                     />
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-400 dark:text-[#8E8E8E]">
                       0 si au temps
                     </span>
                   </div>
@@ -1722,7 +1722,7 @@ export function ExerciseLibraryView({
                   <div>
                     <label
                       htmlFor="ex-duration"
-                      className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-[11px] font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Durée (sec)
                     </label>
@@ -1740,9 +1740,9 @@ export function ExerciseLibraryView({
                           ),
                         }))
                       }
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                     />
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-400 dark:text-[#8E8E8E] tabular-nums">
                       {formParams.durationSeconds > 0
                         ? formatSecondsCompact(formParams.durationSeconds)
                         : '0 si aux rép.'}
@@ -1752,7 +1752,7 @@ export function ExerciseLibraryView({
                   <div>
                     <label
                       htmlFor="ex-rounds"
-                      className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-[11px] font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Nb tours *
                     </label>
@@ -1772,14 +1772,14 @@ export function ExerciseLibraryView({
                           ),
                         }))
                       }
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="ex-pause"
-                      className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-[11px] font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Pause (sec)
                     </label>
@@ -1797,9 +1797,9 @@ export function ExerciseLibraryView({
                           ),
                         }))
                       }
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                     />
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-400 dark:text-[#8E8E8E]">
                       Intra-tour
                     </span>
                   </div>
@@ -1807,7 +1807,7 @@ export function ExerciseLibraryView({
                   <div>
                     <label
                       htmlFor="ex-rest"
-                      className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-[11px] font-semibold text-slate-700 dark:text-[#A3A3A3]"
                     >
                       Repos (sec)
                     </label>
@@ -1825,9 +1825,9 @@ export function ExerciseLibraryView({
                           ),
                         }))
                       }
-                      className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-2.5 font-mono text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-900 tabular-nums focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                     />
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-400 dark:text-[#8E8E8E]">
                       Entre tours
                     </span>
                   </div>
@@ -1837,7 +1837,7 @@ export function ExerciseLibraryView({
               <div>
                 <label
                   htmlFor="ex-intensity"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Repère d’intensité / charge / allure (optionnel)
                 </label>
@@ -1848,14 +1848,14 @@ export function ExerciseLibraryView({
                   value={formIntensity}
                   onChange={(e) => setFormIntensity(e.target.value)}
                   placeholder="Ex. 95% VMA, Charge modérée, Zone 2..."
-                  className="mt-1 min-h-[38px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 min-h-[38px] w-full rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="ex-desc"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-[#E5E5E5]"
                 >
                   Consignes techniques & exécution
                 </label>
@@ -1866,31 +1866,31 @@ export function ExerciseLibraryView({
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Placement, rythme, respiration, points de vigilance..."
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="mt-1 w-full rounded-[10px] border border-slate-300 bg-white p-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
                 />
               </div>
 
               {formError && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+                <div className="rounded-[10px] border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200">
                   {formError}
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3 dark:border-[#262626]">
                 <button
                   type="button"
                   onClick={() => {
                     setFormOpen(false);
                     setEditingRow(null);
                   }}
-                  className="min-h-[38px] rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+                  className="min-h-[38px] rounded-[10px] border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={formSaving}
-                  className="min-h-[38px] rounded-lg bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                  className="min-h-[38px] rounded-[10px] bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:hover:bg-[#22C55E] disabled:opacity-60 cursor-pointer"
                 >
                   {formSaving
                     ? 'Enregistrement...'
