@@ -2502,5 +2502,99 @@ service cloud.firestore {
 
       allow delete: if isValidId(programId) && isMyAttachedProgram(existing());
     }
+
+    // -------------------------------------------------------------------------
+    // /eventAttendeeCards/{registrationId} (Public non-PII initials & photoUrl)
+    // -------------------------------------------------------------------------
+    function isValidEventAttendeeCard(data) {
+      return data.keys().hasAll([
+        'registrationId', 'eventId', 'emailKey', 'initials', 'photoUrl',
+        'status', 'createdByUid', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'registrationId', 'eventId', 'emailKey', 'initials', 'photoUrl',
+        'status', 'createdByUid', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.registrationId) &&
+      data.registrationId.size() >= 4 &&
+      data.registrationId.size() <= 128 &&
+      isValidId(data.eventId) &&
+      data.eventId.size() >= 4 &&
+      data.eventId.size() <= 64 &&
+      isValidEmailKey(data.emailKey) &&
+      data.initials is string &&
+      data.initials.size() >= 1 &&
+      data.initials.size() <= 4 &&
+      data.photoUrl is string &&
+      data.photoUrl.size() <= 80000 &&
+      data.status == 'confirmed' &&
+      isValidId(data.createdByUid) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function canManageAttendeeCardForRegistration(regData) {
+      return regData.status == 'confirmed' && (
+        isAdmin() ||
+        regData.email.lower() == request.auth.token.email.lower() ||
+        (
+          regData.get('isGuest', false) == true &&
+          regData.get('invitedByEmail', '').lower() == request.auth.token.email.lower()
+        )
+      );
+    }
+
+    match /eventAttendeeCards/{registrationId} {
+      allow get: if isValidId(registrationId) && (
+        (resource != null && existing().status == 'confirmed') ||
+        isAdmin()
+      );
+      allow list: if resource.data.status == 'confirmed' || isAdmin();
+
+      allow create: if hasAuthenticatedEmail() &&
+        isValidId(registrationId) &&
+        isValidEventAttendeeCard(incoming()) &&
+        registrationId == incoming().registrationId &&
+        incoming().createdByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/registrations/$(registrationId)) &&
+        get(/databases/$(database)/documents/registrations/$(registrationId)).data.eventId == incoming().eventId &&
+        get(/databases/$(database)/documents/registrations/$(registrationId)).data.emailKey == incoming().emailKey &&
+        canManageAttendeeCardForRegistration(
+          get(/databases/$(database)/documents/registrations/$(registrationId)).data
+        );
+
+      allow update: if hasAuthenticatedEmail() &&
+        isValidId(registrationId) &&
+        isValidEventAttendeeCard(incoming()) &&
+        incoming().registrationId == existing().registrationId &&
+        incoming().eventId == existing().eventId &&
+        incoming().emailKey == existing().emailKey &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['initials', 'photoUrl', 'updatedAt']) &&
+        exists(/databases/$(database)/documents/registrations/$(registrationId)) &&
+        canManageAttendeeCardForRegistration(
+          get(/databases/$(database)/documents/registrations/$(registrationId)).data
+        );
+
+      allow delete: if isValidId(registrationId) && (
+        isAdmin() ||
+        (
+          hasAuthenticatedEmail() && (
+            existing().createdByUid == request.auth.uid ||
+            (
+              exists(/databases/$(database)/documents/registrations/$(registrationId)) &&
+              (
+                get(/databases/$(database)/documents/registrations/$(registrationId)).data.email.lower() == request.auth.token.email.lower() ||
+                get(/databases/$(database)/documents/registrations/$(registrationId)).data.get('invitedByEmail', '').lower() == request.auth.token.email.lower()
+              )
+            )
+          )
+        )
+      );
+    }
   }
 }

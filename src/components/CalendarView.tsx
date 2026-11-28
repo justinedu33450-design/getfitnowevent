@@ -7,20 +7,18 @@ import {
   Clock,
   ExternalLink,
   List,
-  LocateFixed,
   Lock,
   Map as MapIcon,
   MapPin,
   Maximize2,
   MessageSquare,
   Plus,
-  Search,
-  SlidersHorizontal,
+  User,
   UserCheck,
 } from 'lucide-react';
 import {
-  Discipline,
   DisciplineItem,
+  EventAttendeeAvatar,
   EventRatingSummary,
   SportEvent,
 } from '../types';
@@ -34,6 +32,7 @@ import {
   formatFrenchTime,
   formatPaymentModeLabel,
   formatTimeRange,
+  getEventCoachNames,
   getEventDurationMinutes,
   getMonthDaysGrid,
   getSafeEventCoverImageSrc,
@@ -55,10 +54,12 @@ import { EventImageLightbox } from './EventImageLightbox';
 interface CalendarViewProps {
   events: SportEvent[];
   disciplines: DisciplineItem[];
+  viewMode?: 'month' | 'week';
   nowMs: number;
   isCoach: boolean;
   isCoachAdmin?: boolean;
   registeredEventIds?: Set<string>;
+  attendeesByEventId?: Map<string, EventAttendeeAvatar[]>;
   onShareEvent?: (event: SportEvent) => void;
   ratingSummaryByEventId?: Map<string, EventRatingSummary>;
   loading: boolean;
@@ -71,13 +72,72 @@ interface CalendarViewProps {
 
 const WEEKDAY_LABELS = ['LU', 'MA', 'ME', 'JE', 'VE', 'SA', 'DI'];
 
+function getAttendeeInitials(name: string): string {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function AttendeeAvatarCircle({ attendee }: { attendee: EventAttendeeAvatar }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const src =
+    typeof attendee.photoUrl === 'string' && attendee.photoUrl.trim()
+      ? attendee.photoUrl.trim()
+      : '';
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [src]);
+
+  if (src && !imgFailed) {
+    return (
+      <img
+        src={src}
+        alt={attendee.name}
+        title={attendee.name}
+        referrerPolicy="no-referrer"
+        onError={() => setImgFailed(true)}
+        className="relative h-7 w-7 shrink-0 rounded-full bg-slate-100 object-cover ring-2 ring-white dark:bg-[#262626] dark:ring-[#1B1B1B]"
+      />
+    );
+  }
+
+  if (attendee.isAnonymousPlaceholder) {
+    return (
+      <span
+        title={attendee.name}
+        aria-label={attendee.name}
+        className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-500 ring-2 ring-white dark:border-[#333333] dark:bg-[#262626] dark:text-[#A3A3A3] dark:ring-[#1B1B1B]"
+      >
+        <User className="h-3.5 w-3.5" aria-hidden="true" />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      title={attendee.name}
+      aria-label={attendee.name}
+      className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 font-display text-[10px] font-bold text-emerald-800 ring-2 ring-white select-none dark:border-[#4ADE80]/30 dark:bg-[#1F2E24] dark:text-[#4ADE80] dark:ring-[#1B1B1B]"
+    >
+      {getAttendeeInitials(attendee.name)}
+    </span>
+  );
+}
+
 export function CalendarView({
   events,
   disciplines,
+  viewMode = 'month',
   nowMs,
   isCoach,
   isCoachAdmin = false,
   registeredEventIds,
+  attendeesByEventId,
   onShareEvent,
   ratingSummaryByEventId,
   loading,
@@ -85,81 +145,21 @@ export function CalendarView({
   onSelectEvent,
   onCreateEventForDate,
   onMessageCoach,
-  onOpenNearbyMap,
 }: CalendarViewProps) {
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [dayDisplayMode, setDayDisplayMode] = useState<'list' | 'map'>('list');
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
-  const [disciplineFilter, setDisciplineFilter] = useState<'all' | Discipline>(
-    'all'
-  );
-  const [cityQuery, setCityQuery] = useState('');
-  const [regionFilter, setRegionFilter] = useState('');
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [dayAgendaExpanded, setDayAgendaExpanded] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const [lightboxImage, setLightboxImage] = useState<{
     src: string;
     title: string;
   } | null>(null);
-  const skipNextAutoCollapseRef = useRef(false);
   const prevSelectedDayKeyRef = useRef<string | null>(null);
   const prevHasEventsRef = useRef<boolean>(false);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
 
-  const disciplineFilterOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    disciplines.forEach((d) => map.set(d.name.toLowerCase(), d.name));
-    events.forEach((ev) => {
-      if (ev.discipline?.trim()) {
-        const key = ev.discipline.trim().toLowerCase();
-        if (!map.has(key)) map.set(key, ev.discipline.trim());
-      }
-    });
-    return Array.from(map.values()).sort((a, b) =>
-      a.localeCompare(b, 'fr', { sensitivity: 'base' })
-    );
-  }, [disciplines, events]);
-
-  const availableCities = useMemo(() => {
-    const set = new Set<string>();
-    events.forEach((ev) => {
-      if (ev.city?.trim()) set.add(ev.city.trim());
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'fr'));
-  }, [events]);
-
-  const availableRegions = useMemo(() => {
-    const set = new Set<string>();
-    events.forEach((ev) => {
-      if (ev.region?.trim()) set.add(ev.region.trim());
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'fr'));
-  }, [events]);
-
-  const availableSearchSuggestions = useMemo(() => {
-    return Array.from(new Set([...availableCities, ...availableRegions])).sort(
-      (a, b) => a.localeCompare(b, 'fr')
-    );
-  }, [availableCities, availableRegions]);
-
-  const filteredEvents = useMemo(() => {
-    const cq = cityQuery.trim().toLowerCase();
-    const rq = regionFilter.trim().toLowerCase();
-    return events.filter((e) => {
-      if (disciplineFilter !== 'all' && e.discipline !== disciplineFilter) {
-        return false;
-      }
-      if (rq && (e.region || '').trim().toLowerCase() !== rq) {
-        return false;
-      }
-      if (cq) {
-        const cityMatch = e.city.toLowerCase().includes(cq);
-        const regionMatch = (e.region || '').toLowerCase().includes(cq);
-        if (!cityMatch && !regionMatch) return false;
-      }
-      return true;
-    });
-  }, [events, disciplineFilter, cityQuery, regionFilter]);
+  const filteredEvents = events;
 
   const monthDays = useMemo(
     () => getMonthDaysGrid(anchorDate.getFullYear(), anchorDate.getMonth()),
@@ -185,16 +185,52 @@ export function CalendarView({
     prevSelectedDayKeyRef.current = selectedDayKey;
     prevHasEventsRef.current = hasEventsForSelectedDay;
 
-    if (skipNextAutoCollapseRef.current) {
-      skipNextAutoCollapseRef.current = false;
-      setDayAgendaExpanded(true);
-      return;
-    }
-
     if (dayChanged || eventsPresenceChanged) {
       setDayAgendaExpanded(hasEventsForSelectedDay);
     }
+    if (dayChanged) {
+      setCarouselIndex(0);
+      if (carouselRef.current) {
+        carouselRef.current.scrollTo({ left: 0, behavior: 'auto' });
+      }
+    }
   }, [selectedDayKey, hasEventsForSelectedDay]);
+
+  const scrollCarouselToIndex = (targetIdx: number) => {
+    const container = carouselRef.current;
+    if (!container) return;
+    const clamped = Math.max(
+      0,
+      Math.min(targetIdx, eventsForSelectedDay.length - 1)
+    );
+    const cardEl = container.children[clamped] as HTMLElement | undefined;
+    if (cardEl) {
+      container.scrollTo({
+        left: cardEl.offsetLeft,
+        behavior: 'smooth',
+      });
+    }
+    setCarouselIndex(clamped);
+  };
+
+  const handleCarouselScroll = () => {
+    const container = carouselRef.current;
+    if (!container || container.children.length === 0) return;
+    const scrollLeft = container.scrollLeft;
+    let closestIdx = 0;
+    let closestDist = Infinity;
+    for (let i = 0; i < container.children.length; i++) {
+      const child = container.children[i] as HTMLElement;
+      const dist = Math.abs(child.offsetLeft - scrollLeft);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestIdx = i;
+      }
+    }
+    if (closestIdx !== carouselIndex) {
+      setCarouselIndex(closestIdx);
+    }
+  };
 
   const headerTitle = useMemo(() => {
     if (viewMode === 'month') {
@@ -244,29 +280,6 @@ export function CalendarView({
     }
   };
 
-  const handleToday = () => {
-    const today = new Date();
-    setAnchorDate(today);
-    setSelectedDate(today);
-  };
-
-  const handleTodayMap = () => {
-    const todayDate = new Date();
-    const todayKey = `${todayDate.getFullYear()}-${todayDate.getMonth()}-${todayDate.getDate()}`;
-    if (todayKey !== selectedDayKey) {
-      skipNextAutoCollapseRef.current = true;
-    }
-    setAnchorDate(todayDate);
-    setSelectedDate(todayDate);
-    setDayDisplayMode('map');
-    setDayAgendaExpanded(true);
-    window.setTimeout(() => {
-      document
-        .getElementById('day-agenda-panel')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 50);
-  };
-
   const today = new Date(nowMs);
 
   const getEventVisualState = (ev: SportEvent) => {
@@ -307,255 +320,6 @@ export function CalendarView({
       className="calendar-dot-backdrop w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
     >
       <div className="mx-auto max-w-4xl space-y-5">
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] sm:text-sm">
-            Touchez une date pour consulter les séances et réserver votre place.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          {/* Segmented Month / Week toggle */}
-          <div
-            role="group"
-            aria-label="Mode d'affichage du calendrier"
-            className="flex items-center gap-1 rounded-[10px] border border-slate-200 bg-white p-1 dark:border-[#262626] dark:bg-[#161616]"
-          >
-            <button
-              type="button"
-              onClick={() => setViewMode('month')}
-              className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                viewMode === 'month'
-                  ? 'bg-slate-900 text-white shadow-sm dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
-              }`}
-            >
-              Mois
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('week')}
-              className={`min-h-[34px] rounded-md px-3 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                viewMode === 'week'
-                  ? 'bg-slate-900 text-white shadow-sm dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-[#A3A3A3] dark:hover:text-[#E5E5E5]'
-              }`}
-            >
-              Semaine
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleToday}
-            className="inline-flex h-[40px] items-center rounded-[10px] border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] whitespace-nowrap shrink-0 cursor-pointer transition-colors"
-          >
-            Aujourd’hui
-          </button>
-
-          <button
-            type="button"
-            onClick={handleTodayMap}
-            className="inline-flex h-[40px] items-center gap-1.5 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-[#4ADE80]/30 dark:bg-[#4ADE80]/10 dark:text-[#4ADE80] dark:hover:bg-[#4ADE80]/20 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
-          >
-            <MapIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            Carte du jour
-          </button>
-          {onOpenNearbyMap && (
-            <button
-              type="button"
-              onClick={onOpenNearbyMap}
-              className="inline-flex h-[40px] items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#161616] dark:text-[#E5E5E5] dark:hover:bg-[#1F1F1F] whitespace-nowrap shrink-0 cursor-pointer transition-colors"
-            >
-              <LocateFixed className="h-3.5 w-3.5 text-emerald-700 dark:text-[#4ADE80]" aria-hidden="true" />
-              Autour de moi
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Grouped Filters & Quick City Pills (Collapsible) */}
-      <div className="rounded-[16px] border border-slate-200 bg-white shadow-sm dark:border-[#262626] dark:bg-[#161616] dark:shadow-[0_12px_30px_-14px_rgba(0,0,0,0.8)]">
-        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 sm:px-4">
-          <button
-            type="button"
-            onClick={() => setFiltersExpanded((prev) => !prev)}
-            aria-expanded={filtersExpanded}
-            aria-controls="calendar-filters-body"
-            className="flex flex-1 items-center gap-2.5 text-left min-w-0 cursor-pointer"
-          >
-            <SlidersHorizontal
-              className="h-4 w-4 shrink-0 text-emerald-700 dark:text-[#4ADE80]"
-              aria-hidden="true"
-            />
-            <span className="text-xs font-semibold text-slate-800 dark:text-[#E5E5E5] sm:text-sm">
-              Filtres &amp; villes
-            </span>
-            {(cityQuery.trim() || regionFilter || disciplineFilter !== 'all') && (
-              <span className="truncate text-[11px] font-medium text-emerald-700 dark:text-[#4ADE80]">
-                {[
-                  cityQuery.trim() ? `« ${cityQuery.trim()} »` : null,
-                  regionFilter || null,
-                  disciplineFilter !== 'all' ? disciplineFilter : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </span>
-            )}
-          </button>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {(cityQuery.trim() || regionFilter || disciplineFilter !== 'all') && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCityQuery('');
-                  setRegionFilter('');
-                  setDisciplineFilter('all');
-                }}
-                className="text-[11px] font-medium text-slate-500 hover:text-slate-900 dark:text-[#8E8E8E] dark:hover:text-[#E5E5E5] cursor-pointer"
-              >
-                Réinitialiser
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setFiltersExpanded((prev) => !prev)}
-              aria-expanded={filtersExpanded}
-              aria-controls="calendar-filters-body"
-              aria-label={
-                filtersExpanded
-                  ? 'Replier les filtres et villes'
-                  : 'Déplier les filtres et villes'
-              }
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] cursor-pointer"
-            >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform duration-200 ${
-                  filtersExpanded ? 'rotate-180' : ''
-                }`}
-                aria-hidden="true"
-              />
-            </button>
-          </div>
-        </div>
-
-        {filtersExpanded && (
-          <div
-            id="calendar-filters-body"
-            className="space-y-3 border-t border-slate-100 px-3.5 py-3 dark:border-[#262626] sm:px-4"
-          >
-            {/* Filters Row: City/Region search + Region select + Discipline filter */}
-            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
-              {/* City or Region Search Input */}
-              <div className="relative w-full sm:w-56">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#8E8E8E]"
-                  aria-hidden="true"
-                />
-                <input
-                  type="search"
-                  value={cityQuery}
-                  onChange={(e) => setCityQuery(e.target.value)}
-                  placeholder="Rechercher par ville ou région..."
-                  aria-label="Rechercher les événements par ville ou région"
-                  list="calendar-locations-list"
-                  className="min-h-[40px] w-full rounded-[10px] border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:placeholder:text-[#525252] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20"
-                />
-                <datalist id="calendar-locations-list">
-                  {availableSearchSuggestions.map((loc) => (
-                    <option key={loc} value={loc} />
-                  ))}
-                </datalist>
-              </div>
-
-              {/* Region Select */}
-              <select
-                value={regionFilter}
-                onChange={(e) => setRegionFilter(e.target.value)}
-                aria-label="Filtrer par région"
-                className="min-h-[40px] w-full rounded-[10px] border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 sm:w-auto"
-              >
-                <option value="">Toutes les régions</option>
-                {availableRegions.map((reg) => (
-                  <option key={reg} value={reg}>
-                    {reg}
-                  </option>
-                ))}
-              </select>
-
-              {/* Discipline Select List (alphabetical) */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                {disciplineFilter !== 'all' && (
-                  <span
-                    className={`flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[10px] border ${getDisciplineStyle(disciplineFilter, disciplines).softBg} ${getDisciplineStyle(disciplineFilter, disciplines).border} ${getDisciplineStyle(disciplineFilter, disciplines).text}`}
-                    aria-hidden="true"
-                  >
-                    <DisciplineIcon
-                      disciplineName={disciplineFilter}
-                      catalog={disciplines}
-                      className="h-4 w-4"
-                    />
-                  </span>
-                )}
-                <select
-                  value={disciplineFilter}
-                  onChange={(e) => setDisciplineFilter(e.target.value)}
-                  aria-label="Filtrer par discipline"
-                  className="min-h-[40px] w-full rounded-[10px] border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:focus:border-[#4ADE80] dark:focus:ring-[#4ADE80]/20 sm:w-auto"
-                >
-                  <option value="all">Toutes les disciplines</option>
-                  {disciplineFilterOptions.map((disc) => (
-                    <option key={disc} value={disc}>
-                      {disc}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Quick city pills if multiple cities exist */}
-            {availableCities.length > 1 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto border-t border-slate-100 pt-3 pb-0.5 dark:border-[#262626]">
-                <span className="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] whitespace-nowrap shrink-0 mr-1">
-                  Villes :
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCityQuery('')}
-                  className={`min-h-[32px] rounded-[8px] border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                    cityQuery.trim() === ''
-                      ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5]'
-                  }`}
-                >
-                  Toutes
-                </button>
-                {availableCities.map((city) => {
-                  const active =
-                    cityQuery.trim().toLowerCase() === city.toLowerCase();
-                  return (
-                    <button
-                      key={city}
-                      type="button"
-                      onClick={() => setCityQuery(active ? '' : city)}
-                      className={`min-h-[32px] rounded-[8px] border px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                        active
-                          ? 'border-emerald-700 bg-emerald-700 text-white dark:border-[#4ADE80] dark:bg-[#4ADE80] dark:text-[#0A0A0A] dark:font-semibold'
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#A3A3A3] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5]'
-                      }`}
-                    >
-                      {city}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* Two Vertically Stacked Cards: Calendar (Top) + Selected Day Detail (Bottom) */}
       <div className="flex flex-col gap-5">
         {/* Card 1: Calendar */}
@@ -657,12 +421,18 @@ export function CalendarView({
                         {hasEvents && (
                           <span
                             aria-hidden="true"
-                            className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ${
+                            className={`absolute -right-1 -top-1 inline-flex items-center justify-center rounded-full ring-2 tabular-nums leading-none ${
+                              dayEvents.length > 1
+                                ? 'h-[16px] min-w-[16px] px-1 text-[10px] font-bold text-white dark:text-[#0A0A0A]'
+                                : 'h-[13px] w-[13px]'
+                            } ${
                               isSelected
-                                ? 'bg-emerald-600 ring-white dark:bg-[#4ADE80] dark:ring-[#161616]'
-                                : 'bg-emerald-500 ring-white dark:bg-[#4ADE80] dark:ring-[#161616]'
+                                ? 'bg-emerald-700 ring-white dark:bg-[#4ADE80] dark:ring-[#161616]'
+                                : 'bg-emerald-600 ring-white dark:bg-[#4ADE80] dark:ring-[#161616]'
                             }`}
-                          />
+                          >
+                            {dayEvents.length > 1 ? dayEvents.length : null}
+                          </span>
                         )}
                       </span>
 
@@ -1015,9 +785,7 @@ export function CalendarView({
                     Aucune séance ce jour
                   </p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-[#8E8E8E]">
-                    {cityQuery.trim() || regionFilter
-                      ? `Aucun événement trouvé pour « ${[cityQuery.trim(), regionFilter].filter(Boolean).join(' · ')} » à cette date.`
-                      : 'Sélectionnez une autre date sur le calendrier ou consultez la liste des séances.'}
+                    Sélectionnez une autre date sur le calendrier ou consultez la liste des séances.
                   </p>
                   {isCoach && (
                     <button
@@ -1045,22 +813,37 @@ export function CalendarView({
                   </p>
                 </div>
               ) : (
-                eventsForSelectedDay.map((ev) => {
-                  const evalInfo = evaluateEventBooking(ev, nowMs, {
-                    hideRegisteredCount: !isCoach,
-                  });
-                  const discStyle = getDisciplineStyle(ev.discipline, disciplines);
-                  const coverImageSrc = getSafeEventCoverImageSrc(
-                    ev.coverImageUrl
-                  );
-                  const coverImagePosition = normalizeCoverImagePosition(
-                    ev.coverImagePosition
-                  );
-                  return (
-                    <div
-                      key={ev.id}
-                      className={`overflow-hidden rounded-[12px] border border-slate-200 border-l-4 ${discStyle.leftBorder} transition-colors hover:border-slate-300 dark:border-[#262626] dark:bg-[#1B1B1B] dark:hover:border-[#3A3A3A]`}
-                    >
+                <div className="space-y-3">
+                  <div
+                    ref={carouselRef}
+                    onScroll={handleCarouselScroll}
+                    role="region"
+                    aria-label="Carrousel des séances du jour"
+                    className="no-scrollbar relative flex items-stretch gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1"
+                  >
+                    {eventsForSelectedDay.map((ev) => {
+                      const evalInfo = evaluateEventBooking(ev, nowMs, {
+                        hideRegisteredCount: !isCoach,
+                      });
+                      const discStyle = getDisciplineStyle(
+                        ev.discipline,
+                        disciplines
+                      );
+                      const coverImageSrc = getSafeEventCoverImageSrc(
+                        ev.coverImageUrl
+                      );
+                      const coverImagePosition = normalizeCoverImagePosition(
+                        ev.coverImagePosition
+                      );
+                      return (
+                        <div
+                          key={ev.id}
+                          className={`flex flex-col overflow-hidden rounded-[12px] border border-slate-200 border-l-4 ${discStyle.leftBorder} bg-white transition-colors hover:border-slate-300 dark:border-[#262626] dark:bg-[#1B1B1B] dark:hover:border-[#3A3A3A] shrink-0 snap-start ${
+                            eventsForSelectedDay.length > 1
+                              ? 'w-[88%] sm:w-[76%] md:w-[68%]'
+                              : 'w-full'
+                          }`}
+                        >
                       {coverImageSrc && (
                         <button
                           type="button"
@@ -1086,7 +869,7 @@ export function CalendarView({
                           </span>
                         </button>
                       )}
-                      <div className="p-4">
+                      <div className="flex flex-1 flex-col p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-[#8E8E8E]">
                         <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                           <span
@@ -1177,7 +960,14 @@ export function CalendarView({
                         </div>
                         <div className="flex items-center gap-2">
                           <UserCheck className="h-3.5 w-3.5 text-slate-400 dark:text-[#8E8E8E] shrink-0" aria-hidden="true" />
-                          <span className="truncate">{formatEventCoachesLabel(ev)}</span>
+                          <span className="truncate">
+                            {(() => {
+                              const names = getEventCoachNames(ev);
+                              return names.length > 0
+                                ? `Créé par : ${names.join(', ')}`
+                                : 'Créé par';
+                            })()}
+                          </span>
                         </div>
                         {(() => {
                           const safeExternalUrl = getSafeExternalHref(ev.externalUrl);
@@ -1215,6 +1005,55 @@ export function CalendarView({
                       </p>
 
                       {(() => {
+                        const knownAttendees = attendeesByEventId?.get(ev.id) ?? [];
+                        const totalAttendees = Math.max(
+                          knownAttendees.length,
+                          Math.max(0, ev.registeredCount ?? 0)
+                        );
+                        if (totalAttendees === 0) return null;
+
+                        const maxDisplayed = 5;
+                        const visibleSlots = Math.min(maxDisplayed, totalAttendees);
+                        const displayedAttendees: EventAttendeeAvatar[] =
+                          knownAttendees.slice(0, visibleSlots);
+                        while (displayedAttendees.length < visibleSlots) {
+                          displayedAttendees.push({
+                            id: `anon-${ev.id}-${displayedAttendees.length}`,
+                            name: 'Participant inscrit',
+                            isAnonymousPlaceholder: true,
+                          });
+                        }
+                        const extraCount =
+                          totalAttendees > maxDisplayed
+                            ? totalAttendees - maxDisplayed
+                            : 0;
+
+                        return (
+                          <div
+                            className="mt-2.5 flex items-center"
+                            aria-label={`${totalAttendees} ${totalAttendees > 1 ? 'inscrits' : 'inscrit'} à cet événement`}
+                          >
+                            <div className="flex items-center -space-x-2">
+                              {displayedAttendees.map((attendee) => (
+                                <AttendeeAvatarCircle
+                                  key={attendee.id}
+                                  attendee={attendee}
+                                />
+                              ))}
+                              {extraCount > 0 && (
+                                <span
+                                  title={`+${extraCount} autre${extraCount > 1 ? 's' : ''} inscrit${extraCount > 1 ? 's' : ''}`}
+                                  className="relative inline-flex h-7 min-w-[28px] shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-1 text-[11px] font-bold tabular-nums text-slate-700 ring-2 ring-white dark:border-[#3A3A3A] dark:bg-[#262626] dark:text-[#E5E5E5] dark:ring-[#1B1B1B]"
+                                >
+                                  +{extraCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {(() => {
                         const hasSpots =
                           evalInfo.isUnlimited || (evalInfo.remainingSpots ?? 0) > 0;
                         const canBookFromCard =
@@ -1230,7 +1069,7 @@ export function CalendarView({
                           isClosedBeforeStart &&
                           canMemberMessageEventCoach(ev, nowMs, evalInfo);
                         return (
-                          <div className="mt-3 space-y-2">
+                          <div className="mt-auto pt-3 space-y-2">
                             {showClosedMessageCta && (
                               <p className="text-[11px] font-medium text-emerald-700 dark:text-[#4ADE80]">
                                 Message à l’animateur possible jusqu’à {formatFrenchTime(ev.startAt.toDate())}
@@ -1271,7 +1110,28 @@ export function CalendarView({
                       </div>
                     </div>
                   );
-                })
+                })}
+                  </div>
+
+                  {eventsForSelectedDay.length > 1 && (
+                    <div className="flex items-center justify-center gap-1.5 pt-1">
+                      {eventsForSelectedDay.map((ev, idx) => (
+                        <button
+                          key={ev.id}
+                          type="button"
+                          onClick={() => scrollCarouselToIndex(idx)}
+                          aria-label={`Aller à la séance ${idx + 1} : ${ev.title}`}
+                          aria-current={carouselIndex === idx ? 'true' : undefined}
+                          className={`h-2 rounded-full transition-all cursor-pointer ${
+                            carouselIndex === idx
+                              ? 'w-5 bg-emerald-600 dark:bg-[#4ADE80]'
+                              : 'w-2 bg-slate-300 hover:bg-slate-400 dark:bg-[#3A3A3A] dark:hover:bg-[#525252]'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
               </div>

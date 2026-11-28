@@ -67,12 +67,16 @@ export function getEventCoachFirstName(
 }
 
 export function buildRegistrationAckMessage(coachFirstName: string): string {
-  return `${coachFirstName} a bien pris en compte l'inscription. À tout à l'heure pour la séance.`;
+  return `${coachFirstName} a bien pris en compte votre inscription à l'événement.`;
 }
 
 export function isRegistrationAckMessage(text?: string | null): boolean {
   if (!text) return false;
-  return text.toLowerCase().includes("a bien pris en compte l'inscription");
+  const lower = text.toLowerCase();
+  return (
+    lower.includes('a bien pris en compte votre inscription') ||
+    lower.includes("a bien pris en compte l'inscription")
+  );
 }
 
 export function hasEventDuration(

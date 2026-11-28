@@ -40,8 +40,12 @@ export function MemberAuthGate({
         {/* Left: Member Sign-in (Email/Password) */}
         <div className="flex flex-col justify-between p-6 sm:p-8 lg:col-span-7 lg:p-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-[#4ADE80]">
-              GetFitNow Event · Espace Adhérent
+            <ShieldCheck
+              className="mx-auto mb-3 h-10 w-10 text-emerald-700 dark:text-[#4ADE80]"
+              aria-hidden="true"
+            />
+            <p className="text-center text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-[#4ADE80]">
+              Espace Adhérent
             </p>
             <h1
               className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-[#E5E5E5] sm:text-3xl"
@@ -85,7 +89,7 @@ export function MemberAuthGate({
                   onClick={onBackToCalendar}
                   className="inline-flex min-h-[40px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] dark:hover:text-[#E5E5E5] whitespace-nowrap shrink-0 cursor-pointer"
                 >
-                  Retour au calendrier
+                  Retour à l’accueil
                 </button>
               )}
               <button

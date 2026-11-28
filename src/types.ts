@@ -379,6 +379,26 @@ export type AppSection =
   | 'manage'
   | 'coaches';
 
+export interface EventAttendeeAvatar {
+  id: string;
+  name: string;
+  photoUrl?: string;
+  isAnonymousPlaceholder?: boolean;
+}
+
+export interface EventAttendeeCard {
+  id: string;
+  registrationId: string;
+  eventId: string;
+  emailKey: string;
+  initials: string;
+  photoUrl: string;
+  status: 'confirmed';
+  createdByUid: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 export interface CoachNotification {
   id: string;
   coachUid: string;

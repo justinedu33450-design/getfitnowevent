@@ -415,7 +415,7 @@ export function CoachAuthGate({
             onClick={onBackToCalendar}
             className="min-h-[40px] rounded-[10px] border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#262626] dark:bg-[#1F1F1F] dark:text-[#E5E5E5] dark:hover:bg-[#262626] cursor-pointer"
           >
-            Retour à l’accueil adhérent
+            Retour à l’accueil
           </button>
         </div>
       </div>

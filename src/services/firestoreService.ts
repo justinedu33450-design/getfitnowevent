@@ -45,6 +45,7 @@ import {
   Discipline,
   DisciplineColorKey,
   DisciplineIconKey,
+  EventAttendeeCard,
   EventCancelReason,
   EventLike,
   EventPaymentMode,
@@ -1354,6 +1355,249 @@ export function subscribeMyRegistrations(
     unsubOwn();
     unsubInvited();
   };
+}
+
+export function computeAttendeeInitials(
+  firstName?: string,
+  lastName?: string,
+  fallbackName?: string
+): string {
+  const first = (firstName ?? '').trim();
+  const last = (lastName ?? '').trim();
+  if (first && last) {
+    return `${first[0]}${last[0]}`.toUpperCase().slice(0, 4);
+  }
+  const combined = `${first} ${last} ${fallbackName ?? ''}`
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (combined.length === 0) return 'AD';
+  if (combined.length === 1) return combined[0].slice(0, 2).toUpperCase();
+  return `${combined[0][0]}${combined[combined.length - 1][0]}`
+    .toUpperCase()
+    .slice(0, 4);
+}
+
+export function subscribeEventAttendeeCards(
+  onData: (cards: EventAttendeeCard[]) => void,
+  onError?: () => void
+): Unsubscribe {
+  const q = query(
+    collection(db, 'eventAttendeeCards'),
+    where('status', '==', 'confirmed')
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const cards: EventAttendeeCard[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<EventAttendeeCard, 'id'>),
+      }));
+      onData(cards);
+    },
+    () => {
+      onError?.();
+    }
+  );
+}
+
+async function upsertEventAttendeeCardBestEffort(params: {
+  registrationId: string;
+  eventId: string;
+  emailKey: string;
+  initials: string;
+  photoUrl: string;
+  existingCard?: EventAttendeeCard | null;
+}): Promise<'ok' | 'permission_denied' | 'error'> {
+  const uid = auth.currentUser?.uid?.trim();
+  if (!uid || !params.registrationId || !params.eventId || !params.emailKey) {
+    return 'ok';
+  }
+  const cleanInitials = (params.initials.trim() || 'AD').slice(0, 4);
+  const cleanPhotoUrl = params.photoUrl
+    .trim()
+    .slice(0, VALIDATION_LIMITS.PHOTO_URL_MAX);
+  const cardRef = doc(db, 'eventAttendeeCards', params.registrationId);
+
+  try {
+    let existingData: Partial<EventAttendeeCard> | null =
+      params.existingCard ?? null;
+    if (!existingData) {
+      const snap = await getDoc(cardRef);
+      existingData = snap.exists()
+        ? (snap.data() as Partial<EventAttendeeCard>)
+        : null;
+    }
+
+    if (existingData) {
+      if (
+        (existingData.initials ?? '') === cleanInitials &&
+        (existingData.photoUrl ?? '') === cleanPhotoUrl
+      ) {
+        return 'ok';
+      }
+      await updateDoc(cardRef, {
+        initials: cleanInitials,
+        photoUrl: cleanPhotoUrl,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await setDoc(cardRef, {
+        registrationId: params.registrationId,
+        eventId: params.eventId,
+        emailKey: params.emailKey,
+        initials: cleanInitials,
+        photoUrl: cleanPhotoUrl,
+        status: 'confirmed',
+        createdByUid: uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return 'ok';
+  } catch (error) {
+    const code = (error as { code?: string })?.code ?? '';
+    const msg = error instanceof Error ? error.message.toLowerCase() : '';
+    if (code === 'permission-denied' || msg.includes('permission')) {
+      return 'permission_denied';
+    }
+    return 'error';
+  }
+}
+
+async function deleteEventAttendeeCardBestEffort(
+  registrationId: string
+): Promise<void> {
+  if (!registrationId) return;
+  try {
+    await deleteDoc(doc(db, 'eventAttendeeCards', registrationId));
+  } catch {
+    // Best-effort cleanup
+  }
+}
+
+async function syncMemberAttendeeCardsForProfileBestEffort(params: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  photoUrl: string;
+}): Promise<void> {
+  const uid = auth.currentUser?.uid?.trim();
+  const cleanEmail = params.email.trim().toLowerCase();
+  if (!uid || !cleanEmail) return;
+  const initials = computeAttendeeInitials(params.firstName, params.lastName);
+  const cleanPhotoUrl = params.photoUrl
+    .trim()
+    .slice(0, VALIDATION_LIMITS.PHOTO_URL_MAX);
+
+  try {
+    const regsSnap = await getDocs(
+      query(collection(db, 'registrations'), where('email', '==', cleanEmail))
+    );
+    await Promise.all(
+      regsSnap.docs.map(async (regDoc) => {
+        const reg = regDoc.data() as Partial<Registration>;
+        if (reg.status !== 'confirmed' || !reg.eventId || !reg.emailKey) {
+          return;
+        }
+        await upsertEventAttendeeCardBestEffort({
+          registrationId: regDoc.id,
+          eventId: reg.eventId,
+          emailKey: reg.emailKey,
+          initials,
+          photoUrl: cleanPhotoUrl,
+        });
+      })
+    );
+  } catch {
+    // Best-effort sync
+  }
+}
+
+export async function syncCoachEventAttendeeCards(params: {
+  registrations: Registration[];
+  memberProfiles: MemberProfile[];
+  coachAdmins: CoachAdminUser[];
+  existingCards: EventAttendeeCard[];
+}): Promise<'ok' | 'permission_denied'> {
+  const uid = auth.currentUser?.uid?.trim();
+  if (!uid) return 'ok';
+
+  const profileByKey = new Map<string, MemberProfile>();
+  const profileByEmail = new Map<string, MemberProfile>();
+  params.memberProfiles.forEach((p) => {
+    if (p.emailKey) profileByKey.set(p.emailKey, p);
+    if (p.email) profileByEmail.set(p.email.trim().toLowerCase(), p);
+  });
+
+  const coachByKey = new Map<string, CoachAdminUser>();
+  const coachByEmail = new Map<string, CoachAdminUser>();
+  params.coachAdmins.forEach((c) => {
+    if (c.emailKey) coachByKey.set(c.emailKey, c);
+    if (c.email) coachByEmail.set(c.email.trim().toLowerCase(), c);
+  });
+
+  const existingById = new Map(params.existingCards.map((c) => [c.id, c]));
+  const pendingPayloads: Array<{
+    registrationId: string;
+    eventId: string;
+    emailKey: string;
+    initials: string;
+    photoUrl: string;
+    existingCard: EventAttendeeCard | null;
+  }> = [];
+
+  for (const reg of params.registrations) {
+    if (reg.status !== 'confirmed' || !reg.eventId || !reg.emailKey) continue;
+    const emailLower = (reg.email || '').trim().toLowerCase();
+    const matchedProfile =
+      profileByKey.get(reg.emailKey) ?? profileByEmail.get(emailLower);
+    const matchedCoach =
+      coachByKey.get(reg.emailKey) ?? coachByEmail.get(emailLower);
+
+    const initials = computeAttendeeInitials(
+      matchedProfile?.firstName || reg.firstName,
+      matchedProfile?.lastName || reg.lastName,
+      matchedCoach?.displayName
+    );
+    const existingCard = existingById.get(reg.id) ?? null;
+    const resolvedPhotoUrl =
+      (typeof matchedProfile?.photoUrl === 'string' && matchedProfile.photoUrl.trim()) ||
+      (typeof matchedCoach?.photoUrl === 'string' && matchedCoach.photoUrl.trim()) ||
+      existingCard?.photoUrl ||
+      '';
+
+    if (
+      existingCard &&
+      existingCard.initials === initials &&
+      (existingCard.photoUrl ?? '') === resolvedPhotoUrl
+    ) {
+      continue;
+    }
+
+    pendingPayloads.push({
+      registrationId: reg.id,
+      eventId: reg.eventId,
+      emailKey: reg.emailKey,
+      initials,
+      photoUrl: resolvedPhotoUrl,
+      existingCard,
+    });
+    if (pendingPayloads.length >= 25) break;
+  }
+
+  if (pendingPayloads.length === 0) return 'ok';
+
+  const firstResult = await upsertEventAttendeeCardBestEffort(pendingPayloads[0]);
+  if (firstResult === 'permission_denied') {
+    return 'permission_denied';
+  }
+  if (pendingPayloads.length > 1) {
+    await Promise.all(
+      pendingPayloads.slice(1).map((item) => upsertEventAttendeeCardBestEffort(item))
+    );
+  }
+  return 'ok';
 }
 
 export interface EventFormInput {
@@ -3264,6 +3508,29 @@ async function commitSingleParticipantRegistration(params: {
     });
 
     await batch.commit();
+
+    let resolvedPhotoUrl = '';
+    if (!params.isGuest) {
+      try {
+        const memberSnap = await getDoc(doc(db, 'members', emailKey));
+        if (memberSnap.exists()) {
+          const rawPhoto = (memberSnap.data() as Partial<MemberProfile>).photoUrl;
+          if (typeof rawPhoto === 'string') {
+            resolvedPhotoUrl = rawPhoto.trim();
+          }
+        }
+      } catch {
+        // Ignore if member profile isn't readable here
+      }
+    }
+    void upsertEventAttendeeCardBestEffort({
+      registrationId: targetRegistrationId,
+      eventId: params.event.id,
+      emailKey,
+      initials: computeAttendeeInitials(safeFirstName, safeLastName),
+      photoUrl: resolvedPhotoUrl,
+    });
+
     return {
       registrationId: targetRegistrationId,
       emailKey,
@@ -3866,6 +4133,7 @@ export async function cancelMyRegistration(
     }
 
     await batch.commit();
+    void deleteEventAttendeeCardBestEffort(registration.id);
   } catch (error) {
     if (
       error instanceof Error &&
@@ -4266,6 +4534,7 @@ export async function removeRegistration(
       }
     }
   }
+  void deleteEventAttendeeCardBestEffort(registration.id);
 }
 
 function normalizeMemberBirthDateAndLevel(
@@ -4428,6 +4697,12 @@ export async function upsertMemberProfile(params: {
         updatedAt: serverTimestamp(),
       });
     }
+    void syncMemberAttendeeCardsForProfileBestEffort({
+      email: params.email,
+      firstName: params.firstName,
+      lastName: params.lastName,
+      photoUrl: params.photoUrl ?? '',
+    });
   } catch (error) {
     handleFirestoreError(
       error,
@@ -4800,6 +5075,12 @@ export async function upsertMyMemberProfile(params: {
         createdAt: serverTimestamp(),
       });
     }
+    void syncMemberAttendeeCardsForProfileBestEffort({
+      email,
+      firstName,
+      lastName,
+      photoUrl: params.photoUrl,
+    });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `members/${email}`);
   }

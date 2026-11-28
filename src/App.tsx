@@ -36,6 +36,7 @@ import {
   subscribeCoachMemberSchedules,
   subscribeCoachTrainingPrograms,
   subscribeDisciplines,
+  subscribeEventAttendeeCards,
   subscribeEvents,
   subscribeExercises,
   subscribeMemberConversations,
@@ -51,6 +52,7 @@ import {
   subscribePublishedEventReviews,
   subscribeRegistrations,
   syncCoachDirectoryFromAdmins,
+  syncCoachEventAttendeeCards,
   syncEventRegisteredCounter,
   validateMemberSession,
 } from './services/firestoreService';
@@ -65,6 +67,8 @@ import {
   CoachRole,
   Conversation,
   CustomDiscipline,
+  EventAttendeeAvatar,
+  EventAttendeeCard,
   EventRatingSummary,
   EventReview,
   ExerciseLibraryItem,
@@ -153,6 +157,9 @@ export default function App() {
   );
   const resolvedTheme: 'light' | 'dark' =
     theme === 'auto' ? (systemPrefersDark ? 'dark' : 'light') : theme;
+  const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'week'>(
+    'month'
+  );
   const [activeSection, setActiveSection] = useState<AppSection>('calendar');
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -176,6 +183,9 @@ export default function App() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [registrationsLoaded, setRegistrationsLoaded] = useState(false);
   const [memberProfiles, setMemberProfiles] = useState<MemberProfile[]>([]);
+  const [eventAttendeeCards, setEventAttendeeCards] = useState<
+    EventAttendeeCard[]
+  >([]);
 
   // Connected member profile & personal registrations
   const [myMemberProfile, setMyMemberProfile] = useState<MemberProfile | null>(
@@ -572,6 +582,56 @@ export default function App() {
     return () => unsub();
   }, [authLoading]);
 
+  const attendeeCardsSyncBlockedRef = useRef(false);
+
+  // Public non-PII attendee avatar cards (/eventAttendeeCards)
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+    const unsub = subscribeEventAttendeeCards(
+      (cards) => {
+        attendeeCardsSyncBlockedRef.current = false;
+        setEventAttendeeCards(cards);
+      },
+      () => setEventAttendeeCards([])
+    );
+    return () => unsub();
+  }, [authLoading]);
+
+  // Keep /eventAttendeeCards synchronized when coaches view live registrations & member profiles
+  useEffect(() => {
+    if (
+      authLoading ||
+      !isCoach ||
+      !isVerifiedUser ||
+      !registrationsLoaded ||
+      registrations.length === 0 ||
+      attendeeCardsSyncBlockedRef.current
+    ) {
+      return;
+    }
+    void syncCoachEventAttendeeCards({
+      registrations,
+      memberProfiles,
+      coachAdmins,
+      existingCards: eventAttendeeCards,
+    }).then((result) => {
+      if (result === 'permission_denied') {
+        attendeeCardsSyncBlockedRef.current = true;
+      }
+    });
+  }, [
+    authLoading,
+    isCoach,
+    isVerifiedUser,
+    registrationsLoaded,
+    registrations,
+    memberProfiles,
+    coachAdmins,
+    eventAttendeeCards,
+  ]);
+
   const myAdminProfile = useMemo(
     () => (user ? coachAdmins.find((a) => a.id === user.uid) ?? null : null),
     [coachAdmins, user]
@@ -956,6 +1016,136 @@ export default function App() {
     });
     return ids;
   }, [user, myRegistrations]);
+
+  const attendeesByEventId = useMemo(() => {
+    const map = new Map<string, EventAttendeeAvatar[]>();
+
+    const memberProfileByKey = new Map<string, MemberProfile>();
+    const memberProfileByEmail = new Map<string, MemberProfile>();
+    memberProfiles.forEach((p) => {
+      if (p.emailKey) memberProfileByKey.set(p.emailKey, p);
+      if (p.email) memberProfileByEmail.set(p.email.trim().toLowerCase(), p);
+    });
+
+    if (myMemberProfile) {
+      if (myMemberProfile.emailKey) {
+        memberProfileByKey.set(myMemberProfile.emailKey, myMemberProfile);
+      }
+      if (myMemberProfile.email) {
+        memberProfileByEmail.set(
+          myMemberProfile.email.trim().toLowerCase(),
+          myMemberProfile
+        );
+      }
+    }
+
+    const coachByKey = new Map<string, CoachAdminUser>();
+    const coachByEmail = new Map<string, CoachAdminUser>();
+    coachAdmins.forEach((c) => {
+      if (c.emailKey) coachByKey.set(c.emailKey, c);
+      if (c.email) coachByEmail.set(c.email.trim().toLowerCase(), c);
+    });
+
+    const publicCardByRegId = new Map<string, EventAttendeeCard>();
+    eventAttendeeCards.forEach((card) => {
+      const regId = card.registrationId || card.id;
+      if (regId) publicCardByRegId.set(regId, card);
+    });
+
+    const seenRegIdsByEvent = new Map<string, Set<string>>();
+    const sourceRegistrations =
+      isCoach && registrationsLoaded ? registrations : myRegistrations;
+
+    sourceRegistrations.forEach((reg) => {
+      if (reg.status !== 'confirmed' || !reg.eventId) return;
+      const emailLower = (reg.email || '').trim().toLowerCase();
+      const matchedMember =
+        memberProfileByKey.get(reg.emailKey) ??
+        memberProfileByEmail.get(emailLower);
+      const matchedCoach =
+        coachByKey.get(reg.emailKey) ?? coachByEmail.get(emailLower);
+      const publicCard = publicCardByRegId.get(reg.id);
+
+      const profileName = matchedMember
+        ? `${matchedMember.firstName ?? ''} ${matchedMember.lastName ?? ''}`.trim()
+        : '';
+      const regName = `${reg.firstName ?? ''} ${reg.lastName ?? ''}`.trim();
+      const name =
+        profileName ||
+        regName ||
+        matchedCoach?.displayName?.trim() ||
+        publicCard?.initials ||
+        'Inscrit';
+
+      const memberPhoto =
+        typeof matchedMember?.photoUrl === 'string'
+          ? matchedMember.photoUrl.trim()
+          : '';
+      const coachPhoto =
+        typeof matchedCoach?.photoUrl === 'string'
+          ? matchedCoach.photoUrl.trim()
+          : '';
+      const cardPhoto =
+        typeof publicCard?.photoUrl === 'string'
+          ? publicCard.photoUrl.trim()
+          : '';
+
+      const photoUrl = matchedMember
+        ? memberPhoto
+        : coachPhoto || cardPhoto || '';
+
+      const list = map.get(reg.eventId) ?? [];
+      list.push({
+        id: reg.id,
+        name,
+        photoUrl: photoUrl || undefined,
+      });
+      map.set(reg.eventId, list);
+
+      const seen = seenRegIdsByEvent.get(reg.eventId) ?? new Set<string>();
+      seen.add(reg.id);
+      seenRegIdsByEvent.set(reg.eventId, seen);
+    });
+
+    if (!(isCoach && registrationsLoaded)) {
+      eventAttendeeCards.forEach((card) => {
+        if (card.status !== 'confirmed' || !card.eventId) return;
+        const regId = card.registrationId || card.id;
+        const seen = seenRegIdsByEvent.get(card.eventId);
+        if (seen?.has(regId)) return;
+
+        const cardPhoto =
+          typeof card.photoUrl === 'string' ? card.photoUrl.trim() : '';
+        const list = map.get(card.eventId) ?? [];
+        list.push({
+          id: regId,
+          name: card.initials || 'AD',
+          photoUrl: cardPhoto || undefined,
+        });
+        map.set(card.eventId, list);
+      });
+    }
+
+    map.forEach((list, eventId) => {
+      list.sort((a, b) => {
+        const aHasPhoto = a.photoUrl ? 1 : 0;
+        const bHasPhoto = b.photoUrl ? 1 : 0;
+        return bHasPhoto - aHasPhoto;
+      });
+      map.set(eventId, list);
+    });
+
+    return map;
+  }, [
+    isCoach,
+    registrationsLoaded,
+    registrations,
+    myRegistrations,
+    memberProfiles,
+    myMemberProfile,
+    coachAdmins,
+    eventAttendeeCards,
+  ]);
 
   const visibleReviews = useMemo(() => {
     const eventsById = new Map(events.map((ev) => [ev.id, ev]));
@@ -1429,11 +1619,9 @@ export default function App() {
       <TopBar
         theme={theme}
         resolvedTheme={resolvedTheme}
-        onToggleTheme={() =>
-          setTheme((prev) =>
-            prev === 'auto' ? 'light' : prev === 'light' ? 'dark' : 'auto'
-          )
-        }
+        onSelectTheme={(next) => setTheme(next)}
+        calendarViewMode={calendarViewMode}
+        onSelectCalendarViewMode={setCalendarViewMode}
         activeSection={activeSection}
         onNavigate={(section) => {
           if (
@@ -1805,10 +1993,12 @@ export default function App() {
               <CalendarView
                 events={activeEvents}
                 disciplines={disciplineCatalog}
+                viewMode={calendarViewMode}
                 nowMs={nowMs}
                 isCoach={isCoach}
                 isCoachAdmin={isCoachAdmin}
                 registeredEventIds={registeredEventIds}
+                attendeesByEventId={attendeesByEventId}
                 onShareEvent={(ev) => setSharingEvent(ev)}
                 ratingSummaryByEventId={ratingSummaryByEventId}
                 loading={eventsLoading}
@@ -2192,7 +2382,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-slate-200 bg-white dark:border-[#262626] dark:bg-[#161616]">
+      <footer className="border-t border-slate-200 dark:border-[#262626]">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-xs text-slate-500 dark:text-[#8E8E8E] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>© {new Date().getFullYear()} GetFitNow Event · Réservations sportives en ligne</p>
           <div className="flex flex-wrap items-center gap-5">
@@ -2228,7 +2418,7 @@ export default function App() {
                 }}
                 className="hover:text-slate-900 dark:hover:text-[#E5E5E5] cursor-pointer"
               >
-                Mon suivi
+                Mon profil
               </button>
             )}
             {isCoach ? (

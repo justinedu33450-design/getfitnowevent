@@ -341,7 +341,7 @@ export function EmailPasswordAuthForm({
             {submitting
               ? 'Validation en cours...'
               : mode === 'login'
-                ? 'Se connecter avec mon mot de passe'
+                ? 'Se connecter'
                 : mode === 'register'
                   ? 'Créer mon profil avec mot de passe'
                   : 'Envoyer le lien de réinitialisation'}

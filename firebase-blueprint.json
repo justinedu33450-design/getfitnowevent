@@ -1813,6 +1813,77 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "EventAttendeeCard": {
+      "title": "EventAttendeeCard",
+      "description": "Carte publique sans PII (initiales et photo de profil optionnelle) représentant un participant confirmé à un événement.",
+      "type": "object",
+      "properties": {
+        "registrationId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Identifiant de l'inscription confirmée associée."
+        },
+        "eventId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Identifiant de l'événement."
+        },
+        "emailKey": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 48,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Empreinte opaque de l'email du participant."
+        },
+        "initials": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4,
+          "description": "Initiales affichées si aucune photo de profil n'est définie."
+        },
+        "photoUrl": {
+          "type": "string",
+          "maxLength": 80000,
+          "description": "Photo de profil optionnelle définie par l'adhérent ou le coach (vide sinon)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["confirmed"],
+          "description": "Statut confirmé de la participation affichée."
+        },
+        "createdByUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID de l'utilisateur ayant créé la carte."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Horodatage serveur de création."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Horodatage serveur de mise à jour."
+        }
+      },
+      "required": [
+        "registrationId",
+        "eventId",
+        "emailKey",
+        "initials",
+        "photoUrl",
+        "status",
+        "createdByUid",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -1887,6 +1958,10 @@
     "/trainingPrograms/{programId}": {
       "schema": { "$ref": "#/entities/TrainingProgram" },
       "description": "Programmes running personnalisés payants ou offerts (5km, 10km, 21km, 42km) avec durée adaptée au niveau (8 à 16 semaines), 3 séances/sem. par défaut, test VMA initial et allures calculées."
+    },
+    "/eventAttendeeCards/{registrationId}": {
+      "schema": { "$ref": "#/entities/EventAttendeeCard" },
+      "description": "Cartes publiques sans PII (initiales et photo de profil) des inscrits confirmés aux événements."
     }
   }
 }
